@@ -33,7 +33,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          rsync -av --delete docker-compose.yml backend frontend $SSH_USER@$SSH_HOST:~/cu-roadmap/
+          rsync -av --delete docker-compose.yml backend frontend $SSH_USER@$SSH_HOST:~/cu-roadmap
 
       - name: Deploy to server
         env:
