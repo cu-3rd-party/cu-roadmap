@@ -8,10 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     environment:
       name: production
-      url: ${{ secrets.DEPLOY_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -30,12 +28,12 @@ jobs:
           echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      - name: Copy files to server
+      - name: Sync files to server
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          scp -r docker-compose.yml backend frontend $SSH_USER@$SSH_HOST:~/cu-roadmap/
+          rsync -av --delete docker-compose.yml backend frontend $SSH_USER@$SSH_HOST:~/cu-roadmap/
 
       - name: Deploy to server
         env:
