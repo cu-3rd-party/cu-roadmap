@@ -18,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(graph_router, prefix="/api/v1")
+app.include_router(graph_router, prefix="/api/v1/graph")
 app.include_router(majors_router, prefix="/api/v1/majors")
 app.include_router(courses_router, prefix="/api/v1/courses")
 app.include_router(planner_router, prefix="/api/v1/planner")

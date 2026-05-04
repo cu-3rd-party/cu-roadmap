@@ -1,94 +1,139 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Network } from 'vis-network';
-import { Book, Network as NetworkIcon, GraduationCap, X, LayoutDashboard, Search, Calendar, Calculator } from 'lucide-react';
+import { Book, Calendar, Network as NetworkIcon, Calculator, Search, Trash, X } from 'lucide-react';
+import { Network } from 'vis-network/standalone';
 import './App.css';
 
 const API_BASE = 'http://127.0.0.1:8000/api/v1';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('graph');
+  const [activeTab, setActiveTab] = useState('courses');
+  const [passedIds, setPassedIds] = useState<string[]>([]);
   
+  // Shared state for the planner results so we can trigger build from tracker
+  const [roadmapData, setRoadmapData] = useState<any>(null);
+  const [plannerLoading, setPlannerLoading] = useState(false);
+  const [triggerGenerate, setTriggerGenerate] = useState(0);
+
   return (
     <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="main-content">
-        {activeTab === 'graph' && <GraphView />}
-        {activeTab === 'majors' && <MajorsView />}
-        {activeTab === 'courses' && <CoursesView />}
-        {activeTab === 'planner' && <PlannerView />}
-        {activeTab === 'calculator' && <MajorCalculatorView />}
-      </main>
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="layout-body">
+        <aside className="narrow-sidebar">
+          <button className={`side-icon-btn ${activeTab === 'courses' ? 'active' : ''}`} onClick={() => setActiveTab('courses')} title="Courses"><Book size={20}/></button>
+          <button className={`side-icon-btn ${activeTab === 'planner' ? 'active' : ''}`} onClick={() => setActiveTab('planner')} title="Planner"><Calendar size={20}/></button>
+          <button className={`side-icon-btn ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => setActiveTab('graph')} title="Graph"><NetworkIcon size={20}/></button>
+          <button className={`side-icon-btn ${activeTab === 'calculator' ? 'active' : ''}`} onClick={() => setActiveTab('calculator')} title="Identifier"><Calculator size={20}/></button>
+        </aside>
+        <main className="main-content">
+          {activeTab === 'graph' && <GraphView />}
+          {activeTab === 'majors' && <MajorsView />}
+          {activeTab === 'courses' && <CoursesView passedIds={passedIds} setPassedIds={setPassedIds} />}
+          {activeTab === 'planner' && (
+              <PlannerView 
+                passedIds={passedIds} 
+                setPassedIds={setPassedIds} 
+                triggerGenerate={triggerGenerate}
+                setData={setRoadmapData}
+                data={roadmapData}
+                setLoading={setPlannerLoading}
+                loading={plannerLoading}
+              />
+          )}
+          {activeTab === 'calculator' && <MajorCalculatorView passedIds={passedIds} setPassedIds={setPassedIds} />}
+        </main>
+      </div>
+      <StickyTracker 
+        count={passedIds.length} 
+        activeTab={activeTab} 
+        onGenerate={() => setTriggerGenerate(v => v + 1)}
+      />
     </div>
   );
 }
 
-function Sidebar({ activeTab, setActiveTab }: any) {
+function Header({ activeTab, setActiveTab }: any) {
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <LayoutDashboard className="icon-lg" />
-        <h2>CU Admin</h2>
+    <header className="top-header">
+      <div className="header-left">
+        <div className="cu-logo">
+          <svg viewBox="0 0 40 40" width="24" height="24" fill="#111">
+            <path d="M20 5L35 12.5V27.5L20 35L5 27.5V12.5L20 5Z"/>
+          </svg>
+          <div className="logo-text">ROADMAP ENGINE</div>
+        </div>
+        <nav className="top-menu">
+          <button className={`menu-item ${activeTab === 'planner' ? 'active' : ''}`} onClick={() => setActiveTab('planner')}>Планировщик</button>
+          <button className={`menu-item ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => setActiveTab('graph')}>Карта курсов</button>
+          <button className={`menu-item ${activeTab === 'courses' ? 'active' : ''}`} onClick={() => setActiveTab('courses')}>Каталог</button>
+          <button className={`menu-item ${activeTab === 'calculator' ? 'active' : ''}`} onClick={() => setActiveTab('calculator')}>Подбор мейджора</button>
+        </nav>
       </div>
-      <nav className="sidebar-nav">
-        <button className={`nav-btn ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => setActiveTab('graph')}>
-          <NetworkIcon className="icon" /> Graph View
-        </button>
-        <button className={`nav-btn ${activeTab === 'majors' ? 'active' : ''}`} onClick={() => setActiveTab('majors')}>
-          <GraduationCap className="icon" /> Majors
-        </button>
-        <button className={`nav-btn ${activeTab === 'courses' ? 'active' : ''}`} onClick={() => setActiveTab('courses')}>
-          <Book className="icon" /> Courses
-        </button>
-        <button className={`nav-btn ${activeTab === 'planner' ? 'active' : ''}`} onClick={() => setActiveTab('planner')}>
-          <Calendar className="icon" /> Planner (Eng2)
-        </button>
-        <button className={`nav-btn ${activeTab === 'calculator' ? 'active' : ''}`} onClick={() => setActiveTab('calculator')}>
-          <Calculator className="icon" /> Identifier
-        </button>
-      </nav>
-    </aside>
+      <div className="header-right">
+        <div className="user-profile">
+          <span className="text-muted" style={{fontSize: '0.8rem', marginRight: '12px'}}>Тестовый Студент</span>
+          <div className="profile-circle">ТС</div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function StickyTracker({ count, activeTab, onGenerate }: any) {
+  if (activeTab !== 'planner' && activeTab !== 'courses' && activeTab !== 'calculator') return null;
+  
+  return (
+    <div className="sticky-tracker">
+      <div className="tracker-content">
+        <div className="stat">
+          <span className="label">ВЫБРАНО КУРСОВ</span>
+          <span className="value">{count}</span>
+        </div>
+        <div className="divider" />
+        <div className="status">
+          <span className="label">СТАТУС ПЛАНА</span>
+          <span className="value success">{count > 0 ? 'ГОТОВ' : 'ПУСТО'}</span>
+        </div>
+        {activeTab === 'planner' && (
+            <button className="primary-btn" onClick={onGenerate}>ПОСТРОИТЬ ТРАЕКТОРИЮ</button>
+        )}
+      </div>
+    </div>
   );
 }
 
 function GraphView() {
-  const container = useRef<HTMLDivElement>(null);
+  const container = React.useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<any>(null);
 
   useEffect(() => {
-    if (!container.current) return;
-    axios.get(`${API_BASE}/graph-data`).then((res) => {
-      const data = res.data;
-      const colorMap: any = {
-          'tech': { background: '#3b82f6', border: '#2563eb' },
-          'stem': { background: '#8b5cf6', border: '#7c3aed' },
-          'business': { background: '#10b981', border: '#059669' },
-          'soft': { background: '#f59e0b', border: '#d97706' },
-      };
-
-      const nodes = data.nodes.map((n: any) => ({
+    axios.get(`${API_BASE}/graph/data`).then(res => {
+      const nodes = res.data.nodes.map((n: any) => ({
           ...n,
+          shape: 'dot',
+          size: 20,
+          font: { face: 'Inter', size: 12, color: '#111' },
           color: {
-              background: colorMap[n.group]?.background || '#64748b',
-              border: colorMap[n.group]?.border || '#475569',
-              highlight: { background: '#38bdf8', border: '#0ea5e9' }
+              background: '#fff',
+              border: '#3b82f6',
+              highlight: { background: '#eff6ff', border: '#2563eb' }
           },
-          font: { color: '#ffffff', face: 'Inter', size: 14 },
-          shape: 'box',
-          borderWidth: 2,
-          margin: 12,
+          borderWidth: 2
       }));
 
-      const edges = data.edges.map((e: any) => ({
+      const edges = res.data.edges.map((e: any) => ({
           ...e,
           arrows: 'to',
-          color: { color: 'rgba(148, 163, 184, 0.4)', highlight: '#38bdf8' },
+          color: { color: '#e5e7eb', highlight: '#3b82f6' },
           font: { align: 'middle', color: '#94a3b8', size: 10, face: 'Inter' },
           dashes: e.label !== 'prerequisite'
       }));
 
       const network = new Network(container.current!, { nodes, edges }, {
-          physics: { solver: 'forceAtlas2Based' }
+          physics: { 
+              solver: 'forceAtlas2Based',
+              forceAtlas2Based: { gravitationalConstant: -50, centralGravity: 0.01, springLength: 100 }
+          }
       });
 
       network.on("click", (params) => {
@@ -103,14 +148,18 @@ function GraphView() {
   }, []);
 
   return (
-    <div className="view-container">
-      <div ref={container} className="graph-container"></div>
+    <div className="view-container full-height-view" style={{position: 'relative', display: 'flex', flexDirection: 'column'}}>
+      <h1 className="view-title" style={{marginBottom: '20px'}}>Карта связей</h1>
+      <div ref={container} className="graph-viz-container"></div>
       {selectedNode && (
-        <div className="glass-panel info-panel">
-          <button className="close-btn" onClick={() => setSelectedNode(null)}><X size={16}/></button>
-          <span className="badge">{selectedNode.group}</span>
-          <h3>{selectedNode.label}</h3>
-          <p className="text-muted">{selectedNode.title}</p>
+        <div className="glass-panel" style={{
+            position: 'absolute', top: '100px', right: '40px', width: '300px', 
+            padding: '24px', zIndex: 10, boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+        }}>
+          <button onClick={() => setSelectedNode(null)} style={{position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer'}}><X size={16}/></button>
+          <span className="badge" style={{marginBottom: '8px'}}>{selectedNode.group}</span>
+          <h3 style={{fontSize: '1.2rem', marginBottom: '8px'}}>{selectedNode.label}</h3>
+          <p className="text-muted" style={{fontSize: '0.9rem'}}>{selectedNode.title}</p>
         </div>
       )}
     </div>
@@ -118,41 +167,10 @@ function GraphView() {
 }
 
 function MajorsView() {
-  const [majors, setMajors] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-
-  useEffect(() => {
-    axios.get(`${API_BASE}/majors`).then(res => setMajors(res.data));
-    axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
-  }, []);
-
-  return (
-    <div className="view-container scrollable">
-      <h1 className="page-title">Majors & Requirements</h1>
-      <div className="majors-grid">
-        {majors.map(m => (
-          <div key={m.id} className="glass-panel major-card">
-            <h2>{m.title}</h2>
-            <p className="school-tag">{m.school} School</p>
-            <div className="requirements">
-              <h4>Required Courses ({m.requirements.length}):</h4>
-              {m.requirements.length === 0 ? <p className="text-muted">No specific requirements set yet.</p> : (
-                <ul>
-                  {m.requirements.map((req: any) => {
-                    const c = courses.find(c => c.id === req.course_id);
-                    return <li key={req.course_id}>{c ? c.title : req.course_id} <span>({req.type})</span></li>
-                  })}
-                </ul>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <div className="view-container"><h1 className="view-title">Направления обучения</h1></div>;
 }
 
-function CoursesView() {
+function CoursesView({ passedIds, setPassedIds }: any) {
   const [courses, setCourses] = useState<any[]>([]);
   const [search, setSearch] = useState('');
 
@@ -160,55 +178,58 @@ function CoursesView() {
     axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
   }, []);
 
+  const toggleCourse = (id: string) => {
+    setPassedIds((prev: string[]) => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const getCategoryColor = (category: string) => {
+      const cat = category.toLowerCase();
+      if (cat.includes('stem')) return 'var(--cat-stem)';
+      if (cat.includes('business')) return 'var(--cat-english)';
+      if (cat.includes('tech')) return 'var(--cat-ai)';
+      if (cat.includes('soft')) return 'var(--cat-agile)';
+      return 'var(--cat-math)';
+  };
+
   const filtered = courses.filter(c => c.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="view-container scrollable">
-      <div className="header-row">
-        <h1 className="page-title">All Courses</h1>
-        <div className="search-box">
-          <Search size={18} />
-          <input type="text" placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-      </div>
-      <div className="table-container glass-panel">
-        <table className="courses-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>Semesters</th>
-              <th>Load</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(c => (
-              <tr key={c.id}>
-                <td><strong>{c.title}</strong><br/><small className="text-muted">{c.description}</small></td>
-                <td><span className="badge">{c.category}</span></td>
-                <td>{c.course_type}</td>
-                <td>{c.available_semesters.join(', ')}</td>
-                <td>{c.workload}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="view-container">
+      <div className="breadcrumb">Траектория &gt; Каталог курсов</div>
+      <h1 className="view-title">Курсы и навыки</h1>
+      
+      <div className="courses-grid">
+        {filtered.map(c => (
+          <div key={c.id} className={`cu-course-card ${passedIds.includes(c.id) ? 'selected' : ''}`} onClick={() => toggleCourse(c.id)}>
+            <div className="card-top" style={{backgroundColor: getCategoryColor(c.category)}}>
+              <div className="abstract-lines">
+                  <svg width="100%" height="100%" viewBox="0 0 200 120" opacity="0.4">
+                      <path d="M20 60 Q100 20 180 60" stroke="white" fill="none" strokeWidth="1"/>
+                      <path d="M20 70 Q100 30 180 70" stroke="white" fill="none" strokeWidth="1"/>
+                      <path d="M20 80 Q100 40 180 80" stroke="white" fill="none" strokeWidth="1"/>
+                  </svg>
+              </div>
+              <div className="card-icon-circle">
+                  <Search size={14} color={getCategoryColor(c.category)}/>
+              </div>
+            </div>
+            <div className="card-bottom">
+              <div className="card-title">{c.title}</div>
+              <div className="card-meta">{c.category} • {c.workload} к.</div>
+            </div>
+            {passedIds.includes(c.id) && <div className="passed-badge">ПРОЙДЕНО</div>}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function PlannerView() {
+function PlannerView({ passedIds, setPassedIds, triggerGenerate, setData, data, setLoading, loading }: any) {
   const [courses, setCourses] = useState<any[]>([]);
   const [majors, setMajors] = useState<any[]>([]);
-  
   const [selectedMajor, setSelectedMajor] = useState('');
-  const [passedIds, setPassedIds] = useState<string[]>([]);
   const [startSem, setStartSem] = useState(1);
-  
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
@@ -217,10 +238,6 @@ function PlannerView() {
         if (res.data.length > 0) setSelectedMajor(res.data[0].id);
     });
   }, []);
-
-  const toggleCourse = (id: string) => {
-    setPassedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
 
   const generatePlan = () => {
     if (!selectedMajor) return;
@@ -239,71 +256,66 @@ function PlannerView() {
     });
   };
 
-  return (
-    <div className="view-container scrollable">
-      <h1 className="page-title">Roadmap Planner (Engine 2)</h1>
-      <p className="text-muted" style={{marginBottom: 20}}>Specify your major and already passed courses to see your future path.</p>
+  useEffect(() => {
+      if (triggerGenerate > 0) generatePlan();
+  }, [triggerGenerate]);
 
-      <div className="planner-config glass-panel" style={{padding: 24, marginBottom: 32}}>
-        <div className="config-row" style={{display: 'flex', gap: 24, marginBottom: 16}}>
-            <div className="config-group" style={{flex: 1}}>
-                <label style={{display: 'block', marginBottom: 8, fontSize: '0.9rem', color: 'var(--text-muted)'}}>Target Major</label>
-                <select 
-                    value={selectedMajor} 
-                    onChange={e => setSelectedMajor(e.target.value)}
-                    style={{width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '6px'}}
-                >
-                    <option value="">Select a Major...</option>
+  const fixPrereq = (courseTitle: string) => {
+      const target = courses.find(c => courseTitle.includes(c.title));
+      if (target && !passedIds.includes(target.id)) {
+          setPassedIds((prev: string[]) => [...prev, target.id]);
+          setTimeout(generatePlan, 100);
+      }
+  };
+
+  return (
+    <div className="view-container">
+      <div className="breadcrumb">Траектория &gt; Планировщик</div>
+      <h1 className="view-title">Построение траектории</h1>
+      <p className="text-muted" style={{marginBottom: 20}}>Укажите мейджор и семестр, с которого вы хотите начать планирование.</p>
+
+      <div className="planner-header">
+            <div className="form-group" style={{flex: 1}}>
+                <label>Целевое направление (Major)</label>
+                <select value={selectedMajor} onChange={e => setSelectedMajor(e.target.value)} className="planner-select">
                     {majors.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                 </select>
             </div>
-            <div className="config-group" style={{width: '180px'}}>
-                <label style={{display: 'block', marginBottom: 8, fontSize: '0.9rem', color: 'var(--text-muted)'}}>Plan from Semester</label>
-                <input 
-                    type="number" 
-                    value={startSem} 
-                    onChange={e => setStartSem(parseInt(e.target.value))} 
-                    min={1} max={8} 
-                    style={{width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '6px'}}
-                />
+            <div className="form-group" style={{width: '180px'}}>
+                <label>Текущий семестр</label>
+                <input type="number" value={startSem} onChange={e => setStartSem(parseInt(e.target.value))} min={1} max={8} className="planner-input" />
             </div>
-        </div>
-        
-        <div className="config-group">
-            <label style={{display: 'block', marginBottom: 8, fontSize: '0.9rem', color: 'var(--text-muted)'}}>Passed Courses</label>
-            <div className="mini-selection-list">
-                {courses.map(c => (
-                    <label key={c.id} className={`mini-item ${passedIds.includes(c.id) ? 'selected' : ''}`}>
-                        <input type="checkbox" checked={passedIds.includes(c.id)} onChange={() => toggleCourse(c.id)} />
-                        {c.title}
-                    </label>
-                ))}
-            </div>
-        </div>
-
-        <button className="generate-btn" onClick={generatePlan} disabled={loading || !selectedMajor} style={{marginTop: 20}}>
-          {loading ? 'Generating...' : 'Build My Future Roadmap'}
-        </button>
+            <button className="primary-btn" onClick={generatePlan} disabled={loading} style={{height: '42px'}}>
+                {loading ? 'Строим...' : 'Рассчитать'}
+            </button>
       </div>
 
       {data && data.roadmap && (
-        <div className="roadmap-container">
+        <div className="planner-view" style={{marginTop: 40}}>
           <div className="timeline">
             {data.roadmap.map((sem: any, idx: number) => (
-              <div key={idx} className="semester-block glass-panel">
+              <div key={idx} className="semester-block">
                 <div className="sem-header">
-                  <h3>Semester {sem.semester}</h3>
-                  <span className="load-badge">Load: {sem.total_load.toFixed(1)} / 12.0</span>
+                  <h3>Семестр {sem.semester}</h3>
+                  <span className="load-badge">Нагрузка: {(sem.total_load || 0).toFixed(1)} / 12.0</span>
                 </div>
-                {sem.error && <p className="error-text">{sem.error}</p>}
-                {sem.courses.length === 0 && !sem.error ? <p className="text-muted">No courses matched constraints for this semester.</p> : null}
+                {sem.error && typeof sem.error === 'string' && (
+                    <div className="error-text">
+                        <span>⚠️ {sem.error}</span>
+                        {(sem.error.includes('пререквизиты') || sem.error.includes('prereqs')) && (
+                            <button className="fix-btn" onClick={() => fixPrereq(sem.error)}>
+                                ИСПРАВИТЬ
+                            </button>
+                        )}
+                    </div>
+                )}
                 <div className="sem-courses">
                   {sem.courses.map((c: any) => (
                     <div key={c.id} className="sem-course-card">
                       <strong>{c.title}</strong>
                       <div className="course-meta">
                         <span className="badge">{c.type}</span>
-                        <span className="text-muted">Load: {c.workload}</span>
+                        <span className="text-muted">{c.workload} к.</span>
                       </div>
                     </div>
                   ))}
@@ -317,9 +329,8 @@ function PlannerView() {
   );
 }
 
-function MajorCalculatorView() {
+function MajorCalculatorView({ passedIds, setPassedIds }: any) {
   const [courses, setCourses] = useState<any[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -327,13 +338,9 @@ function MajorCalculatorView() {
     axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
   }, []);
 
-  const toggleCourse = (id: string) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
   const calculate = () => {
     setLoading(true);
-    axios.post(`${API_BASE}/majors/identify`, selectedIds).then(res => {
+    axios.post(`${API_BASE}/majors/identify`, passedIds).then(res => {
       setResults(res.data);
       setLoading(false);
     }).catch(err => {
@@ -343,44 +350,28 @@ function MajorCalculatorView() {
   };
 
   return (
-    <div className="view-container scrollable">
-      <h1 className="page-title">Major Identifier</h1>
-      <p className="text-muted" style={{marginBottom: 24}}>Select the courses you've already passed to find out which Major they best correspond to.</p>
+    <div className="view-container">
+      <h1 className="view-title">Подбор мейджора</h1>
+      <p className="text-muted" style={{marginBottom: 24}}>Система проанализирует выбранные курсы и подскажет наиболее подходящее направление.</p>
       
-      <div className="calc-layout">
-        <div className="glass-panel courses-selector">
-          <h3>Select Passed Courses</h3>
-          <div className="selection-list">
-            {courses.map(c => (
-              <label key={c.id} className={`selection-item ${selectedIds.includes(c.id) ? 'selected' : ''}`}>
-                <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleCourse(c.id)} style={{marginRight: 10}} />
-                <span>{c.title}</span>
-              </label>
-            ))}
-          </div>
-          <button className="generate-btn" onClick={calculate} disabled={loading || selectedIds.length === 0} style={{marginTop: 20, width: '100%'}}>
-            {loading ? 'Analyzing...' : 'Identify Best Major'}
+      <div style={{display: 'flex', gap: '20px', marginBottom: '32px'}}>
+          <button className="primary-btn" onClick={calculate} disabled={loading}>
+              {loading ? 'Анализируем...' : 'Рассчитать соответствие'}
           </button>
-        </div>
+      </div>
 
-        <div className="results-panel">
-          {results.length > 0 ? results.map(r => (
-            <div key={r.id} className="glass-panel result-card">
-              <div className="result-header">
-                <h3>{r.title}</h3>
-                <span className="score-text">{(r.score * 100).toFixed(1)}% Match</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{width: `${r.score * 100}%`}}></div>
-              </div>
-              <p className="text-muted" style={{marginTop: 10}}>{r.covered_count} of {r.total_count} required courses covered.</p>
-            </div>
-          )) : (
-            <div className="glass-panel empty-results">
-              <p className="text-muted">Select courses and click analyze to see results.</p>
-            </div>
-          )}
-        </div>
+      <div className="majors-grid">
+        {results.map(r => (
+          <div key={r.id} className="cu-course-card" style={{padding: '24px', cursor: 'default'}}>
+             <h2 style={{fontSize: '1.2rem', marginBottom: '8px', color: '#111'}}>{r.title}</h2>
+             <div className="score-text" style={{color: 'var(--primary)', fontWeight: 800, fontSize: '1.5rem'}}>
+                {(r.score * 100).toFixed(0)}%
+             </div>
+             <div className="progress-bar" style={{height: '6px', background: '#eee', borderRadius: '3px', marginTop: '12px', overflow: 'hidden'}}>
+                <div style={{width: `${r.score * 100}%`, height: '100%', background: 'var(--primary)'}} />
+             </div>
+          </div>
+        ))}
       </div>
     </div>
   );

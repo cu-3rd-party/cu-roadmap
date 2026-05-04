@@ -6,7 +6,7 @@ from src.domain.models import Course, CourseDependency
 
 router = APIRouter()
 
-@router.get("/graph-data")
+@router.get("/data")
 async def get_graph_data(db: AsyncSession = Depends(get_db)):
     courses_result = await db.execute(select(Course))
     courses = courses_result.scalars().all()

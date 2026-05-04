@@ -56,7 +56,14 @@ class GreedyPlanner:
                     available.append(c)
 
             if not available:
-                roadmap.append({"semester": current_sem, "courses": [], "error": "Deadlock: prereqs missing"})
+                missing_info = []
+                for cid, c in courses_todo.items():
+                    missing = [all_courses[req_id].title for req_id in prereqs[cid] if req_id not in passed_ids]
+                    if missing:
+                        missing_info.append(f"{c.title} (нужно: {', '.join(missing)})")
+                
+                error_msg = f"Не хватает пререквизитов: {'; '.join(missing_info[:2])}"
+                roadmap.append({"semester": current_sem, "courses": [], "error": error_msg})
                 break
 
             # Sort by unlocks_count (descending)
