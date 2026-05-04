@@ -1,0 +1,14 @@
+course_id,required_course_id,dependency_type
+C2,C1,prerequisite
+C3,C2,prerequisite
+C14,C13,prerequisite
+C27,C14,prerequisite
+C7,C15,prerequisite
+C7,C18,corequisite_type1
+C26,C7,prerequisite
+C28,C4,prerequisite
+C25,C8,prerequisite
+C24,C25,prerequisite
+C30,C12,prerequisite
+C22,C15,prerequisite
+C27,C25,corequisite_type2
