@@ -45,7 +45,8 @@ async def mock_data():
         business_courses = [
             "Введение в экономику", "Основы бизнес-аналитики", "Основы финансов",
             "Микроэкономика I", "Макроэкономика I", "Основы маркетинга",
-            "Теория игр", "Эконометрика I", "Финансы. Основной уровень"
+            "Теория игр", "Эконометрика I", "Финансы. Основной уровень",
+            "Теория вероятностей и матстатистика", "Математическая статистика"
         ]
         
         common_courses = [
@@ -74,6 +75,8 @@ async def mock_data():
                     session.add(req)
         
         # 2. Add Mock Student for future algorithm testing
+        from src.domain.models import Student, student_passed_courses
+        await session.execute(student_passed_courses.delete())
         await session.execute(Student.__table__.delete())
         
         student = Student(

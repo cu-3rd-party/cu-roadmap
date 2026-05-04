@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Network } from 'vis-network';
-import { Book, Network as NetworkIcon, GraduationCap, X, LayoutDashboard, Search } from 'lucide-react';
+import { Book, Network as NetworkIcon, GraduationCap, X, LayoutDashboard, Search, Calendar, Calculator } from 'lucide-react';
 import './App.css';
 
 const API_BASE = 'http://127.0.0.1:8000/api/v1';
@@ -16,6 +16,8 @@ export default function App() {
         {activeTab === 'graph' && <GraphView />}
         {activeTab === 'majors' && <MajorsView />}
         {activeTab === 'courses' && <CoursesView />}
+        {activeTab === 'planner' && <PlannerView />}
+        {activeTab === 'calculator' && <MajorCalculatorView />}
       </main>
     </div>
   );
@@ -37,6 +39,12 @@ function Sidebar({ activeTab, setActiveTab }: any) {
         </button>
         <button className={`nav-btn ${activeTab === 'courses' ? 'active' : ''}`} onClick={() => setActiveTab('courses')}>
           <Book className="icon" /> Courses
+        </button>
+        <button className={`nav-btn ${activeTab === 'planner' ? 'active' : ''}`} onClick={() => setActiveTab('planner')}>
+          <Calendar className="icon" /> Planner (Eng2)
+        </button>
+        <button className={`nav-btn ${activeTab === 'calculator' ? 'active' : ''}`} onClick={() => setActiveTab('calculator')}>
+          <Calculator className="icon" /> Identifier
         </button>
       </nav>
     </aside>
@@ -186,6 +194,193 @@ function CoursesView() {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+function PlannerView() {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [majors, setMajors] = useState<any[]>([]);
+  
+  const [selectedMajor, setSelectedMajor] = useState('');
+  const [passedIds, setPassedIds] = useState<string[]>([]);
+  const [startSem, setStartSem] = useState(1);
+  
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
+    axios.get(`${API_BASE}/majors`).then(res => {
+        setMajors(res.data);
+        if (res.data.length > 0) setSelectedMajor(res.data[0].id);
+    });
+  }, []);
+
+  const toggleCourse = (id: string) => {
+    setPassedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const generatePlan = () => {
+    if (!selectedMajor) return;
+    setLoading(true);
+    axios.post(`${API_BASE}/planner/generate`, {
+        passed_course_ids: passedIds,
+        major_id: selectedMajor,
+        current_semester: startSem,
+        max_load: 12.0
+    }).then(res => {
+      setData(res.data);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  };
+
+  return (
+    <div className="view-container scrollable">
+      <h1 className="page-title">Roadmap Planner (Engine 2)</h1>
+      <p className="text-muted" style={{marginBottom: 20}}>Specify your major and already passed courses to see your future path.</p>
+
+      <div className="planner-config glass-panel" style={{padding: 24, marginBottom: 32}}>
+        <div className="config-row" style={{display: 'flex', gap: 24, marginBottom: 16}}>
+            <div className="config-group" style={{flex: 1}}>
+                <label style={{display: 'block', marginBottom: 8, fontSize: '0.9rem', color: 'var(--text-muted)'}}>Target Major</label>
+                <select 
+                    value={selectedMajor} 
+                    onChange={e => setSelectedMajor(e.target.value)}
+                    style={{width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '6px'}}
+                >
+                    <option value="">Select a Major...</option>
+                    {majors.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+                </select>
+            </div>
+            <div className="config-group" style={{width: '180px'}}>
+                <label style={{display: 'block', marginBottom: 8, fontSize: '0.9rem', color: 'var(--text-muted)'}}>Plan from Semester</label>
+                <input 
+                    type="number" 
+                    value={startSem} 
+                    onChange={e => setStartSem(parseInt(e.target.value))} 
+                    min={1} max={8} 
+                    style={{width: '100%', padding: '10px', background: 'rgba(0,0,0,0.2)', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '6px'}}
+                />
+            </div>
+        </div>
+        
+        <div className="config-group">
+            <label style={{display: 'block', marginBottom: 8, fontSize: '0.9rem', color: 'var(--text-muted)'}}>Passed Courses</label>
+            <div className="mini-selection-list">
+                {courses.map(c => (
+                    <label key={c.id} className={`mini-item ${passedIds.includes(c.id) ? 'selected' : ''}`}>
+                        <input type="checkbox" checked={passedIds.includes(c.id)} onChange={() => toggleCourse(c.id)} />
+                        {c.title}
+                    </label>
+                ))}
+            </div>
+        </div>
+
+        <button className="generate-btn" onClick={generatePlan} disabled={loading || !selectedMajor} style={{marginTop: 20}}>
+          {loading ? 'Generating...' : 'Build My Future Roadmap'}
+        </button>
+      </div>
+
+      {data && data.roadmap && (
+        <div className="roadmap-container">
+          <div className="timeline">
+            {data.roadmap.map((sem: any, idx: number) => (
+              <div key={idx} className="semester-block glass-panel">
+                <div className="sem-header">
+                  <h3>Semester {sem.semester}</h3>
+                  <span className="load-badge">Load: {sem.total_load.toFixed(1)} / 12.0</span>
+                </div>
+                {sem.error && <p className="error-text">{sem.error}</p>}
+                {sem.courses.length === 0 && !sem.error ? <p className="text-muted">No courses matched constraints for this semester.</p> : null}
+                <div className="sem-courses">
+                  {sem.courses.map((c: any) => (
+                    <div key={c.id} className="sem-course-card">
+                      <strong>{c.title}</strong>
+                      <div className="course-meta">
+                        <span className="badge">{c.type}</span>
+                        <span className="text-muted">Load: {c.workload}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MajorCalculatorView() {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
+  }, []);
+
+  const toggleCourse = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const calculate = () => {
+    setLoading(true);
+    axios.post(`${API_BASE}/majors/identify`, selectedIds).then(res => {
+      setResults(res.data);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  };
+
+  return (
+    <div className="view-container scrollable">
+      <h1 className="page-title">Major Identifier</h1>
+      <p className="text-muted" style={{marginBottom: 24}}>Select the courses you've already passed to find out which Major they best correspond to.</p>
+      
+      <div className="calc-layout">
+        <div className="glass-panel courses-selector">
+          <h3>Select Passed Courses</h3>
+          <div className="selection-list">
+            {courses.map(c => (
+              <label key={c.id} className={`selection-item ${selectedIds.includes(c.id) ? 'selected' : ''}`}>
+                <input type="checkbox" checked={selectedIds.includes(c.id)} onChange={() => toggleCourse(c.id)} style={{marginRight: 10}} />
+                <span>{c.title}</span>
+              </label>
+            ))}
+          </div>
+          <button className="generate-btn" onClick={calculate} disabled={loading || selectedIds.length === 0} style={{marginTop: 20, width: '100%'}}>
+            {loading ? 'Analyzing...' : 'Identify Best Major'}
+          </button>
+        </div>
+
+        <div className="results-panel">
+          {results.length > 0 ? results.map(r => (
+            <div key={r.id} className="glass-panel result-card">
+              <div className="result-header">
+                <h3>{r.title}</h3>
+                <span className="score-text">{(r.score * 100).toFixed(1)}% Match</span>
+              </div>
+              <div className="progress-bar">
+                <div className="progress-fill" style={{width: `${r.score * 100}%`}}></div>
+              </div>
+              <p className="text-muted" style={{marginTop: 10}}>{r.covered_count} of {r.total_count} required courses covered.</p>
+            </div>
+          )) : (
+            <div className="glass-panel empty-results">
+              <p className="text-muted">Select courses and click analyze to see results.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
