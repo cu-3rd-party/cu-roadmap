@@ -42,3 +42,5 @@ jobs:
         run: |
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose down || true"
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose up -d --build"
+          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose exec -T backend uv run src/scripts/ingest_csv.py"
+          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose exec -T backend uv run src/scripts/mock_data.py"
