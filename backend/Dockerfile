@@ -1,13 +1,21 @@
 FROM python:3.14-slim
 
+# Copy uv from the official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+# Copy from the cache instead of linking since it's a container
+ENV UV_LINK_MODE=copy
 
-COPY pyproject.toml uv.lock .python-version ./
-RUN uv sync --frozen --no-dev
+COPY pyproject.toml uv.lock .python-version README.md ./
+RUN uv sync --no-dev --no-install-project
 
 COPY src/ src/
+COPY static/ static/
+COPY *.csv ./
 
 EXPOSE 8080
 
