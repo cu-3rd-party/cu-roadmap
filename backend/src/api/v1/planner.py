@@ -1,18 +1,42 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.core.database import get_db
-from src.domain.models import Student
+from src.domain.models import Student, Course
 from src.services.engine2.generator import GreedyPlanner
+from src.services.validation_service import RoadmapValidator
+from src.services.planner_service import PlannerService
 
 from pydantic import BaseModel
 from uuid import UUID
+from typing import List, Optional, Set
 
 router = APIRouter()
 
 class PlannerRequest(BaseModel):
     passed_course_ids: list[UUID]
     major_id: UUID
+    current_semester: int = 1
+    max_load: float = 12.0
+
+class SemesterValidationRequest(BaseModel):
+    current_semester: int
+    course_ids: List[UUID]
+    passed_course_ids: List[UUID]
+    max_load: float = 12.0
+
+class SemesterData(BaseModel):
+    semester: int
+    course_ids: List[UUID]
+
+class RoadmapValidationRequest(BaseModel):
+    passed_course_ids: List[UUID]
+    roadmap: List[SemesterData]
+    max_load: float = 12.0
+
+class GoalPathRequest(BaseModel):
+    target_course_id: UUID
+    passed_course_ids: List[UUID]
     current_semester: int = 1
     max_load: float = 12.0
 
@@ -29,6 +53,49 @@ async def generate_roadmap(req: PlannerRequest, db: AsyncSession = Depends(get_d
         "major_id": str(req.major_id),
         "roadmap": roadmap
     }
+
+@router.post("/validate-semester/")
+async def validate_semester(req: SemesterValidationRequest, db: AsyncSession = Depends(get_db)):
+    """Scenario 2: Manual Semester Planning - Validate a single semester selection."""
+    planner_service = PlannerService(db)
+    all_courses = await planner_service.get_all_courses()
+    
+    validator = RoadmapValidator(all_courses)
+    courses = [all_courses[cid] for cid in req.course_ids if cid in all_courses]
+    
+    result = validator.validate_semester(
+        courses_in_sem=courses,
+        previously_passed_ids=set(req.passed_course_ids),
+        current_sem_num=req.current_semester,
+        max_load=req.max_load
+    )
+    return result
+
+@router.post("/validate-roadmap/")
+async def validate_roadmap(req: RoadmapValidationRequest, db: AsyncSession = Depends(get_db)):
+    """Scenario 3: The Strict Validator - Validate a full proposed roadmap."""
+    planner_service = PlannerService(db)
+    all_courses = await planner_service.get_all_courses()
+    
+    validator = RoadmapValidator(all_courses)
+    results = validator.validate_full_roadmap(
+        roadmap_data=req.roadmap,
+        initial_passed_ids=set(req.passed_course_ids),
+        max_load=req.max_load
+    )
+    return {"validation_results": results}
+
+@router.post("/goal-path/")
+async def get_goal_path(req: GoalPathRequest, db: AsyncSession = Depends(get_db)):
+    """Scenario 4: Goal-Oriented Planning - Plan towards a specific course."""
+    planner_service = PlannerService(db)
+    path = await planner_service.find_path_to_course(
+        target_course_id=req.target_course_id,
+        passed_ids=set(req.passed_course_ids),
+        current_semester=req.current_semester,
+        max_load=req.max_load
+    )
+    return {"roadmap": path}
 
 @router.get("/test-engine2")
 async def test_engine2(db: AsyncSession = Depends(get_db)):

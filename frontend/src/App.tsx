@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Book, Calendar, Network as NetworkIcon, Calculator, Search, Trash, X } from 'lucide-react';
+import { Book, Calendar, Network as NetworkIcon, Calculator, Search, Trash, X, Target } from 'lucide-react';
 import { Network } from 'vis-network/standalone';
 import './App.css';
 
@@ -9,6 +9,12 @@ const API_BASE = '/api/v1';
 export default function App() {
   const [activeTab, setActiveTab] = useState('courses');
   const [passedIds, setPassedIds] = useState<string[]>([]);
+  const [manualRoadmap, setManualRoadmap] = useState<any[]>([
+      { semester: 1, course_ids: [] },
+      { semester: 2, course_ids: [] },
+      { semester: 3, course_ids: [] },
+      { semester: 4, course_ids: [] }
+  ]);
   
   // Shared state for the planner results so we can trigger build from tracker
   const [roadmapData, setRoadmapData] = useState<any>(null);
@@ -24,6 +30,8 @@ export default function App() {
           <button className={`side-icon-btn ${activeTab === 'planner' ? 'active' : ''}`} onClick={() => setActiveTab('planner')} title="Planner"><Calendar size={20}/></button>
           <button className={`side-icon-btn ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => setActiveTab('graph')} title="Graph"><NetworkIcon size={20}/></button>
           <button className={`side-icon-btn ${activeTab === 'calculator' ? 'active' : ''}`} onClick={() => setActiveTab('calculator')} title="Identifier"><Calculator size={20}/></button>
+          <button className={`side-icon-btn ${activeTab === 'goal' ? 'active' : ''}`} onClick={() => setActiveTab('goal')} title="Goal"><Target size={20}/></button>
+          <button className={`side-icon-btn ${activeTab === 'manual' ? 'active' : ''}`} onClick={() => setActiveTab('manual')} title="Manual"><Search size={20}/></button>
         </aside>
         <main className="main-content">
           {activeTab === 'graph' && <GraphView />}
@@ -41,6 +49,8 @@ export default function App() {
               />
           )}
           {activeTab === 'calculator' && <MajorCalculatorView passedIds={passedIds} setPassedIds={setPassedIds} />}
+          {activeTab === 'goal' && <GoalPlannerView passedIds={passedIds} />}
+          {activeTab === 'manual' && <ManualPlannerView passedIds={passedIds} roadmap={manualRoadmap} setRoadmap={setManualRoadmap} />}
         </main>
       </div>
       <StickyTracker 
@@ -67,6 +77,8 @@ function Header({ activeTab, setActiveTab }: any) {
           <button className={`menu-item ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => setActiveTab('graph')}>Карта курсов</button>
           <button className={`menu-item ${activeTab === 'courses' ? 'active' : ''}`} onClick={() => setActiveTab('courses')}>Каталог</button>
           <button className={`menu-item ${activeTab === 'calculator' ? 'active' : ''}`} onClick={() => setActiveTab('calculator')}>Подбор мейджора</button>
+          <button className={`menu-item ${activeTab === 'goal' ? 'active' : ''}`} onClick={() => setActiveTab('goal')}>Цель</button>
+          <button className={`menu-item ${activeTab === 'manual' ? 'active' : ''}`} onClick={() => setActiveTab('manual')}>Песочница</button>
         </nav>
       </div>
       <div className="header-right">
@@ -80,7 +92,7 @@ function Header({ activeTab, setActiveTab }: any) {
 }
 
 function StickyTracker({ count, activeTab, onGenerate }: any) {
-  if (activeTab !== 'planner' && activeTab !== 'courses' && activeTab !== 'calculator') return null;
+  if (activeTab !== 'planner' && activeTab !== 'courses' && activeTab !== 'calculator' && activeTab !== 'goal' && activeTab !== 'manual') return null;
   
   return (
     <div className="sticky-tracker">
@@ -372,6 +384,178 @@ function MajorCalculatorView({ passedIds, setPassedIds }: any) {
              </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+function GoalPlannerView({ passedIds }: any) {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [targetId, setTargetId] = useState('');
+  const [roadmap, setRoadmap] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    axios.get(`${API_BASE}/courses/`).then(res => setCourses(res.data));
+  }, []);
+
+  const generatePath = () => {
+    if (!targetId) return;
+    setLoading(true);
+    axios.post(`${API_BASE}/planner/goal-path/`, {
+      target_course_id: targetId,
+      passed_course_ids: passedIds,
+      current_semester: 1,
+      max_load: 12.0
+    }).then(res => {
+      setRoadmap(res.data.roadmap);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  };
+
+  return (
+    <div className="view-container">
+      <h1 className="view-title">Планирование от цели</h1>
+      <p className="text-muted" style={{marginBottom: 24}}>Выберите курс, который вы хотите пройти в будущем, и система построит кратчайший путь до него.</p>
+      
+      <div className="planner-header">
+            <div className="form-group" style={{flex: 1}}>
+                <label>Целевой курс</label>
+                <select value={targetId} onChange={e => setTargetId(e.target.value)} className="planner-select">
+                    <option value="">Выберите курс...</option>
+                    {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                </select>
+            </div>
+            <button className="primary-btn" onClick={generatePath} disabled={loading || !targetId} style={{height: '42px'}}>
+                {loading ? 'Строим...' : 'Построить путь'}
+            </button>
+      </div>
+
+      {roadmap.length > 0 && (
+        <div className="planner-view" style={{marginTop: 40}}>
+          <div className="timeline">
+            {roadmap.map((sem: any, idx: number) => (
+              <div key={idx} className="semester-block">
+                <div className="sem-header">
+                  <h3>Семестр {sem.semester}</h3>
+                  {sem.total_load && <span className="load-badge">Нагрузка: {sem.total_load.toFixed(1)}</span>}
+                </div>
+                {sem.error && <div className="error-text">⚠️ {sem.error}</div>}
+                {sem.status && <div className="text-muted" style={{fontSize: '0.8rem', marginBottom: 8}}>{sem.status}</div>}
+                <div className="sem-courses">
+                  {(sem.courses || []).map((c: any) => (
+                    <div key={c.id} className="sem-course-card">
+                      <strong>{c.title}</strong>
+                      <div className="course-meta">
+                        <span className="text-muted">{c.workload} к.</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManualPlannerView({ passedIds, roadmap, setRoadmap }: any) {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [validation, setValidation] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    axios.get(`${API_BASE}/courses/`).then(res => setCourses(res.data));
+  }, []);
+
+  const validate = () => {
+    setLoading(true);
+    axios.post(`${API_BASE}/planner/validate-roadmap/`, {
+      passed_course_ids: passedIds,
+      roadmap: roadmap,
+      max_load: 12.0
+    }).then(res => {
+      setValidation(res.data.validation_results);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  };
+
+  const addCourse = (semIdx: number, courseId: string) => {
+    if (!courseId) return;
+    const newRoadmap = [...roadmap];
+    if (!newRoadmap[semIdx].course_ids.includes(courseId)) {
+        newRoadmap[semIdx].course_ids = [...newRoadmap[semIdx].course_ids, courseId];
+        setRoadmap(newRoadmap);
+    }
+  };
+
+  const removeCourse = (semIdx: number, courseId: string) => {
+    const newRoadmap = [...roadmap];
+    newRoadmap[semIdx].course_ids = newRoadmap[semIdx].course_ids.filter((id: string) => id !== courseId);
+    setRoadmap(newRoadmap);
+  };
+
+  return (
+    <div className="view-container">
+      <h1 className="view-title">Песочница (Ручное планирование)</h1>
+      <p className="text-muted" style={{marginBottom: 24}}>Расставьте курсы по семестрам самостоятельно и проверьте план на корректность.</p>
+      
+      <div style={{marginBottom: 24}}>
+          <button className="primary-btn" onClick={validate} disabled={loading}>
+              {loading ? 'Проверяем...' : 'Проверить план'}
+          </button>
+      </div>
+
+      <div className="planner-view">
+        <div className="timeline">
+          {roadmap.map((sem: any, idx: number) => {
+            const v = validation.find(res => res.semester === sem.semester);
+            return (
+              <div key={idx} className="semester-block" style={{border: v && !v.valid ? '2px solid #fee2e2' : 'none'}}>
+                <div className="sem-header">
+                  <h3>Семестр {sem.semester}</h3>
+                  {v && <span className={`load-badge ${v.total_load > 12 ? 'error' : ''}`}>Нагрузка: {v.total_load.toFixed(1)}</span>}
+                </div>
+                
+                {v && v.messages.map((m: any, midx: number) => (
+                    <div key={midx} className={`error-text ${m.level}`} style={{fontSize: '0.8rem', marginBottom: 4}}>
+                        {m.level === 'error' ? '❌' : '⚠️'} {m.message}
+                    </div>
+                ))}
+
+                <div className="sem-courses" style={{minHeight: '60px', background: '#f8fafc', padding: '12px', borderRadius: '12px'}}>
+                  {sem.course_ids.map((cid: string) => {
+                    const c = courses.find(item => item.id === cid);
+                    return (
+                      <div key={cid} className="sem-course-card" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <strong>{c?.title || cid}</strong>
+                        <button onClick={() => removeCourse(idx, cid)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><Trash size={14}/></button>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <select 
+                    className="planner-select" 
+                    style={{marginTop: 8, fontSize: '0.8rem', padding: '4px 8px'}}
+                    onChange={(e) => { addCourse(idx, e.target.value); e.target.value = ''; }}
+                >
+                    <option value="">+ Добавить курс</option>
+                    {courses.filter(c => !roadmap.some((s: any) => s.course_ids.includes(c.id))).map(c => (
+                        <option key={c.id} value={c.id}>{c.title}</option>
+                    ))}
+                </select>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

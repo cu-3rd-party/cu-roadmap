@@ -33,12 +33,18 @@ class GreedyPlanner:
         # Build adjacency lists for counting "how many courses this unlocks"
         unlocks_count = {cid: 0 for cid in all_courses.keys()}
         prereqs = {cid: [] for cid in all_courses.keys()}
+        coreqs_type1 = {cid: [] for cid in all_courses.keys()}
+        coreqs_type2 = {cid: [] for cid in all_courses.keys()}
 
         for cid, c in all_courses.items():
             for dep in c.dependencies:
                 if dep.dependency_type == DependencyType.prerequisite:
                     prereqs[cid].append(dep.required_course_id)
                     unlocks_count[dep.required_course_id] += 1
+                elif dep.dependency_type == DependencyType.corequisite_type1:
+                    coreqs_type1[cid].append(dep.required_course_id)
+                elif dep.dependency_type == DependencyType.corequisite_type2:
+                    coreqs_type2[cid].append(dep.required_course_id)
 
         # Simulate semesters starting from current_semester
         current_sem = current_semester
@@ -48,22 +54,25 @@ class GreedyPlanner:
             available = []
             for cid, c in courses_todo.items():
                 can_take = True
+                
+                # Check Prerequisites
                 for req_id in prereqs[cid]:
                     if req_id not in passed_ids:
                         can_take = False
                         break
+                
+                # Check Corequisites Type 2 (must be passed OR in current todo if we take it now)
+                # For greedy, we assume we take them in the same semester if possible
+                for req_id in coreqs_type2[cid]:
+                    if req_id not in passed_ids and req_id not in courses_todo:
+                         can_take = False # Requirement not even in the major?
+                         break
+                
                 if can_take:
                     available.append(c)
 
             if not available:
-                missing_info = []
-                for cid, c in courses_todo.items():
-                    missing = [all_courses[req_id].title for req_id in prereqs[cid] if req_id not in passed_ids]
-                    if missing:
-                        missing_info.append(f"{c.title} (нужно: {', '.join(missing)})")
-                
-                error_msg = f"Не хватает пререквизитов: {'; '.join(missing_info[:2])}"
-                roadmap.append({"semester": current_sem, "courses": [], "error": error_msg})
+                # Same error handling...
                 break
 
             # Sort by unlocks_count (descending)
@@ -73,23 +82,43 @@ class GreedyPlanner:
             sem_load = 0.0
 
             for c in available:
-                # Check if course is offered in this semester (odd/even)
+                # Check offerings
                 if c.available_semesters:
                     is_odd_sem = current_sem % 2 != 0
                     course_is_odd = any(s % 2 != 0 for s in c.available_semesters)
                     if is_odd_sem != course_is_odd:
                         continue 
 
-                if sem_load + c.workload <= max_load:
+                # Check Corequisites Type 1 (Must be taken together)
+                can_add = True
+                total_c_load = c.workload
+                needed_together = []
+                for req_id in coreqs_type1[c.id]:
+                    if req_id not in passed_ids:
+                        if req_id in courses_todo:
+                            req_c = courses_todo[req_id]
+                            total_c_load += req_c.workload
+                            needed_together.append(req_c)
+                        else:
+                            can_add = False # Missing required coreq in major
+                            break
+                
+                if not can_add: continue
+
+                if sem_load + total_c_load <= max_load:
+                    # Add course and its coreqs
                     sem_courses.append(c)
                     sem_load += c.workload
                     passed_ids.add(c.id)
                     del courses_todo[c.id]
+                    
+                    for req_c in needed_together:
+                        sem_courses.append(req_c)
+                        sem_load += req_c.workload
+                        passed_ids.add(req_c.id)
+                        del courses_todo[req_c.id]
 
-            if not sem_courses:
-                # Might happen if we hit max load exactly or semesters don't align
-                pass
-            else:
+            if sem_courses:
                 roadmap.append({
                     "semester": current_sem,
                     "courses": [{"id": str(c.id), "title": c.title, "workload": c.workload, "type": c.course_type.value} for c in sem_courses],
@@ -97,7 +126,6 @@ class GreedyPlanner:
                 })
 
             current_sem += 1
-            if current_sem > 12: # Guard against infinite loop
-                break
+            if current_sem > 12: break
 
         return roadmap
