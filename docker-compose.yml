@@ -10,6 +10,18 @@ services:
       - frontend
     restart: unless-stopped
 
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: roadmap_user
+      POSTGRES_PASSWORD: roadmap_password
+      POSTGRES_DB: roadmap_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -29,3 +41,6 @@ services:
 networks:
   default:
     name: cu-roadmap
+
+volumes:
+  pgdata:
