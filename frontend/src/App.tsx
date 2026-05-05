@@ -4,7 +4,7 @@ import { Book, Calendar, Network as NetworkIcon, Calculator, Search, Trash, X } 
 import { Network } from 'vis-network/standalone';
 import './App.css';
 
-const API_BASE = 'http://127.0.0.1:8000/api/v1';
+const API_BASE = '/api/v1';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('courses');
@@ -107,7 +107,7 @@ function GraphView() {
   const [selectedNode, setSelectedNode] = useState<any>(null);
 
   useEffect(() => {
-    axios.get(`${API_BASE}/graph/data`).then(res => {
+    axios.get(`${API_BASE}/graph/data/`).then(res => {
       const nodes = res.data.nodes.map((n: any) => ({
           ...n,
           shape: 'dot',
@@ -175,7 +175,7 @@ function CoursesView({ passedIds, setPassedIds }: any) {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
+    axios.get(`${API_BASE}/courses/`).then(res => setCourses(res.data));
   }, []);
 
   const toggleCourse = (id: string) => {
@@ -232,8 +232,8 @@ function PlannerView({ passedIds, setPassedIds, triggerGenerate, setData, data, 
   const [startSem, setStartSem] = useState(1);
 
   useEffect(() => {
-    axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
-    axios.get(`${API_BASE}/majors`).then(res => {
+    axios.get(`${API_BASE}/courses/`).then(res => setCourses(res.data));
+    axios.get(`${API_BASE}/majors/`).then(res => {
         setMajors(res.data);
         if (res.data.length > 0) setSelectedMajor(res.data[0].id);
     });
@@ -242,7 +242,7 @@ function PlannerView({ passedIds, setPassedIds, triggerGenerate, setData, data, 
   const generatePlan = () => {
     if (!selectedMajor) return;
     setLoading(true);
-    axios.post(`${API_BASE}/planner/generate`, {
+    axios.post(`${API_BASE}/planner/generate/`, {
         passed_course_ids: passedIds,
         major_id: selectedMajor,
         current_semester: startSem,
@@ -335,12 +335,12 @@ function MajorCalculatorView({ passedIds, setPassedIds }: any) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get(`${API_BASE}/courses`).then(res => setCourses(res.data));
+    axios.get(`${API_BASE}/courses/`).then(res => setCourses(res.data));
   }, []);
 
   const calculate = () => {
     setLoading(true);
-    axios.post(`${API_BASE}/majors/identify`, passedIds).then(res => {
+    axios.post(`${API_BASE}/majors/identify/`, passedIds).then(res => {
       setResults(res.data);
       setLoading(false);
     }).catch(err => {
