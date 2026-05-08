@@ -4,7 +4,7 @@ export function StickyTracker({count, activeTab, onGenerate}: any) {
     if (activeTab !== 'planner' && activeTab !== 'courses' && activeTab !== 'calculator' && activeTab !== 'goal' && activeTab !== 'manual') return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="hidden md:block fixed bottom-6 right-6 z-50">
             <div className="bg-white text-gray-900 px-5 py-3 rounded-xl flex items-center gap-5 shadow-lg border border-gray-200">
                 <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-gray-500 uppercase">ВЫБРАНО КУРСОВ</span>

@@ -10,7 +10,7 @@ export function Header({activeTab, setActiveTab}: any) {
                     </svg>
                     <div className="tracking-wide">ROADMAP ENGINE</div>
                 </div>
-                <nav className="flex gap-1">
+                <nav className="hidden md:flex gap-1">
                     <button className={`bg-transparent border-none text-sm text-gray-600 cursor-pointer px-3 py-1.5 rounded-md font-medium ${activeTab === 'planner' ? 'bg-blue-100/80 text-primary' : ''}`}
                             onClick={() => setActiveTab('planner')}>Планировщик
                     </button>

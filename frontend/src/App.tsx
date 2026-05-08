@@ -29,7 +29,15 @@ export default function App() {
     <div className="flex flex-col h-screen">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="flex flex-1 w-full overflow-hidden">
-        <aside className="w-16 min-w-16 bg-white border-r border-gray-200 flex flex-col items-center pt-5 gap-4">
+        <aside className="hidden md:flex w-16 min-w-16 bg-white border-r border-gray-200 flex-col items-center pt-5 gap-4">
+          <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'courses' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('courses')} title="Courses"><Book size={20}/></button>
+          <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'planner' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('planner')} title="Planner"><Calendar size={20}/></button>
+          <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'graph' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('graph')} title="Graph"><NetworkIcon size={20}/></button>
+          <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'calculator' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('calculator')} title="Identifier"><Calculator size={20}/></button>
+          <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'goal' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('goal')} title="Goal"><Target size={20}/></button>
+          <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'manual' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('manual')} title="Manual"><Search size={20}/></button>
+        </aside>
+        <aside className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex flex-row items-center justify-center gap-2 px-4 z-40">
           <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'courses' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('courses')} title="Courses"><Book size={20}/></button>
           <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'planner' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('planner')} title="Planner"><Calendar size={20}/></button>
           <button className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === 'graph' ? 'text-primary bg-blue-50' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'}`} onClick={() => setActiveTab('graph')} title="Graph"><NetworkIcon size={20}/></button>
