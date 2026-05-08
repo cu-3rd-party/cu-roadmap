@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../consts";
+import { getCategoryColor } from "./wizard/helpers";
 import { Search } from "lucide-react";
 
 export function CoursesView({ passedIds, setPassedIds }: any) {
   const [courses, setCourses] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, _setSearch] = useState("");
 
   useEffect(() => {
     axios.get(`${API_BASE}/courses/`).then((res) => setCourses(res.data));
@@ -15,15 +16,6 @@ export function CoursesView({ passedIds, setPassedIds }: any) {
     setPassedIds((prev: string[]) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
-  };
-
-  const getCategoryColor = (category: string) => {
-    const cat = category.toLowerCase();
-    if (cat.includes("stem")) return "#4B9B9B";
-    if (cat.includes("business")) return "#FF7E3D";
-    if (cat.includes("tech")) return "#00A3FF";
-    if (cat.includes("soft")) return "#C0EB00";
-    return "#8B5CF6";
   };
 
   const filtered = courses.filter((c) =>
