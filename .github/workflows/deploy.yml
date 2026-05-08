@@ -44,4 +44,4 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose down || true"
-          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose up -d"
+          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose up -d --build"

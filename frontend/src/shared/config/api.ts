@@ -10,7 +10,7 @@ import type {
 } from "./types";
 
 const client = axios.create({
-  baseURL: "/api/v1",
+  baseURL: `${window.location.origin}/api/v1`,
 });
 
 export const api = {
