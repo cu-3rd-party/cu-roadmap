@@ -1,15 +1,20 @@
 from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from src.domain.models.dependency_type import DependencyType
-from src.domain.models.major.major_requirement import MajorRequirement
-from src.domain.models.course import Course
+from collections import defaultdict
+from src.stores.factory import get_store
+from src.stores.base import (
+    StoreBase,
+    DependencyTypeEnum,
+)
 
 
 class GreedyPlanner:
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, store: StoreBase = None):
+        self._store = store
+
+    async def _get_store(self) -> StoreBase:
+        if self._store is None:
+            self._store = await get_store()
+        return self._store
 
     async def generate_roadmap(
         self,
@@ -18,23 +23,44 @@ class GreedyPlanner:
         current_semester: int = 1,
         max_load: float = 20.0,
     ):
+        store = await self._get_store()
+
         # 1. Fetch Major Requirements
-        req_res = await self.db.execute(
-            select(MajorRequirement)
-            .options(selectinload(MajorRequirement.course))
-            .where(MajorRequirement.major_id == major_id)
-        )
-        requirements = req_res.scalars().all()
+        requirements = await store.get_major_requirements(major_id)
         if not requirements:
             return {"error": "Major not found or has no requirements"}
 
-        target_courses = {req.course_id: req.course for req in requirements}
+        # 2. Fetch all courses
+        all_courses = await store.get_all_courses()
 
-        # 3. Fetch all courses for dependencies
-        all_c_res = await self.db.execute(
-            select(Course).options(selectinload(Course.dependencies))
-        )
-        all_courses = {c.id: c for c in all_c_res.scalars().all()}
+        # Get course data for requirements
+        target_courses = {}
+        for req in requirements:
+            if req.course_id in all_courses:
+                target_courses[req.course_id] = all_courses[req.course_id]
+
+        if not target_courses:
+            return {"error": "No courses found for major requirements"}
+
+        # 3. Fetch all dependencies
+        all_deps = await store.get_course_dependencies()
+
+        # Build dependency structures
+        unlocks_count = defaultdict(int)
+        prereqs = defaultdict(list)
+        coreqs_type1 = defaultdict(list)
+        coreqs_type2 = defaultdict(list)
+
+        set(all_courses.keys())
+
+        for dep in all_deps:
+            if dep.dependency_type == DependencyTypeEnum.prerequisite:
+                prereqs[dep.course_id].append(dep.required_course_id)
+                unlocks_count[dep.required_course_id] += 1
+            elif dep.dependency_type == DependencyTypeEnum.corequisite_type1:
+                coreqs_type1[dep.course_id].append(dep.required_course_id)
+            elif dep.dependency_type == DependencyTypeEnum.corequisite_type2:
+                coreqs_type2[dep.course_id].append(dep.required_course_id)
 
         passed_ids = set(passed_course_ids)
 
@@ -42,22 +68,6 @@ class GreedyPlanner:
         courses_todo = {
             cid: c for cid, c in target_courses.items() if cid not in passed_ids
         }
-
-        # Build adjacency lists for counting "how many courses this unlocks"
-        unlocks_count = {cid: 0 for cid in all_courses.keys()}
-        prereqs = {cid: [] for cid in all_courses.keys()}
-        coreqs_type1 = {cid: [] for cid in all_courses.keys()}
-        coreqs_type2 = {cid: [] for cid in all_courses.keys()}
-
-        for cid, c in all_courses.items():
-            for dep in c.dependencies:
-                if dep.dependency_type == DependencyType.prerequisite:
-                    prereqs[cid].append(dep.required_course_id)
-                    unlocks_count[dep.required_course_id] += 1
-                elif dep.dependency_type == DependencyType.corequisite_type1:
-                    coreqs_type1[cid].append(dep.required_course_id)
-                elif dep.dependency_type == DependencyType.corequisite_type2:
-                    coreqs_type2[cid].append(dep.required_course_id)
 
         # Simulate semesters starting from current_semester
         current_sem = current_semester
@@ -75,17 +85,15 @@ class GreedyPlanner:
                         break
 
                 # Check Corequisites Type 2 (must be passed OR in current todo if we take it now)
-                # For greedy, we assume we take them in the same semester if possible
                 for req_id in coreqs_type2[cid]:
                     if req_id not in passed_ids and req_id not in courses_todo:
-                        can_take = False  # Requirement not even in the major?
+                        can_take = False
                         break
 
                 if can_take:
                     available.append(c)
 
             if not available:
-                # Same error handling...
                 break
 
             # Sort by unlocks_count (descending)
@@ -113,7 +121,7 @@ class GreedyPlanner:
                             total_c_load += req_c.workload
                             needed_together.append(req_c)
                         else:
-                            can_add = False  # Missing required coreq in major
+                            can_add = False
                             break
 
                 if not can_add:

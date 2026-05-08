@@ -1,18 +1,45 @@
 from uuid import UUID
 from typing import List, Dict, Set
-from src.domain.models.dependency_type import DependencyType
-from src.domain.models.course import Course
-from src.domain.schemas import ValidationMessage
-from src.domain.schemas.validation.validation_result import ValidationResult
+from collections import defaultdict
+
+from ..stores.factory import get_store
+from ..stores.base import (
+    StoreBase,
+    CourseData,
+    CourseDependencyData,
+    DependencyTypeEnum,
+)
+from ..domain.schemas import ValidationMessage
+from ..domain.schemas.validation.validation_result import ValidationResult
 
 
 class RoadmapValidator:
-    def __init__(self, all_courses: Dict[UUID, Course]):
+    def __init__(
+        self,
+        all_courses: Dict[UUID, CourseData],
+        deps_by_course: Dict[UUID, List[CourseDependencyData]] = None,
+    ):
         self.all_courses = all_courses
+        self.deps_by_course = deps_by_course or defaultdict(list)
+
+    async def load_dependencies(self, store: StoreBase) -> None:
+        deps = await store.get_course_dependencies()
+        self.deps_by_course = defaultdict(list)
+        for dep in deps:
+            self.deps_by_course[dep.course_id].append(dep)
+
+    @staticmethod
+    async def create_from_store(store: StoreBase = None) -> "RoadmapValidator":
+        if store is None:
+            store = await get_store()
+        all_courses = await store.get_all_courses()
+        validator = RoadmapValidator(all_courses)
+        await validator.load_dependencies(store)
+        return validator
 
     def validate_semester(
         self,
-        courses_in_sem: List[Course],
+        courses_in_sem: List[CourseData],
         previously_passed_ids: Set[UUID],
         current_sem_num: int,
         max_load: float = 12.0,
@@ -46,7 +73,7 @@ class RoadmapValidator:
 
         # 3. Check Dependencies
         for c in courses_in_sem:
-            for dep in c.dependencies:
+            for dep in self.deps_by_course.get(c.id, []):
                 req_id = dep.required_course_id
                 req_title = (
                     self.all_courses[req_id].title
@@ -54,7 +81,7 @@ class RoadmapValidator:
                     else "Неизвестный курс"
                 )
 
-                if dep.dependency_type == DependencyType.prerequisite:
+                if dep.dependency_type == DependencyTypeEnum.prerequisite:
                     if req_id not in previously_passed_ids:
                         messages.append(
                             ValidationMessage(
@@ -64,24 +91,13 @@ class RoadmapValidator:
                             )
                         )
 
-                elif dep.dependency_type == DependencyType.corequisite_type1:
+                elif dep.dependency_type == DependencyTypeEnum.corequisite:
                     # Must be in the same semester
                     if req_id not in in_sem_ids:
                         messages.append(
                             ValidationMessage(
                                 level="error",
                                 message=f"'{c.title}' и '{req_title}' должны изучаться одновременно",
-                                course_id=c.id,
-                            )
-                        )
-
-                elif dep.dependency_type == DependencyType.corequisite_type2:
-                    # Must be before OR in the same semester
-                    if req_id not in previously_passed_ids and req_id not in in_sem_ids:
-                        messages.append(
-                            ValidationMessage(
-                                level="error",
-                                message=f"Для '{c.title}' нужен '{req_title}' (прежде или одновременно)",
                                 course_id=c.id,
                             )
                         )

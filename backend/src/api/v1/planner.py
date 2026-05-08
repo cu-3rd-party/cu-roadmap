@@ -1,8 +1,4 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from src.core.database import get_db
-from src.domain.models.student import Student
+from fastapi import APIRouter
 from src.domain.schemas.goal_path_request import GoalPathRequest
 from src.domain.schemas.roadmap_validation_request import RoadmapValidationRequest
 from src.domain.schemas.semester.semester_validation_request import (
@@ -12,13 +8,15 @@ from src.domain.schemas.planner_request import PlannerRequest
 from src.services.engine2.generator import GreedyPlanner
 from src.services.validation_service import RoadmapValidator
 from src.services.planner_service import PlannerService
+from src.stores.factory import get_store
 
 router = APIRouter()
 
 
 @router.post("/generate")
-async def generate_roadmap(req: PlannerRequest, db: AsyncSession = Depends(get_db)):
-    planner = GreedyPlanner(db)
+async def generate_roadmap(req: PlannerRequest):
+    store = await get_store()
+    planner = GreedyPlanner(store)
     roadmap = await planner.generate_roadmap(
         passed_course_ids=req.passed_course_ids,
         major_id=req.major_id,
@@ -29,14 +27,13 @@ async def generate_roadmap(req: PlannerRequest, db: AsyncSession = Depends(get_d
 
 
 @router.post("/validate-semester/")
-async def validate_semester(
-    req: SemesterValidationRequest, db: AsyncSession = Depends(get_db)
-):
+async def validate_semester(req: SemesterValidationRequest):
     """Scenario 2: Manual Semester Planning - Validate a single semester selection."""
-    planner_service = PlannerService(db)
+    store = await get_store()
+    planner_service = PlannerService(store)
     all_courses = await planner_service.get_all_courses()
 
-    validator = RoadmapValidator(all_courses)
+    validator = await RoadmapValidator.create_from_store(store)
     courses = [all_courses[cid] for cid in req.course_ids if cid in all_courses]
 
     result = validator.validate_semester(
@@ -49,14 +46,13 @@ async def validate_semester(
 
 
 @router.post("/validate-roadmap/")
-async def validate_roadmap(
-    req: RoadmapValidationRequest, db: AsyncSession = Depends(get_db)
-):
+async def validate_roadmap(req: RoadmapValidationRequest):
     """Scenario 3: The Strict Validator - Validate a full proposed roadmap."""
-    planner_service = PlannerService(db)
-    all_courses = await planner_service.get_all_courses()
+    store = await get_store()
+    planner_service = PlannerService(store)
+    await planner_service.get_all_courses()
 
-    validator = RoadmapValidator(all_courses)
+    validator = await RoadmapValidator.create_from_store(store)
     results = validator.validate_full_roadmap(
         roadmap_data=req.roadmap,
         initial_passed_ids=set(req.passed_course_ids),
@@ -66,9 +62,9 @@ async def validate_roadmap(
 
 
 @router.post("/goal-path/")
-async def get_goal_path(req: GoalPathRequest, db: AsyncSession = Depends(get_db)):
+async def get_goal_path(req: GoalPathRequest):
     """Scenario 4: Goal-Oriented Planning - Plan towards a specific course."""
-    planner_service = PlannerService(db)
+    planner_service = PlannerService()
     path = await planner_service.find_path_to_course(
         target_course_id=req.target_course_id,
         passed_ids=set(req.passed_course_ids),
@@ -79,20 +75,19 @@ async def get_goal_path(req: GoalPathRequest, db: AsyncSession = Depends(get_db)
 
 
 @router.get("/test-engine2")
-async def test_engine2(db: AsyncSession = Depends(get_db)):
-    from sqlalchemy.orm import selectinload
+async def test_engine2():
+    store = await get_store()
+    all_students = await store.get_all_students()
 
-    st_res = await db.execute(
-        select(Student).options(selectinload(Student.passed_courses)).limit(1)
-    )
-    student = st_res.scalars().first()
-
-    if not student:
+    if not all_students:
         return {"error": "No mock students found. Please run mock_data.py"}
 
-    planner = GreedyPlanner(db)
+    # Get the first student
+    student = next(iter(all_students.values()))
+
+    planner = GreedyPlanner(store)
     roadmap = await planner.generate_roadmap(
-        passed_course_ids=[c.id for c in student.passed_courses],
+        passed_course_ids=student.passed_course_ids,
         major_id=student.target_major_id,
         current_semester=student.current_semester,
         max_load=12.0,

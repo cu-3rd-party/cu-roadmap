@@ -1,22 +1,36 @@
 from uuid import UUID
 from typing import List, Dict, Set
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from ..domain.models.dependency_type import DependencyType
-from ..domain.models.course import Course
-from .validation_service import RoadmapValidator
+from collections import defaultdict
+
+from ..stores.factory import get_store
+from ..stores.base import (
+    StoreBase,
+    CourseData,
+    CourseDependencyData,
+    DependencyTypeEnum,
+)
 
 
 class PlannerService:
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, store: StoreBase = None):
+        self._store = store
+        self._deps_by_course: Dict[UUID, List[CourseDependencyData]] = defaultdict(list)
 
-    async def get_all_courses(self) -> Dict[UUID, Course]:
-        res = await self.db.execute(
-            select(Course).options(selectinload(Course.dependencies))
-        )
-        return {c.id: c for c in res.scalars().all()}
+    async def _get_store(self) -> StoreBase:
+        if self._store is None:
+            self._store = await get_store()
+        return self._store
+
+    async def _load_dependencies(self) -> None:
+        store = await self._get_store()
+        deps = await store.get_course_dependencies()
+        self._deps_by_course.clear()
+        for dep in deps:
+            self._deps_by_course[dep.course_id].append(dep)
+
+    async def get_all_courses(self) -> Dict[UUID, CourseData]:
+        store = await self._get_store()
+        return await store.get_all_courses()
 
     async def find_path_to_course(
         self,
@@ -28,7 +42,9 @@ class PlannerService:
         """
         Scenario 4: Generates a plan to reach a specific course as fast as possible.
         """
+        await self._load_dependencies()
         all_courses = await self.get_all_courses()
+
         if target_course_id not in all_courses:
             return [{"error": "Target course not found"}]
 
@@ -40,9 +56,9 @@ class PlannerService:
             if curr_id in passed_ids or curr_id in needed_ids:
                 continue
             needed_ids.add(curr_id)
-            curr_course = all_courses[curr_id]
-            for dep in curr_course.dependencies:
-                to_check.append(dep.required_course_id)
+            for dep in self._deps_by_course[curr_id]:
+                if dep.dependency_type == DependencyTypeEnum.prerequisite:
+                    to_check.append(dep.required_course_id)
 
         # 2. Use a greedy approach to schedule these needed courses
         roadmap = []
@@ -50,16 +66,14 @@ class PlannerService:
         courses_todo = {cid: all_courses[cid] for cid in needed_ids}
         current_passed = set(passed_ids)
 
-        RoadmapValidator(all_courses)
-
         while courses_todo:
             available = []
             for cid, c in courses_todo.items():
                 # Check prereqs
                 can_take = True
-                for dep in c.dependencies:
+                for dep in self._deps_by_course.get(cid, []):
                     if (
-                        dep.dependency_type == DependencyType.prerequisite
+                        dep.dependency_type == DependencyTypeEnum.prerequisite
                         and dep.required_course_id not in current_passed
                     ):
                         can_take = False

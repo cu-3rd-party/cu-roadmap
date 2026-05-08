@@ -1,19 +1,16 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from src.core.database import get_db
-from src.domain.models.course import Course
+from fastapi import APIRouter
+from src.stores.factory import get_store
 
 router = APIRouter()
 
 
 @router.get("/")
-async def get_courses(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Course))
-    courses = result.scalars().all()
+async def get_courses():
+    store = await get_store()
+    courses = await store.get_all_courses()
 
     res = []
-    for c in courses:
+    for c in courses.values():
         res.append(
             {
                 "id": str(c.id),

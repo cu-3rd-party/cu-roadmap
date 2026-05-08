@@ -1,21 +1,15 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from src.core.database import get_db
-from src.domain.models.course import Course
-from src.domain.models.course.course_dependency import CourseDependency
+from fastapi import APIRouter
 from logging import info
+from src.stores.factory import get_store
 
 router = APIRouter()
 
 
 @router.get("/data")
-async def get_graph_data(db: AsyncSession = Depends(get_db)):
-    courses_result = await db.execute(select(Course))
-    courses = courses_result.scalars().all()
-
-    deps_result = await db.execute(select(CourseDependency))
-    deps = deps_result.scalars().all()
+async def get_graph_data():
+    store = await get_store()
+    courses = await store.get_all_courses()
+    deps = await store.get_course_dependencies()
 
     nodes = [
         {
@@ -25,7 +19,7 @@ async def get_graph_data(db: AsyncSession = Depends(get_db)):
             "title": c.description,
             "recommended_semester": c.recommended_semester,
         }
-        for c in courses
+        for c in courses.values()
     ]
     info(f"Fetched {len(nodes)} courses for graph nodes: {nodes}")
     edges = [

@@ -1,20 +1,18 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from src.core.database import get_db
-from src.domain.models.major import Major
+from fastapi import APIRouter
+from uuid import UUID
+from src.stores.factory import get_store
 
 router = APIRouter()
 
 
 @router.get("/")
-async def get_majors(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Major).options(selectinload(Major.requirements)))
-    majors = result.scalars().all()
+async def get_majors():
+    store = await get_store()
+    majors = await store.get_all_majors()
 
     res = []
-    for m in majors:
+    for m in majors.values():
+        requirements = await store.get_major_requirements(m.id)
         res.append(
             {
                 "id": str(m.id),
@@ -22,7 +20,7 @@ async def get_majors(db: AsyncSession = Depends(get_db)):
                 "school": m.school,
                 "requirements": [
                     {"course_id": str(r.course_id), "type": r.requirement_type.value}
-                    for r in m.requirements
+                    for r in requirements
                 ],
             }
         )
@@ -30,23 +28,20 @@ async def get_majors(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/identify")
-async def identify_major(
-    passed_course_ids: list[str], db: AsyncSession = Depends(get_db)
-):
-    import uuid
+async def identify_major(passed_course_ids: list[str]):
+    store = await get_store()
+    majors = await store.get_all_majors()
 
-    result = await db.execute(select(Major).options(selectinload(Major.requirements)))
-    majors = result.scalars().all()
-
-    passed_uuids = {uuid.UUID(cid) for cid in passed_course_ids}
+    passed_uuids = {UUID(cid) for cid in passed_course_ids}
 
     analysis = []
-    for m in majors:
-        req_ids = {r.course_id for r in m.requirements}
+    for m in majors.values():
+        requirements = await store.get_major_requirements(m.id)
+        req_ids = {r.course_id for r in requirements}
         if not req_ids:
             continue
         covered = req_ids.intersection(passed_uuids)
-        score = len(covered) / len(req_ids)
+        score = len(covered) / len(req_ids) if req_ids else 0
         analysis.append(
             {
                 "id": str(m.id),
