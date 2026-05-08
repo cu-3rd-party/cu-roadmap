@@ -32,18 +32,84 @@ def parse_semesters(sem_str):
     return [int(s.strip()) for s in sem_str.split(",") if s.strip()]
 
 
+def compute_longest_prereq_depth(course_id, deps_by_course, visited, memo):
+    if course_id in memo:
+        return memo[course_id]
+    if course_id in visited:
+        memo[course_id] = 0
+        return 0
+    visited.add(course_id)
+    prereqs = deps_by_course.get(course_id, [])
+    if not prereqs:
+        memo[course_id] = 0
+    else:
+        max_depth = max(
+            compute_longest_prereq_depth(p, deps_by_course, visited, memo)
+            for p in prereqs
+        )
+        memo[course_id] = max_depth + 1
+    visited.remove(course_id)
+    return memo[course_id]
+
+
+def calculate_recommended_semesters(courses_csv_path, deps_csv_path):
+    courses = {}
+    with open(courses_csv_path, mode="r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            courses[row["id"]] = {
+                "semesters": parse_semesters(row["available_semesters"]),
+            }
+
+    deps_by_course = {}
+    with open(deps_csv_path, mode="r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            cid = row["course_id"]
+            if row["dependency_type"] == "prerequisite":
+                deps_by_course.setdefault(cid, []).append(row["required_course_id"])
+
+    memo = {}
+    for cid in courses:
+        compute_longest_prereq_depth(cid, deps_by_course, set(), memo)
+
+    recommended = {}
+    for cid, depth in memo.items():
+        course_sems = courses[cid]["semesters"]
+        if not course_sems:
+            recommended[cid] = depth + 1
+            continue
+        first_avail = course_sems[0]
+        if first_avail % 2 == 1 and first_avail <= depth + 1:
+            rec = depth + 1 if (depth + 1) % 2 == 1 else depth + 2
+        elif first_avail % 2 == 0 and first_avail <= depth + 1:
+            rec = depth + 1 if (depth + 1) % 2 == 0 else depth + 2
+        else:
+            rec = depth + 1
+        rec = max(rec, first_avail)
+        recommended[cid] = rec
+
+    return recommended
+
+
 async def ingest():
     async with engine.begin() as conn:
         print("Recreating database tables...")
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    courses_csv = os.path.join(script_dir, "../../courses.csv")
+    deps_csv = os.path.join(script_dir, "../../course_dependencies.csv")
+    majors_csv = os.path.join(script_dir, "../../majors.csv")
+    recommended = calculate_recommended_semesters(courses_csv, deps_csv)
+
     course_map = {}
     major_map = {}
 
     async with async_session() as session:
         print("Ingesting courses...")
-        with open("courses.csv", mode="r", encoding="utf-8") as f:
+        with open(courses_csv, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 uid = uuid.uuid4()
@@ -56,11 +122,12 @@ async def ingest():
                     course_type=CourseType(row["course_type"]),
                     category=CourseCategory(row["category"]),
                     workload=float(row["workload"]),
+                    recommended_semester=recommended.get(row["id"]),
                 )
                 session.add(course)
 
         print("Ingesting majors...")
-        with open("majors.csv", mode="r", encoding="utf-8") as f:
+        with open(majors_csv, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 uid = uuid.uuid4()
@@ -75,7 +142,7 @@ async def ingest():
                 session.add(major)
 
         print("Ingesting course dependencies...")
-        with open("course_dependencies.csv", mode="r", encoding="utf-8") as f:
+        with open(deps_csv, mode="r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 # Handle cases where dependent course might not exist in CSV if skipped
