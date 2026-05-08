@@ -1,10 +1,19 @@
 interface SemesterSectionProps {
-  semester: any;
+  semester: {
+    semester: number;
+    total_load?: number;
+    error?: string;
+    courses?: { id: string; title: string; type?: string; workload: number }[];
+    course_ids?: string[];
+  };
   courseGrid?: boolean;
   onRemoveCourse?: (courseId: string, semIdx: number) => void;
   semIdx?: number;
   fixPrereq?: (courseTitle: string) => void;
-  validation?: any;
+  validation?: {
+    valid: boolean;
+    messages: { level: string; message: string }[];
+  };
 }
 
 export function SemesterSection({
@@ -45,7 +54,7 @@ export function SemesterSection({
             semester.error.includes("prereqs")) && (
             <button
               className="bg-red-500 text-white border-none px-2 py-1 rounded text-xs font-bold cursor-pointer ml-2"
-              onClick={() => fixPrereq?.(semester.error)}
+              onClick={() => semester.error && fixPrereq?.(semester.error)}
             >
               ИСПРАВИТЬ
             </button>
@@ -53,7 +62,7 @@ export function SemesterSection({
         </div>
       )}
 
-      {validation?.messages.map((m: any, midx: number) => (
+      {validation?.messages.map((m, midx: number) => (
         <div
           key={midx}
           className={`text-sm mb-1 ${m.level === "error" ? "text-red-500" : "text-yellow-600"}`}
@@ -66,7 +75,7 @@ export function SemesterSection({
         className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
       >
-        {(semester.courses || semester.course_ids || []).map((c: any) => {
+        {(semester.courses || semester.course_ids || []).map((c) => {
           const isString = typeof c === "string";
           return (
             <div

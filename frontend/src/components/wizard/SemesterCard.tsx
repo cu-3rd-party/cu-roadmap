@@ -1,7 +1,19 @@
 import React from "react";
 
+interface Course {
+  id: string;
+  title: string;
+  type: string;
+  workload: number;
+}
+
 interface SemesterCardProps {
-  semester: any;
+  semester: {
+    semester: number;
+    total_load?: number;
+    error?: string;
+    courses: Course[];
+  };
   fixPrereq?: (courseTitle: string) => void;
 }
 
@@ -35,19 +47,14 @@ export function SemesterCard({ semester, fixPrereq }: SemesterCardProps) {
           {load.toFixed(1)} / 12 кредитов
         </div>
       </div>
-
       {semester.error && typeof semester.error === "string" && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
-          <span>⚠️ {semester.error}</span>
-          {(semester.error.includes("пререквизиты") ||
-            semester.error.includes("prereqs")) && (
-            <button
-              className="bg-red-500 text-white border-none px-2 py-1 rounded font-bold text-xs cursor-pointer ml-auto"
-              onClick={() => fixPrereq?.(semester.error)}
-            >
-              Исправить
-            </button>
-          )}
+        <div className="mb-4">
+          <button
+            className="bg-red-500 text-white border-none px-2 py-1 rounded font-bold text-xs cursor-pointer ml-auto"
+            onClick={() => semester.error && fixPrereq?.(semester.error)}
+          >
+            Исправить
+          </button>
         </div>
       )}
 
@@ -55,7 +62,7 @@ export function SemesterCard({ semester, fixPrereq }: SemesterCardProps) {
         className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}
       >
-        {semester.courses.map((c: any) => (
+        {semester.courses.map((c: Course) => (
           <div
             key={c.id}
             className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm"

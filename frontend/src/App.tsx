@@ -17,22 +17,34 @@ import { PlannerView } from "./components/PlannerView";
 import { MajorCalculatorView } from "./components/MajorCalculatorView";
 import { GoalPlannerView } from "./components/GoalPlannerView";
 import { ManualPlannerView } from "./components/ManualPlannerView";
-
 import { StepWizard } from "./components/wizard/StepWizard";
 import { SidebarButton } from "./components/ui";
+
+interface RoadmapSemester {
+  semester: number;
+  course_ids: string[];
+}
+
+interface RoadmapData {
+  roadmap: {
+    semester: number;
+    total_load?: number;
+    error?: string;
+    courses: { id: string; title: string; type: string; workload: number }[];
+  }[];
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("wizard");
   const [passedIds, setPassedIds] = useState<string[]>([]);
-  const [manualRoadmap, setManualRoadmap] = useState<any[]>([
+  const [manualRoadmap, setManualRoadmap] = useState<RoadmapSemester[]>([
     { semester: 1, course_ids: [] },
     { semester: 2, course_ids: [] },
     { semester: 3, course_ids: [] },
     { semester: 4, course_ids: [] },
   ]);
 
-  // Shared state for the planner results so we can trigger build from tracker
-  const [roadmapData, setRoadmapData] = useState<any>(null);
+  const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null);
   const [plannerLoading, setPlannerLoading] = useState(false);
   const [triggerGenerate, setTriggerGenerate] = useState(0);
 

@@ -4,9 +4,21 @@ import { API_BASE } from "../consts";
 import { getCategoryColor } from "./wizard/helpers";
 import { Search } from "lucide-react";
 
-export function CoursesView({ passedIds, setPassedIds }: any) {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [search, _setSearch] = useState("");
+interface CoursesViewProps {
+  passedIds: string[];
+  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  category: string;
+  workload: number;
+}
+
+export function CoursesView({ passedIds, setPassedIds }: CoursesViewProps) {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [search] = useState("");
 
   useEffect(() => {
     axios.get(`${API_BASE}/courses/`).then((res) => setCourses(res.data));

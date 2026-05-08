@@ -2,8 +2,15 @@ import { Check } from "lucide-react";
 import { SemesterCard } from "./SemesterCard";
 import React from "react";
 
+export interface SemesterData {
+  semester: number;
+  total_load?: number;
+  error?: string;
+  courses: { id: string; title: string; type: string; workload: number }[];
+}
+
 interface RoadmapResultProps {
-  roadmap: any[];
+  roadmap: SemesterData[];
   onReset: () => void;
   onEditSettings: () => void;
   fixPrereq: (courseTitle: string) => void;

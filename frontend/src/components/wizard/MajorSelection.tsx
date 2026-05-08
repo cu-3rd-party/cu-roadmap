@@ -1,7 +1,12 @@
 import React from "react";
 
+interface Major {
+  id: string;
+  title: string;
+}
+
 interface MajorSelectProps {
-  majors: any[];
+  majors: Major[];
   selectedMajor: string;
   onChange: (id: string) => void;
 }

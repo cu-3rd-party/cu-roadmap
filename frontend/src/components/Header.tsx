@@ -1,6 +1,11 @@
 import React from "react";
 
-export function Header({ activeTab, setActiveTab }: any) {
+interface HeaderProps {
+  activeTab: string;
+  setActiveTab: React.Dispatch<React.SetStateAction<string>>;
+}
+
+export function Header({ activeTab, setActiveTab }: HeaderProps) {
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-40">
       <div className="flex items-center gap-10">
@@ -12,14 +17,13 @@ export function Header({ activeTab, setActiveTab }: any) {
         </div>
         <nav className="hidden md:flex gap-1">
           <button
-            className={`bg-transparent border-none text-sm text-gray-600 cursor-pointer px-3 py-1.5 rounded-md font-medium ${activeTab === "planner" ? "bg-blue-100/80 text-primary" : ""}`}
-            onClick={() => setActiveTab("planner")}
+            className={`bg-transparent border-none text-sm text-gray-600 cursor-pointer px-3 py-1.5 rounded-md font-medium ${activeTab === "wizard" ? "bg-blue-100/80 text-primary" : ""}`}
+            onClick={() => setActiveTab("wizard")}
           >
             Движок
           </button>
           <button
-            className={`bg-transparent border-none text-sm text-gray-600 cursor-pointer px-3 py-1.5 rounded-md font-medium ${activeTab === "graph" ? "bg-blue-100/80 text-primary" : ""}`}
-            onClick={() => setActiveTab("planner")}
+            className={`bg-transparent border-none text-sm text-gray-600 cursor-pointer px-3 py-1.5 rounded-md font-medium`}
           >
             More Soon...
           </button>

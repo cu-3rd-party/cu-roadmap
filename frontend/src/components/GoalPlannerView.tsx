@@ -2,10 +2,28 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../consts";
 
-export function GoalPlannerView({ passedIds }: any) {
-  const [courses, setCourses] = useState<any[]>([]);
+interface GoalPlannerViewProps {
+  passedIds: string[];
+}
+
+interface Course {
+  id: string;
+  title: string;
+  workload: number;
+}
+
+interface RoadmapSemester {
+  semester: number;
+  total_load?: number;
+  error?: string;
+  status?: string;
+  courses?: Course[];
+}
+
+export function GoalPlannerView({ passedIds }: GoalPlannerViewProps) {
+  const [courses, setCourses] = useState<Course[]>([]);
   const [targetId, setTargetId] = useState("");
-  const [roadmap, setRoadmap] = useState<any[]>([]);
+  const [roadmap, setRoadmap] = useState<RoadmapSemester[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -72,7 +90,7 @@ export function GoalPlannerView({ passedIds }: any) {
       {roadmap.length > 0 && (
         <div className="flex flex-col gap-8 mt-10">
           <div className="flex flex-col gap-8">
-            {roadmap.map((sem: any, idx: number) => (
+            {roadmap.map((sem, idx: number) => (
               <div
                 key={idx}
                 className="bg-gray-50 border border-gray-200 rounded-2xl p-6 min-h-[200px]"
@@ -100,7 +118,7 @@ export function GoalPlannerView({ passedIds }: any) {
                       "repeat(auto-fill, minmax(240px, 1fr))",
                   }}
                 >
-                  {(sem.courses || []).map((c: any) => (
+                  {(sem.courses || []).map((c) => (
                     <div
                       key={c.id}
                       className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm"

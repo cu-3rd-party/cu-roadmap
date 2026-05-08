@@ -1,6 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { API_BASE } from "../consts";
+
+interface PlannerViewProps {
+  passedIds: string[];
+  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
+  triggerGenerate: number;
+  setData: React.Dispatch<React.SetStateAction<RoadmapData | null>>;
+  data: RoadmapData | null;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  loading: boolean;
+}
+
+interface Course {
+  id: string;
+  title: string;
+}
+
+interface Major {
+  id: string;
+  title: string;
+}
+
+interface RoadmapSemester {
+  semester: number;
+  total_load?: number;
+  error?: string;
+  courses: { id: string; title: string; type: string; workload: number }[];
+}
+
+export interface RoadmapData {
+  roadmap: RoadmapSemester[];
+}
 
 export function PlannerView({
   passedIds,
@@ -10,9 +41,9 @@ export function PlannerView({
   data,
   setLoading,
   loading,
-}: any) {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [majors, setMajors] = useState<any[]>([]);
+}: PlannerViewProps) {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState("");
   const [startSem, setStartSem] = useState(1);
 
@@ -24,7 +55,7 @@ export function PlannerView({
     });
   }, []);
 
-  const generatePlan = () => {
+  const generatePlan = useCallback(() => {
     if (!selectedMajor) return;
     setLoading(true);
     axios
@@ -42,11 +73,11 @@ export function PlannerView({
         console.error(err);
         setLoading(false);
       });
-  };
+  }, [selectedMajor, passedIds, startSem, setData, setLoading]);
 
   useEffect(() => {
     if (triggerGenerate > 0) generatePlan();
-  }, [triggerGenerate]);
+  }, [triggerGenerate, generatePlan]);
 
   const fixPrereq = (courseTitle: string) => {
     const target = courses.find((c) => courseTitle.includes(c.title));
@@ -107,10 +138,10 @@ export function PlannerView({
         </button>
       </div>
 
-      {data && data.roadmap && (
+      {(data as RoadmapData)?.roadmap && (
         <div className="flex flex-col gap-8 mt-10">
           <div className="flex flex-col gap-8">
-            {data.roadmap.map((sem: any, idx: number) => (
+            {(data as RoadmapData).roadmap.map((sem, idx: number) => (
               <div
                 key={idx}
                 className="bg-gray-50 border border-gray-200 rounded-2xl p-6 min-h-[200px]"
@@ -128,7 +159,7 @@ export function PlannerView({
                       sem.error.includes("prereqs")) && (
                       <button
                         className="bg-red-500 text-white border-none px-2 py-1 rounded text-xs font-bold cursor-pointer ml-2"
-                        onClick={() => fixPrereq(sem.error)}
+                        onClick={() => sem.error && fixPrereq(sem.error)}
                       >
                         ИСПРАВИТЬ
                       </button>
@@ -142,7 +173,7 @@ export function PlannerView({
                       "repeat(auto-fill, minmax(240px, 1fr))",
                   }}
                 >
-                  {sem.courses.map((c: any) => (
+                  {sem.courses.map((c) => (
                     <div
                       key={c.id}
                       className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm"

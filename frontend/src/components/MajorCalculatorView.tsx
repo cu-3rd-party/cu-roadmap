@@ -1,15 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../consts";
 
-export function MajorCalculatorView({ passedIds, setPassedIds }: any) {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+interface MajorCalculatorViewProps {
+  passedIds: string[];
+  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
+}
 
-  useEffect(() => {
-    axios.get(`${API_BASE}/courses/`).then((res) => setCourses(res.data));
-  }, []);
+interface MajorResult {
+  id: string;
+  title: string;
+  score: number;
+}
+
+export function MajorCalculatorView({ passedIds }: MajorCalculatorViewProps) {
+  const [results, setResults] = useState<MajorResult[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const calculate = () => {
     setLoading(true);

@@ -2,8 +2,15 @@ import React, { useState } from "react";
 import { Check, Search } from "lucide-react";
 import { CourseCard } from "./CourseCard";
 
+interface Course {
+  id: string;
+  title: string;
+  category: string;
+  workload: number;
+}
+
 interface CourseSelectionProps {
-  courses: any[];
+  courses: Course[];
   passedIds: string[];
   onToggleCourse: (id: string) => void;
 }

@@ -1,6 +1,16 @@
 import React from "react";
 
-export function StickyTracker({ count, activeTab, onGenerate }: any) {
+interface StickyTrackerProps {
+  count: number;
+  activeTab: string;
+  onGenerate: () => void;
+}
+
+export function StickyTracker({
+  count,
+  activeTab,
+  onGenerate,
+}: StickyTrackerProps) {
   if (
     activeTab !== "planner" &&
     activeTab !== "courses" &&

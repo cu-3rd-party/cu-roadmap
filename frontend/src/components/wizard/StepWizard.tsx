@@ -1,22 +1,45 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import axios from "axios";
 import { API_BASE } from "../../consts";
 import { CourseSelection } from "./CourseSelection";
 import { MajorSelect } from "./MajorSelection";
 import { AISparkleBox } from "../AISparkleBox";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { RoadmapResult } from "./RoadmapResult";
+import { RoadmapResult, type SemesterData } from "./RoadmapResult";
 import { SemesterSelector } from "./SemesterSelector";
 import { StepNavigation } from "./StepNavigation";
 import { StepIndicator } from "./StepIndicator";
 
+interface Course {
+  id: string;
+  title: string;
+  category: string;
+  type: string;
+  workload: number;
+}
+
+interface Major {
+  id: string;
+  title: string;
+  name: string;
+}
+
+interface RoadmapResponse {
+  roadmap: SemesterData[];
+}
+
 export interface StepWizardProps {
   passedIds: string[];
-  setPassedIds: any;
-  roadmapData: any;
-  setRoadmapData: any;
+  setPassedIds: Dispatch<SetStateAction<string[]>>;
+  roadmapData: RoadmapResponse | null;
+  setRoadmapData: Dispatch<SetStateAction<RoadmapResponse | null>>;
   loading: boolean;
-  setLoading: any;
+  setLoading: Dispatch<SetStateAction<boolean>>;
 }
 
 export function StepWizard({
@@ -28,8 +51,8 @@ export function StepWizard({
   setLoading,
 }: StepWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [majors, setMajors] = useState<any[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState("");
   const [startSem, setStartSem] = useState(1);
 

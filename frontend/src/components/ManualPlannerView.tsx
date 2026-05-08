@@ -3,9 +3,38 @@ import axios from "axios";
 import { API_BASE } from "../consts";
 import { Trash } from "lucide-react";
 
-export function ManualPlannerView({ passedIds, roadmap, setRoadmap }: any) {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [validation, setValidation] = useState<any[]>([]);
+interface ManualPlannerViewProps {
+  passedIds: string[];
+  roadmap: { semester: number; course_ids: string[] }[];
+  setRoadmap: React.Dispatch<
+    React.SetStateAction<{ semester: number; course_ids: string[] }[]>
+  >;
+}
+
+interface Course {
+  id: string;
+  title: string;
+}
+
+interface ValidationMessage {
+  level: string;
+  message: string;
+}
+
+interface ValidationResult {
+  semester: number;
+  valid: boolean;
+  total_load: number;
+  messages: ValidationMessage[];
+}
+
+export function ManualPlannerView({
+  passedIds,
+  roadmap,
+  setRoadmap,
+}: ManualPlannerViewProps) {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [validation, setValidation] = useState<ValidationResult[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -72,7 +101,7 @@ export function ManualPlannerView({ passedIds, roadmap, setRoadmap }: any) {
 
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-8">
-          {roadmap.map((sem: any, idx: number) => {
+          {roadmap.map((sem, idx: number) => {
             const v = validation.find((res) => res.semester === sem.semester);
             return (
               <div
@@ -92,7 +121,7 @@ export function ManualPlannerView({ passedIds, roadmap, setRoadmap }: any) {
                 </div>
 
                 {v &&
-                  v.messages.map((m: any, midx: number) => (
+                  v.messages.map((m, midx: number) => (
                     <div
                       key={midx}
                       className={`text-sm mb-1 ${m.level === "error" ? "text-red-500" : "text-yellow-600"}`}
@@ -139,8 +168,7 @@ export function ManualPlannerView({ passedIds, roadmap, setRoadmap }: any) {
                   <option value="">+ Добавить курс</option>
                   {courses
                     .filter(
-                      (c) =>
-                        !roadmap.some((s: any) => s.course_ids.includes(c.id)),
+                      (c) => !roadmap.some((s) => s.course_ids.includes(c.id)),
                     )
                     .map((c) => (
                       <option key={c.id} value={c.id}>
