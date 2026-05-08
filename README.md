@@ -32,12 +32,17 @@ The application reads configuration from environment variables. Default values a
 Install dependencies:
 
 ```bash
-pip install -r backend/requirements.txt
+cd backend
+uv venv .venv -p 3.14
+uv sync
 ```
 
 Populate database from mock data:
 
 ```bash
+// Задайте URL подключения к базе данных
+export DATABASE_URL=postgresql+asyncpg://roadmap_user:roadmap_password@db:5432/roadmap_db
+// По умолчанию скрипт использует URL указанный выше
 python -m src.scripts.mock_data
 ```
 
@@ -64,6 +69,7 @@ npm run dev
 The application will be available at http://localhost:5173.
 
 ## Docker Compose
+
 Start the local development stack:
 
 ```bash
@@ -73,6 +79,23 @@ docker-compose up --build
 Services:
 - web: FastAPI application
 - db: Database service (if using Postgres)
+
+## Deployment
+
+To deploy using Docker Compose:
+
+```bash
+docker-compose down || true
+docker-compose up -d --build
+docker-compose exec -T backend uv run src/scripts/ingest_csv.py
+docker-compose exec -T backend uv run src/scripts/mock_data.py
+```
+
+This will:
+1. Stop any existing containers
+2. Build and start all services (nginx, db, backend, frontend)
+3. Run database migration scripts (ingest_csv.py)
+4. Populate the database with mock data (mock_data.py)
 
 ## Features
 - Interactive Roadmap Planner: Automatic generation based on Major requirements.
