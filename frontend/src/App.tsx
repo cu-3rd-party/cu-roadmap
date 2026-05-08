@@ -97,6 +97,7 @@ export default function App() {
             borderColor: "var(--color-border)",
           }}
         >
+          <SidebarButton icon={Wand2} active={activeTab === "wizard"} onClick={() => setActiveTab("wizard")} title="Wizard" />
           <SidebarButton icon={Book} active={activeTab === "courses"} onClick={() => setActiveTab("courses")} title="Courses" />
           <SidebarButton icon={Calendar} active={activeTab === "planner"} onClick={() => setActiveTab("planner")} title="Planner" />
           <SidebarButton icon={NetworkIcon} active={activeTab === "graph"} onClick={() => setActiveTab("graph")} title="Graph" />
@@ -150,7 +151,7 @@ export default function App() {
         </main>
       </div>
 
-      <StickyTracker count={passedIds.length} activeTab={activeTab} onGenerate={() => setTriggerGenerate((v) => v + 1)} />
+      {/*<StickyTracker count={passedIds.length} activeTab={activeTab} onGenerate={() => setTriggerGenerate((v) => v + 1)} />*/}
     </div>
   );
 }
