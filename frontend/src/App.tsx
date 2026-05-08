@@ -17,7 +17,8 @@ import { PlannerView } from "./components/PlannerView";
 import { MajorCalculatorView } from "./components/MajorCalculatorView";
 import { GoalPlannerView } from "./components/GoalPlannerView";
 import { ManualPlannerView } from "./components/ManualPlannerView";
-import { StepWizard } from "./components/StepWizard";
+
+import {StepWizard} from "./components/wizard/StepWizard";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("wizard");
@@ -39,6 +40,13 @@ export default function App() {
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="flex flex-1 w-full overflow-hidden">
         <aside className="hidden md:flex w-16 min-w-16 bg-white border-r border-gray-200 flex-col items-center pt-5 gap-4">
+          <button
+              className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === "wizard" ? "text-primary bg-blue-50" : "text-gray-400 hover:bg-gray-50 hover:text-gray-700"}`}
+              onClick={() => setActiveTab("wizard")}
+              title="Wizard"
+          >
+            <Wand2 size={20} />
+          </button>
           <button
             className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === "courses" ? "text-primary bg-blue-50" : "text-gray-400 hover:bg-gray-50 hover:text-gray-700"}`}
             onClick={() => setActiveTab("courses")}
@@ -80,13 +88,6 @@ export default function App() {
             title="Manual"
           >
             <Search size={20} />
-          </button>
-          <button
-            className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === "wizard" ? "text-primary bg-blue-50" : "text-gray-400 hover:bg-gray-50 hover:text-gray-700"}`}
-            onClick={() => setActiveTab("wizard")}
-            title="Wizard"
-          >
-            <Wand2 size={20} />
           </button>
         </aside>
         <aside className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex flex-row items-center justify-center gap-2 px-4 z-40">
