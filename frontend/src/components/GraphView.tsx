@@ -31,12 +31,40 @@ export function GraphView() {
     axios.get<GraphData>(`${API_BASE}/graph/data/`).then((res) => {
       const { nodes: rawNodes, edges: rawEdges } = res.data;
       const groupOrder = [...new Set(rawNodes.map((n) => n.group))];
+      const semesters = [...new Set(rawNodes.map((n) => n.recommended_semester || 1))].sort((a, b) => a - b);
+
+      const semesterLabels = semesters.map((s) => ({
+        id: `semester-label-${s}`,
+        label: `Семестр ${s}`,
+        x: (s - 1) * 200,
+        y: -100,
+        shape: "text" as const,
+        font: {
+          face: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          size: 16,
+          color: "#374151",
+        },
+      }));
+
+      const groupLabels = groupOrder.map((g, i) => ({
+        id: `group-label-${g}`,
+        label: g,
+        x: -80,
+        y: i * 140,
+        shape: "text" as const,
+        font: {
+          face: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          size: 14,
+          color: "#6b7280",
+        },
+      }));
 
       const nodes = rawNodes.map((n) => {
         const groupIndex = groupOrder.indexOf(n.group);
         const semester = n.recommended_semester || 1;
-        const x = (semester - 1) * 200;
-        const y = groupIndex * 140;
+        const randomOffset = () => Math.floor(Math.random() * 61) - 30;
+        const x = (semester - 1) * 200 + randomOffset();
+        const y = groupIndex * 140 + randomOffset();
 
         return {
           id: n.id,
@@ -69,6 +97,8 @@ export function GraphView() {
         };
       });
 
+      nodes.push(...(semesterLabels as unknown as typeof nodes), ...(groupLabels as unknown as typeof nodes));
+
       const edges = rawEdges.map((e) => ({
         ...e,
         arrows: "to" as const,
@@ -98,6 +128,9 @@ export function GraphView() {
             },
           },
           interaction: { hover: true, tooltipDelay: 100 },
+          layout: {
+            hierarchical: false,
+          },
         },
       );
 
