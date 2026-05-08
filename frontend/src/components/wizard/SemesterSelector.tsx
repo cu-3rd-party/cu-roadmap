@@ -42,10 +42,7 @@ export function SemesterSelector({ value, onChange }: SemesterSelectorProps) {
           </button>
         ))}
       </div>
-      <p
-        className="text-xs mt-2"
-        style={{ color: "var(--color-text-muted)" }}
-      >
+      <p className="text-xs mt-2" style={{ color: "var(--color-text-muted)" }}>
         Укажите семестр, с которого хотите начать планирование траектории
       </p>
     </div>

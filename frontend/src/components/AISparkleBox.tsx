@@ -242,7 +242,8 @@ export const AISparkleBoxMadness = memo(() => {
       onMouseLeave={() => setIsHovering(false)}
       onClick={incrementConfusion}
       style={{
-        background: "linear-gradient(135deg, var(--color-bg-hover) 0%, var(--color-bg-main) 100%)",
+        background:
+          "linear-gradient(135deg, var(--color-bg-hover) 0%, var(--color-bg-main) 100%)",
         borderWidth: 1,
         borderStyle: "solid",
         borderColor: "var(--color-border)",
@@ -255,10 +256,16 @@ export const AISparkleBoxMadness = memo(() => {
       <MovingNoiseBackground />
 
       {isAnalyzing && (
-        <div className="absolute top-0 left-0 right-0 h-1 overflow-hidden" style={{ backgroundColor: "var(--color-border)" }}>
+        <div
+          className="absolute top-0 left-0 right-0 h-1 overflow-hidden"
+          style={{ backgroundColor: "var(--color-border)" }}
+        >
           <div
             className="h-full transition-all duration-50"
-            style={{ width: `${loadPercentage}%`, backgroundColor: "var(--color-primary)" }}
+            style={{
+              width: `${loadPercentage}%`,
+              backgroundColor: "var(--color-primary)",
+            }}
           />
         </div>
       )}
@@ -284,7 +291,10 @@ export const AISparkleBoxMadness = memo(() => {
               if (!isHovering) resume();
             }}
           >
-            <span className="font-black text-lg tracking-tight transition-all duration-100" style={{ color: "var(--color-text-main)" }}>
+            <span
+              className="font-black text-lg tracking-tight transition-all duration-100"
+              style={{ color: "var(--color-text-main)" }}
+            >
               {isAnalyzing ? (
                 <span className="inline-flex items-center gap-1">
                   {aiName}
@@ -298,25 +308,46 @@ export const AISparkleBoxMadness = memo(() => {
                 "ЫЫ"
               )}
             </span>
-            <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--color-bg-main)", color: "var(--color-text-muted)" }}>
+            <span
+              className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded-full"
+              style={{
+                backgroundColor: "var(--color-bg-main)",
+                color: "var(--color-text-muted)",
+              }}
+            >
               {isAnalyzing
                 ? `analysis ${loadPercentage}%`
                 : `confidence ${randomConfidence}%`}
             </span>
           </div>
 
-          <div className="text-sm font-bold mt-1 flex items-center gap-2 flex-wrap" style={{ color: "var(--color-text-main)" }}>
+          <div
+            className="text-sm font-bold mt-1 flex items-center gap-2 flex-wrap"
+            style={{ color: "var(--color-text-main)" }}
+          >
             {isAnalyzing
               ? "генерирует оптимальный план..."
               : "сгенерирует оптимальный план"}
             {userConfused > 0 && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full animate-pulse" style={{ backgroundColor: "rgba(239,68,68,0.2)", color: "#ef4444" }}>
+              <span
+                className="text-[10px] px-2 py-0.5 rounded-full animate-pulse"
+                style={{
+                  backgroundColor: "rgba(239,68,68,0.2)",
+                  color: "#ef4444",
+                }}
+              >
                 🤔 confused x{userConfused}
               </span>
             )}
           </div>
 
-          <div className="text-xs mt-1.5 font-mono border-l-2 pl-2 italic" style={{ borderColor: "var(--color-primary)", color: "var(--color-text-muted)" }}>
+          <div
+            className="text-xs mt-1.5 font-mono border-l-2 pl-2 italic"
+            style={{
+              borderColor: "var(--color-primary)",
+              color: "var(--color-text-muted)",
+            }}
+          >
             {subtitleText}
           </div>
 
@@ -325,7 +356,13 @@ export const AISparkleBoxMadness = memo(() => {
               isHovering ? "max-h-20 mt-3 opacity-100" : "max-h-0 opacity-0"
             }`}
           >
-            <div className="text-[9px] border-t pt-2 font-mono" style={{ borderColor: "var(--color-border)", color: "var(--color-text-muted)" }}>
+            <div
+              className="text-[9px] border-t pt-2 font-mono"
+              style={{
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-muted)",
+              }}
+            >
               ⚠️ AI may hallucinate prerequisites, invent workload distribution,
               and occasionally identify as a potato. Results not guaranteed.
               <br />
@@ -335,14 +372,23 @@ export const AISparkleBoxMadness = memo(() => {
         </div>
 
         <div className="shrink-0 opacity-50 hover:opacity-100 transition-opacity">
-          <div className="text-[8px] font-mono rounded px-1.5 py-1 rotate-6" style={{ backgroundColor: "var(--color-bg-main)", color: "var(--color-text-muted)" }}>
+          <div
+            className="text-[8px] font-mono rounded px-1.5 py-1 rotate-6"
+            style={{
+              backgroundColor: "var(--color-bg-main)",
+              color: "var(--color-text-muted)",
+            }}
+          >
             {randomBadge}
           </div>
         </div>
       </div>
 
       {userConfused > 0 && (
-        <div className="absolute inset-0 pointer-events-none animate-pulse rounded-xl" style={{ backgroundColor: "rgba(239,68,68,0.05)" }} />
+        <div
+          className="absolute inset-0 pointer-events-none animate-pulse rounded-xl"
+          style={{ backgroundColor: "rgba(239,68,68,0.05)" }}
+        />
       )}
     </div>
   );
@@ -351,13 +397,26 @@ React.memo(AISparkleBoxMadness);
 
 export const AISparkleBoxSimple = memo(() => {
   return (
-    <div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: "var(--color-bg-hover)" }}>
-      <Sparkles size={20} className="mt-0.5 shrink-0" style={{ color: "var(--color-primary)" }} />
+    <div
+      className="rounded-xl p-4 flex items-start gap-3"
+      style={{ backgroundColor: "var(--color-bg-hover)" }}
+    >
+      <Sparkles
+        size={20}
+        className="mt-0.5 shrink-0"
+        style={{ color: "var(--color-primary)" }}
+      />
       <div>
-        <div className="font-bold text-sm" style={{ color: "var(--color-text-main)" }}>
+        <div
+          className="font-bold text-sm"
+          style={{ color: "var(--color-text-main)" }}
+        >
           AI сгенерирует оптимальный план
         </div>
-        <div className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
+        <div
+          className="text-xs mt-1"
+          style={{ color: "var(--color-text-muted)" }}
+        >
           Система учтёт все пререквизиты и равномерно распределит нагрузку
         </div>
       </div>

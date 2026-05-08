@@ -25,7 +25,11 @@ interface GraphData {
 
 function getThemeColor(varName: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue(varName)
+      .trim() || fallback
+  );
 }
 
 function isDarkMode(): boolean {
@@ -231,10 +235,7 @@ export function GraphView() {
               Семестр {selectedNode.recommended_semester}
             </span>
           </div>
-          <p
-            className="text-sm"
-            style={{ color: "var(--color-text-muted)" }}
-          >
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
             {selectedNode.title}
           </p>
         </div>

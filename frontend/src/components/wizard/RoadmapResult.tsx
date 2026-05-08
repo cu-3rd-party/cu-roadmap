@@ -40,10 +40,7 @@ export function RoadmapResult({
         >
           Ваш план обучения
         </h2>
-        <p
-          className="mt-1"
-          style={{ color: "var(--color-text-muted)" }}
-        >
+        <p className="mt-1" style={{ color: "var(--color-text-muted)" }}>
           Рекомендуемая последовательность курсов по семестрам
         </p>
       </div>

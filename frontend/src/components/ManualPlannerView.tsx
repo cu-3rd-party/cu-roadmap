@@ -115,7 +115,8 @@ export function ManualPlannerView({
                   backgroundColor: "var(--color-bg-hover)",
                   borderWidth: 1,
                   borderStyle: "solid",
-                  borderColor: v && !v.valid ? "#ef4444" : "var(--color-border)",
+                  borderColor:
+                    v && !v.valid ? "#ef4444" : "var(--color-border)",
                 }}
               >
                 <div className="flex justify-between items-center mb-4">
@@ -134,7 +135,9 @@ export function ManualPlannerView({
                             ? "rgba(239,68,68,0.2)"
                             : "var(--color-bg-main)",
                         color:
-                          v.total_load > 12 ? "#ef4444" : "var(--color-text-muted)",
+                          v.total_load > 12
+                            ? "#ef4444"
+                            : "var(--color-text-muted)",
                       }}
                     >
                       Нагрузка: {v.total_load.toFixed(1)}

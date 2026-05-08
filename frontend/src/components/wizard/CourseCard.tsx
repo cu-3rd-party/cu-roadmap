@@ -16,7 +16,9 @@ export function CourseCard({ course, isSelected, onToggle }: CourseCardProps) {
       }`}
       style={{
         backgroundColor: "var(--color-bg-main)",
-        borderColor: isSelected ? "var(--color-primary)" : "var(--color-border)",
+        borderColor: isSelected
+          ? "var(--color-primary)"
+          : "var(--color-border)",
       }}
       onClick={onToggle}
     >

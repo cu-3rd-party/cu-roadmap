@@ -19,7 +19,9 @@ export function CoursesView({ passedIds, setPassedIds }: CoursesViewProps) {
   const [search] = React.useState("");
 
   React.useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:8000"}/courses/`)
+    fetch(
+      `${import.meta.env.VITE_API_BASE || "http://localhost:8000"}/courses/`,
+    )
       .then((res) => res.json())
       .then((data) => setCourses(data));
   }, []);

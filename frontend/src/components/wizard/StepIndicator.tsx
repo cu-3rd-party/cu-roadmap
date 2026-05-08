@@ -26,13 +26,19 @@ export function StepIndicator({ currentStep }: { currentStep: number }) {
               style={
                 isActive
                   ? { backgroundColor: "var(--color-primary)", color: "white" }
-                  : { backgroundColor: "var(--color-bg-hover)", color: "var(--color-text-muted)" }
+                  : {
+                      backgroundColor: "var(--color-bg-hover)",
+                      color: "var(--color-text-muted)",
+                    }
               }
             >
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center"
                 style={{
-                  backgroundColor: isCurrent || isActive ? "rgba(255,255,255,0.2)" : "var(--color-bg-main)",
+                  backgroundColor:
+                    isCurrent || isActive
+                      ? "rgba(255,255,255,0.2)"
+                      : "var(--color-bg-main)",
                 }}
               >
                 <Icon size={16} />
@@ -54,7 +60,11 @@ export function StepIndicator({ currentStep }: { currentStep: number }) {
             {idx < steps.length - 1 && (
               <ChevronRight
                 size={20}
-                style={{ color: isActive ? "var(--color-primary)" : "var(--color-border)" }}
+                style={{
+                  color: isActive
+                    ? "var(--color-primary)"
+                    : "var(--color-border)",
+                }}
               />
             )}
           </React.Fragment>

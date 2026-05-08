@@ -136,10 +136,7 @@ export function GoalPlannerView({ passedIds }: GoalPlannerViewProps) {
                   )}
                 </div>
                 {sem.error && (
-                  <div
-                    className="text-sm mb-2"
-                    style={{ color: "#ef4444" }}
-                  >
+                  <div className="text-sm mb-2" style={{ color: "#ef4444" }}>
                     ⚠️ {sem.error}
                   </div>
                 )}

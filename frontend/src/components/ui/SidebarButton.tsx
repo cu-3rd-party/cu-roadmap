@@ -16,9 +16,7 @@ export function SidebarButton({
   return (
     <button
       className={`p-2.5 rounded-xl border-none transition-all duration-200 ${
-        active
-          ? "text-primary"
-          : "hover:text-gray-700"
+        active ? "text-primary" : "hover:text-gray-700"
       }`}
       style={{
         backgroundColor: active ? "var(--color-bg-hover)" : "transparent",

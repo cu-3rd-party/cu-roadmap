@@ -65,7 +65,10 @@ export function CourseSelection({
           className="text-sm font-medium"
           style={{ color: "var(--color-text-muted)" }}
         >
-          Выбрано курсов: <strong style={{ color: "var(--color-text-main)" }}>{passedIds.length}</strong>
+          Выбрано курсов:{" "}
+          <strong style={{ color: "var(--color-text-main)" }}>
+            {passedIds.length}
+          </strong>
         </span>
       </div>
 

@@ -56,8 +56,13 @@ export default function App() {
     <div className="flex flex-col h-screen">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="flex flex-1 w-full overflow-hidden">
-        <aside className="hidden md:flex w-16 min-w-16 border-r flex-col items-center pt-5 pb-5 gap-4"
-          style={{ backgroundColor: "var(--color-bg-sidebar)", borderColor: "var(--color-border)" }}>
+        <aside
+          className="hidden md:flex w-16 min-w-16 border-r flex-col items-center pt-5 pb-5 gap-4"
+          style={{
+            backgroundColor: "var(--color-bg-sidebar)",
+            borderColor: "var(--color-border)",
+          }}
+        >
           <SidebarButton
             icon={Wand2}
             active={activeTab === "wizard"}
@@ -108,8 +113,13 @@ export default function App() {
             title={theme === "dark" ? "Light mode" : "Dark mode"}
           />
         </aside>
-        <aside className="md:hidden fixed bottom-0 left-0 right-0 h-16 border-t flex flex-row items-center gap-2 px-4 z-40"
-          style={{ backgroundColor: "var(--color-bg-sidebar)", borderColor: "var(--color-border)" }}>
+        <aside
+          className="md:hidden fixed bottom-0 left-0 right-0 h-16 border-t flex flex-row items-center gap-2 px-4 z-40"
+          style={{
+            backgroundColor: "var(--color-bg-sidebar)",
+            borderColor: "var(--color-border)",
+          }}
+        >
           <SidebarButton
             icon={Book}
             active={activeTab === "courses"}
@@ -154,8 +164,13 @@ export default function App() {
             title={theme === "dark" ? "Light mode" : "Dark mode"}
           />
         </aside>
-        <main className="flex-1 w-full overflow-y-auto p-10 flex flex-col"
-          style={{ backgroundColor: "var(--color-bg-main)", color: "var(--color-text-main)" }}>
+        <main
+          className="flex-1 w-full overflow-y-auto p-10 flex flex-col"
+          style={{
+            backgroundColor: "var(--color-bg-main)",
+            color: "var(--color-text-main)",
+          }}
+        >
           {activeTab === "graph" && <GraphView />}
           {activeTab === "majors" && <MajorsView />}
           {activeTab === "courses" && (
