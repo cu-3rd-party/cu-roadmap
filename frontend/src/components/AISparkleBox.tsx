@@ -344,24 +344,24 @@ export const AISparkleBoxMadness = memo(() => {
 });
 React.memo(AISparkleBoxMadness);
 
-export const AISparkleBoxSimple = memo(() =>{
+export const AISparkleBoxSimple = memo(() => {
   return (
-      <div className="bg-blue-50 rounded-xl p-4 flex items-start gap-3">
-        <Sparkles size={20} className="text-primary mt-0.5 shrink-0" />
-        <div>
-          <div className="font-bold text-sm text-gray-900">
-            AI сгенерирует оптимальный план
-          </div>
-          <div className="text-xs text-gray-600 mt-1">
-            Система учтёт все пререквизиты и равномерно распределит нагрузку
-          </div>
+    <div className="bg-blue-50 rounded-xl p-4 flex items-start gap-3">
+      <Sparkles size={20} className="text-primary mt-0.5 shrink-0" />
+      <div>
+        <div className="font-bold text-sm text-gray-900">
+          AI сгенерирует оптимальный план
+        </div>
+        <div className="text-xs text-gray-600 mt-1">
+          Система учтёт все пререквизиты и равномерно распределит нагрузку
         </div>
       </div>
+    </div>
   );
 });
 React.memo(AISparkleBoxSimple);
 
-export const AISparkleBox = memo(() =>{
+export const AISparkleBox = memo(() => {
   const showMadness = Math.random() < 0.05;
 
   if (showMadness) {
