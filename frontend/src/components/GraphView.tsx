@@ -31,7 +31,9 @@ export function GraphView() {
     axios.get<GraphData>(`${API_BASE}/graph/data/`).then((res) => {
       const { nodes: rawNodes, edges: rawEdges } = res.data;
       const groupOrder = [...new Set(rawNodes.map((n) => n.group))];
-      const semesters = [...new Set(rawNodes.map((n) => n.recommended_semester || 1))].sort((a, b) => a - b);
+      const semesters = [
+        ...new Set(rawNodes.map((n) => n.recommended_semester || 1)),
+      ].sort((a, b) => a - b);
 
       const semesterLabels = semesters.map((s) => ({
         id: `semester-label-${s}`,
@@ -97,7 +99,10 @@ export function GraphView() {
         };
       });
 
-      nodes.push(...(semesterLabels as unknown as typeof nodes), ...(groupLabels as unknown as typeof nodes));
+      nodes.push(
+        ...(semesterLabels as unknown as typeof nodes),
+        ...(groupLabels as unknown as typeof nodes),
+      );
 
       const edges = rawEdges.map((e) => ({
         ...e,
@@ -177,7 +182,9 @@ export function GraphView() {
           </span>
           <h3 className="text-xl font-bold mb-2">{selectedNode.label}</h3>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-bold text-primary">Семестр {selectedNode.recommended_semester}</span>
+            <span className="text-sm font-bold text-primary">
+              Семестр {selectedNode.recommended_semester}
+            </span>
           </div>
           <p className="text-sm text-gray-500">{selectedNode.title}</p>
         </div>
