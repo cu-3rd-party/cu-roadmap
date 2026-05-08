@@ -2,12 +2,13 @@ name: Format
 
 on:
   push:
-    branches:
-      - '*'
 
 jobs:
   format:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,22 +27,29 @@ jobs:
 
       - name: Install frontend dependencies
         run: |
+          curl -fsSL https://bun.sh/install | bash
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
           cd frontend
           bun install
 
       - name: Format backend
         run: |
           cd backend
-          ruff format .
-          ruff check --fix .
+          .venv/bin/ruff format .
+          .venv/bin/ruff check --fix .
 
       - name: Format frontend
         run: |
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
           cd frontend
           bunx prettier --write .
 
       - name: Commit formatting changes
         run: |
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add -A
