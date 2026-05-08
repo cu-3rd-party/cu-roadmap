@@ -1,0 +1,49 @@
+name: Format
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install uv
+          uv sync
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          bun install
+
+      - name: Format backend
+        run: |
+          cd backend
+          ruff format .
+          ruff check --fix .
+
+      - name: Format frontend
+        run: |
+          cd frontend
+          bunx prettier --write .
+
+      - name: Commit formatting changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git diff --cached --quiet || git commit -m "style: apply formatting"
+          git push
