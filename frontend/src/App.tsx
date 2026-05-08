@@ -20,7 +20,7 @@ import { ManualPlannerView } from "./components/ManualPlannerView";
 import { StepWizard } from "./components/StepWizard";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("courses");
+  const [activeTab, setActiveTab] = useState("wizard");
   const [passedIds, setPassedIds] = useState<string[]>([]);
   const [manualRoadmap, setManualRoadmap] = useState<any[]>([
     { semester: 1, course_ids: [] },
