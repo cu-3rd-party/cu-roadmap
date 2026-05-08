@@ -33,7 +33,7 @@ export default function App() {
   ]);
   const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null);
   const [plannerLoading, setPlannerLoading] = useState(false);
-  const [triggerGenerate, setTriggerGenerate] = useState(0);
+  const [triggerGenerate, _setTriggerGenerate] = useState(0);
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -156,29 +156,29 @@ export default function App() {
   );
 }
 
-function StickyTracker({ count, activeTab, onGenerate }: { count: number; activeTab: string; onGenerate: () => void }) {
-  return (
-    <div
-      className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl border"
-      style={{
-        backgroundColor: "var(--color-bg-main)",
-        borderColor: "var(--color-border)",
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-bold" style={{ color: "var(--color-text-main)" }}>
-          {count} курсов выбрано
-        </span>
-      </div>
-      {activeTab !== "wizard" && (
-        <button
-          className="text-white border-none px-4 py-2 rounded-lg font-bold text-xs cursor-pointer"
-          style={{ backgroundColor: "var(--color-primary)" }}
-          onClick={onGenerate}
-        >
-          Сгенерировать
-        </button>
-      )}
-    </div>
-  );
-}
+// function StickyTracker({ count, activeTab, onGenerate }: { count: number; activeTab: string; onGenerate: () => void }) {
+//   return (
+//     <div
+//       className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl border"
+//       style={{
+//         backgroundColor: "var(--color-bg-main)",
+//         borderColor: "var(--color-border)",
+//       }}
+//     >
+//       <div className="flex items-center gap-2">
+//         <span className="text-sm font-bold" style={{ color: "var(--color-text-main)" }}>
+//           {count} курсов выбрано
+//         </span>
+//       </div>
+//       {activeTab !== "wizard" && (
+//         <button
+//           className="text-white border-none px-4 py-2 rounded-lg font-bold text-xs cursor-pointer"
+//           style={{ backgroundColor: "var(--color-primary)" }}
+//           onClick={onGenerate}
+//         >
+//           Сгенерировать
+//         </button>
+//       )}
+//     </div>
+//   );
+// }
