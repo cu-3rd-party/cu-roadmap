@@ -3,15 +3,18 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 from ..models import CourseType, CourseCategory, DependencyType, RequirementType
 
+
 class CourseDependencyBase(BaseModel):
     required_course_id: UUID
     dependency_type: DependencyType
+
 
 class CourseDependencyResponse(CourseDependencyBase):
     id: UUID
     course_id: UUID
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class CourseBase(BaseModel):
     title: str
@@ -25,8 +28,10 @@ class CourseBase(BaseModel):
     workload: float
     csat_metric: Optional[float] = None
 
+
 class CourseCreate(CourseBase):
     pass
+
 
 class CourseResponse(CourseBase):
     id: UUID
@@ -34,9 +39,11 @@ class CourseResponse(CourseBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class MajorRequirementBase(BaseModel):
     course_id: UUID
     requirement_type: RequirementType
+
 
 class MajorRequirementResponse(MajorRequirementBase):
     id: UUID
@@ -44,12 +51,15 @@ class MajorRequirementResponse(MajorRequirementBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class MajorBase(BaseModel):
     title: str
     school: str
 
+
 class MajorCreate(MajorBase):
     pass
+
 
 class MajorResponse(MajorBase):
     id: UUID
@@ -57,13 +67,16 @@ class MajorResponse(MajorBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class StudentBase(BaseModel):
     cohort: int
     current_semester: int
     target_major_id: Optional[UUID] = None
 
+
 class StudentCreate(StudentBase):
     pass
+
 
 class StudentResponse(StudentBase):
     id: UUID

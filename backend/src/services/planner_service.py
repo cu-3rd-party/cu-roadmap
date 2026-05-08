@@ -1,24 +1,29 @@
 from uuid import UUID
-from typing import List, Dict, Set, Optional
+from typing import List, Dict, Set
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from src.domain.models import Course, MajorRequirement, DependencyType
+from src.domain.models import Course, DependencyType
 from .validation_service import RoadmapValidator
+
 
 class PlannerService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_all_courses(self) -> Dict[UUID, Course]:
-        res = await self.db.execute(select(Course).options(selectinload(Course.dependencies)))
+        res = await self.db.execute(
+            select(Course).options(selectinload(Course.dependencies))
+        )
         return {c.id: c for c in res.scalars().all()}
 
-    async def find_path_to_course(self, 
-                                 target_course_id: UUID, 
-                                 passed_ids: Set[UUID],
-                                 current_semester: int = 1,
-                                 max_load: float = 12.0) -> List[Dict]:
+    async def find_path_to_course(
+        self,
+        target_course_id: UUID,
+        passed_ids: Set[UUID],
+        current_semester: int = 1,
+        max_load: float = 12.0,
+    ) -> List[Dict]:
         """
         Scenario 4: Generates a plan to reach a specific course as fast as possible.
         """
@@ -43,8 +48,8 @@ class PlannerService:
         current_sem = current_semester
         courses_todo = {cid: all_courses[cid] for cid in needed_ids}
         current_passed = set(passed_ids)
-        
-        validator = RoadmapValidator(all_courses)
+
+        RoadmapValidator(all_courses)
 
         while courses_todo:
             available = []
@@ -52,7 +57,10 @@ class PlannerService:
                 # Check prereqs
                 can_take = True
                 for dep in c.dependencies:
-                    if dep.dependency_type == DependencyType.prerequisite and dep.required_course_id not in current_passed:
+                    if (
+                        dep.dependency_type == DependencyType.prerequisite
+                        and dep.required_course_id not in current_passed
+                    ):
                         can_take = False
                         break
                 if can_take:
@@ -60,17 +68,22 @@ class PlannerService:
 
             if not available:
                 # Potential deadlock or missing data
-                roadmap.append({"semester": current_sem, "error": "Cannot satisfy dependencies for remaining courses."})
+                roadmap.append(
+                    {
+                        "semester": current_sem,
+                        "error": "Cannot satisfy dependencies for remaining courses.",
+                    }
+                )
                 break
 
             # Sort: give priority to courses that are prerequisites for the target or unlock more things
             # For simplicity, we just take as many as fit the load
             sem_courses = []
             sem_load = 0.0
-            
+
             # Offerings check
             is_odd = current_sem % 2 != 0
-            
+
             # Filter by offerings
             available_offered = []
             for c in available:
@@ -81,25 +94,37 @@ class PlannerService:
                 available_offered.append(c)
 
             if not available_offered:
-                 roadmap.append({"semester": current_sem, "courses": [], "status": "Waiting for correct semester offering"})
+                roadmap.append(
+                    {
+                        "semester": current_sem,
+                        "courses": [],
+                        "status": "Waiting for correct semester offering",
+                    }
+                )
             else:
                 for c in available_offered:
                     if sem_load + c.workload <= max_load:
                         sem_courses.append(c)
                         sem_load += c.workload
-                
+
                 for c in sem_courses:
                     current_passed.add(c.id)
                     if c.id in courses_todo:
                         del courses_todo[c.id]
 
-                roadmap.append({
-                    "semester": current_sem,
-                    "courses": [{"id": str(c.id), "title": c.title, "workload": c.workload} for c in sem_courses],
-                    "total_load": sem_load
-                })
+                roadmap.append(
+                    {
+                        "semester": current_sem,
+                        "courses": [
+                            {"id": str(c.id), "title": c.title, "workload": c.workload}
+                            for c in sem_courses
+                        ],
+                        "total_load": sem_load,
+                    }
+                )
 
             current_sem += 1
-            if current_sem > 20: break
+            if current_sem > 20:
+                break
 
         return roadmap
