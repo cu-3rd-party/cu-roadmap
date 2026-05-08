@@ -2,11 +2,6 @@ import pytest
 from uuid import uuid4
 
 from src.services.planner_service import PlannerService
-from src.stores.base import (
-    CourseTypeEnum,
-    CourseCategoryEnum,
-    DependencyTypeEnum,
-)
 
 
 @pytest.mark.asyncio

@@ -2,12 +2,6 @@ import pytest
 from uuid import uuid4
 
 from src.services.engine2.generator import GreedyPlanner
-from src.stores.base import (
-    CourseTypeEnum,
-    CourseCategoryEnum,
-    DependencyTypeEnum,
-    RequirementTypeEnum,
-)
 
 
 @pytest.mark.asyncio

@@ -1,12 +1,7 @@
 import pytest
 from uuid import uuid4
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch
 
-from src.stores.base import (
-    CourseTypeEnum,
-    CourseCategoryEnum,
-    DependencyTypeEnum,
-)
 
 
 @pytest.mark.asyncio

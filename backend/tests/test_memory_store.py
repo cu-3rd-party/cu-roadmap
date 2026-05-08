@@ -4,14 +4,10 @@ from uuid import uuid4
 from src.stores.memory import MemoryStore
 from src.stores.base import (
     CourseData,
-    CourseDependencyData,
     MajorData,
-    MajorRequirementData,
     StudentData,
     CourseTypeEnum,
     CourseCategoryEnum,
-    DependencyTypeEnum,
-    RequirementTypeEnum,
 )
 
 
