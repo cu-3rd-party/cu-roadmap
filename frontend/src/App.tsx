@@ -6,6 +6,7 @@ import {
   Network as NetworkIcon,
   Search,
   Target,
+  Wand2,
 } from "lucide-react";
 import { Header } from "./components/Header";
 import { StickyTracker } from "./components/StickyTracker";
@@ -16,6 +17,7 @@ import { PlannerView } from "./components/PlannerView";
 import { MajorCalculatorView } from "./components/MajorCalculatorView";
 import { GoalPlannerView } from "./components/GoalPlannerView";
 import { ManualPlannerView } from "./components/ManualPlannerView";
+import { StepWizard } from "./components/StepWizard";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("courses");
@@ -79,6 +81,13 @@ export default function App() {
           >
             <Search size={20} />
           </button>
+          <button
+            className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === "wizard" ? "text-primary bg-blue-50" : "text-gray-400 hover:bg-gray-50 hover:text-gray-700"}`}
+            onClick={() => setActiveTab("wizard")}
+            title="Wizard"
+          >
+            <Wand2 size={20} />
+          </button>
         </aside>
         <aside className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex flex-row items-center justify-center gap-2 px-4 z-40">
           <button
@@ -123,6 +132,13 @@ export default function App() {
           >
             <Search size={20} />
           </button>
+          <button
+            className={`p-2.5 rounded-xl border-none transition-all duration-200 ${activeTab === "wizard" ? "text-primary bg-blue-50" : "text-gray-400 hover:bg-gray-50 hover:text-gray-700"}`}
+            onClick={() => setActiveTab("wizard")}
+            title="Wizard"
+          >
+            <Wand2 size={20} />
+          </button>
         </aside>
         <main className="flex-1 w-full bg-white overflow-y-auto p-10 flex flex-col">
           {activeTab === "graph" && <GraphView />}
@@ -153,6 +169,16 @@ export default function App() {
               passedIds={passedIds}
               roadmap={manualRoadmap}
               setRoadmap={setManualRoadmap}
+            />
+          )}
+          {activeTab === "wizard" && (
+            <StepWizard
+              passedIds={passedIds}
+              setPassedIds={setPassedIds}
+              roadmapData={roadmapData}
+              setRoadmapData={setRoadmapData}
+              loading={plannerLoading}
+              setLoading={setPlannerLoading}
             />
           )}
         </main>
