@@ -11,13 +11,13 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from src.domain.models import (
     Base,
-    Course,
-    Major,
-    CourseDependency,
-    CourseType,
-    CourseCategory,
-    DependencyType,
 )
+from src.domain.models.course.course_type import CourseType
+from src.domain.models.course.course_category import CourseCategory
+from src.domain.models.dependency_type import DependencyType
+from src.domain.models.course import Course
+from src.domain.models.course.course_dependency import CourseDependency
+from src.domain.models.major import Major
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",

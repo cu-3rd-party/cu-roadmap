@@ -3,7 +3,8 @@ from typing import List, Dict, Set
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from src.domain.models import Course, DependencyType
+from ..domain.models.dependency_type import DependencyType
+from ..domain.models.course import Course
 from .validation_service import RoadmapValidator
 
 

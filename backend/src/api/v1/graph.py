@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.core.database import get_db
-from src.domain.models import Course, CourseDependency
+from src.domain.models.course import Course
+from src.domain.models.course.course_dependency import CourseDependency
 from logging import info
 
 router = APIRouter()

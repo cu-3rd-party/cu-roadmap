@@ -2,7 +2,9 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from src.domain.models import Course, MajorRequirement, DependencyType
+from src.domain.models.dependency_type import DependencyType
+from src.domain.models.major.major_requirement import MajorRequirement
+from src.domain.models.course import Course
 
 
 class GreedyPlanner:

@@ -1,19 +1,9 @@
 from uuid import UUID
-from typing import List, Dict, Set, Optional
-from pydantic import BaseModel
-from src.domain.models import Course, DependencyType
-
-
-class ValidationMessage(BaseModel):
-    level: str  # "error" or "warning"
-    message: str
-    course_id: Optional[UUID] = None
-
-
-class ValidationResult(BaseModel):
-    is_valid: bool
-    messages: List[ValidationMessage]
-    total_load: float
+from typing import List, Dict, Set
+from src.domain.models.dependency_type import DependencyType
+from src.domain.models.course import Course
+from src.domain.schemas import ValidationMessage
+from src.domain.schemas.validation.validation_result import ValidationResult
 
 
 class RoadmapValidator:

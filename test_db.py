@@ -1,7 +1,8 @@
 import asyncio
 from sqlalchemy import select
 from src.core.database import async_session
-from src.domain.models import Course, Major
+from src.domain.models.course import Course
+from src.domain.models.major import Major
 
 
 async def test():

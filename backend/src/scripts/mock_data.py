@@ -9,12 +9,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
-from src.domain.models import (
-    Course,
-    Major,
-    MajorRequirement,
-    RequirementType,
-)
+from src.domain.models.requirement_type import RequirementType
+from src.domain.models.course import Course
+from src.domain.models.major import Major
+from src.domain.models.major.major_requirement import MajorRequirement
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -104,7 +102,10 @@ async def mock_data():
                     session.add(req)
 
         # 2. Add Mock Student for future algorithm testing
-        from src.domain.models import Student, student_passed_courses
+        from src.domain.models.student.student_passed_courses import (
+            student_passed_courses,
+        )
+        from src.domain.models.student import Student
 
         await session.execute(student_passed_courses.delete())
         await session.execute(Student.__table__.delete())

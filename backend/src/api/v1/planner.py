@@ -2,48 +2,18 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.core.database import get_db
-from src.domain.models import Student
+from src.domain.models.student import Student
+from src.domain.schemas.goal_path_request import GoalPathRequest
+from src.domain.schemas.roadmap_validation_request import RoadmapValidationRequest
+from src.domain.schemas.semester.semester_validation_request import (
+    SemesterValidationRequest,
+)
+from src.domain.schemas.planner_request import PlannerRequest
 from src.services.engine2.generator import GreedyPlanner
 from src.services.validation_service import RoadmapValidator
 from src.services.planner_service import PlannerService
 
-from pydantic import BaseModel
-from uuid import UUID
-from typing import List
-
 router = APIRouter()
-
-
-class PlannerRequest(BaseModel):
-    passed_course_ids: list[UUID]
-    major_id: UUID
-    current_semester: int = 1
-    max_load: float = 12.0
-
-
-class SemesterValidationRequest(BaseModel):
-    current_semester: int
-    course_ids: List[UUID]
-    passed_course_ids: List[UUID]
-    max_load: float = 12.0
-
-
-class SemesterData(BaseModel):
-    semester: int
-    course_ids: List[UUID]
-
-
-class RoadmapValidationRequest(BaseModel):
-    passed_course_ids: List[UUID]
-    roadmap: List[SemesterData]
-    max_load: float = 12.0
-
-
-class GoalPathRequest(BaseModel):
-    target_course_id: UUID
-    passed_course_ids: List[UUID]
-    current_semester: int = 1
-    max_load: float = 12.0
 
 
 @router.post("/generate")

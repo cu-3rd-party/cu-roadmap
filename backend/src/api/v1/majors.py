@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from src.core.database import get_db
-from src.domain.models import Major
+from src.domain.models.major import Major
 
 router = APIRouter()
 
