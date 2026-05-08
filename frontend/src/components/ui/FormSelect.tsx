@@ -6,10 +6,18 @@ interface FormSelectProps {
   placeholder?: string;
 }
 
-export function FormSelect({ value, onChange, options, label, placeholder }: FormSelectProps) {
+export function FormSelect({
+  value,
+  onChange,
+  options,
+  label,
+  placeholder,
+}: FormSelectProps) {
   return (
     <div className="flex flex-col gap-2 flex-1">
-      <label className="text-xs font-bold text-gray-500 uppercase">{label}</label>
+      <label className="text-xs font-bold text-gray-500 uppercase">
+        {label}
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -17,7 +25,9 @@ export function FormSelect({ value, onChange, options, label, placeholder }: For
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (
-          <option key={o.id} value={o.id}>{o.title}</option>
+          <option key={o.id} value={o.id}>
+            {o.title}
+          </option>
         ))}
       </select>
     </div>

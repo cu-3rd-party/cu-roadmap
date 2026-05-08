@@ -28,7 +28,9 @@ export function SemesterSection({
         {(load > 0 || validation) && (
           <span
             className={`text-xs px-2 py-1 rounded font-semibold ${
-              isOverloaded ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-700"
+              isOverloaded
+                ? "bg-red-100 text-red-700"
+                : "bg-gray-200 text-gray-700"
             }`}
           >
             Нагрузка: {load.toFixed(1)} / 12.0
@@ -72,17 +74,23 @@ export function SemesterSection({
               className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm flex justify-between items-center"
             >
               <div>
-                <strong className="font-semibold">{isString ? c : c.title}</strong>
+                <strong className="font-semibold">
+                  {isString ? c : c.title}
+                </strong>
                 {!isString && c.type && (
                   <div className="flex gap-2 mt-1">
                     <span className="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-bold">
                       {c.type}
                     </span>
-                    <span className="text-xs text-gray-500">{c.workload} к.</span>
+                    <span className="text-xs text-gray-500">
+                      {c.workload} к.
+                    </span>
                   </div>
                 )}
                 {!isString && !c.type && (
-                  <div className="text-xs text-gray-500 mt-1">{c.workload} к.</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {c.workload} к.
+                  </div>
                 )}
               </div>
               {onRemoveCourse && semIdx !== undefined && (

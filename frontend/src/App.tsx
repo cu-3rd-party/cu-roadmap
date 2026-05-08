@@ -18,7 +18,7 @@ import { MajorCalculatorView } from "./components/MajorCalculatorView";
 import { GoalPlannerView } from "./components/GoalPlannerView";
 import { ManualPlannerView } from "./components/ManualPlannerView";
 
-import {StepWizard} from "./components/wizard/StepWizard";
+import { StepWizard } from "./components/wizard/StepWizard";
 import { SidebarButton } from "./components/ui";
 
 export default function App() {
@@ -41,22 +41,92 @@ export default function App() {
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="flex flex-1 w-full overflow-hidden">
         <aside className="hidden md:flex w-16 min-w-16 bg-white border-r border-gray-200 flex-col items-center pt-5 gap-4">
-          <SidebarButton icon={Wand2} active={activeTab === "wizard"} onClick={() => setActiveTab("wizard")} title="Wizard" />
-          <SidebarButton icon={Book} active={activeTab === "courses"} onClick={() => setActiveTab("courses")} title="Courses" />
-          <SidebarButton icon={Calendar} active={activeTab === "planner"} onClick={() => setActiveTab("planner")} title="Planner" />
-          <SidebarButton icon={NetworkIcon} active={activeTab === "graph"} onClick={() => setActiveTab("graph")} title="Graph" />
-          <SidebarButton icon={Calculator} active={activeTab === "calculator"} onClick={() => setActiveTab("calculator")} title="Identifier" />
-          <SidebarButton icon={Target} active={activeTab === "goal"} onClick={() => setActiveTab("goal")} title="Goal" />
-          <SidebarButton icon={Search} active={activeTab === "manual"} onClick={() => setActiveTab("manual")} title="Manual" />
+          <SidebarButton
+            icon={Wand2}
+            active={activeTab === "wizard"}
+            onClick={() => setActiveTab("wizard")}
+            title="Wizard"
+          />
+          <SidebarButton
+            icon={Book}
+            active={activeTab === "courses"}
+            onClick={() => setActiveTab("courses")}
+            title="Courses"
+          />
+          <SidebarButton
+            icon={Calendar}
+            active={activeTab === "planner"}
+            onClick={() => setActiveTab("planner")}
+            title="Planner"
+          />
+          <SidebarButton
+            icon={NetworkIcon}
+            active={activeTab === "graph"}
+            onClick={() => setActiveTab("graph")}
+            title="Graph"
+          />
+          <SidebarButton
+            icon={Calculator}
+            active={activeTab === "calculator"}
+            onClick={() => setActiveTab("calculator")}
+            title="Identifier"
+          />
+          <SidebarButton
+            icon={Target}
+            active={activeTab === "goal"}
+            onClick={() => setActiveTab("goal")}
+            title="Goal"
+          />
+          <SidebarButton
+            icon={Search}
+            active={activeTab === "manual"}
+            onClick={() => setActiveTab("manual")}
+            title="Manual"
+          />
         </aside>
         <aside className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex flex-row items-center justify-center gap-2 px-4 z-40">
-          <SidebarButton icon={Book} active={activeTab === "courses"} onClick={() => setActiveTab("courses")} title="Courses" />
-          <SidebarButton icon={Calendar} active={activeTab === "planner"} onClick={() => setActiveTab("planner")} title="Planner" />
-          <SidebarButton icon={NetworkIcon} active={activeTab === "graph"} onClick={() => setActiveTab("graph")} title="Graph" />
-          <SidebarButton icon={Calculator} active={activeTab === "calculator"} onClick={() => setActiveTab("calculator")} title="Identifier" />
-          <SidebarButton icon={Target} active={activeTab === "goal"} onClick={() => setActiveTab("goal")} title="Goal" />
-          <SidebarButton icon={Search} active={activeTab === "manual"} onClick={() => setActiveTab("manual")} title="Manual" />
-          <SidebarButton icon={Wand2} active={activeTab === "wizard"} onClick={() => setActiveTab("wizard")} title="Wizard" />
+          <SidebarButton
+            icon={Book}
+            active={activeTab === "courses"}
+            onClick={() => setActiveTab("courses")}
+            title="Courses"
+          />
+          <SidebarButton
+            icon={Calendar}
+            active={activeTab === "planner"}
+            onClick={() => setActiveTab("planner")}
+            title="Planner"
+          />
+          <SidebarButton
+            icon={NetworkIcon}
+            active={activeTab === "graph"}
+            onClick={() => setActiveTab("graph")}
+            title="Graph"
+          />
+          <SidebarButton
+            icon={Calculator}
+            active={activeTab === "calculator"}
+            onClick={() => setActiveTab("calculator")}
+            title="Identifier"
+          />
+          <SidebarButton
+            icon={Target}
+            active={activeTab === "goal"}
+            onClick={() => setActiveTab("goal")}
+            title="Goal"
+          />
+          <SidebarButton
+            icon={Search}
+            active={activeTab === "manual"}
+            onClick={() => setActiveTab("manual")}
+            title="Manual"
+          />
+          <SidebarButton
+            icon={Wand2}
+            active={activeTab === "wizard"}
+            onClick={() => setActiveTab("wizard")}
+            title="Wizard"
+          />
         </aside>
         <main className="flex-1 w-full bg-white overflow-y-auto p-10 flex flex-col">
           {activeTab === "graph" && <GraphView />}

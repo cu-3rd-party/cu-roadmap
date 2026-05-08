@@ -21,7 +21,7 @@ export function PrimaryButton({
       disabled={disabled || loading}
       className={`bg-primary text-white border-none px-5 py-2.5 rounded-lg font-bold text-sm cursor-pointer disabled:opacity-50 h-10 ${className}`}
     >
-      {loading ? (loadingLabel || label) : label}
+      {loading ? loadingLabel || label : label}
     </button>
   );
 }
