@@ -3,8 +3,10 @@ import {
   Book,
   Calculator,
   Calendar,
+  Moon,
   Network as NetworkIcon,
   Search,
+  Sun,
   Target,
   Wand2,
 } from "lucide-react";
@@ -19,6 +21,7 @@ import { GoalPlannerView } from "./components/GoalPlannerView";
 import { ManualPlannerView } from "./components/ManualPlannerView";
 import { StepWizard } from "./components/wizard/StepWizard";
 import { SidebarButton } from "./components/ui";
+import { useTheme } from "./context/ThemeContext";
 
 interface RoadmapSemester {
   semester: number;
@@ -47,12 +50,14 @@ export default function App() {
   const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null);
   const [plannerLoading, setPlannerLoading] = useState(false);
   const [triggerGenerate, setTriggerGenerate] = useState(0);
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="flex flex-col h-screen">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="flex flex-1 w-full overflow-hidden">
-        <aside className="hidden md:flex w-16 min-w-16 bg-white border-r border-gray-200 flex-col items-center pt-5 gap-4">
+        <aside className="hidden md:flex w-16 min-w-16 border-r flex-col items-center pt-5 pb-5 gap-4"
+          style={{ backgroundColor: "var(--color-bg-sidebar)", borderColor: "var(--color-border)" }}>
           <SidebarButton
             icon={Wand2}
             active={activeTab === "wizard"}
@@ -95,8 +100,16 @@ export default function App() {
             onClick={() => setActiveTab("manual")}
             title="Manual"
           />
+          <div className="flex-1" />
+          <SidebarButton
+            icon={theme === "dark" ? Sun : Moon}
+            active={false}
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          />
         </aside>
-        <aside className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex flex-row items-center justify-center gap-2 px-4 z-40">
+        <aside className="md:hidden fixed bottom-0 left-0 right-0 h-16 border-t flex flex-row items-center gap-2 px-4 z-40"
+          style={{ backgroundColor: "var(--color-bg-sidebar)", borderColor: "var(--color-border)" }}>
           <SidebarButton
             icon={Book}
             active={activeTab === "courses"}
@@ -133,14 +146,16 @@ export default function App() {
             onClick={() => setActiveTab("manual")}
             title="Manual"
           />
+          <div className="flex-1" />
           <SidebarButton
-            icon={Wand2}
-            active={activeTab === "wizard"}
-            onClick={() => setActiveTab("wizard")}
-            title="Wizard"
+            icon={theme === "dark" ? Sun : Moon}
+            active={false}
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
           />
         </aside>
-        <main className="flex-1 w-full bg-white overflow-y-auto p-10 flex flex-col">
+        <main className="flex-1 w-full overflow-y-auto p-10 flex flex-col"
+          style={{ backgroundColor: "var(--color-bg-main)", color: "var(--color-text-main)" }}>
           {activeTab === "graph" && <GraphView />}
           {activeTab === "majors" && <MajorsView />}
           {activeTab === "courses" && (

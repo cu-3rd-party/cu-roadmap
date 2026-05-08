@@ -8,7 +8,10 @@ interface SemesterSelectorProps {
 export function SemesterSelector({ value, onChange }: SemesterSelectorProps) {
   return (
     <div>
-      <label className="text-sm font-bold text-gray-700 mb-2 block">
+      <label
+        className="text-sm font-bold mb-2 block"
+        style={{ color: "var(--color-text-main)" }}
+      >
         Семестр начала обучения
       </label>
       <div className="grid grid-cols-4 gap-2">
@@ -17,16 +20,32 @@ export function SemesterSelector({ value, onChange }: SemesterSelectorProps) {
             key={sem}
             onClick={() => onChange(sem)}
             className={`py-3 px-4 rounded-xl font-bold text-sm transition-all ${
-              value === sem
-                ? "bg-primary text-white"
-                : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
+              value === sem ? "" : "hover:border-gray-300"
             }`}
+            style={
+              value === sem
+                ? {
+                    backgroundColor: "var(--color-primary)",
+                    color: "white",
+                    border: "none",
+                  }
+                : {
+                    backgroundColor: "var(--color-bg-main)",
+                    color: "var(--color-text-muted)",
+                    borderWidth: 1,
+                    borderStyle: "solid",
+                    borderColor: "var(--color-border)",
+                  }
+            }
           >
             Семестр {sem}
           </button>
         ))}
       </div>
-      <p className="text-xs text-gray-500 mt-2">
+      <p
+        className="text-xs mt-2"
+        style={{ color: "var(--color-text-muted)" }}
+      >
         Укажите семестр, с которого хотите начать планирование траектории
       </p>
     </div>

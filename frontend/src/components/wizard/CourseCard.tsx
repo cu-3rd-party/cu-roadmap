@@ -11,11 +11,13 @@ interface CourseCardProps {
 export function CourseCard({ course, isSelected, onToggle }: CourseCardProps) {
   return (
     <div
-      className={`bg-white rounded-xl overflow-hidden cursor-pointer border-2 transition-all hover:shadow-md ${
-        isSelected
-          ? "border-primary shadow-sm"
-          : "border-gray-100 hover:border-gray-300"
+      className={`rounded-xl overflow-hidden cursor-pointer border-2 transition-all hover:shadow-md ${
+        isSelected ? "shadow-sm" : ""
       }`}
+      style={{
+        backgroundColor: "var(--color-bg-main)",
+        borderColor: isSelected ? "var(--color-primary)" : "var(--color-border)",
+      }}
       onClick={onToggle}
     >
       <div
@@ -31,16 +33,22 @@ export function CourseCard({ course, isSelected, onToggle }: CourseCardProps) {
           />
         </svg>
         {isSelected && (
-          <div className="absolute top-2 right-2 bg-white rounded-full p-1">
-            <Check size={14} className="text-primary" />
+          <div
+            className="absolute top-2 right-2 rounded-full p-1"
+            style={{ backgroundColor: "var(--color-bg-main)" }}
+          >
+            <Check size={14} style={{ color: "var(--color-primary)" }} />
           </div>
         )}
       </div>
       <div className="p-3">
-        <div className="font-bold text-sm mb-1 text-gray-900">
+        <div
+          className="font-bold text-sm mb-1"
+          style={{ color: "var(--color-text-main)" }}
+        >
           {course.title}
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>
           {course.category} • {course.workload} к.
         </div>
       </div>

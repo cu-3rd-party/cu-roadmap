@@ -7,23 +7,26 @@ interface HeaderProps {
 
 export function Header({ activeTab, setActiveTab }: HeaderProps) {
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-40">
+    <header className="h-16 border-b flex items-center justify-between px-6 z-40"
+      style={{ backgroundColor: "var(--color-bg-main)", borderColor: "var(--color-border)" }}>
       <div className="flex items-center gap-10">
-        <div className="flex items-center gap-2.5 font-extrabold text-xs max-w-[180px] leading-tight">
-          <svg viewBox="0 0 40 40" width="24" height="24" fill="#111">
+        <div className="flex items-center gap-2.5 font-extrabold text-xs max-w-45 leading-tight">
+          <svg viewBox="0 0 40 40" width="24" height="24" fill="currentColor">
             <path d="M20 5L35 12.5V27.5L20 35L5 27.5V12.5L20 5Z" />
           </svg>
-          <div className="tracking-wide">ROADMAP ENGINE</div>
+          <div className="tracking-wide" style={{ color: "var(--color-text-main)" }}>ROADMAP ENGINE</div>
         </div>
         <nav className="hidden md:flex gap-1">
           <button
-            className={`bg-transparent border-none text-sm text-gray-600 cursor-pointer px-3 py-1.5 rounded-md font-medium ${activeTab === "wizard" ? "bg-blue-100/80 text-primary" : ""}`}
+            className={`bg-transparent border-none text-sm cursor-pointer px-3 py-1.5 rounded-md font-medium`}
+            style={{ color: activeTab === "wizard" ? "var(--color-primary)" : "var(--color-text-muted)" }}
             onClick={() => setActiveTab("wizard")}
           >
             Движок
           </button>
           <button
-            className={`bg-transparent border-none text-sm text-gray-600 cursor-pointer px-3 py-1.5 rounded-md font-medium`}
+            className={`bg-transparent border-none text-sm cursor-pointer px-3 py-1.5 rounded-md font-medium`}
+            style={{ color: "var(--color-text-muted)" }}
           >
             More Soon...
           </button>

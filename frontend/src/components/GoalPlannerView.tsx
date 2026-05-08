@@ -52,23 +52,37 @@ export function GoalPlannerView({ passedIds }: GoalPlannerViewProps) {
 
   return (
     <div className="flex flex-col w-full">
-      <h1 className="text-3xl font-extrabold text-gray-900">
+      <h1
+        className="text-3xl font-extrabold"
+        style={{ color: "var(--color-text-main)" }}
+      >
         Планирование от цели
       </h1>
-      <p className="text-gray-500 mb-6">
+      <p className="mb-6" style={{ color: "var(--color-text-muted)" }}>
         Выберите курс, который вы хотите пройти в будущем, и система построит
         кратчайший путь до него.
       </p>
 
-      <div className="flex gap-6 items-end pb-6 border-b border-gray-200">
+      <div
+        className="flex gap-6 items-end pb-6"
+        style={{ borderColor: "var(--color-border)", borderBottomWidth: 1 }}
+      >
         <div className="flex flex-col gap-2 flex-1">
-          <label className="text-xs font-bold text-gray-500 uppercase">
+          <label
+            className="text-xs font-bold uppercase"
+            style={{ color: "var(--color-text-muted)" }}
+          >
             Целевой курс
           </label>
           <select
             value={targetId}
             onChange={(e) => setTargetId(e.target.value)}
-            className="w-full p-2.5 bg-white text-gray-900 border border-gray-200 rounded-lg text-base"
+            className="w-full p-2.5 border rounded-lg text-base"
+            style={{
+              backgroundColor: "var(--color-bg-main)",
+              color: "var(--color-text-main)",
+              borderColor: "var(--color-border)",
+            }}
           >
             <option value="">Выберите курс...</option>
             {courses.map((c) => (
@@ -79,7 +93,8 @@ export function GoalPlannerView({ passedIds }: GoalPlannerViewProps) {
           </select>
         </div>
         <button
-          className="bg-primary text-white border-none px-5 py-2.5 rounded-lg font-bold text-sm cursor-pointer h-10"
+          className="text-white border-none px-5 py-2.5 rounded-lg font-bold text-sm cursor-pointer h-10"
+          style={{ backgroundColor: "var(--color-primary)" }}
           onClick={generatePath}
           disabled={loading || !targetId}
         >
@@ -93,23 +108,48 @@ export function GoalPlannerView({ passedIds }: GoalPlannerViewProps) {
             {roadmap.map((sem, idx: number) => (
               <div
                 key={idx}
-                className="bg-gray-50 border border-gray-200 rounded-2xl p-6 min-h-[200px]"
+                className="rounded-2xl p-6 min-h-[200px]"
+                style={{
+                  backgroundColor: "var(--color-bg-hover)",
+                  borderWidth: 1,
+                  borderStyle: "solid",
+                  borderColor: "var(--color-border)",
+                }}
               >
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold">Семестр {sem.semester}</h3>
+                  <h3
+                    className="text-lg font-bold"
+                    style={{ color: "var(--color-text-main)" }}
+                  >
+                    Семестр {sem.semester}
+                  </h3>
                   {sem.total_load && (
-                    <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded font-semibold">
+                    <span
+                      className="text-xs px-2 py-1 rounded font-semibold"
+                      style={{
+                        backgroundColor: "var(--color-bg-main)",
+                        color: "var(--color-text-muted)",
+                      }}
+                    >
                       Нагрузка: {sem.total_load.toFixed(1)}
                     </span>
                   )}
                 </div>
                 {sem.error && (
-                  <div className="text-red-500 text-sm mb-2">
+                  <div
+                    className="text-sm mb-2"
+                    style={{ color: "#ef4444" }}
+                  >
                     ⚠️ {sem.error}
                   </div>
                 )}
                 {sem.status && (
-                  <div className="text-sm text-gray-500 mb-2">{sem.status}</div>
+                  <div
+                    className="text-sm mb-2"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    {sem.status}
+                  </div>
                 )}
                 <div
                   className="grid gap-3"
@@ -121,10 +161,24 @@ export function GoalPlannerView({ passedIds }: GoalPlannerViewProps) {
                   {(sem.courses || []).map((c) => (
                     <div
                       key={c.id}
-                      className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm"
+                      className="rounded-xl p-3 shadow-sm"
+                      style={{
+                        backgroundColor: "var(--color-bg-main)",
+                        borderWidth: 1,
+                        borderStyle: "solid",
+                        borderColor: "var(--color-border)",
+                      }}
                     >
-                      <strong className="font-semibold">{c.title}</strong>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <strong
+                        className="font-semibold"
+                        style={{ color: "var(--color-text-main)" }}
+                      >
+                        {c.title}
+                      </strong>
+                      <div
+                        className="text-xs mt-1"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
                         {c.workload} к.
                       </div>
                     </div>

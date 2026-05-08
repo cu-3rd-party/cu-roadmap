@@ -116,15 +116,21 @@ export function StepWizard({
           {currentStep === 2 && (
             <div className="flex flex-col">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold mb-2">
+                <h2
+                  className="text-2xl font-bold mb-2"
+                  style={{ color: "var(--color-text-main)" }}
+                >
                   Настройка траектории
                 </h2>
-                <p className="text-gray-500">
+                <p style={{ color: "var(--color-text-muted)" }}>
                   Выберите направление и укажите, когда вы поступили
                 </p>
               </div>
 
-              <div className="max-w-xl mx-auto bg-gray-50 rounded-2xl p-6">
+              <div
+                className="max-w-xl mx-auto rounded-2xl p-6"
+                style={{ backgroundColor: "var(--color-bg-hover)" }}
+              >
                 <div className="flex flex-col gap-5">
                   <MajorSelect
                     majors={majors}
@@ -139,7 +145,7 @@ export function StepWizard({
               <StepNavigation
                 onBack={() => setCurrentStep(1)}
                 onNext={generatePlan}
-                nextLabel="Построить траекторию"
+                nextLabel="Построить траектории"
                 nextIcon={<Sparkles size={18} />}
                 loading={loading}
                 disabled={!selectedMajor}
@@ -164,7 +170,8 @@ export function StepWizard({
           <button
             onClick={() => setCurrentStep(2)}
             disabled={passedIds.length === 0}
-            className="fixed bottom-20 md:bottom-6 right-6 z-50 flex items-center gap-2 bg-primary text-white border-none px-6 py-3 rounded-xl font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors shadow-lg"
+            className="fixed bottom-20 md:bottom-6 right-6 z-50 flex items-center gap-2 text-white border-none px-6 py-3 rounded-xl font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+            style={{ backgroundColor: "var(--color-primary)" }}
           >
             Далее <ArrowRight size={18} />
           </button>

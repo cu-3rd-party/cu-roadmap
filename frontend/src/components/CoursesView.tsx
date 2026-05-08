@@ -1,6 +1,4 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { API_BASE } from "../consts";
+import React from "react";
 import { getCategoryColor } from "./wizard/helpers";
 import { Search } from "lucide-react";
 
@@ -17,11 +15,13 @@ interface Course {
 }
 
 export function CoursesView({ passedIds, setPassedIds }: CoursesViewProps) {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [search] = useState("");
+  const [courses, setCourses] = React.useState<Course[]>([]);
+  const [search] = React.useState("");
 
-  useEffect(() => {
-    axios.get(`${API_BASE}/courses/`).then((res) => setCourses(res.data));
+  React.useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:8000"}/courses/`)
+      .then((res) => res.json())
+      .then((data) => setCourses(data));
   }, []);
 
   const toggleCourse = (id: string) => {
@@ -36,10 +36,16 @@ export function CoursesView({ passedIds, setPassedIds }: CoursesViewProps) {
 
   return (
     <div className="flex flex-col w-full">
-      <div className="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">
+      <div
+        className="text-xs uppercase font-semibold tracking-wide mb-2"
+        style={{ color: "var(--color-text-muted)" }}
+      >
         Траектория &gt; Каталог курсов
       </div>
-      <h1 className="text-3xl font-extrabold mb-8 text-gray-900 tracking-tight">
+      <h1
+        className="text-3xl font-extrabold mb-8 tracking-tight"
+        style={{ color: "var(--color-text-main)" }}
+      >
         Курсы и навыки
       </h1>
 
@@ -50,7 +56,15 @@ export function CoursesView({ passedIds, setPassedIds }: CoursesViewProps) {
         {filtered.map((c) => (
           <div
             key={c.id}
-            className={`bg-white rounded-2xl overflow-hidden cursor-pointer border transition-all hover:-translate-y-1 hover:shadow-lg select-none ${passedIds.includes(c.id) ? "border-primary border-2" : "border-gray-100"}`}
+            className={`rounded-2xl overflow-hidden cursor-pointer border transition-all hover:-translate-y-1 hover:shadow-lg select-none ${
+              passedIds.includes(c.id) ? "border-2" : ""
+            }`}
+            style={{
+              backgroundColor: "var(--color-bg-main)",
+              borderColor: passedIds.includes(c.id)
+                ? "var(--color-primary)"
+                : "var(--color-border)",
+            }}
             onClick={() => toggleCourse(c.id)}
           >
             <div
@@ -82,20 +96,35 @@ export function CoursesView({ passedIds, setPassedIds }: CoursesViewProps) {
                   strokeWidth="1"
                 />
               </svg>
-              <div className="absolute bottom-3 right-3 bg-white w-8 h-8 rounded-full flex items-center justify-center shadow-md">
+              <div
+                className="absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
+                style={{ backgroundColor: "var(--color-bg-main)" }}
+              >
                 <Search size={14} color={getCategoryColor(c.category)} />
               </div>
             </div>
             <div className="p-4">
-              <div className="font-bold text-base mb-1 text-gray-900 leading-snug">
+              <div
+                className="font-bold text-base mb-1 leading-snug"
+                style={{ color: "var(--color-text-main)" }}
+              >
                 {c.title}
               </div>
-              <div className="text-xs font-medium text-gray-500">
+              <div
+                className="text-xs font-medium"
+                style={{ color: "var(--color-text-muted)" }}
+              >
                 {c.category} • {c.workload} к.
               </div>
             </div>
             {passedIds.includes(c.id) && (
-              <div className="absolute top-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs font-extrabold">
+              <div
+                className="absolute top-3 left-3 px-2 py-1 rounded text-xs font-extrabold"
+                style={{
+                  backgroundColor: "rgba(0,0,0,0.7)",
+                  color: "white",
+                }}
+              >
                 ПРОЙДЕНО
               </div>
             )}

@@ -22,25 +22,30 @@ export function StepIndicator({ currentStep }: { currentStep: number }) {
         return (
           <React.Fragment key={step.id}>
             <div
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                isActive ? "bg-primary text-white" : "bg-gray-100 text-gray-400"
-              }`}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
+              style={
+                isActive
+                  ? { backgroundColor: "var(--color-primary)", color: "white" }
+                  : { backgroundColor: "var(--color-bg-hover)", color: "var(--color-text-muted)" }
+              }
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  isCurrent
-                    ? "bg-white/20"
-                    : isActive
-                      ? "bg-white/20"
-                      : "bg-gray-200"
-                }`}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: isCurrent || isActive ? "rgba(255,255,255,0.2)" : "var(--color-bg-main)",
+                }}
               >
                 <Icon size={16} />
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold">{step.title}</span>
                 <span
-                  className={`text-xs ${isActive ? "text-white/70" : "text-gray-400"}`}
+                  className="text-xs"
+                  style={
+                    isActive
+                      ? { color: "rgba(255,255,255,0.7)" }
+                      : { color: "var(--color-text-muted)" }
+                  }
                 >
                   {step.desc}
                 </span>
@@ -49,7 +54,7 @@ export function StepIndicator({ currentStep }: { currentStep: number }) {
             {idx < steps.length - 1 && (
               <ChevronRight
                 size={20}
-                className={`${isActive ? "text-primary" : "text-gray-300"}`}
+                style={{ color: isActive ? "var(--color-primary)" : "var(--color-border)" }}
               />
             )}
           </React.Fragment>

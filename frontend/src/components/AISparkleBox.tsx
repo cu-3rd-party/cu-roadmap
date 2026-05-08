@@ -237,23 +237,28 @@ export const AISparkleBoxMadness = memo(() => {
   return (
     <div
       ref={containerRef}
-      className="relative bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-5 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] cursor-pointer overflow-hidden border border-blue-200/50"
+      className="relative rounded-2xl p-5 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] cursor-pointer overflow-hidden"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       onClick={incrementConfusion}
       style={{
+        background: "linear-gradient(135deg, var(--color-bg-hover) 0%, var(--color-bg-main) 100%)",
+        borderWidth: 1,
+        borderStyle: "solid",
+        borderColor: "var(--color-border)",
         boxShadow: isHovering
           ? `0 20px 35px -12px rgba(59,130,246,${0.3 + sparkleIntensity * 0.2})`
-          : "0 4px 6px -1px rgba(0,0,0,0.05)",
+          : "0 4px 6px -1px rgba(0,0,0,0.1)",
+        color: "var(--color-text-main)",
       }}
     >
       <MovingNoiseBackground />
 
       {isAnalyzing && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-200/50 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 overflow-hidden" style={{ backgroundColor: "var(--color-border)" }}>
           <div
-            className="h-full bg-linear-to-r from-blue-400 via-indigo-500 to-purple-600 transition-all duration-50"
-            style={{ width: `${loadPercentage}%` }}
+            className="h-full transition-all duration-50"
+            style={{ width: `${loadPercentage}%`, backgroundColor: "var(--color-primary)" }}
           />
         </div>
       )}
@@ -279,7 +284,7 @@ export const AISparkleBoxMadness = memo(() => {
               if (!isHovering) resume();
             }}
           >
-            <span className="bg-linear-to-r from-blue-800 via-indigo-700 to-purple-800 bg-clip-text text-transparent">
+            <span className="font-black text-lg tracking-tight transition-all duration-100" style={{ color: "var(--color-text-main)" }}>
               {isAnalyzing ? (
                 <span className="inline-flex items-center gap-1">
                   {aiName}
@@ -293,25 +298,25 @@ export const AISparkleBoxMadness = memo(() => {
                 "ЫЫ"
               )}
             </span>
-            <span className="ml-2 text-[10px] font-mono bg-white/60 px-1.5 py-0.5 rounded-full text-gray-500">
+            <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--color-bg-main)", color: "var(--color-text-muted)" }}>
               {isAnalyzing
                 ? `analysis ${loadPercentage}%`
                 : `confidence ${randomConfidence}%`}
             </span>
           </div>
 
-          <div className="text-sm font-bold text-gray-800 mt-1 flex items-center gap-2 flex-wrap">
+          <div className="text-sm font-bold mt-1 flex items-center gap-2 flex-wrap" style={{ color: "var(--color-text-main)" }}>
             {isAnalyzing
               ? "генерирует оптимальный план..."
               : "сгенерирует оптимальный план"}
             {userConfused > 0 && (
-              <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full animate-pulse">
+              <span className="text-[10px] px-2 py-0.5 rounded-full animate-pulse" style={{ backgroundColor: "rgba(239,68,68,0.2)", color: "#ef4444" }}>
                 🤔 confused x{userConfused}
               </span>
             )}
           </div>
 
-          <div className="text-xs text-gray-500 mt-1.5 font-mono border-l-2 border-blue-300 pl-2 italic">
+          <div className="text-xs mt-1.5 font-mono border-l-2 pl-2 italic" style={{ borderColor: "var(--color-primary)", color: "var(--color-text-muted)" }}>
             {subtitleText}
           </div>
 
@@ -320,7 +325,7 @@ export const AISparkleBoxMadness = memo(() => {
               isHovering ? "max-h-20 mt-3 opacity-100" : "max-h-0 opacity-0"
             }`}
           >
-            <div className="text-[9px] text-gray-400 border-t border-blue-200/50 pt-2 font-mono">
+            <div className="text-[9px] border-t pt-2 font-mono" style={{ borderColor: "var(--color-border)", color: "var(--color-text-muted)" }}>
               ⚠️ AI may hallucinate prerequisites, invent workload distribution,
               and occasionally identify as a potato. Results not guaranteed.
               <br />
@@ -330,14 +335,14 @@ export const AISparkleBoxMadness = memo(() => {
         </div>
 
         <div className="shrink-0 opacity-50 hover:opacity-100 transition-opacity">
-          <div className="text-[8px] font-mono bg-black/5 rounded px-1.5 py-1 rotate-6">
+          <div className="text-[8px] font-mono rounded px-1.5 py-1 rotate-6" style={{ backgroundColor: "var(--color-bg-main)", color: "var(--color-text-muted)" }}>
             {randomBadge}
           </div>
         </div>
       </div>
 
       {userConfused > 0 && (
-        <div className="absolute inset-0 bg-red-500/5 pointer-events-none animate-pulse rounded-xl" />
+        <div className="absolute inset-0 pointer-events-none animate-pulse rounded-xl" style={{ backgroundColor: "rgba(239,68,68,0.05)" }} />
       )}
     </div>
   );
@@ -346,13 +351,13 @@ React.memo(AISparkleBoxMadness);
 
 export const AISparkleBoxSimple = memo(() => {
   return (
-    <div className="bg-blue-50 rounded-xl p-4 flex items-start gap-3">
-      <Sparkles size={20} className="text-primary mt-0.5 shrink-0" />
+    <div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: "var(--color-bg-hover)" }}>
+      <Sparkles size={20} className="mt-0.5 shrink-0" style={{ color: "var(--color-primary)" }} />
       <div>
-        <div className="font-bold text-sm text-gray-900">
+        <div className="font-bold text-sm" style={{ color: "var(--color-text-main)" }}>
           AI сгенерирует оптимальный план
         </div>
-        <div className="text-xs text-gray-600 mt-1">
+        <div className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
           Система учтёт все пререквизиты и равномерно распределит нагрузку
         </div>
       </div>

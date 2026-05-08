@@ -27,7 +27,11 @@ export function StepNavigation({
       {onBack && (
         <button
           onClick={onBack}
-          className="flex items-center gap-2 bg-gray-100 text-gray-700 border-none px-5 py-3 rounded-xl font-bold text-sm cursor-pointer hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-2 border-none px-5 py-3 rounded-xl font-bold text-sm cursor-pointer transition-colors"
+          style={{
+            backgroundColor: "var(--color-bg-hover)",
+            color: "var(--color-text-main)",
+          }}
         >
           <ArrowLeft size={18} /> {backLabel}
         </button>
@@ -36,7 +40,8 @@ export function StepNavigation({
         <button
           onClick={onNext}
           disabled={disabled || loading}
-          className="flex items-center gap-2 bg-primary text-white border-none px-6 py-3 rounded-xl font-bold text-sm cursor-pointer disabled:opacity-50 hover:bg-blue-600 transition-colors"
+          className="flex items-center gap-2 text-white border-none px-6 py-3 rounded-xl font-bold text-sm cursor-pointer disabled:opacity-50 transition-colors"
+          style={{ backgroundColor: "var(--color-primary)" }}
         >
           {loading ? "Генерируем..." : nextLabel} {nextIcon}
         </button>

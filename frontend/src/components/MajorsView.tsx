@@ -3,7 +3,10 @@ import React from "react";
 export function MajorsView() {
   return (
     <div className="flex flex-col w-full">
-      <h1 className="text-3xl font-extrabold text-gray-900">
+      <h1
+        className="text-3xl font-extrabold"
+        style={{ color: "var(--color-text-main)" }}
+      >
         Направления обучения
       </h1>
     </div>

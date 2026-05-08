@@ -16,10 +16,37 @@
   --font-family-sans: "Inter", -apple-system, "BlinkMacSystemFont", sans-serif;
 }
 
+:root {
+  --color-primary: #3b82f6;
+  --color-bg-main: #ffffff;
+  --color-bg-sidebar: #f9fafb;
+  --color-text-main: #1a1a1b;
+  --color-text-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-bg-hover: #f3f4f6;
+  --color-shadow: #e5e7eb;
+}
+
+.dark {
+  --color-primary: #60a5fa;
+  --color-bg-main: #000000;
+  --color-bg-sidebar: #000000;
+  --color-text-main: #ffffff;
+  --color-text-muted: #9ca3af;
+  --color-border: #1a1a1a;
+  --color-bg-hover: #0d0d0d;
+  --color-shadow: #111111;
+}
+
 body {
-  font-family: var(--font-family-sans);
+  font-family: var(--font-family-sans), sans-serif;
   background-color: var(--color-bg-main);
   color: var(--color-text-main);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
+}
+
+.dark body,
+.dark body {
+  background-color: #000000;
 }

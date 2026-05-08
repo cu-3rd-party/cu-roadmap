@@ -22,16 +22,17 @@ export function StickyTracker({
 
   return (
     <div className="hidden md:block fixed bottom-6 right-6 z-50">
-      <div className="bg-white text-gray-900 px-5 py-3 rounded-xl flex items-center gap-5 shadow-lg border border-gray-200">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-gray-500 uppercase">
+      <div className="rounded-xl flex items-center gap-5 shadow-lg border"
+        style={{ backgroundColor: "var(--color-bg-main)", borderColor: "var(--color-border)", color: "var(--color-text-main)" }}>
+        <div className="flex flex-col px-5 py-3">
+          <span className="text-[10px] font-bold uppercase" style={{ color: "var(--color-text-muted)" }}>
             ВЫБРАНО КУРСОВ
           </span>
           <span className="text-sm font-extrabold">{count}</span>
         </div>
-        <div className="w-px h-6 bg-gray-200" />
+        <div className="w-px h-6" style={{ backgroundColor: "var(--color-border)" }} />
         <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-gray-500 uppercase">
+          <span className="text-[10px] font-bold uppercase" style={{ color: "var(--color-text-muted)" }}>
             СТАТУС ПЛАНА
           </span>
           <span className="text-sm font-extrabold text-green-600">
@@ -40,7 +41,8 @@ export function StickyTracker({
         </div>
         {activeTab === "planner" && (
           <button
-            className="bg-primary text-white border-none px-4 py-2 rounded-lg font-bold text-sm cursor-pointer ml-2"
+            className="border-none px-4 py-2 rounded-lg font-bold text-sm cursor-pointer ml-2 text-white"
+            style={{ backgroundColor: "var(--color-primary)" }}
             onClick={onGenerate}
           >
             ПОСТРОИТЬ ТРАЕКТОРИЮ

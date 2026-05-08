@@ -23,6 +23,15 @@ interface GraphData {
   edges: GraphEdge[];
 }
 
+function getThemeColor(varName: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+}
+
+function isDarkMode(): boolean {
+  return document.documentElement.classList.contains("dark");
+}
+
 export function GraphView() {
   const container = React.useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
@@ -35,6 +44,14 @@ export function GraphView() {
         ...new Set(rawNodes.map((n) => n.recommended_semester || 1)),
       ].sort((a, b) => a - b);
 
+      const dark = isDarkMode();
+      const textColor = dark ? "#ffffff" : "#374151";
+      const mutedColor = dark ? "#9ca3af" : "#6b7280";
+      const borderColor = dark ? "#3b82f6" : "#3b82f6";
+      const edgeColor = dark ? "#4b5563" : "#d1d5db";
+      const nodeBg = dark ? "#111111" : "#fff";
+      const nodeHighlightBg = dark ? "#1e3a5f" : "#eff6ff";
+
       const semesterLabels = semesters.map((s) => ({
         id: `semester-label-${s}`,
         label: `Семестр ${s}`,
@@ -44,7 +61,7 @@ export function GraphView() {
         font: {
           face: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
           size: 16,
-          color: "#374151",
+          color: textColor,
         },
       }));
 
@@ -57,7 +74,7 @@ export function GraphView() {
         font: {
           face: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
           size: 14,
-          color: "#6b7280",
+          color: mutedColor,
         },
       }));
 
@@ -80,18 +97,18 @@ export function GraphView() {
           font: {
             face: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
             size: 14,
-            color: "#1f2937",
+            color: textColor,
             strokeWidth: 0,
           },
           color: {
-            background: "#fff",
-            border: "#3b82f6",
-            highlight: { background: "#eff6ff", border: "#2563eb" },
+            background: nodeBg,
+            border: borderColor,
+            highlight: { background: nodeHighlightBg, border: borderColor },
           },
           borderWidth: 3,
           shadow: {
             enabled: true,
-            color: "rgba(0,0,0,0.1)",
+            color: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.1)",
             size: 6,
             x: 0,
             y: 3,
@@ -107,10 +124,10 @@ export function GraphView() {
       const edges = rawEdges.map((e) => ({
         ...e,
         arrows: "to" as const,
-        color: { color: "#d1d5db", highlight: "#3b82f6" },
+        color: { color: edgeColor, highlight: borderColor },
         font: {
           align: "middle" as const,
-          color: "#6b7280",
+          color: mutedColor,
           size: 11,
           face: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         },
@@ -157,36 +174,69 @@ export function GraphView() {
       className="flex flex-col w-full h-full"
       style={{ position: "relative" }}
     >
-      <h1 className="text-3xl font-extrabold mb-5 text-gray-900">
+      <h1
+        className="text-3xl font-extrabold mb-5"
+        style={{ color: "var(--color-text-main)" }}
+      >
         Карта связей
       </h1>
       <div
         ref={container}
-        className="flex-1 border border-gray-100 rounded-2xl bg-gray-50 min-h-[500px]"
+        className="flex-1 rounded-2xl min-h-[500px]"
+        style={{
+          borderWidth: 1,
+          borderStyle: "solid",
+          borderColor: "var(--color-border)",
+          backgroundColor: "var(--color-bg-hover)",
+        }}
       ></div>
       {selectedNode && (
         <div
-          className="absolute top-24 right-10 w-72 p-6 z-10 rounded-xl shadow-xl bg-white/95 backdrop-blur"
+          className="absolute top-24 right-10 w-72 p-6 z-10 rounded-xl shadow-xl backdrop-blur"
           style={{
-            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+            backgroundColor: "var(--color-bg-main)",
+            borderWidth: 1,
+            borderStyle: "solid",
+            borderColor: "var(--color-border)",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
           }}
         >
           <button
             onClick={() => setSelectedNode(null)}
-            className="absolute top-3 right-3 bg-transparent border-none cursor-pointer p-0"
+            className="absolute top-3 right-3 border-none cursor-pointer p-0"
+            style={{ color: "var(--color-text-muted)" }}
           >
             <X size={16} />
           </button>
-          <span className="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-bold mb-2 inline-block">
+          <span
+            className="text-xs px-1.5 py-0.5 rounded font-bold mb-2 inline-block"
+            style={{
+              backgroundColor: "var(--color-bg-hover)",
+              color: "var(--color-text-muted)",
+            }}
+          >
             {selectedNode.group}
           </span>
-          <h3 className="text-xl font-bold mb-2">{selectedNode.label}</h3>
+          <h3
+            className="text-xl font-bold mb-2"
+            style={{ color: "var(--color-text-main)" }}
+          >
+            {selectedNode.label}
+          </h3>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-bold text-primary">
+            <span
+              className="text-sm font-bold"
+              style={{ color: "var(--color-primary)" }}
+            >
               Семестр {selectedNode.recommended_semester}
             </span>
           </div>
-          <p className="text-sm text-gray-500">{selectedNode.title}</p>
+          <p
+            className="text-sm"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {selectedNode.title}
+          </p>
         </div>
       )}
     </div>

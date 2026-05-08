@@ -17,9 +17,13 @@ export function SidebarButton({
     <button
       className={`p-2.5 rounded-xl border-none transition-all duration-200 ${
         active
-          ? "text-primary bg-blue-50"
-          : "text-gray-400 hover:bg-gray-50 hover:text-gray-700"
+          ? "text-primary"
+          : "hover:text-gray-700"
       }`}
+      style={{
+        backgroundColor: active ? "var(--color-bg-hover)" : "transparent",
+        color: active ? "var(--color-primary)" : "var(--color-text-muted)",
+      }}
       onClick={onClick}
       title={title}
     >

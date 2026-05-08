@@ -81,17 +81,21 @@ export function ManualPlannerView({
 
   return (
     <div className="flex flex-col w-full">
-      <h1 className="text-3xl font-extrabold text-gray-900">
+      <h1
+        className="text-3xl font-extrabold"
+        style={{ color: "var(--color-text-main)" }}
+      >
         Песочница (Ручное планирование)
       </h1>
-      <p className="text-gray-500 mb-6">
+      <p className="mb-6" style={{ color: "var(--color-text-muted)" }}>
         Расставьте курсы по семестрам самостоятельно и проверьте план на
         корректность.
       </p>
 
       <div className="mb-6">
         <button
-          className="bg-primary text-white border-none px-4 py-2 rounded-lg font-bold text-sm cursor-pointer"
+          className="text-white border-none px-4 py-2 rounded-lg font-bold text-sm cursor-pointer"
+          style={{ backgroundColor: "var(--color-primary)" }}
           onClick={validate}
           disabled={loading}
         >
@@ -106,14 +110,32 @@ export function ManualPlannerView({
             return (
               <div
                 key={idx}
-                className="bg-gray-50 border border-gray-200 rounded-2xl p-6"
-                style={{ border: v && !v.valid ? "2px solid #fee2e2" : "" }}
+                className="rounded-2xl p-6"
+                style={{
+                  backgroundColor: "var(--color-bg-hover)",
+                  borderWidth: 1,
+                  borderStyle: "solid",
+                  borderColor: v && !v.valid ? "#ef4444" : "var(--color-border)",
+                }}
               >
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold">Семестр {sem.semester}</h3>
+                  <h3
+                    className="text-lg font-bold"
+                    style={{ color: "var(--color-text-main)" }}
+                  >
+                    Семестр {sem.semester}
+                  </h3>
                   {v && (
                     <span
-                      className={`text-xs px-2 py-1 rounded font-semibold ${v.total_load > 12 ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-700"}`}
+                      className="text-xs px-2 py-1 rounded font-semibold"
+                      style={{
+                        backgroundColor:
+                          v.total_load > 12
+                            ? "rgba(239,68,68,0.2)"
+                            : "var(--color-bg-main)",
+                        color:
+                          v.total_load > 12 ? "#ef4444" : "var(--color-text-muted)",
+                      }}
                     >
                       Нагрузка: {v.total_load.toFixed(1)}
                     </span>
@@ -124,15 +146,19 @@ export function ManualPlannerView({
                   v.messages.map((m, midx: number) => (
                     <div
                       key={midx}
-                      className={`text-sm mb-1 ${m.level === "error" ? "text-red-500" : "text-yellow-600"}`}
+                      className="text-sm mb-1"
+                      style={{
+                        color: m.level === "error" ? "#ef4444" : "#eab308",
+                      }}
                     >
                       {m.level === "error" ? "❌" : "⚠️"} {m.message}
                     </div>
                   ))}
 
                 <div
-                  className="grid gap-3 min-h-[60px] bg-gray-100 p-3 rounded-xl"
+                  className="grid gap-3 min-h-[60px] p-3 rounded-xl"
                   style={{
+                    backgroundColor: "var(--color-bg-main)",
                     gridTemplateColumns:
                       "repeat(auto-fill, minmax(240px, 1fr))",
                   }}
@@ -142,14 +168,24 @@ export function ManualPlannerView({
                     return (
                       <div
                         key={cid}
-                        className="bg-white border border-gray-200 rounded-xl p-3 flex justify-between items-center"
+                        className="rounded-xl p-3 flex justify-between items-center"
+                        style={{
+                          backgroundColor: "var(--color-bg-main)",
+                          borderWidth: 1,
+                          borderStyle: "solid",
+                          borderColor: "var(--color-border)",
+                        }}
                       >
-                        <strong className="font-semibold text-sm">
+                        <strong
+                          className="font-semibold text-sm"
+                          style={{ color: "var(--color-text-main)" }}
+                        >
                           {c?.title || cid}
                         </strong>
                         <button
                           onClick={() => removeCourse(idx, cid)}
-                          className="bg-transparent border-none text-red-500 cursor-pointer p-0"
+                          className="border-none cursor-pointer p-0"
+                          style={{ color: "#ef4444" }}
                         >
                           <Trash size={14} />
                         </button>
@@ -159,7 +195,14 @@ export function ManualPlannerView({
                 </div>
 
                 <select
-                  className="mt-2 w-full p-1 text-sm bg-white text-gray-900 border border-gray-200 rounded-lg"
+                  className="mt-2 w-full p-1 text-sm rounded-lg"
+                  style={{
+                    backgroundColor: "var(--color-bg-main)",
+                    color: "var(--color-text-main)",
+                    borderWidth: 1,
+                    borderStyle: "solid",
+                    borderColor: "var(--color-border)",
+                  }}
                   onChange={(e) => {
                     addCourse(idx, e.target.value);
                     e.target.value = "";
