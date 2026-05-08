@@ -36,7 +36,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          rsync -av --delete docker-compose.yml backend frontend nginx $SSH_USER@$SSH_HOST:~/cu-roadmap
+          rsync -avz --delete --progress docker-compose.yml backend frontend nginx $SSH_USER@$SSH_HOST:~/cu-roadmap
 
       - name: Deploy to server
         env:
@@ -44,4 +44,4 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose down || true"
-          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose up -d --build"
+          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose up -d"
