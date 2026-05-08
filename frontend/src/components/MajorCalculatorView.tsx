@@ -23,33 +23,25 @@ export function MajorCalculatorView({passedIds, setPassedIds}: any) {
     };
 
     return (
-        <div className="view-container">
-            <h1 className="view-title">Подбор мейджора</h1>
-            <p className="text-muted" style={{marginBottom: 24}}>Система проанализирует выбранные курсы и подскажет
-                наиболее подходящее направление.</p>
+        <div className="flex flex-col w-full">
+            <h1 className="text-3xl font-extrabold text-gray-900">Подбор мейджора</h1>
+            <p className="text-gray-500 mb-6">Система проанализирует выбранные курсы и подскажет наиболее подходящее направление.</p>
 
-            <div style={{display: 'flex', gap: '20px', marginBottom: '32px'}}>
-                <button className="primary-btn" onClick={calculate} disabled={loading}>
+            <div className="flex gap-5 mb-8">
+                <button className="bg-primary text-white border-none px-4 py-2 rounded-lg font-bold text-sm cursor-pointer" onClick={calculate} disabled={loading}>
                     {loading ? 'Анализируем...' : 'Рассчитать соответствие'}
                 </button>
             </div>
 
-            <div className="majors-grid">
+            <div className="grid gap-6" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))'}}>
                 {results.map(r => (
-                    <div key={r.id} className="cu-course-card" style={{padding: '24px', cursor: 'default'}}>
-                        <h2 style={{fontSize: '1.2rem', marginBottom: '8px', color: '#111'}}>{r.title}</h2>
-                        <div className="score-text"
-                             style={{color: 'var(--primary)', fontWeight: 800, fontSize: '1.5rem'}}>
+                    <div key={r.id} className="bg-white rounded-2xl p-6 border border-gray-100" style={{cursor: 'default'}}>
+                        <h2 className="text-xl font-bold mb-2 text-gray-900">{r.title}</h2>
+                        <div className="text-primary font-extrabold text-2xl">
                             {(r.score * 100).toFixed(0)}%
                         </div>
-                        <div className="progress-bar" style={{
-                            height: '6px',
-                            background: '#eee',
-                            borderRadius: '3px',
-                            marginTop: '12px',
-                            overflow: 'hidden'
-                        }}>
-                            <div style={{width: `${r.score * 100}%`, height: '100%', background: 'var(--primary)'}}/>
+                        <div className="h-1.5 bg-gray-100 rounded mt-3 overflow-hidden">
+                            <div style={{width: `${r.score * 100}%`, height: '100%', background: '#3B82F6'}}/>
                         </div>
                     </div>
                 ))}

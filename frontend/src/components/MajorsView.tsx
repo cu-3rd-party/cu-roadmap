@@ -1,5 +1,5 @@
 import React from "react";
 
 export function MajorsView() {
-    return <div className="view-container"><h1 className="view-title">Направления обучения</h1></div>;
+    return <div className="flex flex-col w-full"><h1 className="text-3xl font-extrabold text-gray-900">Направления обучения</h1></div>;
 }

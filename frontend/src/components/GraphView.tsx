@@ -50,26 +50,19 @@ export function GraphView() {
     }, []);
 
     return (
-        <div className="view-container full-height-view"
-             style={{position: 'relative', display: 'flex', flexDirection: 'column'}}>
-            <h1 className="view-title" style={{marginBottom: '20px'}}>Карта связей</h1>
-            <div ref={container} className="graph-viz-container"></div>
+        <div className="flex flex-col w-full h-full" style={{position: 'relative'}}>
+            <h1 className="text-3xl font-extrabold mb-5 text-gray-900">Карта связей</h1>
+            <div ref={container} className="flex-1 border border-gray-100 rounded-2xl bg-gray-50 min-h-[500px]"></div>
             {selectedNode && (
-                <div className="glass-panel" style={{
-                    position: 'absolute', top: '100px', right: '40px', width: '300px',
-                    padding: '24px', zIndex: 10, boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                <div className="absolute top-24 right-10 w-72 p-6 z-10 rounded-xl shadow-xl bg-white/95 backdrop-blur" style={{
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
                 }}>
-                    <button onClick={() => setSelectedNode(null)} style={{
-                        position: 'absolute',
-                        top: 12,
-                        right: 12,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}><X size={16}/></button>
-                    <span className="badge" style={{marginBottom: '8px'}}>{selectedNode.group}</span>
-                    <h3 style={{fontSize: '1.2rem', marginBottom: '8px'}}>{selectedNode.label}</h3>
-                    <p className="text-muted" style={{fontSize: '0.9rem'}}>{selectedNode.title}</p>
+                    <button onClick={() => setSelectedNode(null)} className="absolute top-3 right-3 bg-transparent border-none cursor-pointer p-0">
+                        <X size={16}/>
+                    </button>
+                    <span className="text-xs bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-bold mb-2 inline-block">{selectedNode.group}</span>
+                    <h3 className="text-xl font-bold mb-2">{selectedNode.label}</h3>
+                    <p className="text-sm text-gray-500">{selectedNode.title}</p>
                 </div>
             )}
         </div>

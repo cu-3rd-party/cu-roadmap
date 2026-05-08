@@ -43,66 +43,49 @@ export function ManualPlannerView({passedIds, roadmap, setRoadmap}: any) {
     };
 
     return (
-        <div className="view-container">
-            <h1 className="view-title">Песочница (Ручное планирование)</h1>
-            <p className="text-muted" style={{marginBottom: 24}}>Расставьте курсы по семестрам самостоятельно и
-                проверьте план на корректность.</p>
+        <div className="flex flex-col w-full">
+            <h1 className="text-3xl font-extrabold text-gray-900">Песочница (Ручное планирование)</h1>
+            <p className="text-gray-500 mb-6">Расставьте курсы по семестрам самостоятельно и проверьте план на корректность.</p>
 
-            <div style={{marginBottom: 24}}>
-                <button className="primary-btn" onClick={validate} disabled={loading}>
+            <div className="mb-6">
+                <button className="bg-primary text-white border-none px-4 py-2 rounded-lg font-bold text-sm cursor-pointer" onClick={validate} disabled={loading}>
                     {loading ? 'Проверяем...' : 'Проверить план'}
                 </button>
             </div>
 
-            <div className="planner-view">
-                <div className="timeline">
+            <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-8">
                     {roadmap.map((sem: any, idx: number) => {
                         const v = validation.find(res => res.semester === sem.semester);
                         return (
-                            <div key={idx} className="semester-block"
-                                 style={{border: v && !v.valid ? '2px solid #fee2e2' : 'none'}}>
-                                <div className="sem-header">
-                                    <h3>Семестр {sem.semester}</h3>
-                                    {v && <span
-                                        className={`load-badge ${v.total_load > 12 ? 'error' : ''}`}>Нагрузка: {v.total_load.toFixed(1)}</span>}
+                            <div key={idx} className="bg-gray-50 border border-gray-200 rounded-2xl p-6" style={{border: v && !v.valid ? '2px solid #fee2e2' : ''}}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-bold">Семестр {sem.semester}</h3>
+                                    {v && <span className={`text-xs px-2 py-1 rounded font-semibold ${v.total_load > 12 ? 'bg-red-100 text-red-700' : 'bg-gray-200 text-gray-700'}`}>Нагрузка: {v.total_load.toFixed(1)}</span>}
                                 </div>
 
                                 {v && v.messages.map((m: any, midx: number) => (
-                                    <div key={midx} className={`error-text ${m.level}`}
-                                         style={{fontSize: '0.8rem', marginBottom: 4}}>
+                                    <div key={midx} className={`text-sm mb-1 ${m.level === 'error' ? 'text-red-500' : 'text-yellow-600'}`}>
                                         {m.level === 'error' ? '❌' : '⚠️'} {m.message}
                                     </div>
                                 ))}
 
-                                <div className="sem-courses" style={{
-                                    minHeight: '60px',
-                                    background: '#f8fafc',
-                                    padding: '12px',
-                                    borderRadius: '12px'
-                                }}>
+                                <div className="grid gap-3 min-h-[60px] bg-gray-100 p-3 rounded-xl" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))'}}>
                                     {sem.course_ids.map((cid: string) => {
                                         const c = courses.find(item => item.id === cid);
                                         return (
-                                            <div key={cid} className="sem-course-card" style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}>
-                                                <strong>{c?.title || cid}</strong>
-                                                <button onClick={() => removeCourse(idx, cid)} style={{
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    color: '#ef4444',
-                                                    cursor: 'pointer'
-                                                }}><Trash size={14}/></button>
+                                            <div key={cid} className="bg-white border border-gray-200 rounded-xl p-3 flex justify-between items-center">
+                                                <strong className="font-semibold text-sm">{c?.title || cid}</strong>
+                                                <button onClick={() => removeCourse(idx, cid)} className="bg-transparent border-none text-red-500 cursor-pointer p-0">
+                                                    <Trash size={14}/>
+                                                </button>
                                             </div>
                                         );
                                     })}
                                 </div>
 
                                 <select
-                                    className="planner-select"
-                                    style={{marginTop: 8, fontSize: '0.8rem', padding: '4px 8px'}}
+                                    className="mt-2 w-full p-1 text-sm bg-white text-gray-900 border border-gray-200 rounded-lg"
                                     onChange={(e) => {
                                         addCourse(idx, e.target.value);
                                         e.target.value = '';

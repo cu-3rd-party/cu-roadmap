@@ -1,5 +1,25 @@
-/* Harmless index.css - All styles moved to App.css */
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3B82F6;
+  --color-bg-main: #FFFFFF;
+  --color-bg-sidebar: #F9FAFB;
+  --color-text-main: #1A1A1B;
+  --color-text-muted: #6B7280;
+  --color-border: #E5E7EB;
+  --color-cat-stem: #4B9B9B;
+  --color-cat-english: #FF7E3D;
+  --color-cat-safety: #FF5A1F;
+  --color-cat-ai: #00A3FF;
+  --color-cat-agile: #C0EB00;
+  --color-cat-math: #8B5CF6;
+  --font-family-sans: 'Inter', -apple-system, 'BlinkMacSystemFont', sans-serif;
+}
+
 body {
-  margin: 0;
-  padding: 0;
+  font-family: var(--font-family-sans);
+  background-color: var(--color-bg-main);
+  color: var(--color-text-main);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
 }
