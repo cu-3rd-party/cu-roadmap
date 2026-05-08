@@ -3,7 +3,6 @@ from uuid import uuid4
 from unittest.mock import patch
 
 
-
 @pytest.mark.asyncio
 async def test_get_courses_endpoint(store_with_courses):
     from httpx import AsyncClient, ASGITransport
