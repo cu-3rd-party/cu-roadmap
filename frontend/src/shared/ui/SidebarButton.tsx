@@ -19,12 +19,8 @@ export function SidebarButton({
       onClick={onClick}
       title={title}
       style={{
-        backgroundColor: active
-          ? "var(--color-bg-hover)"
-          : "transparent",
-        color: active
-          ? "var(--color-primary)"
-          : "var(--color-text-muted)",
+        backgroundColor: active ? "var(--color-bg-hover)" : "transparent",
+        color: active ? "var(--color-primary)" : "var(--color-text-muted)",
       }}
     >
       <Icon size={20} strokeWidth={1.8} />

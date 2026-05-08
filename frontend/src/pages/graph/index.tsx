@@ -16,7 +16,9 @@ export function GraphPage() {
     api.getGraphData().then((res) => {
       const { nodes: rawNodes, edges: rawEdges } = res.data;
       const groupOrder = [...new Set(rawNodes.map((n) => n.group))];
-      const semesters = [...new Set(rawNodes.map((n) => n.recommended_semester || 1))].sort((a, b) => a - b);
+      const semesters = [
+        ...new Set(rawNodes.map((n) => n.recommended_semester || 1)),
+      ].sort((a, b) => a - b);
 
       const dark = isDarkMode();
       const textColor = dark ? "#ffffff" : "#374151";
@@ -141,8 +143,14 @@ export function GraphPage() {
   }, []);
 
   return (
-    <div className="flex flex-col w-full h-full" style={{ position: "relative" }}>
-      <h1 className="text-3xl font-extrabold mb-5" style={{ color: "var(--color-text-main)" }}>
+    <div
+      className="flex flex-col w-full h-full"
+      style={{ position: "relative" }}
+    >
+      <h1
+        className="text-3xl font-extrabold mb-5"
+        style={{ color: "var(--color-text-main)" }}
+      >
         Карта связей
       </h1>
       <div
@@ -182,11 +190,17 @@ export function GraphPage() {
           >
             {selectedNode.group}
           </span>
-          <h3 className="text-xl font-bold mb-2" style={{ color: "var(--color-text-main)" }}>
+          <h3
+            className="text-xl font-bold mb-2"
+            style={{ color: "var(--color-text-main)" }}
+          >
             {selectedNode.label}
           </h3>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-bold" style={{ color: "var(--color-primary)" }}>
+            <span
+              className="text-sm font-bold"
+              style={{ color: "var(--color-primary)" }}
+            >
               Семестр {selectedNode.recommended_semester}
             </span>
           </div>

@@ -22,7 +22,10 @@ export function SemesterSection({
       }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold" style={{ color: "var(--color-text-main)" }}>
+        <h3
+          className="text-lg font-bold"
+          style={{ color: "var(--color-text-main)" }}
+        >
           Семестр {semester}
         </h3>
         {totalLoad !== undefined && (

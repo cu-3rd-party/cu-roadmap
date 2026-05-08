@@ -78,34 +78,55 @@ export function PlannerPage({
 
   return (
     <div className="flex flex-col w-full">
-      <div className="text-xs uppercase font-semibold tracking-wide mb-2" style={{ color: "var(--color-text-muted)" }}>
+      <div
+        className="text-xs uppercase font-semibold tracking-wide mb-2"
+        style={{ color: "var(--color-text-muted)" }}
+      >
         Траектория &gt; Планировщик
       </div>
-      <h1 className="text-3xl font-extrabold mb-8 tracking-tight" style={{ color: "var(--color-text-main)" }}>
+      <h1
+        className="text-3xl font-extrabold mb-8 tracking-tight"
+        style={{ color: "var(--color-text-main)" }}
+      >
         Построение траектории
       </h1>
       <p className="mb-5" style={{ color: "var(--color-text-muted)" }}>
         Укажите мейджор и семестр, с которого вы хотите начать планирование.
       </p>
 
-      <div className="flex gap-6 items-end pb-6" style={{ borderColor: "var(--color-border)", borderBottomWidth: 1 }}>
+      <div
+        className="flex gap-6 items-end pb-6"
+        style={{ borderColor: "var(--color-border)", borderBottomWidth: 1 }}
+      >
         <div className="flex flex-col gap-2 flex-1">
-          <label className="text-xs font-bold uppercase" style={{ color: "var(--color-text-muted)" }}>
+          <label
+            className="text-xs font-bold uppercase"
+            style={{ color: "var(--color-text-muted)" }}
+          >
             Целевое направление (Major)
           </label>
           <select
             value={selectedMajor}
             onChange={(e) => setSelectedMajor(e.target.value)}
             className="w-full p-2.5 border rounded-lg text-base"
-            style={{ backgroundColor: "var(--color-bg-main)", color: "var(--color-text-main)", borderColor: "var(--color-border)" }}
+            style={{
+              backgroundColor: "var(--color-bg-main)",
+              color: "var(--color-text-main)",
+              borderColor: "var(--color-border)",
+            }}
           >
             {majors.map((m) => (
-              <option key={m.id} value={m.id}>{m.title}</option>
+              <option key={m.id} value={m.id}>
+                {m.title}
+              </option>
             ))}
           </select>
         </div>
         <div className="flex flex-col gap-2 w-44">
-          <label className="text-xs font-bold uppercase" style={{ color: "var(--color-text-muted)" }}>
+          <label
+            className="text-xs font-bold uppercase"
+            style={{ color: "var(--color-text-muted)" }}
+          >
             Текущий семестр
           </label>
           <input
@@ -115,7 +136,11 @@ export function PlannerPage({
             min={1}
             max={8}
             className="w-full p-2.5 border rounded-lg text-base"
-            style={{ backgroundColor: "var(--color-bg-main)", color: "var(--color-text-main)", borderColor: "var(--color-border)" }}
+            style={{
+              backgroundColor: "var(--color-bg-main)",
+              color: "var(--color-text-main)",
+              borderColor: "var(--color-border)",
+            }}
           />
         </div>
         <button

@@ -34,9 +34,10 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
               <div
                 className="w-16 h-0.5"
                 style={{
-                  backgroundColor: currentStep > step
-                    ? "var(--color-primary)"
-                    : "var(--color-border)",
+                  backgroundColor:
+                    currentStep > step
+                      ? "var(--color-primary)"
+                      : "var(--color-border)",
                 }}
               />
             )}

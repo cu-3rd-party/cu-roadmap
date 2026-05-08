@@ -25,7 +25,9 @@ import type { RoadmapData } from "@/shared/config";
 export default function App() {
   const [activeTab, setActiveTab] = useState("wizard");
   const [passedIds, setPassedIds] = useState<string[]>([]);
-  const [manualRoadmap, setManualRoadmap] = useState<{ semester: number; course_ids: string[] }[]>([
+  const [manualRoadmap, setManualRoadmap] = useState<
+    { semester: number; course_ids: string[] }[]
+  >([
     { semester: 1, course_ids: [] },
     { semester: 2, course_ids: [] },
     { semester: 3, course_ids: [] },
@@ -50,7 +52,10 @@ export default function App() {
             <svg viewBox="0 0 40 40" width="24" height="24" fill="currentColor">
               <path d="M20 5L35 12.5V27.5L20 35L5 27.5V12.5L20 5Z" />
             </svg>
-            <div className="tracking-wide" style={{ color: "var(--color-text-main)" }}>
+            <div
+              className="tracking-wide"
+              style={{ color: "var(--color-text-main)" }}
+            >
               ROADMAP ENGINE
             </div>
           </div>
@@ -58,13 +63,19 @@ export default function App() {
             <button
               className="bg-transparent border-none text-sm cursor-pointer px-3 py-1.5 rounded-md font-medium"
               style={{
-                color: activeTab === "wizard" ? "var(--color-primary)" : "var(--color-text-muted)",
+                color:
+                  activeTab === "wizard"
+                    ? "var(--color-primary)"
+                    : "var(--color-text-muted)",
               }}
               onClick={() => setActiveTab("wizard")}
             >
               Движок
             </button>
-            <button className="bg-transparent border-none text-sm cursor-pointer px-3 py-1.5 rounded-md font-medium" style={{ color: "var(--color-text-muted)" }}>
+            <button
+              className="bg-transparent border-none text-sm cursor-pointer px-3 py-1.5 rounded-md font-medium"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               More Soon...
             </button>
           </nav>
@@ -79,15 +90,55 @@ export default function App() {
             borderColor: "var(--color-border)",
           }}
         >
-          <SidebarButton icon={Wand2} active={activeTab === "wizard"} onClick={() => setActiveTab("wizard")} title="Wizard" />
-          <SidebarButton icon={Book} active={activeTab === "courses"} onClick={() => setActiveTab("courses")} title="Courses" />
-          <SidebarButton icon={Calendar} active={activeTab === "planner"} onClick={() => setActiveTab("planner")} title="Planner" />
-          <SidebarButton icon={NetworkIcon} active={activeTab === "graph"} onClick={() => setActiveTab("graph")} title="Graph" />
-          <SidebarButton icon={Calculator} active={activeTab === "calculator"} onClick={() => setActiveTab("calculator")} title="Identifier" />
-          <SidebarButton icon={Target} active={activeTab === "goal"} onClick={() => setActiveTab("goal")} title="Goal" />
-          <SidebarButton icon={Search} active={activeTab === "manual"} onClick={() => setActiveTab("manual")} title="Manual" />
+          <SidebarButton
+            icon={Wand2}
+            active={activeTab === "wizard"}
+            onClick={() => setActiveTab("wizard")}
+            title="Wizard"
+          />
+          <SidebarButton
+            icon={Book}
+            active={activeTab === "courses"}
+            onClick={() => setActiveTab("courses")}
+            title="Courses"
+          />
+          <SidebarButton
+            icon={Calendar}
+            active={activeTab === "planner"}
+            onClick={() => setActiveTab("planner")}
+            title="Planner"
+          />
+          <SidebarButton
+            icon={NetworkIcon}
+            active={activeTab === "graph"}
+            onClick={() => setActiveTab("graph")}
+            title="Graph"
+          />
+          <SidebarButton
+            icon={Calculator}
+            active={activeTab === "calculator"}
+            onClick={() => setActiveTab("calculator")}
+            title="Identifier"
+          />
+          <SidebarButton
+            icon={Target}
+            active={activeTab === "goal"}
+            onClick={() => setActiveTab("goal")}
+            title="Goal"
+          />
+          <SidebarButton
+            icon={Search}
+            active={activeTab === "manual"}
+            onClick={() => setActiveTab("manual")}
+            title="Manual"
+          />
           <div className="flex-1" />
-          <SidebarButton icon={theme === "dark" ? Sun : Moon} active={false} onClick={toggleTheme} title={theme === "dark" ? "Light mode" : "Dark mode"} />
+          <SidebarButton
+            icon={theme === "dark" ? Sun : Moon}
+            active={false}
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          />
         </aside>
 
         <aside
@@ -97,15 +148,55 @@ export default function App() {
             borderColor: "var(--color-border)",
           }}
         >
-          <SidebarButton icon={Wand2} active={activeTab === "wizard"} onClick={() => setActiveTab("wizard")} title="Wizard" />
-          <SidebarButton icon={Book} active={activeTab === "courses"} onClick={() => setActiveTab("courses")} title="Courses" />
-          <SidebarButton icon={Calendar} active={activeTab === "planner"} onClick={() => setActiveTab("planner")} title="Planner" />
-          <SidebarButton icon={NetworkIcon} active={activeTab === "graph"} onClick={() => setActiveTab("graph")} title="Graph" />
-          <SidebarButton icon={Calculator} active={activeTab === "calculator"} onClick={() => setActiveTab("calculator")} title="Identifier" />
-          <SidebarButton icon={Target} active={activeTab === "goal"} onClick={() => setActiveTab("goal")} title="Goal" />
-          <SidebarButton icon={Search} active={activeTab === "manual"} onClick={() => setActiveTab("manual")} title="Manual" />
+          <SidebarButton
+            icon={Wand2}
+            active={activeTab === "wizard"}
+            onClick={() => setActiveTab("wizard")}
+            title="Wizard"
+          />
+          <SidebarButton
+            icon={Book}
+            active={activeTab === "courses"}
+            onClick={() => setActiveTab("courses")}
+            title="Courses"
+          />
+          <SidebarButton
+            icon={Calendar}
+            active={activeTab === "planner"}
+            onClick={() => setActiveTab("planner")}
+            title="Planner"
+          />
+          <SidebarButton
+            icon={NetworkIcon}
+            active={activeTab === "graph"}
+            onClick={() => setActiveTab("graph")}
+            title="Graph"
+          />
+          <SidebarButton
+            icon={Calculator}
+            active={activeTab === "calculator"}
+            onClick={() => setActiveTab("calculator")}
+            title="Identifier"
+          />
+          <SidebarButton
+            icon={Target}
+            active={activeTab === "goal"}
+            onClick={() => setActiveTab("goal")}
+            title="Goal"
+          />
+          <SidebarButton
+            icon={Search}
+            active={activeTab === "manual"}
+            onClick={() => setActiveTab("manual")}
+            title="Manual"
+          />
           <div className="flex-1" />
-          <SidebarButton icon={theme === "dark" ? Sun : Moon} active={false} onClick={toggleTheme} title={theme === "dark" ? "Light mode" : "Dark mode"} />
+          <SidebarButton
+            icon={theme === "dark" ? Sun : Moon}
+            active={false}
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          />
         </aside>
 
         <main
@@ -144,7 +235,11 @@ export default function App() {
           )}
           {activeTab === "goal" && <GoalPage passedIds={passedIds} />}
           {activeTab === "manual" && (
-            <ManualPage passedIds={passedIds} roadmap={manualRoadmap} setRoadmap={setManualRoadmap} />
+            <ManualPage
+              passedIds={passedIds}
+              roadmap={manualRoadmap}
+              setRoadmap={setManualRoadmap}
+            />
           )}
           {activeTab === "graph" && <GraphPage />}
           {activeTab === "majors" && <MajorsPage />}

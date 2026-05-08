@@ -6,7 +6,11 @@ interface MajorSelectProps {
   onChange: (id: string) => void;
 }
 
-export function MajorSelect({ majors, selectedMajor, onChange }: MajorSelectProps) {
+export function MajorSelect({
+  majors,
+  selectedMajor,
+  onChange,
+}: MajorSelectProps) {
   return (
     <div className="flex flex-col gap-2">
       <label

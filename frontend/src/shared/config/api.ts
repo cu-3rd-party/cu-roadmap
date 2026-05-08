@@ -23,8 +23,7 @@ export const api = {
     major_id: string;
     current_semester: number;
     max_load: number;
-  }) =>
-    client.post<RoadmapResponse>("/planner/generate/", params),
+  }) => client.post<RoadmapResponse>("/planner/generate/", params),
 
   identifyMajors: (passedIds: string[]) =>
     client.post<MajorResult[]>("/majors/identify/", passedIds),

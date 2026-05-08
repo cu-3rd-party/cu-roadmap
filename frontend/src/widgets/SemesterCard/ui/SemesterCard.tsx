@@ -23,7 +23,10 @@ export function SemesterCard({ semester, fixPrereq }: SemesterCardProps) {
       }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold" style={{ color: "var(--color-text-main)" }}>
+        <h3
+          className="text-lg font-bold"
+          style={{ color: "var(--color-text-main)" }}
+        >
           Семестр {semester.semester}
         </h3>
         <span
@@ -71,7 +74,10 @@ export function SemesterCard({ semester, fixPrereq }: SemesterCardProps) {
               borderColor: "var(--color-border)",
             }}
           >
-            <strong className="font-semibold" style={{ color: "var(--color-text-main)" }}>
+            <strong
+              className="font-semibold"
+              style={{ color: "var(--color-text-main)" }}
+            >
               {c.title}
             </strong>
             <div className="flex gap-2 mt-1">
@@ -86,7 +92,10 @@ export function SemesterCard({ semester, fixPrereq }: SemesterCardProps) {
                   {c.type}
                 </span>
               )}
-              <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              <span
+                className="text-xs"
+                style={{ color: "var(--color-text-muted)" }}
+              >
                 {c.workload} к.
               </span>
             </div>
