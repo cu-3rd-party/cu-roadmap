@@ -164,7 +164,7 @@ export function StepWizard({
           <button
             onClick={() => setCurrentStep(2)}
             disabled={passedIds.length === 0}
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-primary text-white border-none px-6 py-3 rounded-xl font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors shadow-lg"
+            className="fixed bottom-20 md:bottom-6 right-6 z-50 flex items-center gap-2 bg-primary text-white border-none px-6 py-3 rounded-xl font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors shadow-lg"
           >
             Далее <ArrowRight size={18} />
           </button>
