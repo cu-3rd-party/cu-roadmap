@@ -13,22 +13,40 @@ export function GraphView() {
       const nodes = res.data.nodes.map((n: any) => ({
         ...n,
         shape: "dot",
-        size: 20,
-        font: { face: "Inter", size: 12, color: "#111" },
+        size: 22,
+        font: {
+          face: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          size: 13,
+          color: "#1f2937",
+          strokeWidth: 0,
+        },
         color: {
           background: "#fff",
           border: "#3b82f6",
           highlight: { background: "#eff6ff", border: "#2563eb" },
         },
         borderWidth: 2,
+        shadow: {
+          enabled: true,
+          color: "rgba(0,0,0,0.1)",
+          size: 4,
+          x: 0,
+          y: 2,
+        },
       }));
 
       const edges = res.data.edges.map((e: any) => ({
         ...e,
         arrows: "to",
-        color: { color: "#e5e7eb", highlight: "#3b82f6" },
-        font: { align: "middle", color: "#94a3b8", size: 10, face: "Inter" },
+        color: { color: "#d1d5db", highlight: "#3b82f6" },
+        font: {
+          align: "middle",
+          color: "#6b7280",
+          size: 11,
+          face: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        },
         dashes: e.label !== "prerequisite",
+        smooth: { enabled: true, type: "continuous" },
       }));
 
       const network = new Network(
@@ -43,6 +61,7 @@ export function GraphView() {
               springLength: 100,
             },
           },
+          interaction: { hover: true, tooltipDelay: 100 },
         },
       );
 
