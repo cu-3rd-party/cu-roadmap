@@ -139,7 +139,7 @@ class RoadmapValidator:
                     "semester": sem_num,
                     "valid": res.is_valid,
                     "total_load": res.total_load,
-                    "messages": [m.dict() for m in res.messages],
+                    "messages": [m.model_dump() for m in res.messages],
                 }
             )
 
