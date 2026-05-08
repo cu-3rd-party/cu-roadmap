@@ -167,7 +167,7 @@ const useRandomConfidence = () => {
   return confidence;
 };
 
-export const AISparkleBox = memo(() => {
+export const AISparkleBoxMadness = memo(() => {
   const [isHovering, setIsHovering] = useState(false);
   const [loadPercentage, setLoadPercentage] = useState(0);
   const [userConfused, setUserConfused] = useState(0);
@@ -237,7 +237,7 @@ export const AISparkleBox = memo(() => {
   return (
     <div
       ref={containerRef}
-      className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-5 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] cursor-pointer overflow-hidden border border-blue-200/50"
+      className="relative bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-5 transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] cursor-pointer overflow-hidden border border-blue-200/50"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       onClick={incrementConfusion}
@@ -252,7 +252,7 @@ export const AISparkleBox = memo(() => {
       {isAnalyzing && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-blue-200/50 overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600 transition-all duration-50"
+            className="h-full bg-linear-to-r from-blue-400 via-indigo-500 to-purple-600 transition-all duration-50"
             style={{ width: `${loadPercentage}%` }}
           />
         </div>
@@ -260,7 +260,7 @@ export const AISparkleBox = memo(() => {
 
       <div className="flex items-start gap-3 relative z-10">
         <div
-          className="mt-0.5 flex-shrink-0 transition-all duration-150"
+          className="mt-0.5 shrink-0 transition-all duration-150"
           style={{
             opacity: sparkleIntensity,
             filter: `blur(${isHovering ? 0 : 0.5}px)`,
@@ -279,7 +279,7 @@ export const AISparkleBox = memo(() => {
               if (!isHovering) resume();
             }}
           >
-            <span className="bg-gradient-to-r from-blue-800 via-indigo-700 to-purple-800 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-blue-800 via-indigo-700 to-purple-800 bg-clip-text text-transparent">
               {isAnalyzing ? (
                 <span className="inline-flex items-center gap-1">
                   {aiName}
@@ -329,7 +329,7 @@ export const AISparkleBox = memo(() => {
           </div>
         </div>
 
-        <div className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity">
+        <div className="shrink-0 opacity-50 hover:opacity-100 transition-opacity">
           <div className="text-[8px] font-mono bg-black/5 rounded px-1.5 py-1 rotate-6">
             {randomBadge}
           </div>
@@ -342,5 +342,32 @@ export const AISparkleBox = memo(() => {
     </div>
   );
 });
+React.memo(AISparkleBoxMadness);
 
-export default React.memo(AISparkleBox);
+export const AISparkleBoxSimple = memo(() =>{
+  return (
+      <div className="bg-blue-50 rounded-xl p-4 flex items-start gap-3">
+        <Sparkles size={20} className="text-primary mt-0.5 shrink-0" />
+        <div>
+          <div className="font-bold text-sm text-gray-900">
+            AI сгенерирует оптимальный план
+          </div>
+          <div className="text-xs text-gray-600 mt-1">
+            Система учтёт все пререквизиты и равномерно распределит нагрузку
+          </div>
+        </div>
+      </div>
+  );
+});
+React.memo(AISparkleBoxSimple);
+
+export const AISparkleBox = memo(() =>{
+  const showMadness = Math.random() < 0.05;
+
+  if (showMadness) {
+    return <AISparkleBoxMadness />;
+  } else {
+    return <AISparkleBoxSimple />;
+  }
+});
+React.memo(AISparkleBox);
