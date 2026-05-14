@@ -16,6 +16,7 @@ RUN uv sync --no-dev --no-install-project
 COPY src/ src/
 COPY static/ static/
 COPY *.csv ./
+COPY credentials/ credentials/
 
 EXPOSE 8080
 

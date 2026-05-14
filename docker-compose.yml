@@ -27,8 +27,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      SEED_ON_STARTUP: "false"
+      SEED_ON_STARTUP: "true"
       USE_MEMORY_STORE: "false"
+      GOOGLE_SHEETS_SPREADSHEET_ID: "1PW6xjxELWvPiaWcxqq8-aidTfEndUD2z9mO1vbEKHJ4"
+      GOOGLE_SERVICE_ACCOUNT_FILE: "credentials/google_service_account.json"
     expose:
       - "8080"
     volumes:

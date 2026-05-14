@@ -476,10 +476,32 @@ class PostgreStore(StoreBase):
             await self.create_student(student)
 
     async def seed_all_data(self) -> None:
+        """Seed database from Google Sheets. Falls back to CSV+mock if unavailable."""
+        if await self._try_seed_from_google_sheets():
+            return
+        # Fallback: CSV files + hardcoded mock major_requirements
+        print("Google Sheets unavailable — falling back to CSV seed.")
         script_dir = os.path.dirname(os.path.abspath(__file__))
         courses_csv = os.path.join(script_dir, "../../courses.csv")
         deps_csv = os.path.join(script_dir, "../../course_dependencies.csv")
         majors_csv = os.path.join(script_dir, "../../majors.csv")
-
         await self.load_courses_from_csv(courses_csv, deps_csv, majors_csv)
         await self.load_mock_data()
+
+    async def _try_seed_from_google_sheets(self) -> bool:
+        """Attempt to sync from Google Sheets. Returns True on success."""
+        try:
+            from src.services.sync.course_sync import CourseSyncService
+            async with self._async_session() as session:
+                sync = CourseSyncService(session)
+                stats = await sync.sync_all()
+            print(
+                f"Google Sheets sync complete — "
+                f"courses: {stats['courses']}, "
+                f"majors: {stats['majors']}, "
+                f"major_requirements: {stats['major_requirements']}"
+            )
+            return True
+        except Exception as e:
+            print(f"Google Sheets sync failed: {e}")
+            return False

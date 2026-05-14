@@ -28,7 +28,7 @@ class GreedyPlanner:
         # 1. Fetch Major Requirements
         requirements = await store.get_major_requirements(major_id)
         if not requirements:
-            return {"error": "Major not found or has no requirements"}
+            return []
 
         # 2. Fetch all courses
         all_courses = await store.get_all_courses()
@@ -40,7 +40,7 @@ class GreedyPlanner:
                 target_courses[req.course_id] = all_courses[req.course_id]
 
         if not target_courses:
-            return {"error": "No courses found for major requirements"}
+            return []
 
         # 3. Fetch all dependencies
         all_deps = await store.get_course_dependencies()
