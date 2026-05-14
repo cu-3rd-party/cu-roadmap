@@ -3,7 +3,13 @@ export interface Course {
   title: string;
   category: string;
   type?: string;
+  course_type?: string;
   workload: number;
+  description?: string;
+  available_semesters?: number[];
+  recommended_semester?: number;
+  prerequisites?: string[];
+  postrequisites?: string[];
 }
 
 export interface Major {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api, type Course, type ValidationResult } from "@/shared/config";
-import { Trash } from "lucide-react";
+import { Trash, Info } from "lucide-react";
+import { CourseInfoModal } from "@/shared/ui";
 
 interface ManualPageProps {
   passedIds: string[];
@@ -59,6 +60,62 @@ export function ManualPage({
       (id: string) => id !== courseId,
     );
     setRoadmap(newRoadmap);
+  };
+
+  const CourseItem = ({
+    course,
+    allCourses,
+    onRemove,
+  }: {
+    course: Course;
+    allCourses: Course[];
+    onRemove: () => void;
+  }) => {
+    const [showInfo, setShowInfo] = useState(false);
+    return (
+      <>
+        <div
+          className="rounded-xl p-3 flex justify-between items-center group relative cursor-pointer hover:border-blue-400/50 transition-all"
+          style={{
+            backgroundColor: "var(--color-bg-main)",
+            borderWidth: 1,
+            borderStyle: "solid",
+            borderColor: "var(--color-border)",
+          }}
+          onClick={() => setShowInfo(true)}
+        >
+          <div className="flex items-center gap-2 flex-1">
+            <strong
+              className="font-semibold text-sm"
+              style={{ color: "var(--color-text-main)" }}
+            >
+              {course.title}
+            </strong>
+            <Info
+              size={12}
+              className="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            />
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="border-none cursor-pointer p-0 opacity-40 hover:opacity-100 transition-opacity"
+            style={{ color: "#ef4444" }}
+          >
+            <Trash size={14} />
+          </button>
+        </div>
+        {showInfo && (
+          <CourseInfoModal
+            course={course}
+            allCourses={allCourses}
+            onClose={() => setShowInfo(false)}
+          />
+        )}
+      </>
+    );
   };
 
   return (
@@ -144,31 +201,14 @@ export function ManualPage({
               >
                 {sem.course_ids.map((cid: string) => {
                   const c = courses.find((item) => item.id === cid);
+                  if (!c) return null;
                   return (
-                    <div
+                    <CourseItem
                       key={cid}
-                      className="rounded-xl p-3 flex justify-between items-center"
-                      style={{
-                        backgroundColor: "var(--color-bg-main)",
-                        borderWidth: 1,
-                        borderStyle: "solid",
-                        borderColor: "var(--color-border)",
-                      }}
-                    >
-                      <strong
-                        className="font-semibold text-sm"
-                        style={{ color: "var(--color-text-main)" }}
-                      >
-                        {c?.title || cid}
-                      </strong>
-                      <button
-                        onClick={() => removeCourse(idx, cid)}
-                        className="border-none cursor-pointer p-0"
-                        style={{ color: "#ef4444" }}
-                      >
-                        <Trash size={14} />
-                      </button>
-                    </div>
+                      course={c}
+                      allCourses={courses}
+                      onRemove={() => removeCourse(idx, cid)}
+                    />
                   );
                 })}
               </div>

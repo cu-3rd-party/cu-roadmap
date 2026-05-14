@@ -44,6 +44,10 @@ dist-ssr/
 *.swo
 .DS_Store
 
+# Credentials
+credentials/
+*.json
+
 # DB
 *.sqlite
 *.db

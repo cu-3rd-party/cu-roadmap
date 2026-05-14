@@ -134,15 +134,27 @@ export function WizardPage({
           )}
 
           {currentStep === 3 && roadmapData?.roadmap && (
-            <RoadmapResult
-              roadmap={roadmapData.roadmap}
-              onReset={() => {
-                setRoadmapData(null);
-                setCurrentStep(1);
-              }}
-              onEditSettings={() => setCurrentStep(2)}
-              fixPrereq={fixPrereq}
-            />
+            <div className="flex flex-col">
+              <div className="flex justify-center mb-2">
+                <div 
+                  className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  style={{ backgroundColor: 'var(--color-bg-hover)', color: 'var(--color-primary)', border: '1px solid var(--color-primary)' }}
+                >
+                  Направление: {majors.find(m => m.id === selectedMajor)?.title || selectedMajor}
+                </div>
+              </div>
+              <RoadmapResult
+                roadmap={roadmapData.roadmap}
+                allCourses={courses}
+                passedIds={passedIds}
+                onReset={() => {
+                  setRoadmapData(null);
+                  setCurrentStep(1);
+                }}
+                onEditSettings={() => setCurrentStep(2)}
+                fixPrereq={fixPrereq}
+              />
+            </div>
           )}
         </div>
 

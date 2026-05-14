@@ -1,17 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Search } from "lucide-react";
-import { api } from "@/shared/config";
-import { getCategoryColor } from "@/shared/lib";
+import { api, type Course } from "@/shared/config";
+import { CourseCard } from "../wizard/ui/CourseCard";
 
 interface CoursesPageProps {
   passedIds: string[];
   setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
 }
-
 export function CoursesPage({ passedIds, setPassedIds }: CoursesPageProps) {
-  const [courses, setCourses] = useState<
-    { id: string; title: string; category: string; workload: number }[]
-  >([]);
+  const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
     api.getCourses().then((res) => setCourses(res.data));
@@ -43,78 +39,14 @@ export function CoursesPage({ passedIds, setPassedIds }: CoursesPageProps) {
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
       >
         {courses.map((c) => (
-          <div
+          <CourseCard
             key={c.id}
-            className={`rounded-2xl overflow-hidden cursor-pointer border transition-all hover:-translate-y-1 hover:shadow-lg select-none relative ${
-              passedIds.includes(c.id) ? "border-2" : ""
-            }`}
-            style={{
-              backgroundColor: "var(--color-bg-main)",
-              borderColor: passedIds.includes(c.id)
-                ? "var(--color-primary)"
-                : "var(--color-border)",
-            }}
-            onClick={() => toggleCourse(c.id)}
-          >
-            <div
-              className="h-36 relative"
-              style={{ backgroundColor: getCategoryColor(c.category) }}
-            >
-              <svg
-                width="100%"
-                height="100%"
-                viewBox="0 0 200 120"
-                opacity="0.4"
-              >
-                <path
-                  d="M20 60 Q100 20 180 60"
-                  stroke="white"
-                  fill="none"
-                  strokeWidth="1"
-                />
-                <path
-                  d="M20 70 Q100 30 180 70"
-                  stroke="white"
-                  fill="none"
-                  strokeWidth="1"
-                />
-                <path
-                  d="M20 80 Q100 40 180 80"
-                  stroke="white"
-                  fill="none"
-                  strokeWidth="1"
-                />
-              </svg>
-              <div
-                className="absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
-                style={{ backgroundColor: "var(--color-bg-main)" }}
-              >
-                <Search size={14} color={getCategoryColor(c.category)} />
-              </div>
-            </div>
-            <div className="p-4">
-              <div
-                className="font-bold text-base mb-1 leading-snug"
-                style={{ color: "var(--color-text-main)" }}
-              >
-                {c.title}
-              </div>
-              <div
-                className="text-xs font-medium"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                {c.category} • {c.workload} к.
-              </div>
-            </div>
-            {passedIds.includes(c.id) && (
-              <div
-                className="absolute top-3 left-3 px-2 py-1 rounded text-xs font-extrabold"
-                style={{ backgroundColor: "rgba(0,0,0,0.7)", color: "white" }}
-              >
-                ПРОЙДЕНО
-              </div>
-            )}
-          </div>
+            course={c}
+            allCourses={courses}
+            passedIds={passedIds}
+            isSelected={passedIds.includes(c.id)}
+            onToggle={() => toggleCourse(c.id)}
+          />
         ))}
       </div>
     </div>

@@ -70,6 +70,8 @@ class PostgreStore(StoreBase):
             recommended_semester=course.recommended_semester,
             workload=course.workload,
             csat_metric=course.csat_metric,
+            prerequisites=[d.required_course_id for d in course.dependencies if d.dependency_type.value == "prerequisite"],
+            postrequisites=[]
         )
 
     @staticmethod

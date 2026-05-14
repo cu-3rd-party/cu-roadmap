@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { api, type RoadmapData } from "@/shared/config";
+import { api, type RoadmapData, type Course } from "@/shared/config";
 import { SemesterCard } from "@/widgets/SemesterCard";
 
 interface PlannerPageProps {
@@ -10,11 +10,6 @@ interface PlannerPageProps {
   data: RoadmapData | null;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
-}
-
-interface Course {
-  id: string;
-  title: string;
 }
 
 interface Major {
@@ -155,8 +150,15 @@ export function PlannerPage({
 
       {data?.roadmap && (
         <div className="flex flex-col gap-8 mt-10">
+          <div className="flex items-center gap-3">
+             <div className="h-px flex-1 bg-border" style={{ backgroundColor: 'var(--color-border)' }}></div>
+             <div className="px-4 py-1.5 rounded-full text-sm font-bold border" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
+                План для: {majors.find(m => m.id === selectedMajor)?.title || selectedMajor}
+             </div>
+             <div className="h-px flex-1 bg-border" style={{ backgroundColor: 'var(--color-border)' }}></div>
+          </div>
           {data.roadmap.map((sem, idx: number) => (
-            <SemesterCard key={idx} semester={sem} fixPrereq={fixPrereq} />
+            <SemesterCard key={idx} semester={sem} fixPrereq={fixPrereq} allCourses={courses} passedIds={passedIds} />
           ))}
         </div>
       )}

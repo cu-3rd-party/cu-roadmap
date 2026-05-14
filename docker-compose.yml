@@ -27,10 +27,13 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      SEED_ON_STARTUP: "true"
-      USE_MEMORY_STORE: "true"
+      SEED_ON_STARTUP: "false"
+      USE_MEMORY_STORE: "false"
     expose:
       - "8080"
+    volumes:
+      - ./backend:/app
+      - ./.env:/app/.env
     restart: unless-stopped
 
   frontend:

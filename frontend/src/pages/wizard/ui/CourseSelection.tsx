@@ -80,6 +80,8 @@ export function CourseSelection({
           <CourseCard
             key={c.id}
             course={c}
+            allCourses={courses}
+            passedIds={passedIds}
             isSelected={passedIds.includes(c.id)}
             onToggle={() => onToggleCourse(c.id)}
           />

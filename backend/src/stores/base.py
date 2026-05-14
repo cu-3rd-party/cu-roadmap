@@ -21,6 +21,7 @@ class CourseTypeEnum(str, Enum):
     mandatory = "mandatory"
     elective = "elective"
     optional = "optional"
+    other = "other"
 
 
 class CourseCategoryEnum(str, Enum):
@@ -44,6 +45,8 @@ class CourseData:
     recommended_semester: Optional[int]
     workload: float
     csat_metric: Optional[float]
+    prerequisites: List[UUID] = None
+    postrequisites: List[UUID] = None
 
 
 @dataclass

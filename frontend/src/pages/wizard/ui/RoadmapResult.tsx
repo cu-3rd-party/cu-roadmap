@@ -1,12 +1,14 @@
 import { Check } from "lucide-react";
 import { SemesterCard } from "@/widgets/SemesterCard";
-import type { SemesterData } from "@/shared/config";
+import type { SemesterData, Course } from "@/shared/config";
 
 interface RoadmapResultProps {
   roadmap: SemesterData[];
   onReset: () => void;
   onEditSettings: () => void;
   fixPrereq?: (courseTitle: string) => void;
+  allCourses: Course[];
+  passedIds: string[];
 }
 
 export function RoadmapResult({
@@ -14,6 +16,8 @@ export function RoadmapResult({
   onReset,
   onEditSettings,
   fixPrereq,
+  allCourses,
+  passedIds,
 }: RoadmapResultProps) {
   return (
     <div className="flex flex-col">
@@ -40,7 +44,7 @@ export function RoadmapResult({
 
       <div className="flex flex-col gap-6">
         {roadmap.map((sem, idx) => (
-          <SemesterCard key={idx} semester={sem} fixPrereq={fixPrereq} />
+          <SemesterCard key={idx} semester={sem} fixPrereq={fixPrereq} allCourses={allCourses} passedIds={passedIds} />
         ))}
       </div>
 

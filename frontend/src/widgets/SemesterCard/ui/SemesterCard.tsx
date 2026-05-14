@@ -1,5 +1,7 @@
 import React from "react";
 import type { Course } from "@/shared/config";
+import { Info } from "lucide-react";
+import { CourseInfoModal } from "@/shared/ui";
 
 interface SemesterCardProps {
   semester: {
@@ -9,9 +11,16 @@ interface SemesterCardProps {
     courses: Course[];
   };
   fixPrereq?: (courseTitle: string) => void;
+  allCourses: Course[];
+  passedIds?: string[];
 }
 
-export function SemesterCard({ semester, fixPrereq }: SemesterCardProps) {
+export function SemesterCard({
+  semester,
+  fixPrereq,
+  allCourses,
+  passedIds = [],
+}: SemesterCardProps) {
   return (
     <div
       className="rounded-2xl p-6 min-h-[200px]"
@@ -64,44 +73,87 @@ export function SemesterCard({ semester, fixPrereq }: SemesterCardProps) {
         }}
       >
         {semester.courses.map((c) => (
-          <div
+          <CourseItem
             key={c.id}
-            className="rounded-xl p-3 shadow-sm"
-            style={{
-              backgroundColor: "var(--color-bg-main)",
-              borderWidth: 1,
-              borderStyle: "solid",
-              borderColor: "var(--color-border)",
-            }}
-          >
-            <strong
-              className="font-semibold"
-              style={{ color: "var(--color-text-main)" }}
-            >
-              {c.title}
-            </strong>
-            <div className="flex gap-2 mt-1">
-              {c.type && (
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded font-bold"
-                  style={{
-                    backgroundColor: "var(--color-bg-hover)",
-                    color: "var(--color-text-muted)",
-                  }}
-                >
-                  {c.type}
-                </span>
-              )}
-              <span
-                className="text-xs"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                {c.workload} к.
-              </span>
-            </div>
-          </div>
+            course={c}
+            allCourses={allCourses}
+            passedIds={passedIds}
+            currentSemester={semester.semester}
+          />
         ))}
       </div>
     </div>
+  );
+}
+
+function CourseItem({
+  course,
+  allCourses,
+  passedIds,
+  currentSemester,
+}: {
+  course: Course;
+  allCourses: Course[];
+  passedIds: string[];
+  currentSemester: number;
+}) {
+  const [showInfo, setShowInfo] = React.useState(false);
+
+  return (
+    <>
+      <div
+        className="rounded-xl p-3 shadow-sm cursor-pointer hover:border-blue-400/50 transition-colors group relative"
+        style={{
+          backgroundColor: "var(--color-bg-main)",
+          borderWidth: 1,
+          borderStyle: "solid",
+          borderColor: "var(--color-border)",
+        }}
+        onClick={() => setShowInfo(true)}
+      >
+        <div className="flex justify-between items-start">
+          <strong
+            className="font-semibold"
+            style={{ color: "var(--color-text-main)" }}
+          >
+            {course.title}
+          </strong>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="w-5 h-5 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <Info size={12} className="text-blue-500" />
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 mt-1">
+          {course.type && (
+            <span
+              className="text-xs px-1.5 py-0.5 rounded font-bold"
+              style={{
+                backgroundColor: "var(--color-bg-hover)",
+                color: "var(--color-text-muted)",
+              }}
+            >
+              {course.type}
+            </span>
+          )}
+          <span
+            className="text-xs"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            {course.workload} к.
+          </span>
+        </div>
+      </div>
+
+      {showInfo && (
+        <CourseInfoModal
+          course={course}
+          allCourses={allCourses}
+          passedIds={passedIds}
+          currentSemester={currentSemester}
+          onClose={() => setShowInfo(false)}
+        />
+      )}
+    </>
   );
 }
