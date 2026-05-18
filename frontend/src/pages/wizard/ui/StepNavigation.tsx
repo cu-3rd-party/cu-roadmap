@@ -1,10 +1,12 @@
-import React from "react";
+import type { ReactNode } from "react";
+
+import { Button } from "@/shared/ui/kit/button";
 
 interface StepNavigationProps {
   onBack?: () => void;
   onNext: () => void;
   nextLabel?: string;
-  nextIcon?: React.ReactNode;
+  nextIcon?: ReactNode;
   loading?: boolean;
   disabled?: boolean;
 }
@@ -20,26 +22,19 @@ export function StepNavigation({
   return (
     <div className="flex justify-center gap-4 mt-6">
       {onBack && (
-        <button
-          onClick={onBack}
-          className="border-none px-5 py-3 rounded-xl font-bold text-sm cursor-pointer transition-colors"
-          style={{
-            backgroundColor: "var(--color-bg-hover)",
-            color: "var(--color-text-main)",
-          }}
-        >
+        <Button variant="secondary" size="lg" onClick={onBack}>
           Назад
-        </button>
+        </Button>
       )}
-      <button
+      <Button
+        size="lg"
         onClick={onNext}
         disabled={loading || disabled}
-        className="flex items-center gap-2 text-white border-none px-6 py-3 rounded-xl font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
-        style={{ backgroundColor: "var(--color-primary)" }}
+        className="shadow-lg"
       >
         {nextIcon}
         {loading ? "Загрузка..." : nextLabel}
-      </button>
+      </Button>
     </div>
   );
 }
