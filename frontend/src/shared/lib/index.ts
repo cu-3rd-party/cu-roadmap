@@ -1,1 +1,1 @@
-export { getCategoryColor } from "./category-colors";
+export { cn } from "./cn";
