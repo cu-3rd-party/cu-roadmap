@@ -1,83 +1,49 @@
-import React, { useEffect, useState } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
-import { api } from "@/shared/config";
-import type { Course, Major } from "@/shared/config";
-import { AISparkleBox } from "./ui/AISparkleBox";
+import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+
+import { useCoursesQuery } from "@/entities/course";
+import { useMajorsQuery } from "@/entities/major";
+import { RoadmapResult } from "@/entities/roadmap";
+import { PassedCoursesGrid } from "@/features/passed-courses";
 import {
-  CourseSelection,
-  MajorSelect,
-  SemesterSelector,
-  StepIndicator,
-  StepNavigation,
-  RoadmapResult,
-} from "./ui";
-import type { RoadmapResponse } from "@/shared/config";
+  GenerateRoadmapForm,
+  useFixPrereq,
+  useGenerateRoadmapMutation,
+} from "@/features/roadmap-generation";
+import { useRoadmapStore } from "@/shared/store";
+import { Badge } from "@/shared/ui/kit/badge";
+import { Button } from "@/shared/ui/kit/button";
 
-interface WizardPageProps {
-  passedIds: string[];
-  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
-  roadmapData: RoadmapResponse | null;
-  setRoadmapData: React.Dispatch<React.SetStateAction<RoadmapResponse | null>>;
-  loading: boolean;
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-}
+import { StepIndicator } from "./ui";
 
-export function WizardPage({
-  passedIds,
-  setPassedIds,
-  roadmapData,
-  setRoadmapData,
-  loading,
-  setLoading,
-}: WizardPageProps) {
+const WizardPage = () => {
+  const { passedIds, roadmapData, setRoadmapData } = useRoadmapStore();
+  const { data: courses = [] } = useCoursesQuery();
+  const { data: majors = [] } = useMajorsQuery();
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState("");
   const [startSem, setStartSem] = useState(1);
 
-  useEffect(() => {
-    api.getCourses().then((res) => setCourses(res.data));
-    api.getMajors().then((res) => {
-      setMajors(res.data);
-      if (res.data.length > 0) setSelectedMajor(res.data[0].id);
-    });
-  }, []);
+  const { mutate, isPending } = useGenerateRoadmapMutation();
 
-  const toggleCourse = (id: string) => {
-    setPassedIds((prev: string[]) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-  };
-
-  const generatePlan = () => {
+  const generate = () => {
     if (!selectedMajor) return;
-    setLoading(true);
-    api
-      .generateRoadmap({
+    mutate(
+      {
         passed_course_ids: passedIds,
         major_id: selectedMajor,
         current_semester: startSem,
         max_load: 12.0,
-      })
-      .then((res) => {
-        setRoadmapData(res.data);
-        setLoading(false);
-        setCurrentStep(3);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+      },
+      { onSuccess: () => setCurrentStep(3) },
+    );
   };
 
-  const fixPrereq = (courseTitle: string) => {
-    const target = courses.find((c) => courseTitle.includes(c.title));
-    if (target && !passedIds.includes(target.id)) {
-      setPassedIds((prev: string[]) => [...prev, target.id]);
-      setTimeout(generatePlan, 100);
-    }
-  };
+  const fixPrereq = useFixPrereq(courses, generate);
+
+  const majorTitle =
+    majors.find((m) => m.id === selectedMajor)?.title || selectedMajor;
 
   return (
     <div className="flex flex-col w-full h-full">
@@ -85,63 +51,30 @@ export function WizardPage({
 
       <div className="flex-1 relative">
         <div className="overflow-y-auto h-full pb-20">
-          {currentStep === 1 && (
-            <CourseSelection
-              courses={courses}
-              passedIds={passedIds}
-              onToggleCourse={toggleCourse}
-            />
-          )}
+          {currentStep === 1 && <PassedCoursesGrid courses={courses} />}
 
           {currentStep === 2 && (
-            <div className="flex flex-col">
-              <div className="text-center mb-6">
-                <h2
-                  className="text-2xl font-bold mb-2"
-                  style={{ color: "var(--color-text-main)" }}
-                >
-                  Настройка траектории
-                </h2>
-                <p style={{ color: "var(--color-text-muted)" }}>
-                  Выберите направление и укажите, когда вы поступили
-                </p>
-              </div>
-
-              <div
-                className="max-w-xl mx-auto rounded-2xl p-6"
-                style={{ backgroundColor: "var(--color-bg-hover)" }}
-              >
-                <div className="flex flex-col gap-5">
-                  <MajorSelect
-                    majors={majors}
-                    selectedMajor={selectedMajor}
-                    onChange={setSelectedMajor}
-                  />
-                  <SemesterSelector value={startSem} onChange={setStartSem} />
-                  <AISparkleBox />
-                </div>
-              </div>
-
-              <StepNavigation
-                onBack={() => setCurrentStep(1)}
-                onNext={generatePlan}
-                nextLabel="Построить траектории"
-                nextIcon={<Sparkles size={18} />}
-                loading={loading}
-                disabled={!selectedMajor}
-              />
-            </div>
+            <GenerateRoadmapForm
+              majors={majors}
+              selectedMajor={selectedMajor || (majors[0]?.id ?? "")}
+              onSelectedMajorChange={setSelectedMajor}
+              startSem={startSem}
+              onStartSemChange={setStartSem}
+              isPending={isPending}
+              onBack={() => setCurrentStep(1)}
+              onGenerate={generate}
+            />
           )}
 
           {currentStep === 3 && roadmapData?.roadmap && (
             <div className="flex flex-col">
               <div className="flex justify-center mb-2">
-                <div 
-                  className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                  style={{ backgroundColor: 'var(--color-bg-hover)', color: 'var(--color-primary)', border: '1px solid var(--color-primary)' }}
+                <Badge
+                  variant="outline"
+                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider border-primary text-primary"
                 >
-                  Направление: {majors.find(m => m.id === selectedMajor)?.title || selectedMajor}
-                </div>
+                  Направление: {majorTitle}
+                </Badge>
               </div>
               <RoadmapResult
                 roadmap={roadmapData.roadmap}
@@ -159,16 +92,18 @@ export function WizardPage({
         </div>
 
         {currentStep === 1 && (
-          <button
+          <Button
+            size="lg"
             onClick={() => setCurrentStep(2)}
             disabled={passedIds.length === 0}
-            className="fixed bottom-20 md:bottom-6 right-6 z-50 flex items-center gap-2 text-white border-none px-6 py-3 rounded-xl font-bold text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
-            style={{ backgroundColor: "var(--color-primary)" }}
+            className="fixed bottom-20 md:bottom-6 right-6 z-50 shadow-lg"
           >
             Далее <ArrowRight size={18} />
-          </button>
+          </Button>
         )}
       </div>
     </div>
   );
-}
+};
+
+export default WizardPage;

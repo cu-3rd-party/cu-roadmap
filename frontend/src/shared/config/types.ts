@@ -12,11 +12,17 @@ export interface Course {
   postrequisites?: string[];
 }
 
+export interface MajorRequirement {
+  course_id: string;
+  type: string;
+}
+
 export interface Major {
   id: string;
   title: string;
   name?: string;
   school?: string;
+  requirements?: MajorRequirement[];
 }
 
 export interface CourseBasic {
