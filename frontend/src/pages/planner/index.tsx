@@ -1,115 +1,94 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 
 import { useCoursesQuery } from "@/entities/course";
-import type { MajorMatch } from "@/entities/major";
-import { useIdentifyMajorsQuery, useMajorsQuery } from "@/entities/major";
-import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
-import { useSettingsStore } from "@/features/settings";
-import { toPercent } from "@/shared/lib";
-import type { MajorProgress } from "@/widgets/PlannerSummary";
-import { PlannerSummary } from "@/widgets/PlannerSummary";
-import { SemesterSection } from "@/widgets/SemesterSection";
-
-import { buildPlannerStats, buildSemesters } from "./model";
+import { useMajorsQuery } from "@/entities/major";
+import { SemesterCard } from "@/entities/roadmap";
+import {
+  MajorSelect,
+  SemesterSelector,
+  useFixPrereq,
+  useGenerateRoadmapMutation,
+} from "@/features/roadmap-generation";
+import { useRoadmapStore } from "@/shared/store";
+import { Badge } from "@/shared/ui/kit/badge";
+import { Button } from "@/shared/ui/kit/button";
+import { Separator } from "@/shared/ui/kit/separator";
 
 const PlannerPage = () => {
-  const { admissionYear } = useSettingsStore();
-  const { selections, validation } = usePlannerStore();
-  const { data: courses, isLoading, isError } = useCoursesQuery(admissionYear);
+  const { passedIds, roadmapData } = useRoadmapStore();
+  const { data: courses = [] } = useCoursesQuery();
+  const { data: majors = [] } = useMajorsQuery();
 
-  // Validate once on first load so a returning user immediately sees the conflicts
-  const validate = useValidatePlan();
-  const validatedOnMount = useRef(false);
-  useEffect(() => {
-    if (validatedOnMount.current || admissionYear == null) return;
-    validatedOnMount.current = true;
-    validate(admissionYear);
-  }, [admissionYear, validate]);
+  const [selectedMajor, setSelectedMajor] = useState("");
+  const [startSem, setStartSem] = useState(1);
+  const { mutate, isPending } = useGenerateRoadmapMutation();
 
-  // Identify majors from every course placed in the planner.
-  const selectedCourseIds = useMemo(
-    () => Object.values(selections).flatMap((list) => list.map((c) => c.id)),
-    [selections],
-  );
-  const identifyQuery = useIdentifyMajorsQuery(
-    selectedCourseIds,
-    admissionYear,
-  );
-  const majorsQuery = useMajorsQuery(admissionYear);
+  const effectiveMajor = selectedMajor || majors[0]?.id || "";
 
-  // Remember the last result produced while courses were selected. When the
-  // planner is emptied we keep showing the same major cards (titles) with 0%
-  // instead of clearing them.
-  const noCourses = selectedCourseIds.length === 0;
-  const [lastMatches, setLastMatches] = useState<MajorMatch[]>([]);
-  useEffect(() => {
-    if (!noCourses && identifyQuery.data) setLastMatches(identifyQuery.data);
-  }, [noCourses, identifyQuery.data]);
+  const generate = () => {
+    if (!effectiveMajor) return;
+    mutate({
+      passed_course_ids: passedIds,
+      major_id: effectiveMajor,
+      current_semester: startSem,
+      max_load: 12.0,
+    });
+  };
 
-  // First-load only: header + buttons stay live, the 6-cell grid shows
-  // skeletons. keepPreviousData keeps isLoading false on later updates.
-  const summaryLoading = identifyQuery.isLoading || majorsQuery.isLoading;
+  const fixPrereq = useFixPrereq(courses, generate);
 
-  // Resolve display titles from the real majors list, matched by id.
-  const majorTitleById = useMemo(
-    () => new Map((majorsQuery.data ?? []).map((m) => [m.id, m.title])),
-    [majorsQuery.data],
-  );
-
-  const plannerMajors: MajorProgress[] = useMemo(() => {
-    // With no courses, reuse the previous matches' titles (or the initial
-    // mount data if nothing has been selected yet) and zero out the progress.
-    const source = noCourses
-      ? lastMatches.length > 0
-        ? lastMatches
-        : (identifyQuery.data ?? [])
-      : (identifyQuery.data ?? []);
-
-    return source.map((match) => ({
-      title: majorTitleById.get(match.id) ?? match.title,
-      earnedPct: noCourses
-        ? 0
-        : toPercent(match.coveredCount, match.totalCount),
-      availablePct: noCourses
-        ? 0
-        : toPercent(match.canCoverCount, match.totalCount),
-    }));
-  }, [noCourses, lastMatches, identifyQuery.data, majorTitleById]);
-
-  // Conflicts are error/warning validation messages across all semesters.
-  const conflictCount = useMemo(
-    () => validation.reduce((sum, sem) => sum + sem.messages.length, 0),
-    [validation],
-  );
-
-  const stats = useMemo(
-    () => buildPlannerStats(selectedCourseIds.length, conflictCount),
-    [selectedCourseIds.length, conflictCount],
-  );
-
-  const semesters = useMemo(
-    () => buildSemesters(admissionYear),
-    [admissionYear],
-  );
+  const majorTitle =
+    majors.find((m) => m.id === effectiveMajor)?.title || effectiveMajor;
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
-      <PlannerSummary
-        stats={stats}
-        majors={plannerMajors}
-        loading={summaryLoading}
-      />
+    <div className="flex flex-col w-full">
+      <div className="text-xs uppercase font-semibold tracking-wide mb-2 text-muted-foreground">
+        Траектория &gt; Планировщик
+      </div>
+      <h1 className="text-3xl font-extrabold mb-8 tracking-tight text-foreground">
+        Построение траектории
+      </h1>
+      <p className="mb-5 text-muted-foreground">
+        Укажите мейджор и семестр, с которого вы хотите начать планирование.
+      </p>
 
-      {semesters.map((semester) => (
-        <SemesterSection
-          key={semester.index}
-          index={semester.index}
-          dateRange={semester.dateRange}
-          courses={courses ?? []}
-          coursesLoading={isLoading}
-          coursesError={isError}
-        />
-      ))}
+      <div className="flex gap-6 items-end pb-6 border-b border-border">
+        <div className="flex-1">
+          <MajorSelect
+            majors={majors}
+            selectedMajor={effectiveMajor}
+            onChange={setSelectedMajor}
+          />
+        </div>
+        <SemesterSelector value={startSem} onChange={setStartSem} />
+        <Button onClick={generate} disabled={isPending || !effectiveMajor}>
+          {isPending ? "Строим..." : "Рассчитать"}
+        </Button>
+      </div>
+
+      {roadmapData?.roadmap && (
+        <div className="flex flex-col gap-8 mt-10">
+          <div className="flex items-center gap-3">
+            <Separator className="flex-1" />
+            <Badge
+              variant="outline"
+              className="px-4 py-1.5 text-sm font-bold border-primary text-primary"
+            >
+              План для: {majorTitle}
+            </Badge>
+            <Separator className="flex-1" />
+          </div>
+          {roadmapData.roadmap.map((sem, idx) => (
+            <SemesterCard
+              key={idx}
+              semester={sem}
+              fixPrereq={fixPrereq}
+              allCourses={courses}
+              passedIds={passedIds}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

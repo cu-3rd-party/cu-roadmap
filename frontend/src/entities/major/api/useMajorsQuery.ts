@@ -1,17 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 
-import type { AdmissionYear } from "@/shared/constants";
+import { api } from "@/shared/config";
 
-import { normalizeMajor } from "../lib";
+export const majorsQueryKey = ["majors"] as const;
 
-import { getMajors } from "./getMajors";
-
-export const majorsQueryKey = (year: AdmissionYear) =>
-  ["majors", year] as const;
-
-export const useMajorsQuery = (year: AdmissionYear | null) =>
-  useQuery({
-    queryKey: ["majors", year],
-    queryFn: () => getMajors(year!).then((dtos) => dtos.map(normalizeMajor)),
-    enabled: year != null,
+export function useMajorsQuery() {
+  return useQuery({
+    queryKey: majorsQueryKey,
+    queryFn: () => api.getMajors().then((res) => res.data),
   });
+}

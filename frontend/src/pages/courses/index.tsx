@@ -1,38 +1,16 @@
-import React, { useEffect, useState } from "react";
+import { CourseCard, useCoursesQuery } from "@/entities/course";
+import { useRoadmapStore } from "@/shared/store";
 
-import { api, type Course } from "@/shared/config";
-
-import { CourseCard } from "../wizard/ui/CourseCard";
-
-interface CoursesPageProps {
-  passedIds: string[];
-  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
-}
-export function CoursesPage({ passedIds, setPassedIds }: CoursesPageProps) {
-  const [courses, setCourses] = useState<Course[]>([]);
-
-  useEffect(() => {
-    api.getCourses().then((res) => setCourses(res.data));
-  }, []);
-
-  const toggleCourse = (id: string) => {
-    setPassedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-  };
+const CoursesPage = () => {
+  const { passedIds, togglePassedId } = useRoadmapStore();
+  const { data: courses = [] } = useCoursesQuery();
 
   return (
     <div className="flex flex-col w-full">
-      <div
-        className="text-xs uppercase font-semibold tracking-wide mb-2"
-        style={{ color: "var(--color-text-muted)" }}
-      >
+      <div className="text-xs uppercase font-semibold tracking-wide mb-2 text-muted-foreground">
         Траектория &gt; Каталог курсов
       </div>
-      <h1
-        className="text-3xl font-extrabold mb-8 tracking-tight"
-        style={{ color: "var(--color-text-main)" }}
-      >
+      <h1 className="text-3xl font-extrabold mb-8 tracking-tight text-foreground">
         Курсы и навыки
       </h1>
 
@@ -47,10 +25,12 @@ export function CoursesPage({ passedIds, setPassedIds }: CoursesPageProps) {
             allCourses={courses}
             passedIds={passedIds}
             isSelected={passedIds.includes(c.id)}
-            onToggle={() => toggleCourse(c.id)}
+            onToggle={() => togglePassedId(c.id)}
           />
         ))}
       </div>
     </div>
   );
-}
+};
+
+export default CoursesPage;

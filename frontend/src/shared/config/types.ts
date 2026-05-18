@@ -1,19 +1,20 @@
 export interface Course {
   id: string;
   title: string;
-  category?: string;
+  category: string;
   type?: string;
   course_type?: string;
   workload: number;
   description?: string;
   available_semesters?: number[];
-  allowed_cohorts?: number[];
-  recommended_semester?: number | null;
+  recommended_semester?: number;
   prerequisites?: string[];
-  corequisites?: string[];
   postrequisites?: string[];
-  handbook_link?: string;
-  to_major?: Record<string, string>;
+}
+
+export interface MajorRequirement {
+  course_id: string;
+  type: string;
 }
 
 export interface Major {
@@ -21,7 +22,7 @@ export interface Major {
   title: string;
   name?: string;
   school?: string;
-  cohort_year?: number;
+  requirements?: MajorRequirement[];
 }
 
 export interface CourseBasic {
@@ -31,7 +32,6 @@ export interface CourseBasic {
 
 export interface SemesterData {
   semester: number;
-  course_ids?: string[];
   total_load?: number;
   error?: string;
   status?: string;
@@ -45,7 +45,6 @@ export interface RoadmapResponse {
 export interface MajorResult {
   id: string;
   title: string;
-  cohort_year?: number;
   score: number;
 }
 

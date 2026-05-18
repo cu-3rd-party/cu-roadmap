@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { GreetingModal } from "@/features/settings";
-import { Navbar } from "@/widgets/Navbar";
+import { AppHeader } from "@/widgets/AppHeader";
+import { AppSidebar } from "@/widgets/AppSidebar";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -9,12 +9,14 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="flex h-screen flex-col">
-      <Navbar />
-      <main className="flex-1 overflow-y-auto bg-background-alt px-6 py-8 text-fg-primary scrollbar-gutter-stable">
-        {children}
-      </main>
-      <GreetingModal />
+    <div className="flex flex-col h-screen">
+      <AppHeader />
+      <div className="flex flex-1 w-full overflow-hidden">
+        <AppSidebar />
+        <main className="flex-1 w-full overflow-y-auto p-10 flex flex-col bg-background text-foreground">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

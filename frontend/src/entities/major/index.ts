@@ -1,16 +1,2 @@
-export {
-  getMajors,
-  useMajorsQuery,
-  majorsQueryKey,
-  identifyMajors,
-  useIdentifyMajorsQuery,
-  identifyMajorsQueryKey,
-} from "./api";
-export type {
-  MajorDto,
-  MajorRequirementDto,
-  MajorMatchDto,
-  IdentifyMajorsRequestDto,
-} from "./api";
-export type { Major, MajorRequirement, MajorMatch } from "./model/types";
-export { normalizeMajor, normalizeMajorMatch } from "./lib";
+export type { Major, MajorRequirement } from "./model";
+export { useMajorsQuery, majorsQueryKey } from "./api/useMajorsQuery";

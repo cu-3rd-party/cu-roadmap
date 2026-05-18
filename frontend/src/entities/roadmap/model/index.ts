@@ -1,3 +1,8 @@
-export { usePlannerStore } from "./usePlannerStore";
-export { type PlannedCourse } from "./types";
-export * from "./domain";
+export type {
+  SemesterData,
+  RoadmapResponse,
+  RoadmapSemester,
+  ValidationMessage,
+  ValidationResult,
+} from "@/shared/config/types";
+export type { RoadmapData } from "@/shared/config";
