@@ -1,6 +1,6 @@
 import React from "react";
 import { X, Lock, Unlock, ArrowRight, Info, AlertTriangle } from "lucide-react";
-import type { Course } from "../config/types";
+import type { Course } from "../model";
 import { getCategoryColor, getCategoryLabel } from "../lib";
 
 interface CourseInfoModalProps {

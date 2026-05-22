@@ -1,40 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { AISparkleBox } from "@/features/roadmap-generation";
+import { MajorSelect, SemesterSelector } from "@/features/roadmap-generation";
+import { PassedCoursesGrid } from "@/features/passed-courses";
+import { RoadmapResult } from "@/entities/roadmap";
 import { api } from "@/shared/config";
 import type { Course, Major } from "@/shared/config";
-import { AISparkleBox } from "./ui/AISparkleBox";
+import { useRoadmapStore } from "@/shared/store";
 import {
-  CourseSelection,
-  MajorSelect,
-  SemesterSelector,
   StepIndicator,
   StepNavigation,
-  RoadmapResult,
 } from "./ui";
-import type { RoadmapResponse } from "@/shared/config";
 
-interface WizardPageProps {
-  passedIds: string[];
-  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
-  roadmapData: RoadmapResponse | null;
-  setRoadmapData: React.Dispatch<React.SetStateAction<RoadmapResponse | null>>;
-  loading: boolean;
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-export function WizardPage({
-  passedIds,
-  setPassedIds,
-  roadmapData,
-  setRoadmapData,
-  loading,
-  setLoading,
-}: WizardPageProps) {
+export function WizardPage() {
+  const { passedIds, setPassedIds, roadmapData, setRoadmapData } =
+    useRoadmapStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [courses, setCourses] = useState<Course[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState("");
   const [startSem, setStartSem] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     api.getCourses().then((res) => setCourses(res.data));
@@ -86,11 +72,7 @@ export function WizardPage({
       <div className="flex-1 relative">
         <div className="overflow-y-auto h-full pb-20">
           {currentStep === 1 && (
-            <CourseSelection
-              courses={courses}
-              passedIds={passedIds}
-              onToggleCourse={toggleCourse}
-            />
+            <PassedCoursesGrid courses={courses} />
           )}
 
           {currentStep === 2 && (
@@ -178,3 +160,5 @@ export function WizardPage({
     </div>
   );
 }
+
+export default WizardPage;

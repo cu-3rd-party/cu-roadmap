@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { SemesterCard } from "@/widgets/SemesterCard";
+import { SemesterCard } from "@/entities/roadmap";
 import type { SemesterData, Course } from "@/shared/config";
 
 interface RoadmapResultProps {
