@@ -19,7 +19,7 @@ from src.services.sync.google_sheets import GoogleSheetsService
 # Mapping: Google Sheet name → (Major title, Major school, CourseCategory)
 SHEET_TO_MAJOR: Dict[str, Tuple[str, str, CourseCategory]] = {
     "Бизнес и аналитика": ("Business", "Business", CourseCategory.business),
-    "Искусственный интеллект": ("AI", "Tech", CourseCategory.tech),
+    "Искусственный интеллект": ("AI", "Tech", CourseCategory.ai),
     "Разработка": ("Software Engineering", "Tech", CourseCategory.tech),
 }
 

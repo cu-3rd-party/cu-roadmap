@@ -1,7 +1,7 @@
 import React from "react";
 import { X, Lock, Unlock, ArrowRight, Info, AlertTriangle } from "lucide-react";
 import type { Course } from "../config/types";
-import { getCategoryColor } from "../lib";
+import { getCategoryColor, getCategoryLabel } from "../lib";
 
 interface CourseInfoModalProps {
   course: Course;
@@ -54,7 +54,7 @@ export function CourseInfoModal({
             className="text-xs font-bold uppercase tracking-widest mb-1"
             style={{ color: getCategoryColor(course.category) }}
           >
-            {course.category}
+            {getCategoryLabel(course.category)}
           </div>
           <h2 className="text-3xl font-black tracking-tight">{course.title}</h2>
         </div>

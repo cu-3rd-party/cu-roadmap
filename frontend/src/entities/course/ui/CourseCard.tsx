@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { cn } from "@/shared/lib/cn";
 
-import { getCategoryColor } from "../lib";
+import { getCategoryColor, getCategoryLabel } from "../lib";
 import type { Course } from "../model";
 
 import { CourseInfoModal } from "./CourseInfoModal";
@@ -79,7 +79,7 @@ export function CourseCard({
             {course.title}
           </div>
           <div className="text-xs font-medium text-muted-foreground">
-            {course.category} • {course.workload} к.
+            {getCategoryLabel(course.category)} • {course.workload} к.
           </div>
         </div>
       </div>

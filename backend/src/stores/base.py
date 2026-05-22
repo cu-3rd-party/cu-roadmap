@@ -25,6 +25,7 @@ class CourseTypeEnum(str, Enum):
 
 
 class CourseCategoryEnum(str, Enum):
+    ai = "ai"
     stem = "stem"
     soft = "soft"
     business = "business"
