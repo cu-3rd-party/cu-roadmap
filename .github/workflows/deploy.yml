@@ -43,7 +43,11 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
           ENV: ${{ secrets.ENV }}
+          GOOGLE_ACCOUNT_JSON: ${{ secrets.GOOGLE_ACCOUNT_JSON }}
         run: |
+          GOOGLE_ACCOUNT_JSON_B64=$(printf '%s' "$GOOGLE_ACCOUNT_JSON" | base64 -w 0)
           ssh $SSH_USER@$SSH_HOST "printf '%s' \"${{ secrets.ENV }}\" > ${{ secrets.DEPLOY_PATH }}/.env"
+          ssh $SSH_USER@$SSH_HOST "mkdir -p ${{ secrets.DEPLOY_PATH }}/backend/credentials"
+          ssh $SSH_USER@$SSH_HOST "printf '%s' '$GOOGLE_ACCOUNT_JSON_B64' | base64 -d > ${{ secrets.DEPLOY_PATH }}/backend/credentials/google_service_account.json"
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose down || true"
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose up -d --build"

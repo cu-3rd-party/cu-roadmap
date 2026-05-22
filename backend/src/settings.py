@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     postgres_user: str = "roadmap_user"
     postgres_password: str = "roadmap_password"
     postgres_db: str = "roadmap_db"
+    postgres_host: str = "127.0.0.1"
 
     seed_on_startup: bool = True
     use_memory_store: bool = False
@@ -37,7 +38,7 @@ class Settings(BaseSettings):
         return (
             "postgresql+asyncpg://"
             f"{self.postgres_user}:{self.postgres_password}"
-            f"@127.0.0.1:5432/{self.postgres_db}"
+            f"@{self.postgres_host}:5432/{self.postgres_db}"
         )
 
     @property
