@@ -1,6 +1,7 @@
 import asyncio
-import sys
 import os
+import sys
+import uuid
 
 # Add root project dir to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -8,7 +9,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
-from src.domain.models.course import Course
 from src.domain.models.major import Major
 from src.domain.models import Base
 from src.services.sync.course_sync import CourseSyncService

@@ -1,7 +1,7 @@
 import gspread
-from google.oauth2.service_account import Credentials
 import os
 from typing import List, Dict, Any
+from google.oauth2.service_account import Credentials
 
 from src.settings import get_settings
 
@@ -30,6 +30,10 @@ class GoogleSheetsService:
         return gspread.authorize(credentials)
 
     def get_sheet_names(self) -> List[str]:
+        sheets = os.getenv("GOOGLE_SHEETS_SYNC_SHEETS")
+        if sheets is not None:
+            return [name.strip() for name in sheets.split(",") if name.strip()]
+
         return get_settings().google_sheets_sync_sheet_names
 
     def get_sheet_data(self, sheet_name: str) -> List[Dict[str, Any]]:

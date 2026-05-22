@@ -1,6 +1,6 @@
 import asyncio
 import os
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
@@ -22,7 +22,7 @@ async def check():
             select(Course.title).where(Course.title.ilike("%Алгоритмы%"))
         )
         rows = res.all()
-        print(f"Courses matching 'Алгоритмы':")
+        print("Courses matching 'Алгоритмы':")
         for row in rows:
             title = row[0]
             print(f"  - '{title}' (Length: {len(title)})")
