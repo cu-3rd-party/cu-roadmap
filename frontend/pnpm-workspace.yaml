@@ -1,0 +1,6 @@
+strictDepBuilds: false
+verifyDepsBeforeRun: false
+onlyBuiltDependencies:
+  - esbuild
+  - msw
+  - unrs-resolver
