@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { api, type RoadmapData, type Course } from "@/shared/config";
+
 import { SemesterCard } from "@/entities/roadmap";
+import { api, type RoadmapData, type Course } from "@/shared/config";
 import { useRoadmapStore } from "@/shared/store";
 
 interface Major {
@@ -9,8 +10,12 @@ interface Major {
 }
 
 export function PlannerPage() {
-  const { passedIds, setPassedIds, roadmapData: data, setRoadmapData: setData } =
-    useRoadmapStore();
+  const {
+    passedIds,
+    setPassedIds,
+    roadmapData: data,
+    setRoadmapData: setData,
+  } = useRoadmapStore();
   const [courses, setCourses] = useState<Course[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState("");

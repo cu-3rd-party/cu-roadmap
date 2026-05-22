@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { AISparkleBox } from "@/features/roadmap-generation";
-import { MajorSelect, SemesterSelector } from "@/features/roadmap-generation";
-import { PassedCoursesGrid } from "@/features/passed-courses";
+import React, { useEffect, useState } from "react";
+
 import { RoadmapResult } from "@/entities/roadmap";
+import { PassedCoursesGrid } from "@/features/passed-courses";
+import {
+  AISparkleBox,
+  MajorSelect,
+  SemesterSelector,
+} from "@/features/roadmap-generation";
 import { api } from "@/shared/config";
 import type { Course, Major } from "@/shared/config";
 import { useRoadmapStore } from "@/shared/store";
-import {
-  StepIndicator,
-  StepNavigation,
-} from "./ui";
+
+import { StepIndicator, StepNavigation } from "./ui";
 
 export function WizardPage() {
   const { passedIds, setPassedIds, roadmapData, setRoadmapData } =
@@ -71,9 +73,7 @@ export function WizardPage() {
 
       <div className="flex-1 relative">
         <div className="overflow-y-auto h-full pb-20">
-          {currentStep === 1 && (
-            <PassedCoursesGrid courses={courses} />
-          )}
+          {currentStep === 1 && <PassedCoursesGrid courses={courses} />}
 
           {currentStep === 2 && (
             <div className="flex flex-col">
