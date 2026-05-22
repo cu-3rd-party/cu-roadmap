@@ -1,28 +1,40 @@
-import { ArrowRight, Sparkles } from "lucide-react";
 import React, { useEffect, useState } from "react";
-
-import { RoadmapResult } from "@/entities/roadmap";
-import { PassedCoursesGrid } from "@/features/passed-courses";
-import {
-  AISparkleBox,
-  MajorSelect,
-  SemesterSelector,
-} from "@/features/roadmap-generation";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { api } from "@/shared/config";
 import type { Course, Major } from "@/shared/config";
-import { useRoadmapStore } from "@/shared/store";
+import { AISparkleBox } from "./ui/AISparkleBox";
+import {
+  CourseSelection,
+  MajorSelect,
+  SemesterSelector,
+  StepIndicator,
+  StepNavigation,
+  RoadmapResult,
+} from "./ui";
+import type { RoadmapResponse } from "@/shared/config";
 
-import { StepIndicator, StepNavigation } from "./ui";
+interface WizardPageProps {
+  passedIds: string[];
+  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
+  roadmapData: RoadmapResponse | null;
+  setRoadmapData: React.Dispatch<React.SetStateAction<RoadmapResponse | null>>;
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
-export function WizardPage() {
-  const { passedIds, setPassedIds, roadmapData, setRoadmapData } =
-    useRoadmapStore();
+export function WizardPage({
+  passedIds,
+  setPassedIds,
+  roadmapData,
+  setRoadmapData,
+  loading,
+  setLoading,
+}: WizardPageProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [courses, setCourses] = useState<Course[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState("");
   const [startSem, setStartSem] = useState(1);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     api.getCourses().then((res) => setCourses(res.data));
@@ -73,7 +85,13 @@ export function WizardPage() {
 
       <div className="flex-1 relative">
         <div className="overflow-y-auto h-full pb-20">
-          {currentStep === 1 && <PassedCoursesGrid courses={courses} />}
+          {currentStep === 1 && (
+            <CourseSelection
+              courses={courses}
+              passedIds={passedIds}
+              onToggleCourse={toggleCourse}
+            />
+          )}
 
           {currentStep === 2 && (
             <div className="flex flex-col">
@@ -160,5 +178,3 @@ export function WizardPage() {
     </div>
   );
 }
-
-export default WizardPage;

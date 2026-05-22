@@ -1,7 +1,5 @@
+import React from "react";
 import { BookOpen, GraduationCap, Map } from "lucide-react";
-import { Fragment } from "react";
-
-import { cn } from "@/shared/lib/cn";
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -20,27 +18,30 @@ export function StepIndicator({ currentStep }: StepIndicatorProps) {
         const step = idx + 1;
         const isActive = currentStep >= step;
         return (
-          <Fragment key={step}>
+          <React.Fragment key={step}>
             <div
-              className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground",
-              )}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+              style={{
+                backgroundColor: isActive
+                  ? "var(--color-primary)"
+                  : "var(--color-bg-hover)",
+                color: isActive ? "white" : "var(--color-text-muted)",
+              }}
             >
               <Icon size={16} />
-              <span className="sr-only">{label}</span>
             </div>
             {step < 3 && (
               <div
-                className={cn(
-                  "w-16 h-0.5",
-                  currentStep > step ? "bg-primary" : "bg-border",
-                )}
+                className="w-16 h-0.5"
+                style={{
+                  backgroundColor:
+                    currentStep > step
+                      ? "var(--color-primary)"
+                      : "var(--color-border)",
+                }}
               />
             )}
-          </Fragment>
+          </React.Fragment>
         );
       })}
     </div>

@@ -1,26 +1,35 @@
 import React, { useEffect, useState, useCallback } from "react";
-
-import { SemesterCard } from "@/entities/roadmap";
 import { api, type RoadmapData, type Course } from "@/shared/config";
-import { useRoadmapStore } from "@/shared/store";
+import { SemesterCard } from "@/widgets/SemesterCard";
+
+interface PlannerPageProps {
+  passedIds: string[];
+  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
+  triggerGenerate: number;
+  setData: React.Dispatch<React.SetStateAction<RoadmapData | null>>;
+  data: RoadmapData | null;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  loading: boolean;
+}
 
 interface Major {
   id: string;
   title: string;
 }
 
-export function PlannerPage() {
-  const {
-    passedIds,
-    setPassedIds,
-    roadmapData: data,
-    setRoadmapData: setData,
-  } = useRoadmapStore();
+export function PlannerPage({
+  passedIds,
+  setPassedIds,
+  triggerGenerate,
+  setData,
+  data,
+  setLoading,
+  loading,
+}: PlannerPageProps) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState("");
   const [startSem, setStartSem] = useState(1);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     api.getCourses().then((res) => setCourses(res.data));
@@ -49,6 +58,10 @@ export function PlannerPage() {
         setLoading(false);
       });
   }, [selectedMajor, passedIds, startSem, setData, setLoading]);
+
+  useEffect(() => {
+    if (triggerGenerate > 0) generatePlan();
+  }, [triggerGenerate, generatePlan]);
 
   const fixPrereq = (courseTitle: string) => {
     const target = courses.find((c) => courseTitle.includes(c.title));
@@ -172,5 +185,3 @@ export function PlannerPage() {
     </div>
   );
 }
-
-export default PlannerPage;

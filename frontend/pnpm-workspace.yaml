@@ -1,9 +1,13 @@
 packages:
   - .
 
+confirmModulesPurge: false
 strictDepBuilds: false
 verifyDepsBeforeRun: false
 onlyBuiltDependencies:
   - esbuild
   - msw
   - unrs-resolver
+allowBuilds:
+  esbuild: set this to true or false
+  msw: set this to true or false
