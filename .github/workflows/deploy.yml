@@ -3,7 +3,7 @@ name: Deploy
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: [Format, Test Backend]
+    workflows: [Test]
     types: [completed]
     branches: [master]
 
