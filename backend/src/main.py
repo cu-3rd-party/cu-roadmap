@@ -13,12 +13,13 @@ from src.api.v1.graph import router as graph_router
 from src.api.v1.majors import router as majors_router
 from src.api.v1.courses import router as courses_router
 from src.api.v1.planner import router as planner_router
+from src.settings import get_settings
 
 setup_logging()
 
 
 async def _sync_google_sheets_loop(store) -> None:
-    interval_seconds = int(os.getenv("GOOGLE_SHEETS_SYNC_INTERVAL_SECONDS", "3600"))
+    interval_seconds = get_settings().google_sheets_sync_interval_seconds
 
     while True:
         await asyncio.sleep(interval_seconds)
@@ -31,20 +32,19 @@ async def _sync_google_sheets_loop(store) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    force_memory = os.getenv("FORCE_MEMORY_STORE", "false").lower() == "true"
+    settings = get_settings()
+    force_memory = settings.force_memory_store
     store = await init_store(force_memory=force_memory)
     sync_task = None
 
-    seed_on_startup = os.getenv("SEED_ON_STARTUP", "true").lower() == "true"
-    if seed_on_startup:
+    if settings.seed_on_startup:
         try:
             await store.seed_all_data()
             print("Store seeded with data from CSV files")
         except Exception as e:
             print(f"Warning: Could not seed store on startup: {e}")
 
-    google_sync_enabled = os.getenv("GOOGLE_SHEETS_SYNC_ENABLED", "true").lower() == "true"
-    if google_sync_enabled:
+    if settings.google_sheets_sync_enabled:
         try:
             await store.sync_google_sheets_data()
         except Exception as e:
@@ -99,4 +99,5 @@ async def health_check():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    settings = get_settings()
+    uvicorn.run(app, host=settings.host, port=settings.port)

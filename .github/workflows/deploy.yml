@@ -36,12 +36,14 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          rsync -avz --delete --progress docker-compose.yml backend frontend nginx $SSH_USER@$SSH_HOST:~/cu-roadmap
+          rsync -avz --delete --progress docker-compose.yml backend frontend nginx $SSH_USER@$SSH_HOST:${{ secrets.DEPLOY_PATH }}
 
       - name: Deploy to server
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
+          ENV: ${{ secrets.ENV }}
         run: |
+          ssh $SSH_USER@$SSH_HOST "printf '%s' \"${{ secrets.ENV }}\" > ${{ secrets.DEPLOY_PATH }}/.env"
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose down || true"
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose up -d --build"

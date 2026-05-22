@@ -1,12 +1,9 @@
-import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-# Use environment variable for database URL, defaulting to the docker-compose service name 'db'
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://roadmap_user:roadmap_password@db:5432/roadmap_db",
-)
+from src.settings import get_settings
+
+DATABASE_URL = get_settings().db_url
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

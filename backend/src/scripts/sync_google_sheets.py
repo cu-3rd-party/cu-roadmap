@@ -1,10 +1,6 @@
 import asyncio
 import sys
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Add root project dir to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -16,11 +12,9 @@ from src.domain.models.course import Course
 from src.domain.models.major import Major
 from src.domain.models import Base
 from src.services.sync.course_sync import CourseSyncService
+from src.settings import get_settings
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://roadmap_user:roadmap_password@db:5432/roadmap_db",
-)
+DATABASE_URL = get_settings().db_url
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

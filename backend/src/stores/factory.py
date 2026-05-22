@@ -1,9 +1,9 @@
-import os
 from typing import Optional
 
 from .base import StoreBase
 from .postgresql import PostgreStore
 from .memory import MemoryStore
+from ..settings import get_settings
 
 _store_instance: Optional[StoreBase] = None
 
@@ -11,9 +11,9 @@ _store_instance: Optional[StoreBase] = None
 async def init_store(force_memory: bool = False) -> StoreBase:
     global _store_instance
 
-    use_memory = (
-        force_memory or os.getenv("USE_MEMORY_STORE", "false").lower() == "true"
-    )
+    settings = get_settings()
+
+    use_memory = force_memory or settings.use_memory_store
 
     if use_memory:
         _store_instance = MemoryStore()

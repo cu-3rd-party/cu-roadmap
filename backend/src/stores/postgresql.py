@@ -1,4 +1,3 @@
-import os
 import csv
 import uuid
 from uuid import UUID
@@ -28,14 +27,12 @@ from ..domain.models.course.course_dependency import CourseDependency
 from ..domain.models.major import Major
 from ..domain.models.major.major_requirement import MajorRequirement
 from ..domain.models.student import Student
+from ..settings import get_settings
 
 
 class PostgreStore(StoreBase):
     def __init__(self, database_url: Optional[str] = None):
-        self._database_url = database_url or os.getenv(
-            "DATABASE_URL",
-            "postgresql+asyncpg://roadmap_user:roadmap_password@db:5432/roadmap_db",
-        )
+        self._database_url = database_url or get_settings().db_url
         self._engine = None
         self._async_session = None
 

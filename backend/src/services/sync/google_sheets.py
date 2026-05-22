@@ -3,11 +3,14 @@ from google.oauth2.service_account import Credentials
 import os
 from typing import List, Dict, Any
 
+from src.settings import get_settings
+
 
 class GoogleSheetsService:
     def __init__(self):
-        self.spreadsheet_id = os.getenv("GOOGLE_SHEETS_SPREADSHEET_ID")
-        self.credentials_file = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE")
+        settings = get_settings()
+        self.spreadsheet_id = settings.google_sheets_spreadsheet_id
+        self.credentials_file = settings.google_service_account_file
         self.client = self._authenticate()
 
     def _authenticate(self):
@@ -28,13 +31,7 @@ class GoogleSheetsService:
         return gspread.authorize(credentials)
 
     def get_sheet_names(self) -> List[str]:
-        raw_sheet_names = os.getenv("GOOGLE_SHEETS_SYNC_SHEETS", "")
-        if raw_sheet_names.strip():
-            sheet_names = [name.strip() for name in raw_sheet_names.split(",") if name.strip()]
-            if sheet_names:
-                return sheet_names
-
-        return ["Бизнес и аналитика", "Искусственный интеллект", "Разработка"]
+        return get_settings().google_sheets_sync_sheet_names
 
     def get_sheet_data(self, sheet_name: str) -> List[Dict[str, Any]]:
         """Fetches all records from a specific sheet by name."""

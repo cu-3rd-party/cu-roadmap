@@ -1,6 +1,7 @@
-import os
 import sys
 import logging
+
+from src.settings import get_settings
 
 
 class ColoredFormatter(logging.Formatter):
@@ -21,7 +22,7 @@ class ColoredFormatter(logging.Formatter):
 
 
 def setup_logging():
-    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    log_level = get_settings().log_level.upper()
     numeric_level = getattr(logging, log_level, logging.INFO)
 
     handler = logging.StreamHandler(sys.stdout)

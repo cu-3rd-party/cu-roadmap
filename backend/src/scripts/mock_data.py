@@ -13,11 +13,9 @@ from src.domain.models.requirement_type import RequirementType
 from src.domain.models.course import Course
 from src.domain.models.major import Major
 from src.domain.models.major.major_requirement import MajorRequirement
+from src.settings import get_settings
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://roadmap_user:roadmap_password@db:5432/roadmap_db",
-)
+DATABASE_URL = get_settings().db_url
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
