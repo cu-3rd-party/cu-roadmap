@@ -21,8 +21,12 @@ async def get_courses():
                 "available_semesters": c.available_semesters,
                 "recommended_semester": c.recommended_semester,
                 "workload": c.workload,
-                "prerequisites": [str(p) for p in c.prerequisites] if c.prerequisites else [],
-                "postrequisites": [str(p) for p in c.postrequisites] if c.postrequisites else [],
+                "prerequisites": [str(p) for p in c.prerequisites]
+                if c.prerequisites
+                else [],
+                "postrequisites": [str(p) for p in c.postrequisites]
+                if c.postrequisites
+                else [],
             }
         )
     return res

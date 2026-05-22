@@ -19,19 +19,31 @@ DATABASE_URL = get_settings().db_url
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+
 async def main():
     print("Initializing database tables...")
     async with engine.begin() as conn:
         # This will create tables if they don't exist
         await conn.run_sync(Base.metadata.create_all)
-    
+
     print("Starting Google Sheets synchronization...")
     async with async_session() as session:
         # Seed Majors
-        for m_title in ["Software Engineering", "AI", "Business", "Common (All Majors)"]:
+        for m_title in [
+            "Software Engineering",
+            "AI",
+            "Business",
+            "Common (All Majors)",
+        ]:
             res = await session.execute(select(Major).where(Major.title == m_title))
             if not res.scalar():
-                session.add(Major(id=uuid.uuid4(), title=m_title, school="Tech" if "Business" not in m_title else "Business"))
+                session.add(
+                    Major(
+                        id=uuid.uuid4(),
+                        title=m_title,
+                        school="Tech" if "Business" not in m_title else "Business",
+                    )
+                )
         await session.commit()
 
         try:
@@ -41,8 +53,11 @@ async def main():
         except Exception as e:
             print(f"Error during synchronization: {e}")
             if "credentials" in str(e).lower():
-                print("\nTIP: Make sure you have placed your Google Service Account JSON file in 'backend/credentials/'")
+                print(
+                    "\nTIP: Make sure you have placed your Google Service Account JSON file in 'backend/credentials/'"
+                )
                 print("and updated GOOGLE_SERVICE_ACCOUNT_FILE in your .env file.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

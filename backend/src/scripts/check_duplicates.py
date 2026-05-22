@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from src.domain.models.course import Course
@@ -13,6 +14,7 @@ from src.settings import get_settings
 DATABASE_URL = get_settings().db_url
 engine = create_async_engine(DATABASE_URL)
 async_session = sessionmaker(engine, class_=AsyncSession)
+
 
 async def check():
     async with async_session() as session:
@@ -37,6 +39,7 @@ async def check():
         print(f"\nDuplicates by case-insensitive title: {len(dups_ci)}")
         for title, count in dups_ci:
             print(f"  - '{title}' ({count} times)")
+
 
 if __name__ == "__main__":
     asyncio.run(check())

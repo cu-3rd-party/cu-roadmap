@@ -15,8 +15,6 @@ def test_db_url_uses_local_postgres_host():
 
 
 def test_google_sheet_names_are_parsed():
-    settings = Settings(
-        google_sheets_sync_sheets="Sheet A, Sheet B ,, Sheet C"
-    )
+    settings = Settings(google_sheets_sync_sheets="Sheet A, Sheet B ,, Sheet C")
 
     assert settings.google_sheets_sync_sheet_names == ["Sheet A", "Sheet B", "Sheet C"]

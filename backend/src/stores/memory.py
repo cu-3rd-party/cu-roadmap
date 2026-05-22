@@ -424,7 +424,9 @@ class MemoryStore(StoreBase):
         raw_type = row.get("Тип курса", "").lower()
         if "core" in raw_type or "mandatory" in raw_type:
             course_type = CourseTypeEnum.mandatory
-        elif "choice" in raw_type or "elective" in raw_type or "факультатив" in raw_type:
+        elif (
+            "choice" in raw_type or "elective" in raw_type or "факультатив" in raw_type
+        ):
             course_type = CourseTypeEnum.elective
         else:
             course_type = CourseTypeEnum.other

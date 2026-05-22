@@ -55,8 +55,7 @@ class CourseSyncService:
         # 2. Upsert majors
         major_map: Dict[str, Major] = {}
         all_major_titles = [
-            (title, school)
-            for _, (title, school, _) in SHEET_TO_MAJOR.items()
+            (title, school) for _, (title, school, _) in SHEET_TO_MAJOR.items()
         ]
         all_major_titles.append((COMMON_MAJOR_TITLE, COMMON_MAJOR_SCHOOL))
 
@@ -75,7 +74,7 @@ class CourseSyncService:
         await self.session.flush()
 
         # 3. First pass: create Course objects, track sheet membership
-        course_map: Dict[str, Course] = {}       # normalized title → Course
+        course_map: Dict[str, Course] = {}  # normalized title → Course
         # course_title → list of major titles it belongs to
         course_to_majors: Dict[str, List[str]] = {}
         all_rows: List[Tuple[Dict[str, Any], Course]] = []
@@ -136,20 +135,24 @@ class CourseSyncService:
     def _normalize_title(self, raw_title: str) -> str:
         """Removes leading emoji/circles for deduplication key."""
         return re.sub(
-            r'^[\u2600-\u27BF\U0001f300-\U0001f64f\U0001f680-\U0001f6ff'
-            r'\U0001f534\U0001f535\u26ab]\s*',
+            r"^[\u2600-\u27BF\U0001f300-\U0001f64f\U0001f680-\U0001f6ff"
+            r"\U0001f534\U0001f535\u26ab]\s*",
             "",
             raw_title,
         ).strip()
 
-    def _map_row_to_course(self, row: Dict[str, Any], category: CourseCategory) -> Course:
+    def _map_row_to_course(
+        self, row: Dict[str, Any], category: CourseCategory
+    ) -> Course:
         raw_title = row.get("Название курса", "").strip()
 
         # Course type
         raw_type = row.get("Тип курса", "").lower()
         if "core" in raw_type or "mandatory" in raw_type:
             c_type = CourseType.mandatory
-        elif "choice" in raw_type or "elective" in raw_type or "факультатив" in raw_type:
+        elif (
+            "choice" in raw_type or "elective" in raw_type or "факультатив" in raw_type
+        ):
             c_type = CourseType.elective
         else:
             c_type = CourseType.other

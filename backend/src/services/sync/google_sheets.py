@@ -25,8 +25,7 @@ class GoogleSheetsService:
             "https://www.googleapis.com/auth/drive.metadata.readonly",
         ]
         credentials = Credentials.from_service_account_file(
-            self.credentials_file,
-            scopes=scopes
+            self.credentials_file, scopes=scopes
         )
         return gspread.authorize(credentials)
 

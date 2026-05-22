@@ -60,7 +60,10 @@ async def test_memory_store_sync_google_sheets_data(monkeypatch):
     assert len(courses) == 2
     assert len(majors) == 1
     assert len(dependencies) == 1
-    assert {course.title for course in courses.values()} == {"Python Basics", "Advanced Python"}
+    assert {course.title for course in courses.values()} == {
+        "Python Basics",
+        "Advanced Python",
+    }
     assert next(iter(majors.values())).title == "Software Engineering"
 
     await store.close()
