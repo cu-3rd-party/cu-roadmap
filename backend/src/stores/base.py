@@ -169,3 +169,7 @@ class StoreBase(ABC):
     @abstractmethod
     async def seed_all_data(self) -> None:
         pass
+
+    @abstractmethod
+    async def sync_google_sheets_data(self) -> None:
+        pass

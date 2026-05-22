@@ -347,3 +347,162 @@ class MemoryStore(StoreBase):
 
         await self.load_courses_from_csv(courses_csv, deps_csv, majors_csv)
         await self.load_mock_data()
+
+    async def sync_google_sheets_data(self) -> None:
+        from src.services.sync.google_sheets import GoogleSheetsService
+        from src.services.sync.course_sync import SHEET_TO_MAJOR
+
+        sheets_service = GoogleSheetsService()
+        all_sheets_data = sheets_service.get_all_relevant_sheets()
+
+        await self.clear_all()
+
+        course_map: Dict[str, CourseData] = {}
+        course_to_majors: Dict[str, List[str]] = {}
+        dependency_rows: List[tuple[dict, CourseData]] = []
+        majors_by_title: Dict[str, MajorData] = {}
+
+        for sheet_name in all_sheets_data:
+            if sheet_name not in SHEET_TO_MAJOR:
+                continue
+
+            major_title, school, _ = SHEET_TO_MAJOR[sheet_name]
+            major = MajorData(id=uuid.uuid4(), title=major_title, school=school)
+            await self.create_major(major)
+            majors_by_title[major_title] = major
+
+        for sheet_name, rows in all_sheets_data.items():
+            mapping = SHEET_TO_MAJOR.get(sheet_name)
+            if mapping is None:
+                continue
+
+            major_title, _, category = mapping
+
+            for row in rows:
+                raw_title = row.get("Название курса", "").strip()
+                if not raw_title:
+                    continue
+
+                normalized_title = self._normalize_sheet_title(raw_title)
+                course = course_map.get(normalized_title)
+
+                if course is None:
+                    course = self._map_sheet_row_to_course(row, category)
+                    await self.create_course(course)
+                    course_map[normalized_title] = course
+                    course_to_majors[normalized_title] = []
+                    dependency_rows.append((row, course))
+
+                if major_title not in course_to_majors[normalized_title]:
+                    course_to_majors[normalized_title].append(major_title)
+
+        for row, course in dependency_rows:
+            await self._create_sheet_dependencies(row, course, course_map)
+
+        for normalized_title, major_titles in course_to_majors.items():
+            course = course_map[normalized_title]
+            for major_title in major_titles:
+                major = majors_by_title.get(major_title)
+                if major is None:
+                    continue
+
+                await self.create_major_requirement(
+                    MajorRequirementData(
+                        id=uuid.uuid4(),
+                        major_id=major.id,
+                        course_id=course.id,
+                        requirement_type=RequirementTypeEnum.core,
+                    )
+                )
+
+    def _normalize_sheet_title(self, raw_title: str) -> str:
+        return raw_title.strip()
+
+    def _map_sheet_row_to_course(
+        self, row: Dict[str, str], category: CourseCategoryEnum
+    ) -> CourseData:
+        raw_type = row.get("Тип курса", "").lower()
+        if "core" in raw_type or "mandatory" in raw_type:
+            course_type = CourseTypeEnum.mandatory
+        elif "choice" in raw_type or "elective" in raw_type or "факультатив" in raw_type:
+            course_type = CourseTypeEnum.elective
+        else:
+            course_type = CourseTypeEnum.other
+
+        raw_semester = row.get("Осень / весна", "").lower()
+        if "осень" in raw_semester:
+            available_semesters = [1, 3, 5, 7]
+        elif "весна" in raw_semester:
+            available_semesters = [2, 4, 6, 8]
+        else:
+            available_semesters = [1, 2, 3, 4, 5, 6, 7, 8]
+
+        raw_recommended = str(row.get("Рекомендованный к прохождению семестр", ""))
+        recommended_semester = None
+        digits = "".join(ch for ch in raw_recommended if ch.isdigit())
+        if digits:
+            recommended_semester = int(digits)
+
+        raw_workload = str(row.get("Нагрузка", row.get("workload", "5")))
+        workload_chars = []
+        dot_seen = False
+        for char in raw_workload:
+            if char.isdigit():
+                workload_chars.append(char)
+            elif char == "." and not dot_seen:
+                workload_chars.append(char)
+                dot_seen = True
+        workload = float("".join(workload_chars)) if workload_chars else 5.0
+
+        return CourseData(
+            id=uuid.uuid4(),
+            title=row.get("Название курса", "").strip(),
+            description=row.get("Контекст", ""),
+            handbook_link=row.get("Силлабус если есть", ""),
+            course_type=course_type,
+            category=category,
+            allowed_cohorts=[2024, 2025, 2026],
+            available_semesters=available_semesters,
+            recommended_semester=recommended_semester,
+            workload=workload,
+            csat_metric=None,
+        )
+
+    async def _create_sheet_dependencies(
+        self,
+        row: Dict[str, str],
+        course: CourseData,
+        course_map: Dict[str, CourseData],
+    ) -> None:
+        for title in self._split_sheet_titles(row.get("Пререквизиты", "")):
+            target = course_map.get(self._normalize_sheet_title(title))
+            if target is None:
+                continue
+
+            await self.create_course_dependency(
+                CourseDependencyData(
+                    id=uuid.uuid4(),
+                    course_id=course.id,
+                    required_course_id=target.id,
+                    dependency_type=DependencyTypeEnum.prerequisite,
+                )
+            )
+
+        for title in self._split_sheet_titles(row.get("Кореквизиты", "")):
+            target = course_map.get(self._normalize_sheet_title(title))
+            if target is None:
+                continue
+
+            await self.create_course_dependency(
+                CourseDependencyData(
+                    id=uuid.uuid4(),
+                    course_id=course.id,
+                    required_course_id=target.id,
+                    dependency_type=DependencyTypeEnum.corequisite_type1,
+                )
+            )
+
+    def _split_sheet_titles(self, raw_value: str) -> List[str]:
+        if not isinstance(raw_value, str) or not raw_value.strip():
+            return []
+        return [title.strip() for title in raw_value.split(",") if title.strip()]

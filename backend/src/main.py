@@ -1,5 +1,6 @@
 import uvicorn
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,10 +17,23 @@ from src.api.v1.planner import router as planner_router
 setup_logging()
 
 
+async def _sync_google_sheets_loop(store) -> None:
+    interval_seconds = int(os.getenv("GOOGLE_SHEETS_SYNC_INTERVAL_SECONDS", "3600"))
+
+    while True:
+        await asyncio.sleep(interval_seconds)
+
+        try:
+            await store.sync_google_sheets_data()
+        except Exception as e:
+            print(f"Warning: Google Sheets background sync failed: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     force_memory = os.getenv("FORCE_MEMORY_STORE", "false").lower() == "true"
     store = await init_store(force_memory=force_memory)
+    sync_task = None
 
     seed_on_startup = os.getenv("SEED_ON_STARTUP", "true").lower() == "true"
     if seed_on_startup:
@@ -29,7 +43,23 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"Warning: Could not seed store on startup: {e}")
 
+    google_sync_enabled = os.getenv("GOOGLE_SHEETS_SYNC_ENABLED", "true").lower() == "true"
+    if google_sync_enabled:
+        try:
+            await store.sync_google_sheets_data()
+        except Exception as e:
+            print(f"Warning: Initial Google Sheets sync failed: {e}")
+
+        sync_task = asyncio.create_task(_sync_google_sheets_loop(store))
+
     yield
+
+    if sync_task is not None:
+        sync_task.cancel()
+        try:
+            await sync_task
+        except asyncio.CancelledError:
+            pass
 
     await close_store()
 

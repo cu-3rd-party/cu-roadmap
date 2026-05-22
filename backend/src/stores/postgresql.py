@@ -491,17 +491,22 @@ class PostgreStore(StoreBase):
     async def _try_seed_from_google_sheets(self) -> bool:
         """Attempt to sync from Google Sheets. Returns True on success."""
         try:
-            from src.services.sync.course_sync import CourseSyncService
-            async with self._async_session() as session:
-                sync = CourseSyncService(session)
-                stats = await sync.sync_all()
-            print(
-                f"Google Sheets sync complete — "
-                f"courses: {stats['courses']}, "
-                f"majors: {stats['majors']}, "
-                f"major_requirements: {stats['major_requirements']}"
-            )
+            await self.sync_google_sheets_data()
             return True
         except Exception as e:
             print(f"Google Sheets sync failed: {e}")
             return False
+
+    async def sync_google_sheets_data(self) -> None:
+        from src.services.sync.course_sync import CourseSyncService
+
+        async with self._async_session() as session:
+            sync = CourseSyncService(session)
+            stats = await sync.sync_all()
+
+        print(
+            f"Google Sheets sync complete - "
+            f"courses: {stats['courses']}, "
+            f"majors: {stats['majors']}, "
+            f"major_requirements: {stats['major_requirements']}"
+        )
