@@ -17,7 +17,7 @@
     "msw:gen": "pnpm exec msw init public --save",
     "test": "vitest",
     "format:eslint": "pnpm lint:eslint --fix",
-    "format:prettier": "prettier \"**/*.{json,js,ts,tsx}\" --write",
+    "format:prettier": "prettier --write .",
     "format": "pnpm format:eslint && pnpm format:prettier",
     "lint:eslint": "eslint \"**/*.{js,ts,tsx}\"",
     "lint:prettier": "prettier \"**/*.{json,js,ts,tsx}\" --check --write",
