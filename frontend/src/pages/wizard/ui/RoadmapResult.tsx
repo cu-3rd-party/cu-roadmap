@@ -44,7 +44,13 @@ export function RoadmapResult({
 
       <div className="flex flex-col gap-6">
         {roadmap.map((sem, idx) => (
-          <SemesterCard key={idx} semester={sem} fixPrereq={fixPrereq} allCourses={allCourses} passedIds={passedIds} />
+          <SemesterCard
+            key={idx}
+            semester={sem}
+            fixPrereq={fixPrereq}
+            allCourses={allCourses}
+            passedIds={passedIds}
+          />
         ))}
       </div>
 

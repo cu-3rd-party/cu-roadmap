@@ -136,11 +136,17 @@ export function WizardPage({
           {currentStep === 3 && roadmapData?.roadmap && (
             <div className="flex flex-col">
               <div className="flex justify-center mb-2">
-                <div 
+                <div
                   className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                  style={{ backgroundColor: 'var(--color-bg-hover)', color: 'var(--color-primary)', border: '1px solid var(--color-primary)' }}
+                  style={{
+                    backgroundColor: "var(--color-bg-hover)",
+                    color: "var(--color-primary)",
+                    border: "1px solid var(--color-primary)",
+                  }}
                 >
-                  Направление: {majors.find(m => m.id === selectedMajor)?.title || selectedMajor}
+                  Направление:{" "}
+                  {majors.find((m) => m.id === selectedMajor)?.title ||
+                    selectedMajor}
                 </div>
               </div>
               <RoadmapResult

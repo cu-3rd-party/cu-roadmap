@@ -76,7 +76,10 @@ export function CourseInfoModal({
           {/* Warning */}
           {missingPrereqs.length > 0 && (
             <div className="flex flex-col gap-1 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20">
-              <div className="flex items-center gap-2" style={{ color: "#E63F07" }}>
+              <div
+                className="flex items-center gap-2"
+                style={{ color: "#E63F07" }}
+              >
                 <AlertTriangle size={16} />
                 <span className="text-sm font-bold">
                   Не все пререквизиты выполнены

@@ -151,14 +151,34 @@ export function PlannerPage({
       {data?.roadmap && (
         <div className="flex flex-col gap-8 mt-10">
           <div className="flex items-center gap-3">
-             <div className="h-px flex-1 bg-border" style={{ backgroundColor: 'var(--color-border)' }}></div>
-             <div className="px-4 py-1.5 rounded-full text-sm font-bold border" style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}>
-                План для: {majors.find(m => m.id === selectedMajor)?.title || selectedMajor}
-             </div>
-             <div className="h-px flex-1 bg-border" style={{ backgroundColor: 'var(--color-border)' }}></div>
+            <div
+              className="h-px flex-1 bg-border"
+              style={{ backgroundColor: "var(--color-border)" }}
+            ></div>
+            <div
+              className="px-4 py-1.5 rounded-full text-sm font-bold border"
+              style={{
+                borderColor: "var(--color-primary)",
+                color: "var(--color-primary)",
+              }}
+            >
+              План для:{" "}
+              {majors.find((m) => m.id === selectedMajor)?.title ||
+                selectedMajor}
+            </div>
+            <div
+              className="h-px flex-1 bg-border"
+              style={{ backgroundColor: "var(--color-border)" }}
+            ></div>
           </div>
           {data.roadmap.map((sem, idx: number) => (
-            <SemesterCard key={idx} semester={sem} fixPrereq={fixPrereq} allCourses={courses} passedIds={passedIds} />
+            <SemesterCard
+              key={idx}
+              semester={sem}
+              fixPrereq={fixPrereq}
+              allCourses={courses}
+              passedIds={passedIds}
+            />
           ))}
         </div>
       )}
