@@ -25,7 +25,7 @@ jobs:
       - name: Run tests
         run: uv run pytest
 
-  build-frontend:
+  test-frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,4 +50,4 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend
-        run: pnpm build
+        run: pnpm test
