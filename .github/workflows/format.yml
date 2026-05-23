@@ -7,13 +7,8 @@ on:
 jobs:
   format:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -43,10 +38,13 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
-      - name: Update frontend lockfile
+      - name: Verify frontend lockfile
         run: |
           cd frontend
           pnpm install --lockfile-only
+
+      - name: Check tracked changes
+        run: git diff --exit-code -- backend/uv.lock frontend/pnpm-lock.yaml
 
       - name: Install frontend dependencies
         run: |
@@ -59,15 +57,10 @@ jobs:
           .venv/bin/ruff format .
           .venv/bin/ruff check --fix .
 
-      - name: Format frontend
+      - name: Check backend formatting
+        run: git diff --exit-code -- backend
+
+      - name: Check frontend formatting
         run: |
           cd frontend
-          pnpm format
-
-      - name: Commit formatting changes
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git diff --cached --quiet || git commit -m "style: apply formatting"
-          git push
+          pnpm format:check

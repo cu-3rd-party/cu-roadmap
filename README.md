@@ -28,6 +28,14 @@ The application reads configuration from environment variables. Default values a
 
 ## Local Development
 
+Install the repo Git hooks once after cloning:
+
+```bash
+./scripts/install-git-hooks.sh
+```
+
+The pre-commit hook refreshes `backend/uv.lock` and `frontend/pnpm-lock.yaml`, runs backend Ruff formatting and fixes, runs frontend Prettier formatting, and stages those changes automatically.
+
 ### Backend
 Install dependencies:
 
@@ -57,13 +65,13 @@ Install dependencies:
 
 ```bash
 cd frontend
-npm install
+pnpm install
 ```
 
 Run the development server:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 The application will be available at http://localhost:5173.
