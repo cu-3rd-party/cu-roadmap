@@ -24,40 +24,56 @@ def _load_courses_by_title(courses_csv_path: Path) -> dict[str, dict[str, str]]:
         return {row["title"]: row for row in csv.DictReader(file_obj)}
 
 
-def _build_sheet_rows_from_csv(courses_csv_path: Path) -> dict[str, list[dict[str, str]]]:
+def _build_sheet_rows_from_csv(
+    courses_csv_path: Path,
+) -> dict[str, list[dict[str, str]]]:
     csv_courses = _load_courses_by_title(courses_csv_path)
 
     return {
         "Разработка": [
             {
                 "Название курса": "Разработка на Python. Основной",
-                "Тип курса": csv_courses["Разработка на Python. Основной"]["course_type"],
+                "Тип курса": csv_courses["Разработка на Python. Основной"][
+                    "course_type"
+                ],
                 "Осень / весна": "осень",
                 "Рекомендованный к прохождению семестр": "1",
                 "Нагрузка": csv_courses["Разработка на Python. Основной"]["workload"],
-                "Контекст": csv_courses["Разработка на Python. Основной"]["description"],
+                "Контекст": csv_courses["Разработка на Python. Основной"][
+                    "description"
+                ],
                 "Силлабус если есть": "",
                 "Пререквизиты": "",
                 "Кореквизиты": "",
             },
             {
                 "Название курса": "Разработка на Python. Углублённый",
-                "Тип курса": csv_courses["Разработка на Python. Углублённый"]["course_type"],
+                "Тип курса": csv_courses["Разработка на Python. Углублённый"][
+                    "course_type"
+                ],
                 "Осень / весна": "осень",
                 "Рекомендованный к прохождению семестр": "3",
-                "Нагрузка": csv_courses["Разработка на Python. Углублённый"]["workload"],
-                "Контекст": csv_courses["Разработка на Python. Углублённый"]["description"],
+                "Нагрузка": csv_courses["Разработка на Python. Углублённый"][
+                    "workload"
+                ],
+                "Контекст": csv_courses["Разработка на Python. Углублённый"][
+                    "description"
+                ],
                 "Силлабус если есть": "",
                 "Пререквизиты": "Разработка на Python. Основной",
                 "Кореквизиты": "",
             },
             {
                 "Название курса": "Основы промышленной разработки",
-                "Тип курса": csv_courses["Основы промышленной разработки"]["course_type"],
+                "Тип курса": csv_courses["Основы промышленной разработки"][
+                    "course_type"
+                ],
                 "Осень / весна": "весна",
                 "Рекомендованный к прохождению семестр": "2",
                 "Нагрузка": csv_courses["Основы промышленной разработки"]["workload"],
-                "Контекст": csv_courses["Основы промышленной разработки"]["description"],
+                "Контекст": csv_courses["Основы промышленной разработки"][
+                    "description"
+                ],
                 "Силлабус если есть": "",
                 "Пререквизиты": "",
                 "Кореквизиты": "",
