@@ -1,15 +1,5 @@
 import React, { useState } from "react";
-import {
-  Book,
-  Calculator,
-  Calendar,
-  Moon,
-  Network as NetworkIcon,
-  Search,
-  Sun,
-  Target,
-  Wand2,
-} from "lucide-react";
+import { Book, Calculator, Calendar, Moon, Network as NetworkIcon, Search, Sun, Target, Wand2, } from "lucide-react";
 import { useTheme } from "@/app/providers";
 import { SidebarButton } from "@/shared/ui";
 import { WizardPage } from "@/pages/wizard";

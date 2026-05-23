@@ -15,9 +15,18 @@ jobs:
         working-directory: backend
 
     steps:
+      - name: Resolve formatted commit
+        id: resolve-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: .
+        run: |
+          sha=$(gh api repos/${{ github.repository }}/commits/${{ github.event.workflow_run.head_branch }} --jq '.sha')
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ steps.resolve-ref.outputs.sha }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -39,9 +48,18 @@ jobs:
         working-directory: frontend
 
     steps:
+      - name: Resolve formatted commit
+        id: resolve-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: .
+        run: |
+          sha=$(gh api repos/${{ github.repository }}/commits/${{ github.event.workflow_run.head_branch }} --jq '.sha')
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ steps.resolve-ref.outputs.sha }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
