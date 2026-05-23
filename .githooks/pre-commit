@@ -16,6 +16,8 @@ printf '%s\n' 'Updating backend lockfile and formatting backend...'
 printf '%s\n' 'Updating frontend lockfile and formatting frontend...'
 (
   cd "$root_dir/frontend"
+  corepack enable
+  corepack prepare pnpm@11.1.2 --activate
   pnpm install --lockfile-only
   pnpm format
 )

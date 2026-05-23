@@ -29,27 +29,24 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11.1.2
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Verify frontend lockfile
-        run: |
-          cd frontend
-          pnpm install --lockfile-only
-
-      - name: Check tracked changes
-        run: git diff --exit-code -- backend/uv.lock frontend/pnpm-lock.yaml
 
       - name: Install frontend dependencies
         run: |
           cd frontend
           pnpm install --frozen-lockfile
+
+      - name: Format/Check frontend formatting
+        run: |
+          cd frontend
+          pnpm format:check
 
       - name: Format backend
         run: |
@@ -59,8 +56,3 @@ jobs:
 
       - name: Check backend formatting
         run: git diff --exit-code -- backend
-
-      - name: Check frontend formatting
-        run: |
-          cd frontend
-          pnpm format:check

@@ -31,6 +31,8 @@ The application reads configuration from environment variables. Default values a
 Install the repo Git hooks once after cloning:
 
 ```bash
+corepack enable
+corepack prepare pnpm@11.1.2 --activate
 ./scripts/install-git-hooks.sh
 ```
 

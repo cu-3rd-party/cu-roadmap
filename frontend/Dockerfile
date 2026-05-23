@@ -6,6 +6,7 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 
 RUN corepack enable
+RUN corepack prepare pnpm@11.1.2 --activate
 
 FROM base AS install
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
