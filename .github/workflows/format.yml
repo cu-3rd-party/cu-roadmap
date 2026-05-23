@@ -2,6 +2,7 @@ name: Format
 
 on:
   push:
+    branches: [master]
 
 jobs:
   format:
@@ -19,10 +20,15 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install backend dependencies
+      - name: Update backend lockfile
         run: |
           cd backend
           pip install uv
+          uv lock
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
           uv sync
 
       - name: Set up pnpm
@@ -36,6 +42,11 @@ jobs:
           node-version: 20
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Update frontend lockfile
+        run: |
+          cd frontend
+          pnpm install --lockfile-only
 
       - name: Install frontend dependencies
         run: |
