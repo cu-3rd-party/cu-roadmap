@@ -5,9 +5,8 @@ import { api } from "@/shared/config";
 import { renderWithProviders } from "@/test/render";
 
 vi.mock("@/shared/config", async () => {
-  const actual = await vi.importActual<typeof import("@/shared/config")>(
-    "@/shared/config",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/shared/config")>("@/shared/config");
 
   return {
     ...actual,
@@ -28,7 +27,14 @@ describe("WizardPage", () => {
     const setLoading = vi.fn();
 
     vi.mocked(api.getCourses).mockResolvedValue({
-      data: [{ id: "course-1", title: "Python Basics", category: "tech", workload: 4 }],
+      data: [
+        {
+          id: "course-1",
+          title: "Python Basics",
+          category: "tech",
+          workload: 4,
+        },
+      ],
     } as Awaited<ReturnType<typeof api.getCourses>>);
     vi.mocked(api.getMajors).mockResolvedValue({
       data: [{ id: "major-1", title: "Software Engineering" }],
@@ -65,7 +71,9 @@ describe("WizardPage", () => {
 
     await screen.findByText("Python Basics");
     await user.click(screen.getByRole("button", { name: /Далее/i }));
-    await user.click(screen.getByRole("button", { name: /Построить траектории/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Построить траектории/i }),
+    );
 
     expect(api.generateRoadmap).toHaveBeenCalled();
     expect(setLoading).toHaveBeenCalledWith(true);

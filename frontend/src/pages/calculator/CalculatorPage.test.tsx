@@ -5,9 +5,8 @@ import { api } from "@/shared/config";
 import { renderWithProviders } from "@/test/render";
 
 vi.mock("@/shared/config", async () => {
-  const actual = await vi.importActual<typeof import("@/shared/config")>(
-    "@/shared/config",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/shared/config")>("@/shared/config");
 
   return {
     ...actual,
@@ -31,9 +30,7 @@ describe("CalculatorPage", () => {
       screen.getByRole("button", { name: "Рассчитать соответствие" }),
     );
 
-    expect(
-      await screen.findByText("Software Engineering"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Software Engineering")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
   });
 });

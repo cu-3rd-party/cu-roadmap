@@ -5,9 +5,8 @@ import { api } from "@/shared/config";
 import { renderWithProviders } from "@/test/render";
 
 vi.mock("@/shared/config", async () => {
-  const actual = await vi.importActual<typeof import("@/shared/config")>(
-    "@/shared/config",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/shared/config")>("@/shared/config");
 
   return {
     ...actual,
@@ -24,7 +23,14 @@ describe("GoalPage", () => {
     const user = userEvent.setup();
 
     vi.mocked(api.getCourses).mockResolvedValue({
-      data: [{ id: "course-1", title: "Python Basics", category: "tech", workload: 4 }],
+      data: [
+        {
+          id: "course-1",
+          title: "Python Basics",
+          category: "tech",
+          workload: 4,
+        },
+      ],
     } as Awaited<ReturnType<typeof api.getCourses>>);
     vi.mocked(api.generateGoalPath).mockResolvedValue({
       data: {
@@ -33,7 +39,12 @@ describe("GoalPage", () => {
             semester: 1,
             total_load: 4,
             courses: [
-              { id: "course-1", title: "Python Basics", category: "tech", workload: 4 },
+              {
+                id: "course-1",
+                title: "Python Basics",
+                category: "tech",
+                workload: 4,
+              },
             ],
           },
         ],
