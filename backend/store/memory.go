@@ -218,7 +218,7 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 		s.courses[uid] = CourseData{
 			ID:                  uid,
 			Title:               row[1],
-			Description:         strPtr(row[2]),
+			Description:         new(row[2]),
 			CourseType:          courseType,
 			Category:            category,
 			AvailableSemesters:  sems,
@@ -396,8 +396,6 @@ func parseFloat(s string) float64 {
 	_, _ = fmt.Sscanf(s, "%f", &val)
 	return val
 }
-
-func strPtr(s string) *string { return &s }
 
 func splitCSV(s string) []int {
 	var out []int

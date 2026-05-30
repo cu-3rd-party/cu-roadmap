@@ -28,15 +28,15 @@ func (s *MemoryStoreTestSuite) TestCreateAndGetCourse() {
 	course := CourseData{
 		ID:                  uuid.New(),
 		Title:               "Test Course",
-		Description:         strPtr("A test course"),
-		HandbookLink:        strPtr("http://example.com"),
+		Description:         new("A test course"),
+		HandbookLink:        new("http://example.com"),
 		CourseType:          enums.CourseTypeMandatory,
 		Category:            enums.CourseCategoryTech,
 		AllowedCohorts:      []int{2024, 2025},
 		AvailableSemesters:  []int{1, 2},
-		RecommendedSemester: intPtr(1),
+		RecommendedSemester: new(1),
 		Workload:            5.0,
-		CsatMetric:          float64Ptr(4.5),
+		CsatMetric:          new(4.5),
 	}
 
 	created, err := s.s.CreateCourse(course)
@@ -185,9 +185,6 @@ func (s *MemoryStoreTestSuite) TestClearAll() {
 func TestMemoryStoreSuite(t *testing.T) {
 	suite.Run(t, new(MemoryStoreTestSuite))
 }
-
-func intPtr(i int) *int             { return &i }
-func float64Ptr(f float64) *float64 { return &f }
 
 func TestLoadCoursesFromCSV(t *testing.T) {
 	s := NewMemoryStore()
