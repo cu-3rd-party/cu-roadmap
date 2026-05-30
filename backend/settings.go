@@ -15,6 +15,7 @@ type Settings struct {
 	UseMemoryStore                 bool   `envconfig:"USE_MEMORY_STORE" default:"false"`
 	GoogleSheetsSpreadsheetID      string `envconfig:"GOOGLE_SHEETS_SPREADSHEET_ID" default:""`
 	GoogleServiceAccountJSON       string `envconfig:"GOOGLE_SERVICE_ACCOUNT_JSON" default:""`
+	GoogleServiceAccountJSONB64    string `envconfig:"GOOGLE_SERVICE_ACCOUNT_JSON_B64" default:""`
 	GoogleSheetsSyncSheets         string `envconfig:"GOOGLE_SHEETS_SYNC_SHEETS" default:"Бизнес и аналитика,Искусственный интеллект,Разработка"`
 	GoogleSheetsSyncEnabled        bool   `envconfig:"GOOGLE_SHEETS_SYNC_ENABLED" default:"true"`
 	GoogleSheetsSyncIntervalSecond int    `envconfig:"GOOGLE_SHEETS_SYNC_INTERVAL_SECONDS" default:"3600"`

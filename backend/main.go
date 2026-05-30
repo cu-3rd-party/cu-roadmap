@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"log/slog"
@@ -26,20 +27,27 @@ func main() {
 
 	slog.Info("starting CU Roadmap API")
 
+	credsJSON := settings.GoogleServiceAccountJSON
+	if credsJSON == "" && settings.GoogleServiceAccountJSONB64 != "" {
+		decoded, err := base64.StdEncoding.DecodeString(settings.GoogleServiceAccountJSONB64)
+		if err == nil {
+			credsJSON = string(decoded)
+		}
+	}
 	store.SetSheetsConfig(
 		settings.GoogleSheetsSpreadsheetID,
-		settings.GoogleServiceAccountJSON,
+		credsJSON,
 		settings.GoogleSheetsSyncSheetNames(),
 	)
 
 	useMemoryStore := settings.UseMemoryStore
 
 	slog.Info("initializing store", "USE_MEMORY_STORE", useMemoryStore)
-	_, err := store.InitStore(useMemoryStore, settings.DBURL())
+	s, err := store.InitStore(useMemoryStore, settings.DBURL())
 	if err != nil {
 		log.Fatalf("failed to init store: %v", err)
 	}
-	defer store.CloseStore()
+	defer s.Close()
 
 	if settings.SeedOnStartup {
 		s := store.GetStore()
