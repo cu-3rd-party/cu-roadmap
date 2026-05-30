@@ -601,3 +601,7 @@ func calculateRecommendedSemesters(coursesPath, depsPath string) map[string]int 
 	}
 	return recommended
 }
+
+func ptr[T any](v T) *T {
+	return &v
+}
