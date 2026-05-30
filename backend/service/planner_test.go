@@ -1,0 +1,124 @@
+package service
+
+import (
+	"testing"
+
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/cu-3rd-party/cu-roadmap/backend/store"
+)
+
+func newTestData() (store.StoreBase, *store.CourseData, *store.CourseData, *store.CourseData) {
+	s := store.NewMemoryStore()
+	s.Init()
+
+	c1 := store.CourseData{ID: uuid.New(), Title: "Python Basics", Description: strPtr("Intro"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1, 2}, RecommendedSemester: intPtr(1), Workload: 4.0}
+	c2 := store.CourseData{ID: uuid.New(), Title: "Advanced Python", Description: strPtr("Advanced"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{3, 4}, RecommendedSemester: intPtr(3), Workload: 5.0}
+	c3 := store.CourseData{ID: uuid.New(), Title: "Algorithms", Description: strPtr("Algos"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategorySTEM, AvailableSemesters: []int{1, 3}, RecommendedSemester: intPtr(2), Workload: 6.0}
+
+	s.CreateCourse(c1)
+	s.CreateCourse(c2)
+	s.CreateCourse(c3)
+
+	dep := store.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite}
+	s.CreateCourseDependency(dep)
+
+	return s, &c1, &c2, &c3
+}
+
+func strPtr(s string) *string { return &s }
+func intPtr(i int) *int       { return &i }
+
+func TestGenerateRoadmapBasic(t *testing.T) {
+	s, c1, c2, c3 := newTestData()
+	defer s.Close()
+
+	major := store.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+	s.CreateMajor(major)
+	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeCore})
+	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeCore})
+	_ = c3
+
+	planner := NewGreedyPlanner(s)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, major.ID, 1, 12.0)
+	assert.NoError(t, err)
+	assert.IsType(t, []map[string]interface{}{}, roadmap)
+	assert.NotZero(t, len(roadmap.([]map[string]interface{})))
+}
+
+func TestGenerateRoadmapWithPassedCourses(t *testing.T) {
+	s, c1, c2, c3 := newTestData()
+	defer s.Close()
+
+	major := store.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+	s.CreateMajor(major)
+	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeCore})
+	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeCore})
+	_ = c3
+
+	planner := NewGreedyPlanner(s)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID}, major.ID, 3, 12.0)
+	assert.NoError(t, err)
+	assert.IsType(t, []map[string]interface{}{}, roadmap)
+}
+
+func TestGenerateRoadmapMajorNotFound(t *testing.T) {
+	s := store.NewMemoryStore()
+	s.Init()
+	defer s.Close()
+
+	planner := NewGreedyPlanner(s)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0)
+	assert.NoError(t, err)
+	assert.IsType(t, map[string]interface{}{}, roadmap)
+	assert.Contains(t, roadmap.(map[string]interface{}), "error")
+}
+
+func TestGenerateRoadmapRespectsMaxLoad(t *testing.T) {
+	s, c1, c2, c3 := newTestData()
+	defer s.Close()
+
+	major := store.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+	s.CreateMajor(major)
+	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeCore})
+	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeCore})
+	_ = c3
+
+	planner := NewGreedyPlanner(s)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, major.ID, 1, 4.0)
+	assert.NoError(t, err)
+	rm := roadmap.([]map[string]interface{})
+	for _, sem := range rm {
+		if load, ok := sem["total_load"]; ok {
+			assert.LessOrEqual(t, load.(float64), 4.0)
+		}
+	}
+}
+
+func TestGenerateRoadmapEmptyMajor(t *testing.T) {
+	s, _, _, _ := newTestData()
+	defer s.Close()
+
+	planner := NewGreedyPlanner(s)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0)
+	assert.NoError(t, err)
+	assert.IsType(t, map[string]interface{}{}, roadmap)
+	assert.Contains(t, roadmap.(map[string]interface{}), "error")
+}
+
+func TestGenerateRoadmapAllPassed(t *testing.T) {
+	s, c1, c2, _ := newTestData()
+	defer s.Close()
+
+	major := store.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+	s.CreateMajor(major)
+	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeCore})
+	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeCore})
+
+	planner := NewGreedyPlanner(s)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID, c2.ID}, major.ID, 1, 12.0)
+	assert.NoError(t, err)
+	assert.IsType(t, []map[string]interface{}{}, roadmap)
+}

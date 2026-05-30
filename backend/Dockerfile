@@ -1,23 +1,23 @@
-FROM python:3.14-slim
-
-# Copy uv from the official image
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# Enable bytecode compilation
-ENV UV_COMPILE_BYTECODE=1
-# Copy from the cache instead of linking since it's a container
-ENV UV_LINK_MODE=copy
+COPY go.mod go.sum ./
+RUN go mod download
 
-COPY pyproject.toml uv.lock .python-version README.md ./
-RUN uv sync --no-dev --no-install-project
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/server .
 
-COPY src/ src/
+FROM alpine:3.19
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+
+COPY --from=builder /app/server .
 COPY static/ static/
 COPY *.csv ./
-COPY credentials/ credentials/
 
 EXPOSE 8080
 
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["./server"]

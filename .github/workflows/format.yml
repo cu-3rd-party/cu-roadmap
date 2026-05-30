@@ -10,21 +10,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          python-version: '3.12'
+          go-version: '1.23'
+          cache-dependency-path: backend/go.sum
 
-      - name: Update backend lockfile
+      - name: Check go mod tidy
         run: |
           cd backend
-          pip install uv
-          uv lock
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
 
-      - name: Install backend dependencies
+      - name: Install gofumpt
+        run: go install mvdan.cc/gofumpt@latest
+
+      - name: Check Go formatting
         run: |
           cd backend
-          uv sync
+          gofumpt -l -w .
+          git diff --exit-code -- .
+
+      - name: Run go vet
+        run: |
+          cd backend
+          go vet ./...
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -47,12 +57,3 @@ jobs:
         run: |
           cd frontend
           pnpm format:check
-
-      - name: Format backend
-        run: |
-          cd backend
-          .venv/bin/ruff format .
-          .venv/bin/ruff check --fix .
-
-      - name: Check backend formatting
-        run: git diff --exit-code -- backend

@@ -28,17 +28,14 @@ jobs:
         with:
           ref: ${{ steps.resolve-ref.outputs.sha }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-
-      - name: Set up Python
-        run: uv python install 3.14
-
-      - name: Install dependencies
-        run: uv sync --group dev
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: backend/go.sum
 
       - name: Run tests
-        run: uv run pytest
+        run: go test -p 1 -count=1 ./...
 
   test-frontend:
     if: github.event.workflow_run.conclusion == 'success'

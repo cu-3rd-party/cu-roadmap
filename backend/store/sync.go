@@ -1,0 +1,322 @@
+package store
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"regexp"
+	"strings"
+
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/google/uuid"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
+	"google.golang.org/api/sheets/v4"
+)
+
+type SheetMajorMapping struct {
+	MajorTitle string
+	School     string
+	Category   enums.CourseCategory
+}
+
+var SHEET_TO_MAJOR = map[string]SheetMajorMapping{
+	"Бизнес и аналитика":      {"Business", "Business", enums.CourseCategoryBusiness},
+	"Искусственный интеллект": {"AI", "Tech", enums.CourseCategoryAI},
+	"Разработка":              {"Software Engineering", "Tech", enums.CourseCategoryTech},
+}
+
+type SyncResult struct {
+	Courses           int
+	Majors            int
+	MajorRequirements int
+}
+
+type sheetsConfig struct {
+	SpreadsheetID   string
+	CredentialsJSON string
+	SheetNames      []string
+}
+
+var sheetsCfg sheetsConfig
+
+func SetSheetsConfig(spreadsheetID, credentialsJSON string, sheetNames []string) {
+	sheetsCfg = sheetsConfig{
+		SpreadsheetID:   spreadsheetID,
+		CredentialsJSON: credentialsJSON,
+		SheetNames:      sheetNames,
+	}
+}
+
+func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string) (SyncResult, error) {
+	if err := s.ClearAll(); err != nil {
+		return SyncResult{}, fmt.Errorf("clear store: %w", err)
+	}
+
+	majorsByTitle := make(map[string]MajorData)
+	courseMap := make(map[string]CourseData)
+	courseToMajors := make(map[string][]string)
+	type rowEntry struct {
+		Row    map[string]string
+		Course CourseData
+	}
+	var allRows []rowEntry
+
+	for sheetName, rows := range sheetsData {
+		mapping, ok := SHEET_TO_MAJOR[sheetName]
+		if !ok {
+			slog.Warn("unknown sheet, skipping", "sheet", sheetName)
+			continue
+		}
+
+		if _, exists := majorsByTitle[mapping.MajorTitle]; !exists {
+			major := MajorData{ID: uuid.New(), Title: mapping.MajorTitle, School: mapping.School}
+			if _, err := s.CreateMajor(major); err != nil {
+				return SyncResult{}, fmt.Errorf("create major %s: %w", mapping.MajorTitle, err)
+			}
+			majorsByTitle[mapping.MajorTitle] = major
+		}
+
+		for _, row := range rows {
+			title := strings.TrimSpace(row["Название курса"])
+			if title == "" {
+				continue
+			}
+
+			norm := NormalizeSheetTitle(title)
+			if _, exists := courseMap[norm]; !exists {
+				course := MapSheetRowToCourse(row, mapping.Category)
+				if _, err := s.CreateCourse(course); err != nil {
+					return SyncResult{}, fmt.Errorf("create course %s: %w", title, err)
+				}
+				courseMap[norm] = course
+				courseToMajors[norm] = nil
+				allRows = append(allRows, rowEntry{Row: row, Course: course})
+			}
+
+			found := false
+			for _, t := range courseToMajors[norm] {
+				if t == mapping.MajorTitle {
+					found = true
+					break
+				}
+			}
+			if !found {
+				courseToMajors[norm] = append(courseToMajors[norm], mapping.MajorTitle)
+			}
+		}
+	}
+
+	for _, entry := range allRows {
+		for _, prereqTitle := range SplitSheetTitles(entry.Row["Пререквизиты"]) {
+			norm := NormalizeSheetTitle(prereqTitle)
+			target, exists := courseMap[norm]
+			if !exists {
+				target, exists = courseMap[prereqTitle]
+				if !exists {
+					continue
+				}
+			}
+			if _, err := s.CreateCourseDependency(CourseDependencyData{
+				ID:               uuid.New(),
+				CourseID:         entry.Course.ID,
+				RequiredCourseID: target.ID,
+				DependencyType:   enums.DependencyTypePrerequisite,
+			}); err != nil {
+				return SyncResult{}, fmt.Errorf("create prereq dependency: %w", err)
+			}
+		}
+
+		for _, coreqTitle := range SplitSheetTitles(entry.Row["Кореквизиты"]) {
+			norm := NormalizeSheetTitle(coreqTitle)
+			target, exists := courseMap[norm]
+			if !exists {
+				target, exists = courseMap[coreqTitle]
+				if !exists {
+					continue
+				}
+			}
+			if _, err := s.CreateCourseDependency(CourseDependencyData{
+				ID:               uuid.New(),
+				CourseID:         entry.Course.ID,
+				RequiredCourseID: target.ID,
+				DependencyType:   enums.DependencyTypeCorequisite1,
+			}); err != nil {
+				return SyncResult{}, fmt.Errorf("create coreq dependency: %w", err)
+			}
+		}
+	}
+
+	reqCount := 0
+	for normTitle, majorTitles := range courseToMajors {
+		course := courseMap[normTitle]
+		for _, majorTitle := range majorTitles {
+			major, exists := majorsByTitle[majorTitle]
+			if !exists {
+				continue
+			}
+			if _, err := s.CreateMajorRequirement(MajorRequirementData{
+				ID:              uuid.New(),
+				MajorID:         major.ID,
+				CourseID:        course.ID,
+				RequirementType: enums.RequirementTypeCore,
+			}); err != nil {
+				return SyncResult{}, fmt.Errorf("create major requirement: %w", err)
+			}
+			reqCount++
+		}
+	}
+
+	return SyncResult{
+		Courses:           len(courseMap),
+		Majors:            len(majorsByTitle),
+		MajorRequirements: reqCount,
+	}, nil
+}
+
+func syncWithSheets(s StoreBase) error {
+	if sheetsCfg.SpreadsheetID == "" || sheetsCfg.CredentialsJSON == "" {
+		slog.Warn("Google Sheets not configured, skipping sync")
+		return nil
+	}
+
+	config, err := google.JWTConfigFromJSON([]byte(sheetsCfg.CredentialsJSON), "https://www.googleapis.com/auth/spreadsheets.readonly")
+	if err != nil {
+		return fmt.Errorf("parse service account credentials: %w", err)
+	}
+
+	client := config.Client(context.Background())
+	sheetsService, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
+	if err != nil {
+		return fmt.Errorf("create sheets service: %w", err)
+	}
+
+	allData := make(map[string][]map[string]string)
+	for _, sheetName := range sheetsCfg.SheetNames {
+		slog.Info("fetching sheet", "sheet", sheetName)
+		rangeStr := fmt.Sprintf("'%s'!A:Z", sheetName)
+		resp, err := sheetsService.Spreadsheets.Values.Get(sheetsCfg.SpreadsheetID, rangeStr).Do()
+		if err != nil {
+			slog.Warn("failed to fetch sheet, skipping", "sheet", sheetName, "error", err)
+			continue
+		}
+
+		if len(resp.Values) == 0 {
+			continue
+		}
+
+		headerRaw := resp.Values[0]
+		headers := make([]string, len(headerRaw))
+		for i, h := range headerRaw {
+			headers[i] = fmt.Sprint(h)
+		}
+
+		var rows []map[string]string
+		for _, row := range resp.Values[1:] {
+			record := make(map[string]string)
+			for i, h := range headers {
+				if i < len(row) {
+					record[h] = fmt.Sprint(row[i])
+				}
+			}
+			rows = append(rows, record)
+		}
+		allData[sheetName] = rows
+		slog.Info("fetched rows from sheet", "sheet", sheetName, "count", len(rows))
+	}
+
+	if len(allData) == 0 {
+		slog.Info("no data returned from Google Sheets")
+		return nil
+	}
+
+	result, err := SyncFromSheetData(s, allData)
+	if err != nil {
+		return fmt.Errorf("sync from sheet data: %w", err)
+	}
+
+	slog.Info(
+		"Google Sheets sync complete",
+		"courses", result.Courses,
+		"majors", result.Majors,
+		"major_requirements", result.MajorRequirements,
+	)
+
+	return nil
+}
+
+func NormalizeSheetTitle(raw string) string {
+	re := regexp.MustCompile("^[\u2600-\u27BF\U0001F300-\U0001F64F\U0001F680-\U0001F6FF\U0001F534\U0001F535\u26AB]\\s*")
+	return strings.TrimSpace(re.ReplaceAllString(raw, ""))
+}
+
+func SplitSheetTitles(raw string) []string {
+	if raw == "" {
+		return nil
+	}
+	var out []string
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) CourseData {
+	rawType := strings.ToLower(row["Тип курса"])
+	var courseType enums.CourseType
+	if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
+		courseType = enums.CourseTypeMandatory
+	} else if strings.Contains(rawType, "choice") || strings.Contains(rawType, "elective") || strings.Contains(rawType, "факультатив") {
+		courseType = enums.CourseTypeElective
+	} else {
+		courseType = enums.CourseTypeOther
+	}
+
+	rawSeason := strings.ToLower(row["Осень / весна"])
+	var availableSemesters []int
+	if strings.Contains(rawSeason, "осень") {
+		availableSemesters = []int{1, 3, 5, 7}
+	} else if strings.Contains(rawSeason, "весна") {
+		availableSemesters = []int{2, 4, 6, 8}
+	} else {
+		availableSemesters = []int{1, 2, 3, 4, 5, 6, 7, 8}
+	}
+
+	var recommendedSemester *int
+	rawRec := row["Рекомендованный к прохождению семестр"]
+	re := regexp.MustCompile(`\d+`)
+	if match := re.FindString(rawRec); match != "" {
+		v := 0
+		fmt.Sscanf(match, "%d", &v)
+		recommendedSemester = &v
+	}
+
+	rawWorkload := row["Нагрузка"]
+	if rawWorkload == "" {
+		rawWorkload = row["workload"]
+	}
+	if rawWorkload == "" {
+		rawWorkload = "5"
+	}
+	workload := 5.0
+	reW := regexp.MustCompile(`(\d+(?:\.\d+)?)`)
+	if match := reW.FindString(rawWorkload); match != "" {
+		fmt.Sscanf(match, "%f", &workload)
+	}
+
+	return CourseData{
+		ID:                  uuid.New(),
+		Title:               strings.TrimSpace(row["Название курса"]),
+		Description:         strPtr(row["Контекст"]),
+		HandbookLink:        strPtr(row["Силлабус если есть"]),
+		CourseType:          courseType,
+		Category:            category,
+		AllowedCohorts:      []int{2024, 2025, 2026},
+		AvailableSemesters:  availableSemesters,
+		RecommendedSemester: recommendedSemester,
+		Workload:            workload,
+	}
+}
