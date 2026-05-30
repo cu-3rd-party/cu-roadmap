@@ -12,7 +12,8 @@ import (
 
 func createCourse(id *uuid.UUID, title string, workload float64, sems []int) store.CourseData {
 	if id == nil {
-		id = new(uuid.New())
+		uid := uuid.New()
+		id = &uid
 	}
 	if sems == nil {
 		sems = []int{1, 2}

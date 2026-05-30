@@ -14,9 +14,9 @@ func newTestData() (store.StoreBase, *store.CourseData, *store.CourseData, *stor
 	s := store.NewMemoryStore()
 	s.Init()
 
-	c1 := store.CourseData{ID: uuid.New(), Title: "Python Basics", Description: new("Intro"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1, 2}, RecommendedSemester: new(1), Workload: 4.0}
-	c2 := store.CourseData{ID: uuid.New(), Title: "Advanced Python", Description: new("Advanced"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{3, 4}, RecommendedSemester: new(3), Workload: 5.0}
-	c3 := store.CourseData{ID: uuid.New(), Title: "Algorithms", Description: new("Algos"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategorySTEM, AvailableSemesters: []int{1, 3}, RecommendedSemester: new(2), Workload: 6.0}
+	c1 := store.CourseData{ID: uuid.New(), Title: "Python Basics", Description: ptr("Intro"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1, 2}, RecommendedSemester: ptr(1), Workload: 4.0}
+	c2 := store.CourseData{ID: uuid.New(), Title: "Advanced Python", Description: ptr("Advanced"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{3, 4}, RecommendedSemester: ptr(3), Workload: 5.0}
+	c3 := store.CourseData{ID: uuid.New(), Title: "Algorithms", Description: ptr("Algos"), CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategorySTEM, AvailableSemesters: []int{1, 3}, RecommendedSemester: ptr(2), Workload: 6.0}
 
 	s.CreateCourse(c1)
 	s.CreateCourse(c2)
@@ -118,4 +118,8 @@ func TestGenerateRoadmapAllPassed(t *testing.T) {
 	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID, c2.ID}, major.ID, 1, 12.0, 0)
 	assert.NoError(t, err)
 	assert.IsType(t, []map[string]interface{}{}, roadmap)
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }
