@@ -20,6 +20,7 @@ func (p *GreedyPlanner) GenerateRoadmap(
 	majorID uuid.UUID,
 	currentSemester int,
 	maxLoad float64,
+	cohort int,
 ) (interface{}, error) {
 	requirements, err := p.store.GetMajorRequirements(majorID)
 	if err != nil {
@@ -37,6 +38,9 @@ func (p *GreedyPlanner) GenerateRoadmap(
 	targetCourses := make(map[uuid.UUID]store.CourseData)
 	for _, req := range requirements {
 		if c, ok := allCourses[req.CourseID]; ok {
+			if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
+				continue
+			}
 			targetCourses[req.CourseID] = c
 		}
 	}
@@ -199,4 +203,13 @@ func (p *GreedyPlanner) GenerateRoadmap(
 	}
 
 	return roadmap, nil
+}
+
+func cohortInSlice(cohort int, cohorts []int) bool {
+	for _, c := range cohorts {
+		if c == cohort {
+			return true
+		}
+	}
+	return false
 }

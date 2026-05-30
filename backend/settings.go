@@ -10,7 +10,7 @@ type Settings struct {
 	PostgresUser                   string `envconfig:"POSTGRES_USER" default:"roadmap_user"`
 	PostgresPassword               string `envconfig:"POSTGRES_PASSWORD" default:"roadmap_password"`
 	PostgresDB                     string `envconfig:"POSTGRES_DB" default:"roadmap_db"`
-	PostgresHost                   string `envconfig:"POSTGRES_HOST" default:"127.0.0.1"`
+	PostgresHost                   string `envconfig:"POSTGRES_HOST" default:"db"`
 	SeedOnStartup                  bool   `envconfig:"SEED_ON_STARTUP" default:"true"`
 	UseMemoryStore                 bool   `envconfig:"USE_MEMORY_STORE" default:"false"`
 	GoogleSheetsSpreadsheetID      string `envconfig:"GOOGLE_SHEETS_SPREADSHEET_ID" default:""`

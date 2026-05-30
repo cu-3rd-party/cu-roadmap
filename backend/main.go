@@ -40,6 +40,12 @@ func main() {
 		settings.GoogleSheetsSyncSheetNames(),
 	)
 
+	slog.Info(
+		"sheets sync configured",
+		"spreadsheet_id", settings.GoogleSheetsSpreadsheetID,
+		"requested_sheets", settings.GoogleSheetsSyncSheetNames(),
+	)
+
 	useMemoryStore := settings.UseMemoryStore
 
 	slog.Info("initializing store", "USE_MEMORY_STORE", useMemoryStore)

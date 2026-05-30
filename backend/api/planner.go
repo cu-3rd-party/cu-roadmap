@@ -32,7 +32,7 @@ func generateRoadmap(c *gin.Context) {
 	}
 
 	planner := service.NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap(req.PassedCourseIDs, req.MajorID, req.CurrentSemester, req.MaxLoad)
+	roadmap, err := planner.GenerateRoadmap(req.PassedCourseIDs, req.MajorID, req.CurrentSemester, req.MaxLoad, req.Cohort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -208,7 +208,7 @@ func testEngine2(c *gin.Context) {
 	}
 
 	planner := service.NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap(student.PassedCourseIDs, *student.TargetMajorID, student.CurrentSemester, 12.0)
+	roadmap, err := planner.GenerateRoadmap(student.PassedCourseIDs, *student.TargetMajorID, student.CurrentSemester, 12.0, student.Cohort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -11,10 +11,11 @@ const (
 type CourseCategory string
 
 const (
-	CourseCategoryAI       CourseCategory = "ai"
-	CourseCategorySTEM     CourseCategory = "stem"
-	CourseCategorySoft     CourseCategory = "soft"
-	CourseCategoryBusiness CourseCategory = "business"
-	CourseCategoryTech     CourseCategory = "tech"
-	CourseCategoryDesign   CourseCategory = "design"
+	CourseCategoryFundamentals CourseCategory = "fundamentals"
+	CourseCategoryAI           CourseCategory = "ai"
+	CourseCategorySTEM         CourseCategory = "stem"
+	CourseCategorySoft         CourseCategory = "soft"
+	CourseCategoryBusiness     CourseCategory = "business"
+	CourseCategoryTech         CourseCategory = "tech"
+	CourseCategoryDesign       CourseCategory = "design"
 )

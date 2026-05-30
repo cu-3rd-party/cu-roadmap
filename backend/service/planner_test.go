@@ -42,7 +42,7 @@ func TestGenerateRoadmapBasic(t *testing.T) {
 	_ = c3
 
 	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, major.ID, 1, 12.0)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, major.ID, 1, 12.0, 0)
 	assert.NoError(t, err)
 	assert.IsType(t, []map[string]interface{}{}, roadmap)
 	assert.NotZero(t, len(roadmap.([]map[string]interface{})))
@@ -59,7 +59,7 @@ func TestGenerateRoadmapWithPassedCourses(t *testing.T) {
 	_ = c3
 
 	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID}, major.ID, 3, 12.0)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID}, major.ID, 3, 12.0, 0)
 	assert.NoError(t, err)
 	assert.IsType(t, []map[string]interface{}{}, roadmap)
 }
@@ -70,7 +70,7 @@ func TestGenerateRoadmapMajorNotFound(t *testing.T) {
 	defer s.Close()
 
 	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0, 0)
 	assert.NoError(t, err)
 	assert.IsType(t, map[string]interface{}{}, roadmap)
 	assert.Contains(t, roadmap.(map[string]interface{}), "error")
@@ -87,7 +87,7 @@ func TestGenerateRoadmapRespectsMaxLoad(t *testing.T) {
 	_ = c3
 
 	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, major.ID, 1, 4.0)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, major.ID, 1, 4.0, 0)
 	assert.NoError(t, err)
 	rm := roadmap.([]map[string]interface{})
 	for _, sem := range rm {
@@ -102,7 +102,7 @@ func TestGenerateRoadmapEmptyMajor(t *testing.T) {
 	defer s.Close()
 
 	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0, 0)
 	assert.NoError(t, err)
 	assert.IsType(t, map[string]interface{}{}, roadmap)
 	assert.Contains(t, roadmap.(map[string]interface{}), "error")
@@ -118,7 +118,7 @@ func TestGenerateRoadmapAllPassed(t *testing.T) {
 	s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeCore})
 
 	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID, c2.ID}, major.ID, 1, 12.0)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID, c2.ID}, major.ID, 1, 12.0, 0)
 	assert.NoError(t, err)
 	assert.IsType(t, []map[string]interface{}{}, roadmap)
 }

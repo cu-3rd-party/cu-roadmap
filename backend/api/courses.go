@@ -36,6 +36,7 @@ func getCourses(c *gin.Context) {
 			"course_type":          string(c.CourseType),
 			"category":             string(c.Category),
 			"available_semesters":  c.AvailableSemesters,
+			"allowed_cohorts":      c.AllowedCohorts,
 			"recommended_semester": c.RecommendedSemester,
 			"workload":             c.Workload,
 			"prerequisites":        prereqs,

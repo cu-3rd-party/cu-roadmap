@@ -7,6 +7,7 @@ export interface Course {
   workload: number;
   description?: string;
   available_semesters?: number[];
+  allowed_cohorts?: number[];
   recommended_semester?: number;
   prerequisites?: string[];
   postrequisites?: string[];

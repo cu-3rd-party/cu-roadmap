@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
@@ -48,7 +50,37 @@ func SetSheetsConfig(spreadsheetID, credentialsJSON string, sheetNames []string)
 	}
 }
 
-func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string) (SyncResult, error) {
+func guessSheetMapping(title string) (SheetMajorMapping, bool) {
+	if m, ok := SHEET_TO_MAJOR[title]; ok {
+		return m, true
+	}
+
+	lower := strings.ToLower(title)
+
+	type kwEntry struct {
+		keywords []string
+		mapping  SheetMajorMapping
+	}
+	keywordMap := []kwEntry{
+		{[]string{"бизнес", "business", "экономика", "финанс", "маркетинг", "аналитик"}, SheetMajorMapping{"Business", "Business", enums.CourseCategoryBusiness}},
+		{[]string{"искусственный интеллект", "интеллект", "machine learning", "deep learning", "ml", "dl", "ai", "ии", "нейро"}, SheetMajorMapping{"AI", "Tech", enums.CourseCategoryAI}},
+		{[]string{"разработка", "software", "программирован", "программист", "swe", "engineering", "development", "web", "mobile", "backend", "frontend"}, SheetMajorMapping{"Software Engineering", "Tech", enums.CourseCategoryTech}},
+		{[]string{"дизайн", "design", "ux", "ui", "график"}, SheetMajorMapping{"Design", "Design", enums.CourseCategoryDesign}},
+		{[]string{"общ", "common", "general", "fundamental", "базов", "основ"}, SheetMajorMapping{"Common", "Common", enums.CourseCategoryFundamentals}},
+	}
+
+	for _, entry := range keywordMap {
+		for _, kw := range entry.keywords {
+			if strings.Contains(lower, kw) {
+				return entry.mapping, true
+			}
+		}
+	}
+
+	return SheetMajorMapping{}, false
+}
+
+func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, sheetMapping map[string]SheetMajorMapping) (SyncResult, error) {
 	if err := s.ClearAll(); err != nil {
 		return SyncResult{}, fmt.Errorf("clear store: %w", err)
 	}
@@ -63,7 +95,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string) (
 	var allRows []rowEntry
 
 	for sheetName, rows := range sheetsData {
-		mapping, ok := SHEET_TO_MAJOR[sheetName]
+		mapping, ok := sheetMapping[sheetName]
 		if !ok {
 			slog.Warn("unknown sheet, skipping", "sheet", sheetName)
 			continue
@@ -191,10 +223,64 @@ func syncWithSheets(s StoreBase) error {
 		return fmt.Errorf("create sheets service: %w", err)
 	}
 
+	spreadsheet, err := sheetsService.Spreadsheets.Get(sheetsCfg.SpreadsheetID).Do()
+	if err != nil {
+		return fmt.Errorf("get spreadsheet metadata: %w", err)
+	}
+
+	sheetMapping := make(map[string]SheetMajorMapping)
+	sheetNames := make([]string, 0, len(spreadsheet.Sheets))
+	for _, sheet := range spreadsheet.Sheets {
+		title := sheet.Properties.Title
+		sheetNames = append(sheetNames, title)
+		if mapping, ok := guessSheetMapping(title); ok {
+			sheetMapping[title] = mapping
+			slog.Info(
+				"sheet mapped",
+				"sheet", title,
+				"major", mapping.MajorTitle,
+				"school", mapping.School,
+				"category", mapping.Category,
+				"source", "guess",
+			)
+		} else {
+			slog.Warn(
+				"sheet could not be mapped to any major",
+				"sheet", title,
+			)
+		}
+	}
+
+	usedFilter := ""
+	requestedSheets := sheetsCfg.SheetNames
+	if len(requestedSheets) > 0 && requestedSheets[0] != "" {
+		filtered := make(map[string]bool)
+		for _, s := range requestedSheets {
+			filtered[s] = true
+		}
+		var filteredNames []string
+		for _, s := range sheetNames {
+			if filtered[s] {
+				filteredNames = append(filteredNames, s)
+			}
+		}
+		sheetNames = filteredNames
+		usedFilter = fmt.Sprintf(" (filtered from config, %d requested)", len(requestedSheets))
+	}
+
+	slog.Info(
+		"discovered sheets for sync",
+		"total_sheets", len(spreadsheet.Sheets),
+		"mapped_sheets", len(sheetMapping),
+		"to_sync", len(sheetNames),
+		"sheets", sheetNames,
+		"filter", usedFilter,
+	)
+
 	allData := make(map[string][]map[string]string)
-	for _, sheetName := range sheetsCfg.SheetNames {
+	for _, sheetName := range sheetNames {
 		slog.Info("fetching sheet", "sheet", sheetName)
-		rangeStr := fmt.Sprintf("'%s'!A:Z", sheetName)
+		rangeStr := fmt.Sprintf("'%s'!A:Z", strings.ReplaceAll(sheetName, "'", "\\'"))
 		resp, err := sheetsService.Spreadsheets.Values.Get(sheetsCfg.SpreadsheetID, rangeStr).Do()
 		if err != nil {
 			slog.Warn("failed to fetch sheet, skipping", "sheet", sheetName, "error", err)
@@ -230,7 +316,7 @@ func syncWithSheets(s StoreBase) error {
 		return nil
 	}
 
-	result, err := SyncFromSheetData(s, allData)
+	result, err := SyncFromSheetData(s, allData, sheetMapping)
 	if err != nil {
 		return fmt.Errorf("sync from sheet data: %w", err)
 	}
@@ -262,6 +348,40 @@ func SplitSheetTitles(raw string) []string {
 		}
 	}
 	return out
+}
+
+func parseAllowedCohorts(raw string) []int {
+	if raw == "" {
+		return nil
+	}
+	seen := make(map[int]bool)
+	var result []int
+	re := regexp.MustCompile(`^(\d{4})\s*[-–]\s*(\d{4})$`)
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if matches := re.FindStringSubmatch(part); len(matches) == 3 {
+			start, _ := strconv.Atoi(matches[1])
+			end, _ := strconv.Atoi(matches[2])
+			if start > 0 && end > 0 && start <= end {
+				for y := start; y <= end; y++ {
+					if !seen[y] {
+						seen[y] = true
+						result = append(result, y)
+					}
+				}
+			}
+		} else if year, err := strconv.Atoi(part); err == nil {
+			if !seen[year] {
+				seen[year] = true
+				result = append(result, year)
+			}
+		}
+	}
+	sort.Ints(result)
+	return result
 }
 
 func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) CourseData {
@@ -314,7 +434,7 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) C
 		HandbookLink:        strPtr(row["Силлабус если есть"]),
 		CourseType:          courseType,
 		Category:            category,
-		AllowedCohorts:      []int{2024, 2025, 2026},
+		AllowedCohorts:      parseAllowedCohorts(row["Поток"]),
 		AvailableSemesters:  availableSemesters,
 		RecommendedSemester: recommendedSemester,
 		Workload:            workload,
