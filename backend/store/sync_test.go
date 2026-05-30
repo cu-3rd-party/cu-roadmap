@@ -18,6 +18,7 @@ func TestNormalizeSheetTitle(t *testing.T) {
 		{"\U0001f534 Линал", "Линал"},
 		{"Обычный курс", "Обычный курс"},
 		{"  С пробелами  ", "С пробелами"},
+		{"Программирование C++", "Программирование С++"},
 		{"", ""},
 	}
 	for _, tc := range tests {
@@ -33,9 +34,13 @@ func TestSplitSheetTitles(t *testing.T) {
 	}{
 		{"", nil},
 		{"  ", nil},
+		{"-", nil},
+		{"нет", nil},
 		{"Курс А", []string{"Курс А"}},
 		{"Курс А, Курс Б", []string{"Курс А", "Курс Б"}},
 		{"  Курс А ,  Курс Б  ", []string{"Курс А", "Курс Б"}},
+		{"Курс А\nКурс Б", []string{"Курс А", "Курс Б"}},
+		{"Курс А; Курс Б", []string{"Курс А", "Курс Б"}},
 	}
 	for _, tc := range tests {
 		result := SplitSheetTitles(tc.input)
@@ -54,11 +59,98 @@ func TestParseAllowedCohorts(t *testing.T) {
 		{"2024-2028", []int{2024, 2025, 2026, 2027, 2028}},
 		{"2026-2030", []int{2026, 2027, 2028, 2029, 2030}},
 		{"2024-2028, 2025-2029", []int{2024, 2025, 2026, 2027, 2028, 2029}},
+		{"2024-2028/2025-2029", []int{2024, 2025, 2026, 2027, 2028, 2029}},
+		{"\"2024, 2025, 2026\"", []int{2024, 2025, 2026}},
 	}
 	for _, tc := range tests {
 		result := parseAllowedCohorts(tc.input)
 		assert.Equal(t, tc.expected, result, "input: %q", tc.input)
 	}
+}
+
+func TestMapSheetRowToCourseSupportsXLSXHeaderVariants(t *testing.T) {
+	row := map[string]string{
+		"Название курса": "Программирование C++",
+		"Контекст, чтобы правильно отобразить на траектории\nесли есть": "Desc",
+		"Силлабус\nесли есть": "https://example.com",
+		"Тип курса":           "major core",
+		"Поток":               "2024–2028/2025-2029",
+		"Осень / весна":       "сквозной",
+		"Рекомендованный к прохождению семестр": "1 семестр, 2 семестр",
+		"Нагрузка": "6",
+	}
+	c := MapSheetRowToCourse(row, enums.CourseCategoryTech)
+	assert.Equal(t, "Программирование С++", c.Title)
+	assert.NotNil(t, c.Description)
+	assert.Equal(t, "Desc", *c.Description)
+	assert.NotNil(t, c.HandbookLink)
+	assert.Equal(t, "https://example.com", *c.HandbookLink)
+	assert.Equal(t, enums.CourseTypeMandatory, c.CourseType)
+	assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 7, 8}, c.AvailableSemesters)
+	assert.NotNil(t, c.RecommendedSemester)
+	assert.Equal(t, 1, *c.RecommendedSemester)
+	assert.Equal(t, []int{2024, 2025, 2026, 2027, 2028, 2029}, c.AllowedCohorts)
+}
+
+func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
+	s := NewMemoryStore()
+	s.Init()
+	defer s.Close()
+
+	sheetsData := map[string][]map[string]string{
+		"2024 Разработка": {
+			{
+				"Название курса": "Основы промышленной разработки",
+				"Тип курса":      "major core",
+				"Осень / весна":  "осень",
+				"Поток":          "2026-2030",
+				"Нагрузка":       "5",
+				"Пререквизиты":   "нет",
+				"Кореквизиты ":   "-",
+			},
+			{
+				"Название курса": "Основы фронтенд-разработки",
+				"Тип курса":      "major core",
+				"Осень / весна":  "осень",
+				"Поток":          "2026-2030",
+				"Нагрузка":       "5",
+				"Пререквизиты":   "Основы промышленной разработки",
+				"Кореквизиты ":   "нет",
+			},
+		},
+		"Soft": {
+			{
+				"Название курса": "Целеполагание, планирование и самоорганизация",
+				"Тип курса":      "flex",
+				"Семестр":        "5",
+				"Поток":          "\"2024, 2025, 2026\"",
+			},
+		},
+		"STEM": {
+			{
+				"Название курса": "Искусство и наука",
+				"Тип курса":      "flex",
+				"Поток":          "2024–2028",
+				"Пререквизиты":   "-",
+				"Кореквизиты":    "-",
+			},
+		},
+	}
+
+	sheetMapping := map[string]SheetMajorMapping{
+		"2024 Разработка": {"Software Engineering", "Tech", enums.CourseCategoryTech},
+		"Soft":            {"Common", "Common", enums.CourseCategorySoft},
+		"STEM":            {"Common", "Common", enums.CourseCategorySTEM},
+	}
+
+	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
+	assert.NoError(t, err)
+	assert.Equal(t, 4, result.Courses)
+	assert.Equal(t, 2, result.Majors)
+
+	deps, _ := s.GetCourseDependencies()
+	assert.Len(t, deps, 1)
+	assert.Equal(t, enums.DependencyTypePrerequisite, deps[0].DependencyType)
 }
 
 func TestMapSheetRowToCourse(t *testing.T) {
@@ -280,6 +372,85 @@ func TestSyncFromSheetDataDeduplicatesCourses(t *testing.T) {
 
 	courses, _ := s.GetAllCourses()
 	assert.Len(t, courses, 1)
+}
+
+func TestSyncFromSheetDataMajorsAreCohortSpecificAndRequirementTypeRespectsMajorCoreChoice(t *testing.T) {
+	s := NewMemoryStore()
+	s.Init()
+	defer s.Close()
+
+	sheetsData := map[string][]map[string]string{
+		"2026 Искусственный интеллект": {
+			{
+				"Название курса": "Дискретная математика",
+				"Тип курса":      "major core",
+				"Поток":          "2026-2030",
+				"Осень / весна":  "осень",
+				"Нагрузка":       "5",
+			},
+			{
+				"Название курса": "Публичные выступления",
+				"Тип курса":      "major choice",
+				"Поток":          "2026-2030",
+				"Осень / весна":  "весна",
+				"Нагрузка":       "5",
+			},
+		},
+		"2025 Искусственный интеллект": {
+			{
+				"Название курса": "Дискретная математика",
+				"Тип курса":      "major core",
+				"Поток":          "2025-2029",
+				"Осень / весна":  "осень",
+				"Нагрузка":       "5",
+			},
+		},
+	}
+
+	sheetMapping := map[string]SheetMajorMapping{
+		"2026 Искусственный интеллект": {"AI", "Tech", enums.CourseCategoryAI},
+		"2025 Искусственный интеллект": {"AI", "Tech", enums.CourseCategoryAI},
+	}
+
+	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, result.Courses)
+	assert.Equal(t, 2, result.Majors)
+
+	majors, _ := s.GetAllMajors()
+	found := map[string]uuid.UUID{}
+	for _, m := range majors {
+		found[m.Title] = m.ID
+	}
+	_, ok := found["AI (2026)"]
+	assert.True(t, ok)
+	_, ok = found["AI (2025)"]
+	assert.True(t, ok)
+
+	courses, _ := s.GetAllCourses()
+	var discID uuid.UUID
+	var speakID uuid.UUID
+	for _, c := range courses {
+		if c.Title == "Дискретная математика" {
+			discID = c.ID
+		}
+		if c.Title == "Публичные выступления" {
+			speakID = c.ID
+		}
+	}
+	assert.NotEqual(t, uuid.Nil, discID)
+	assert.NotEqual(t, uuid.Nil, speakID)
+
+	reqs2026, _ := s.GetMajorRequirements(found["AI (2026)"])
+	assert.Len(t, reqs2026, 2)
+	for _, r := range reqs2026 {
+		if r.CourseID == discID {
+			assert.Equal(t, enums.RequirementTypeCore, r.RequirementType)
+		}
+		if r.CourseID == speakID {
+			assert.Equal(t, enums.RequirementTypeMinorRecommended, r.RequirementType)
+		}
+	}
 }
 
 func TestSyncFromSheetDataSkipsUnknownSheet(t *testing.T) {
