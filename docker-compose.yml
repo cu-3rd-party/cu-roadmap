@@ -28,9 +28,6 @@ services:
       - .env
     expose:
       - "8080"
-    volumes:
-      - ./backend:/app
-      - ./.env:/app/.env
     restart: unless-stopped
 
   frontend:

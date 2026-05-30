@@ -47,7 +47,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          rsync -avz --delete --progress docker-compose.yml docker-compose.prod.yml backend frontend nginx $SSH_USER@$SSH_HOST:${{ secrets.DEPLOY_PATH }}
+          rsync -avz --delete --progress docker-compose.yml backend frontend nginx $SSH_USER@$SSH_HOST:${{ secrets.DEPLOY_PATH }}
 
       - name: Deploy to server
         env:
@@ -60,4 +60,4 @@ jobs:
           ssh $SSH_USER@$SSH_HOST "printf '%s' \"${{ secrets.ENV }}\" > ${{ secrets.DEPLOY_PATH }}/.env"
           ssh $SSH_USER@$SSH_HOST "printf 'GOOGLE_SERVICE_ACCOUNT_JSON_B64=%s\n' '$GOOGLE_ACCOUNT_JSON_B64' >> ${{ secrets.DEPLOY_PATH }}/.env"
           ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose down || true"
-          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build"
+          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose -f docker-compose.yml up -d --build"
