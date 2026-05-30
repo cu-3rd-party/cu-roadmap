@@ -285,14 +285,25 @@ func syncWithSheets(s StoreBase) error {
 	usedFilter := ""
 	requestedSheets := sheetsCfg.SheetNames
 	if len(requestedSheets) > 0 && requestedSheets[0] != "" {
-		filtered := make(map[string]bool)
-		for _, s := range requestedSheets {
-			filtered[s] = true
+		norm := func(v string) string {
+			v = strings.ToLower(strings.TrimSpace(v))
+			v = strings.Join(strings.Fields(v), " ")
+			return v
+		}
+		wanted := make([]string, 0, len(requestedSheets))
+		for _, rs := range requestedSheets {
+			if n := norm(rs); n != "" {
+				wanted = append(wanted, n)
+			}
 		}
 		var filteredNames []string
-		for _, s := range sheetNames {
-			if filtered[s] {
-				filteredNames = append(filteredNames, s)
+		for _, sn := range sheetNames {
+			snNorm := norm(sn)
+			for _, w := range wanted {
+				if strings.Contains(snNorm, w) {
+					filteredNames = append(filteredNames, sn)
+					break
+				}
 			}
 		}
 		sheetNames = filteredNames
