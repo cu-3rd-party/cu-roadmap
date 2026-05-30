@@ -54,6 +54,7 @@ func (s *MemoryStore) GetAllCourses() (map[uuid.UUID]CourseData, error) {
 	out := make(map[uuid.UUID]CourseData, len(s.courses))
 	for id, c := range s.courses {
 		c.Prerequisites = s.getPrereqsLocked(id)
+		c.Corequisites = s.getCoreqsLocked(id)
 		out[id] = c
 	}
 	return out, nil
@@ -69,6 +70,16 @@ func (s *MemoryStore) getPrereqsLocked(courseID uuid.UUID) []uuid.UUID {
 	return prereqs
 }
 
+func (s *MemoryStore) getCoreqsLocked(courseID uuid.UUID) []uuid.UUID {
+	var coreqs []uuid.UUID
+	for _, dep := range s.courseDependencies {
+		if dep.CourseID == courseID && dep.DependencyType == enums.DependencyTypeCorequisite1 {
+			coreqs = append(coreqs, dep.RequiredCourseID)
+		}
+	}
+	return coreqs
+}
+
 func (s *MemoryStore) GetCourseByID(courseID uuid.UUID) (*CourseData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -77,6 +88,7 @@ func (s *MemoryStore) GetCourseByID(courseID uuid.UUID) (*CourseData, error) {
 		return nil, nil
 	}
 	c.Prerequisites = s.getPrereqsLocked(courseID)
+	c.Corequisites = s.getCoreqsLocked(courseID)
 	return &c, nil
 }
 
@@ -94,6 +106,31 @@ func (s *MemoryStore) CreateCourse(course CourseData) (CourseData, error) {
 	s.courses[course.ID] = course
 	s.coursesByTitle[course.Title] = course.ID
 	return course, nil
+}
+
+func (s *MemoryStore) UpdateCourse(course CourseData) (CourseData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	oldCourse, exists := s.courses[course.ID]
+	if exists && oldCourse.Title != course.Title {
+		delete(s.coursesByTitle, oldCourse.Title)
+	}
+	s.courses[course.ID] = course
+	s.coursesByTitle[course.Title] = course.ID
+	return course, nil
+}
+
+func (s *MemoryStore) DeleteCourse(courseID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	course, exists := s.courses[courseID]
+	if exists {
+		delete(s.coursesByTitle, course.Title)
+		delete(s.courses, courseID)
+	}
+	return nil
 }
 
 func (s *MemoryStore) GetAllMajors() (map[uuid.UUID]MajorData, error) {
@@ -124,6 +161,31 @@ func (s *MemoryStore) CreateMajor(major MajorData) (MajorData, error) {
 	return major, nil
 }
 
+func (s *MemoryStore) UpdateMajor(major MajorData) (MajorData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	oldMajor, exists := s.majors[major.ID]
+	if exists && oldMajor.Title != major.Title {
+		delete(s.majorsByTitle, oldMajor.Title)
+	}
+	s.majors[major.ID] = major
+	s.majorsByTitle[major.Title] = major.ID
+	return major, nil
+}
+
+func (s *MemoryStore) DeleteMajor(majorID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	major, exists := s.majors[majorID]
+	if exists {
+		delete(s.majorsByTitle, major.Title)
+		delete(s.majors, majorID)
+	}
+	return nil
+}
+
 func (s *MemoryStore) GetMajorRequirements(majorID uuid.UUID) ([]MajorRequirementData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -143,11 +205,38 @@ func (s *MemoryStore) CreateMajorRequirement(req MajorRequirementData) (MajorReq
 	return req, nil
 }
 
+func (s *MemoryStore) DeleteMajorRequirements(majorID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var newReqs []MajorRequirementData
+	for _, r := range s.majorRequirements {
+		if r.MajorID != majorID {
+			newReqs = append(newReqs, r)
+		}
+	}
+	s.majorRequirements = newReqs
+	return nil
+}
+
 func (s *MemoryStore) CreateCourseDependency(dep CourseDependencyData) (CourseDependencyData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.courseDependencies = append(s.courseDependencies, dep)
 	return dep, nil
+}
+
+func (s *MemoryStore) DeleteCourseDependencies(courseID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var newDeps []CourseDependencyData
+	for _, d := range s.courseDependencies {
+		if d.CourseID != courseID {
+			newDeps = append(newDeps, d)
+		}
+	}
+	s.courseDependencies = newDeps
+	return nil
 }
 
 func (s *MemoryStore) GetAllStudents() (map[uuid.UUID]StudentData, error) {
@@ -215,10 +304,11 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 			recSem = &r
 		}
 
+		desc := row[2]
 		s.courses[uid] = CourseData{
 			ID:                  uid,
 			Title:               row[1],
-			Description:         new(row[2]),
+			Description:         &desc,
 			CourseType:          courseType,
 			Category:            category,
 			AvailableSemesters:  sems,

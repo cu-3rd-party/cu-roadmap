@@ -83,7 +83,8 @@ func (s *PostgresStore) GetCourseByID(courseID uuid.UUID) (*CourseData, error) {
 		}
 		return nil, err
 	}
-	return new(toCourseData(&c)), nil
+	cd := toCourseData(&c)
+	return &cd, nil
 }
 
 func (s *PostgresStore) GetCourseDependencies() ([]CourseDependencyData, error) {
@@ -123,6 +124,32 @@ func (s *PostgresStore) CreateCourse(course CourseData) (CourseData, error) {
 	return course, nil
 }
 
+func (s *PostgresStore) UpdateCourse(course CourseData) (CourseData, error) {
+	var c models.Course
+	if err := s.db.First(&c, "id = ?", course.ID).Error; err != nil {
+		return course, err
+	}
+	c.Title = course.Title
+	c.Description = course.Description
+	c.HandbookLink = course.HandbookLink
+	c.CourseType = course.CourseType
+	c.Category = course.Category
+	c.AllowedCohorts = course.AllowedCohorts
+	c.AvailableSemesters = course.AvailableSemesters
+	c.RecommendedSemester = course.RecommendedSemester
+	c.Workload = course.Workload
+	c.CsatMetric = course.CsatMetric
+
+	if err := s.db.Save(&c).Error; err != nil {
+		return course, err
+	}
+	return course, nil
+}
+
+func (s *PostgresStore) DeleteCourse(courseID uuid.UUID) error {
+	return s.db.Delete(&models.Course{}, "id = ?", courseID).Error
+}
+
 func (s *PostgresStore) GetAllMajors() (map[uuid.UUID]MajorData, error) {
 	var majors []models.Major
 	if err := s.db.Find(&majors).Error; err != nil {
@@ -149,6 +176,19 @@ func (s *PostgresStore) GetMajorByID(majorID uuid.UUID) (*MajorData, error) {
 func (s *PostgresStore) CreateMajor(major MajorData) (MajorData, error) {
 	m := models.Major{ID: major.ID, Title: major.Title, School: major.School}
 	if err := s.db.Create(&m).Error; err != nil {
+		return major, err
+	}
+	return major, nil
+}
+
+func (s *PostgresStore) UpdateMajor(major MajorData) (MajorData, error) {
+	var m models.Major
+	if err := s.db.First(&m, "id = ?", major.ID).Error; err != nil {
+		return major, err
+	}
+	m.Title = major.Title
+	m.School = major.School
+	if err := s.db.Save(&m).Error; err != nil {
 		return major, err
 	}
 	return major, nil
@@ -184,6 +224,10 @@ func (s *PostgresStore) CreateMajorRequirement(req MajorRequirementData) (MajorR
 	return req, nil
 }
 
+func (s *PostgresStore) DeleteMajorRequirements(majorID uuid.UUID) error {
+	return s.db.Where("major_id = ?", majorID).Delete(&models.MajorRequirement{}).Error
+}
+
 func (s *PostgresStore) CreateCourseDependency(dep CourseDependencyData) (CourseDependencyData, error) {
 	d := models.CourseDependency{
 		ID:               dep.ID,
@@ -195,6 +239,10 @@ func (s *PostgresStore) CreateCourseDependency(dep CourseDependencyData) (Course
 		return dep, err
 	}
 	return dep, nil
+}
+
+func (s *PostgresStore) DeleteCourseDependencies(courseID uuid.UUID) error {
+	return s.db.Where("course_id = ?", courseID).Delete(&models.CourseDependency{}).Error
 }
 
 func (s *PostgresStore) GetAllStudents() (map[uuid.UUID]StudentData, error) {
@@ -217,7 +265,8 @@ func (s *PostgresStore) GetStudentByID(studentID uuid.UUID) (*StudentData, error
 		}
 		return nil, err
 	}
-	return new(toStudentData(&st)), nil
+	sd := toStudentData(&st)
+	return &sd, nil
 }
 
 func (s *PostgresStore) CreateStudent(student StudentData) (StudentData, error) {
@@ -280,6 +329,8 @@ func toCourseData(c *models.Course) CourseData {
 	for _, dep := range c.CourseDependencies {
 		if dep.DependencyType == enums.DependencyTypePrerequisite {
 			cd.Prerequisites = append(cd.Prerequisites, dep.RequiredCourseID)
+		} else if dep.DependencyType == enums.DependencyTypeCorequisite1 {
+			cd.Corequisites = append(cd.Corequisites, dep.RequiredCourseID)
 		}
 	}
 	return cd

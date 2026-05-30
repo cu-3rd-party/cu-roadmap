@@ -18,6 +18,7 @@ type CourseData struct {
 	Workload            float64
 	CsatMetric          *float64
 	Prerequisites       []uuid.UUID
+	Corequisites        []uuid.UUID
 	Postrequisites      []uuid.UUID
 }
 
@@ -57,12 +58,17 @@ type StoreBase interface {
 	GetCourseByID(courseID uuid.UUID) (*CourseData, error)
 	GetCourseDependencies() ([]CourseDependencyData, error)
 	CreateCourse(course CourseData) (CourseData, error)
+	UpdateCourse(course CourseData) (CourseData, error)
+	DeleteCourse(courseID uuid.UUID) error
 	GetAllMajors() (map[uuid.UUID]MajorData, error)
 	GetMajorByID(majorID uuid.UUID) (*MajorData, error)
 	CreateMajor(major MajorData) (MajorData, error)
+	UpdateMajor(major MajorData) (MajorData, error)
 	GetMajorRequirements(majorID uuid.UUID) ([]MajorRequirementData, error)
 	CreateMajorRequirement(req MajorRequirementData) (MajorRequirementData, error)
+	DeleteMajorRequirements(majorID uuid.UUID) error
 	CreateCourseDependency(dep CourseDependencyData) (CourseDependencyData, error)
+	DeleteCourseDependencies(courseID uuid.UUID) error
 	GetAllStudents() (map[uuid.UUID]StudentData, error)
 	GetStudentByID(studentID uuid.UUID) (*StudentData, error)
 	CreateStudent(student StudentData) (StudentData, error)

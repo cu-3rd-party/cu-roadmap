@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -11,6 +12,10 @@ import (
 func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 	rg.GET("/", getMajors)
 	rg.POST("/identify", identifyMajor)
+
+	admin := rg.Group("/")
+	admin.Use(authMiddleware())
+	admin.PUT("/:id", updateMajor)
 }
 
 func getMajors(c *gin.Context) {
@@ -113,4 +118,53 @@ func identifyMajor(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, analysis)
+}
+
+func updateMajor(c *gin.Context) {
+	idParam := c.Param("id")
+	majorID, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid major id"})
+		return
+	}
+
+	s := store.GetStore()
+	var req struct {
+		Title        string   `json:"title" binding:"required"`
+		School       string   `json:"school"`
+		Requirements []string `json:"requirements"` // Course IDs
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	existing, err := s.GetMajorByID(majorID)
+	if err != nil || existing == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "major not found"})
+		return
+	}
+
+	existing.Title = req.Title
+	existing.School = req.School
+
+	updated, err := s.UpdateMajor(*existing)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	s.DeleteMajorRequirements(majorID)
+	for _, pid := range req.Requirements {
+		if cid, err := uuid.Parse(pid); err == nil {
+			s.CreateMajorRequirement(store.MajorRequirementData{
+				ID:              uuid.New(),
+				MajorID:         majorID,
+				CourseID:        cid,
+				RequirementType: enums.RequirementTypeCore,
+			})
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"id": updated.ID.String()})
 }

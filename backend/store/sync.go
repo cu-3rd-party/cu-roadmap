@@ -427,11 +427,13 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) C
 		fmt.Sscanf(match, "%f", &workload)
 	}
 
+	desc := row["Контекст"]
+	link := row["Силлабус если есть"]
 	return CourseData{
 		ID:                  uuid.New(),
 		Title:               strings.TrimSpace(row["Название курса"]),
-		Description:         new(row["Контекст"]),
-		HandbookLink:        new(row["Силлабус если есть"]),
+		Description:         &desc,
+		HandbookLink:        &link,
 		CourseType:          courseType,
 		Category:            category,
 		AllowedCohorts:      parseAllowedCohorts(row["Поток"]),

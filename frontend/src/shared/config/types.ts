@@ -8,9 +8,11 @@ export interface Course {
   description?: string;
   available_semesters?: number[];
   allowed_cohorts?: number[];
-  recommended_semester?: number;
+  recommended_semester?: number | null;
   prerequisites?: string[];
+  corequisites?: string[];
   postrequisites?: string[];
+  handbook_link?: string;
 }
 
 export interface Major {
