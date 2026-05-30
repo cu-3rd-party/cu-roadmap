@@ -11,13 +11,13 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     profiles:
       - postgres
     env_file:
       - .env
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data
     restart: unless-stopped
 
   backend:
@@ -39,4 +39,4 @@ networks:
     name: cu-roadmap
 
 volumes:
-  pgdata:
+  postgres_data:
