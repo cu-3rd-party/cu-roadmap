@@ -26,7 +26,7 @@ describe("CoursesPage", () => {
         {
           id: "course-1",
           title: "Python Basics",
-          category: "tech",
+          
           workload: 4,
           description: "Intro course",
           prerequisites: [],

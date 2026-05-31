@@ -5,7 +5,7 @@ import { CourseCard } from "./CourseCard";
 interface Course {
   id: string;
   title: string;
-  category: string;
+  
   workload: number;
 }
 

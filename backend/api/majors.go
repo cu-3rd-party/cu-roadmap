@@ -163,15 +163,11 @@ func updateMajor(c *gin.Context) {
 		if err != nil {
 			continue
 		}
-		reqType := enums.RequirementTypeCore
-		if r.Type == string(enums.RequirementTypeMinorRecommended) {
-			reqType = enums.RequirementTypeMinorRecommended
-		}
 		s.CreateMajorRequirement(store.MajorRequirementData{
 			ID:              uuid.New(),
 			MajorID:         majorID,
 			CourseID:        cid,
-			RequirementType: reqType,
+			RequirementType: enums.RequirementType(r.Type),
 		})
 	}
 

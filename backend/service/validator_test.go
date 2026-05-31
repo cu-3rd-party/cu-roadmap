@@ -3,7 +3,6 @@ package service
 import (
 	"testing"
 
-	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
@@ -21,8 +20,6 @@ func createCourse(id *uuid.UUID, title string, workload float64, sems []int) sto
 	return store.CourseData{
 		ID:                 *id,
 		Title:              title,
-		CourseType:         enums.CourseTypeMandatory,
-		Category:           enums.CourseCategoryTech,
 		AvailableSemesters: sems,
 		Workload:           workload,
 	}

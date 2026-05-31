@@ -98,8 +98,6 @@ func TestGetCoursesWithData(t *testing.T) {
 		c := store.CourseData{
 			ID:                 uuid.New(),
 			Title:              "Python",
-			CourseType:         enums.CourseTypeMandatory,
-			Category:           enums.CourseCategoryTech,
 			AvailableSemesters: []int{1, 2},
 			Workload:           4.0,
 		}
@@ -134,9 +132,9 @@ func TestGetMajorsWithData(t *testing.T) {
 	router := setupRouterRoot(t, func(s store.StoreBase) {
 		m := store.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
 		s.CreateMajor(m)
-		c := store.CourseData{ID: uuid.New(), Title: "Python", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 4.0}
+		c := store.CourseData{ID: uuid.New(), Title: "Python", AvailableSemesters: []int{1}, Workload: 4.0}
 		s.CreateCourse(c)
-		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c.ID, RequirementType: enums.RequirementTypeCore})
+		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c.ID, RequirementType: enums.RequirementTypeMajorCore})
 	})
 
 	w := httptest.NewRecorder()
@@ -170,8 +168,8 @@ func TestGetGraphDataEmpty(t *testing.T) {
 
 func TestGetGraphDataWithData(t *testing.T) {
 	router := setupRouterRoot(t, func(s store.StoreBase) {
-		c1 := store.CourseData{ID: uuid.New(), Title: "A", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 3.0}
-		c2 := store.CourseData{ID: uuid.New(), Title: "B", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 3.0}
+		c1 := store.CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 3.0}
+		c2 := store.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{1}, Workload: 3.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
 		s.CreateCourseDependency(store.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite})
@@ -195,16 +193,16 @@ func TestIdentifyMajor(t *testing.T) {
 		s.CreateMajor(m1)
 		s.CreateMajor(m2)
 
-		c1 := store.CourseData{ID: uuid.New(), Title: "A", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 3.0}
-		c2 := store.CourseData{ID: uuid.New(), Title: "B", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 3.0}
-		c3 := store.CourseData{ID: uuid.New(), Title: "C", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 3.0}
+		c1 := store.CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 3.0}
+		c2 := store.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{1}, Workload: 3.0}
+		c3 := store.CourseData{ID: uuid.New(), Title: "C", AvailableSemesters: []int{1}, Workload: 3.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
 		s.CreateCourse(c3)
 
-		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeCore})
-		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeCore})
-		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m2.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeCore})
+		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
+		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
+		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m2.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
 	})
 
 	body := `["` + getCourseID(router, t) + `"]`
@@ -241,9 +239,9 @@ func TestPlannerGenerate(t *testing.T) {
 	router := setupRouterRoot(t, func(s store.StoreBase) {
 		m := store.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
 		s.CreateMajor(m)
-		c := store.CourseData{ID: uuid.New(), Title: "Python", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1, 2}, Workload: 4.0}
+		c := store.CourseData{ID: uuid.New(), Title: "Python", AvailableSemesters: []int{1, 2}, Workload: 4.0}
 		s.CreateCourse(c)
-		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c.ID, RequirementType: enums.RequirementTypeCore})
+		s.CreateMajorRequirement(store.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c.ID, RequirementType: enums.RequirementTypeMajorCore})
 	})
 
 	courses := getCoursesList(router, t)
@@ -297,8 +295,8 @@ func TestPlannerGenerateBadRequest(t *testing.T) {
 
 func TestPlannerValidateSemester(t *testing.T) {
 	router := setupRouterRoot(t, func(s store.StoreBase) {
-		c1 := store.CourseData{ID: uuid.New(), Title: "A", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 4.0}
-		c2 := store.CourseData{ID: uuid.New(), Title: "B", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{2}, Workload: 5.0}
+		c1 := store.CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 4.0}
+		c2 := store.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{2}, Workload: 5.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
 		s.CreateCourseDependency(store.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite})
@@ -322,8 +320,8 @@ func TestPlannerValidateSemester(t *testing.T) {
 
 func TestPlannerValidateSemesterWorkloadExceeded(t *testing.T) {
 	router := setupRouterRoot(t, func(s store.StoreBase) {
-		c1 := store.CourseData{ID: uuid.New(), Title: "A", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 6.0}
-		c2 := store.CourseData{ID: uuid.New(), Title: "B", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 7.0}
+		c1 := store.CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 6.0}
+		c2 := store.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{1}, Workload: 7.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
 	})
@@ -345,8 +343,8 @@ func TestPlannerValidateSemesterWorkloadExceeded(t *testing.T) {
 
 func TestPlannerGoalPath(t *testing.T) {
 	router := setupRouterRoot(t, func(s store.StoreBase) {
-		c1 := store.CourseData{ID: uuid.New(), Title: "Python", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1, 2}, Workload: 4.0}
-		c2 := store.CourseData{ID: uuid.New(), Title: "Advanced", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{3, 4}, Workload: 5.0}
+		c1 := store.CourseData{ID: uuid.New(), Title: "Python", AvailableSemesters: []int{1, 2}, Workload: 4.0}
+		c2 := store.CourseData{ID: uuid.New(), Title: "Advanced", AvailableSemesters: []int{3, 4}, Workload: 5.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
 		s.CreateCourseDependency(store.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite})
@@ -412,8 +410,6 @@ func TestGetGraphDataWithRecommendedSemester(t *testing.T) {
 		c := store.CourseData{
 			ID:                  uuid.New(),
 			Title:               "Algo",
-			CourseType:          enums.CourseTypeMandatory,
-			Category:            enums.CourseCategorySTEM,
 			AvailableSemesters:  []int{1, 3},
 			RecommendedSemester: ptr(2),
 			Workload:            5.0,

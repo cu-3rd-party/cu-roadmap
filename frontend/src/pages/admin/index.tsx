@@ -6,8 +6,8 @@ interface Course {
   id: string;
   title: string;
   description: string;
-  course_type: string;
-  category: string;
+  category?: string;
+  course_type?: string;
   workload: number;
   available_semesters: number[];
   allowed_cohorts: number[];
@@ -198,8 +198,8 @@ export function AdminPage() {
                 id: "",
                 title: "",
                 description: "",
-                course_type: "mandatory",
-                category: "stem",
+                
+                
                 workload: 3,
                 available_semesters: [],
                 allowed_cohorts: [],
@@ -262,8 +262,14 @@ export function AdminPage() {
               <tr className="border-b" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-bg-card)" }}>
                 <th className="p-4 font-semibold">Название</th>
                 <th className="p-4 font-semibold">Школа / Факультет</th>
-                <th className="p-4 font-semibold">Core</th>
-                <th className="p-4 font-semibold">Choice</th>
+                <th className="p-4 font-semibold">major core</th>
+                <th className="p-4 font-semibold">major choice</th>
+                <th className="p-4 font-semibold">flex</th>
+                <th className="p-4 font-semibold">общеуниверситетский</th>
+                <th className="p-4 font-semibold">факультатив</th>
+                <th className="p-4 font-semibold">Minor</th>
+                <th className="p-4 font-semibold">soft</th>
+                <th className="p-4 font-semibold">selected topics</th>
                 <th className="p-4 font-semibold w-16">Действия</th>
               </tr>
             </thead>
@@ -272,8 +278,14 @@ export function AdminPage() {
                 <tr key={m.id} className="border-b last:border-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: "var(--color-border)" }}>
                   <td className="p-4">{m.title}</td>
                   <td className="p-4">{m.school}</td>
-                  <td className="p-4">{m.requirements?.filter(r => r.type === 'core').length || 0}</td>
-                  <td className="p-4">{m.requirements?.filter(r => r.type === 'minor_recommended').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'major_core').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'major_choice').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'flex').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'university').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'elective').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'minor').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'soft').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'selected_topics').length || 0}</td>
                   <td className="p-4">
                     <div className="flex gap-2">
                       <button
@@ -485,7 +497,7 @@ function MajorEditor({ major, allCourses, onSave, onCancel }: { major: Major; al
     if (exists) {
       setFormData(p => ({ ...p, requirements: p.requirements.filter(r => r.course_id !== id) }));
     } else {
-      setFormData(p => ({ ...p, requirements: [...p.requirements, { course_id: id, type: "core" }] }));
+      setFormData(p => ({ ...p, requirements: [...p.requirements, { course_id: id, type: "major_core" }] }));
     }
   };
 
@@ -519,7 +531,7 @@ function MajorEditor({ major, allCourses, onSave, onCancel }: { major: Major; al
         </label>
         
         <div className="flex flex-col gap-1.5 text-sm font-medium text-gray-400">
-          Курсы направления ({formData.requirements.length} выбрано: {formData.requirements.filter(r=>r.type==='core').length} core, {formData.requirements.filter(r=>r.type==='minor_recommended').length} choice)
+          Курсы направления ({formData.requirements.length} выбрано)
           <div className="border rounded-lg p-2 flex flex-col gap-2" style={{ borderColor: "var(--color-border)" }}>
             <input type="text" placeholder="Поиск курса..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 rounded-md bg-transparent border text-base" style={{ borderColor: "var(--color-border)", color: "var(--color-text-main)" }} />
             <div className="max-h-72 overflow-y-auto flex flex-col gap-1 pr-2">
@@ -530,9 +542,15 @@ function MajorEditor({ major, allCourses, onSave, onCancel }: { major: Major; al
                     <input type="checkbox" checked={isSelected} onChange={() => toggleCourse(c.id)} className="w-4 h-4 rounded border-gray-600 cursor-pointer" />
                     <span className="truncate flex-1 text-gray-800 dark:text-gray-300 cursor-pointer" onClick={() => toggleCourse(c.id)}>{c.title}</span>
                     {isSelected && (
-                      <select value={reqMap[c.id] || 'core'} onChange={e => setReqType(c.id, e.target.value)} className="text-xs px-2 py-1 rounded border bg-transparent cursor-pointer" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
-                        <option value="core" className="bg-black text-white">Core</option>
-                        <option value="minor_recommended" className="bg-black text-white">Choice</option>
+                      <select value={reqMap[c.id] || 'major_core'} onChange={e => setReqType(c.id, e.target.value)} className="text-xs px-2 py-1 rounded border bg-transparent cursor-pointer" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
+                        <option value="major_core" className="bg-black text-white">major core</option>
+                        <option value="major_choice" className="bg-black text-white">major choice</option>
+                        <option value="flex" className="bg-black text-white">flex</option>
+                        <option value="university" className="bg-black text-white">общеуниверситетский</option>
+                        <option value="elective" className="bg-black text-white">факультатив</option>
+                        <option value="minor" className="bg-black text-white">Minor</option>
+                        <option value="soft" className="bg-black text-white">soft</option>
+                        <option value="selected_topics" className="bg-black text-white">selected topics</option>
                       </select>
                     )}
                   </div>

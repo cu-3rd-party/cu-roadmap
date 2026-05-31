@@ -439,7 +439,7 @@ func (s *MemoryStore) LoadMockData() error {
 				ID:              uuid.New(),
 				MajorID:         major.ID,
 				CourseID:        c.ID,
-				RequirementType: enums.RequirementTypeCore,
+				RequirementType: enums.RequirementTypeMajorCore,
 			})
 		}
 	}

@@ -30,8 +30,6 @@ func (s *MemoryStoreTestSuite) TestCreateAndGetCourse() {
 		Title:               "Test Course",
 		Description:         ptr("A test course"),
 		HandbookLink:        ptr("http://example.com"),
-		CourseType:          enums.CourseTypeMandatory,
-		Category:            enums.CourseCategoryTech,
 		AllowedCohorts:      []int{2024, 2025},
 		AvailableSemesters:  []int{1, 2},
 		RecommendedSemester: ptr(1),
@@ -51,8 +49,8 @@ func (s *MemoryStoreTestSuite) TestCreateAndGetCourse() {
 }
 
 func (s *MemoryStoreTestSuite) TestGetAllCourses() {
-	c1 := CourseData{ID: uuid.New(), Title: "A", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 4.0}
-	c2 := CourseData{ID: uuid.New(), Title: "B", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 4.0}
+	c1 := CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 4.0}
+	c2 := CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{1}, Workload: 4.0}
 	s.s.CreateCourse(c1)
 	s.s.CreateCourse(c2)
 
@@ -87,8 +85,8 @@ func (s *MemoryStoreTestSuite) TestGetMajorByIDNotFound() {
 }
 
 func (s *MemoryStoreTestSuite) TestCreateAndGetCourseDependency() {
-	c1 := CourseData{ID: uuid.New(), Title: "A", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 4.0}
-	c2 := CourseData{ID: uuid.New(), Title: "B", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 4.0}
+	c1 := CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 4.0}
+	c2 := CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{1}, Workload: 4.0}
 	s.s.CreateCourse(c1)
 	s.s.CreateCourse(c2)
 
@@ -105,10 +103,10 @@ func (s *MemoryStoreTestSuite) TestCreateAndGetCourseDependency() {
 func (s *MemoryStoreTestSuite) TestCreateAndGetMajorRequirement() {
 	major := MajorData{ID: uuid.New(), Title: "Test Major", School: "Tech"}
 	s.s.CreateMajor(major)
-	c1 := CourseData{ID: uuid.New(), Title: "C1", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, AvailableSemesters: []int{1}, Workload: 4.0}
+	c1 := CourseData{ID: uuid.New(), Title: "C1", AvailableSemesters: []int{1}, Workload: 4.0}
 	s.s.CreateCourse(c1)
 
-	req := MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeCore}
+	req := MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore}
 	_, err := s.s.CreateMajorRequirement(req)
 	assert.NoError(s.T(), err)
 
@@ -170,7 +168,7 @@ func (s *MemoryStoreTestSuite) TestUpdateStudent() {
 }
 
 func (s *MemoryStoreTestSuite) TestClearAll() {
-	course := CourseData{ID: uuid.New(), Title: "To Be Cleared", CourseType: enums.CourseTypeElective, Category: enums.CourseCategorySoft, AvailableSemesters: []int{1}, Workload: 3.0}
+	course := CourseData{ID: uuid.New(), Title: "To Be Cleared", AvailableSemesters: []int{1}, Workload: 3.0}
 	s.s.CreateCourse(course)
 
 	courses, _ := s.s.GetAllCourses()

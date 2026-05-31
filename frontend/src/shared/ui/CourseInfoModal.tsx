@@ -52,9 +52,9 @@ export function CourseInfoModal({
           </button>
           <div
             className="text-xs font-bold uppercase tracking-widest mb-1"
-            style={{ color: getCategoryColor(course.category) }}
+            style={{ color: "var(--color-primary)" }}
           >
-            {course.category}
+            
           </div>
           <h2 className="text-3xl font-black tracking-tight">{course.title}</h2>
         </div>

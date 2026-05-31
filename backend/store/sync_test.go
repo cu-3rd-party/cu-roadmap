@@ -79,13 +79,13 @@ func TestMapSheetRowToCourseSupportsXLSXHeaderVariants(t *testing.T) {
 		"Рекомендованный к прохождению семестр": "1 семестр, 2 семестр",
 		"Нагрузка": "6",
 	}
-	c := MapSheetRowToCourse(row, enums.CourseCategoryTech)
+	c := MapSheetRowToCourse(row)
 	assert.Equal(t, "Программирование С++", c.Title)
 	assert.NotNil(t, c.Description)
 	assert.Equal(t, "Desc", *c.Description)
 	assert.NotNil(t, c.HandbookLink)
 	assert.Equal(t, "https://example.com", *c.HandbookLink)
-	assert.Equal(t, enums.CourseTypeMandatory, c.CourseType)
+
 	assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 7, 8}, c.AvailableSemesters)
 	assert.NotNil(t, c.RecommendedSemester)
 	assert.Equal(t, 1, *c.RecommendedSemester)
@@ -138,9 +138,9 @@ func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
 	}
 
 	sheetMapping := map[string]SheetMajorMapping{
-		"2024 Разработка": {"Software Engineering", "Tech", enums.CourseCategoryTech},
-		"Soft":            {"Common", "Common", enums.CourseCategorySoft},
-		"STEM":            {"Common", "Common", enums.CourseCategorySTEM},
+		"2024 Разработка": {"Software Engineering", "Tech"},
+		"Soft":            {"Common", "Common"},
+		"STEM":            {"Common", "Common"},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
@@ -164,7 +164,7 @@ func TestMapSheetRowToCourse(t *testing.T) {
 		"Рекомендованный к прохождению семестр": "3",
 		"Нагрузка": "6.0",
 	}
-	course := MapSheetRowToCourse(row, enums.CourseCategoryTech)
+	course := MapSheetRowToCourse(row)
 
 	assert.Equal(t, "Тестовый курс", course.Title)
 	assert.NotEqual(t, uuid.Nil, course.ID)
@@ -172,8 +172,8 @@ func TestMapSheetRowToCourse(t *testing.T) {
 	assert.Equal(t, "Описание", *course.Description)
 	assert.NotNil(t, course.HandbookLink)
 	assert.Equal(t, "https://cu.ru", *course.HandbookLink)
-	assert.Equal(t, enums.CourseTypeMandatory, course.CourseType)
-	assert.Equal(t, enums.CourseCategoryTech, course.Category)
+
+
 	assert.Equal(t, []int{1, 3, 5, 7}, course.AvailableSemesters)
 	assert.NotNil(t, course.RecommendedSemester)
 	assert.Equal(t, 3, *course.RecommendedSemester)
@@ -189,11 +189,11 @@ func TestMapSheetRowToCourseElective(t *testing.T) {
 		"Рекомендованный к прохождению семестр": "",
 		"Нагрузка": "",
 	}
-	course := MapSheetRowToCourse(row, enums.CourseCategorySoft)
+	course := MapSheetRowToCourse(row)
 
 	assert.Equal(t, "Факультатив", course.Title)
-	assert.Equal(t, enums.CourseTypeElective, course.CourseType)
-	assert.Equal(t, enums.CourseCategorySoft, course.Category)
+
+
 	assert.Equal(t, []int{2, 4, 6, 8}, course.AvailableSemesters)
 	assert.Nil(t, course.RecommendedSemester)
 	assert.Equal(t, 5.0, course.Workload)
@@ -206,9 +206,9 @@ func TestMapSheetRowToCourseWorkloadVariants(t *testing.T) {
 		"Осень / весна":  "",
 		"Нагрузка":       "7.5",
 	}
-	course := MapSheetRowToCourse(row, enums.CourseCategoryAI)
+	course := MapSheetRowToCourse(row)
 	assert.Equal(t, 7.5, course.Workload)
-	assert.Equal(t, enums.CourseTypeOther, course.CourseType)
+
 
 	row2 := map[string]string{
 		"Название курса": "Курс 2",
@@ -216,7 +216,7 @@ func TestMapSheetRowToCourseWorkloadVariants(t *testing.T) {
 		"Осень / весна":  "",
 		"workload":       "8",
 	}
-	course2 := MapSheetRowToCourse(row2, enums.CourseCategoryAI)
+	course2 := MapSheetRowToCourse(row2)
 	assert.Equal(t, 8.0, course2.Workload)
 }
 
@@ -249,7 +249,7 @@ func TestSyncFromSheetData(t *testing.T) {
 	}
 
 	sheetMapping := map[string]SheetMajorMapping{
-		"Разработка": {"Software Engineering", "Tech", enums.CourseCategoryTech},
+		"Разработка": {"Software Engineering", "Tech"},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
@@ -312,9 +312,9 @@ func TestSyncFromSheetDataWithMultipleMajors(t *testing.T) {
 	}
 
 	sheetMapping := map[string]SheetMajorMapping{
-		"Бизнес и аналитика":      {"Business", "Business", enums.CourseCategoryBusiness},
-		"Искусственный интеллект": {"AI", "Tech", enums.CourseCategoryAI},
-		"Разработка":              {"Software Engineering", "Tech", enums.CourseCategoryTech},
+		"Бизнес и аналитика":      {"Business", "Business"},
+		"Искусственный интеллект": {"AI", "Tech"},
+		"Разработка":              {"Software Engineering", "Tech"},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
@@ -361,8 +361,8 @@ func TestSyncFromSheetDataDeduplicatesCourses(t *testing.T) {
 	}
 
 	sheetMapping := map[string]SheetMajorMapping{
-		"Разработка":              {"Software Engineering", "Tech", enums.CourseCategoryTech},
-		"Искусственный интеллект": {"AI", "Tech", enums.CourseCategoryAI},
+		"Разработка":              {"Software Engineering", "Tech"},
+		"Искусственный интеллект": {"AI", "Tech"},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
@@ -408,8 +408,8 @@ func TestSyncFromSheetDataMajorsAreCohortSpecificAndRequirementTypeRespectsMajor
 	}
 
 	sheetMapping := map[string]SheetMajorMapping{
-		"2026 Искусственный интеллект": {"AI", "Tech", enums.CourseCategoryAI},
-		"2025 Искусственный интеллект": {"AI", "Tech", enums.CourseCategoryAI},
+		"2026 Искусственный интеллект": {"AI", "Tech"},
+		"2025 Искусственный интеллект": {"AI", "Tech"},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
@@ -445,10 +445,10 @@ func TestSyncFromSheetDataMajorsAreCohortSpecificAndRequirementTypeRespectsMajor
 	assert.Len(t, reqs2026, 2)
 	for _, r := range reqs2026 {
 		if r.CourseID == discID {
-			assert.Equal(t, enums.RequirementTypeCore, r.RequirementType)
+			assert.Equal(t, enums.RequirementTypeMajorCore, r.RequirementType)
 		}
 		if r.CourseID == speakID {
-			assert.Equal(t, enums.RequirementTypeMinorRecommended, r.RequirementType)
+			assert.Equal(t, enums.RequirementTypeMinor, r.RequirementType)
 		}
 	}
 }
@@ -504,7 +504,7 @@ func TestSyncFromSheetDataWithCorequisites(t *testing.T) {
 	}
 
 	sheetMapping := map[string]SheetMajorMapping{
-		"Разработка": {"Software Engineering", "Tech", enums.CourseCategoryTech},
+		"Разработка": {"Software Engineering", "Tech"},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
@@ -543,7 +543,7 @@ func TestSyncFromSheetDataWithEmojiPrefix(t *testing.T) {
 	}
 
 	sheetMapping := map[string]SheetMajorMapping{
-		"Разработка": {"Software Engineering", "Tech", enums.CourseCategoryTech},
+		"Разработка": {"Software Engineering", "Tech"},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
@@ -578,7 +578,7 @@ func TestSyncFromSheetDataEmptyCourseTitleSkipped(t *testing.T) {
 	}
 
 	sheetMapping := map[string]SheetMajorMapping{
-		"Разработка": {"Software Engineering", "Tech", enums.CourseCategoryTech},
+		"Разработка": {"Software Engineering", "Tech"},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)

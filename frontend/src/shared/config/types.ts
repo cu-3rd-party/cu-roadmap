@@ -1,7 +1,7 @@
 export interface Course {
   id: string;
   title: string;
-  category: string;
+  
   type?: string;
   course_type?: string;
   workload: number;

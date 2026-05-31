@@ -37,7 +37,7 @@ export function CourseCard({
       >
         <div
           className="h-28 relative"
-          style={{ backgroundColor: getCategoryColor(course.category) }}
+          style={{ backgroundColor: "var(--color-primary)" }}
         >
           <svg width="100%" height="100%" viewBox="0 0 200 120" opacity="0.4">
             <path
@@ -75,7 +75,7 @@ export function CourseCard({
               setShowInfo(true);
             }}
           >
-            <Search size={14} color={getCategoryColor(course.category)} />
+            <Search size={14} color={"var(--color-primary)"} />
           </div>
         </div>
         <div className="p-4">
@@ -89,7 +89,7 @@ export function CourseCard({
             className="text-xs font-medium"
             style={{ color: "var(--color-text-muted)" }}
           >
-            {course.category} • {course.workload} к.
+            {course.workload} к.
           </div>
         </div>
       </div>
