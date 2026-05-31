@@ -1,97 +1,82 @@
-import { Check, Search } from "lucide-react";
 import { useState } from "react";
 
-import { cn } from "@/shared/lib/cn";
+import { Button } from "@/shared/ui/kit/button";
+import { Separator } from "@/shared/ui/kit/separator";
 
-import { getCategoryColor } from "../lib";
-import type { Course } from "../model";
+import { MOCK_COURSE_DETAILS } from "../model/details";
 
-import { CourseInfoModal } from "./CourseInfoModal";
+import { DetailsDrawer } from "./DetailsDrawer";
+
+export type CourseCardVariant = "catalog" | "select" | "planned";
 
 interface CourseCardProps {
-  course: Course;
-  isSelected: boolean;
-  onToggle: () => void;
-  allCourses?: Course[];
-  passedIds?: string[];
+  title: string;
+  /**
+   * - `catalog` (default): "О курсе" + "Выбрать"
+   * - `select`: single centered "Выбрать" (used inside the add-course modal)
+   * - `planned`: "О курсе" + "Удалить" (used inside a semester block)
+   */
+  variant?: CourseCardVariant;
+  onSelect?: () => void;
+  onRemove?: () => void;
 }
 
-export function CourseCard({
-  course,
-  isSelected,
-  onToggle,
-  allCourses = [],
-  passedIds = [],
-}: CourseCardProps) {
-  const [showInfo, setShowInfo] = useState(false);
+export const CourseCard = ({
+  title,
+  variant = "catalog",
+  onSelect,
+  onRemove,
+}: CourseCardProps) => {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const showDetails = variant !== "select";
 
   return (
-    <>
-      <div
-        className={cn(
-          "rounded-2xl overflow-hidden cursor-pointer border bg-card transition-all hover:-translate-y-1 hover:shadow-lg select-none",
-          isSelected ? "border-2 border-primary" : "border-border",
-        )}
-        onClick={onToggle}
-      >
-        <div
-          className="h-28 relative"
-          style={{ backgroundColor: getCategoryColor(course.category) }}
-        >
-          <svg width="100%" height="100%" viewBox="0 0 200 120" opacity="0.4">
-            <path
-              d="M20 60 Q100 20 180 60"
-              stroke="white"
-              fill="none"
-              strokeWidth="1"
-            />
-            <path
-              d="M20 70 Q100 30 180 70"
-              stroke="white"
-              fill="none"
-              strokeWidth="1"
-            />
-            <path
-              d="M20 80 Q100 40 180 80"
-              stroke="white"
-              fill="none"
-              strokeWidth="1"
-            />
-          </svg>
-          {isSelected && (
-            <div className="absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md bg-primary text-primary-foreground">
-              <Check size={16} />
-            </div>
-          )}
-          <button
-            type="button"
-            className="absolute bottom-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform bg-card"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowInfo(true);
-            }}
-          >
-            <Search size={14} color={getCategoryColor(course.category)} />
-          </button>
-        </div>
-        <div className="p-4">
-          <div className="font-bold text-base mb-1 leading-snug text-foreground">
-            {course.title}
-          </div>
-          <div className="text-xs font-medium text-muted-foreground">
-            {course.category} • {course.workload} к.
-          </div>
-        </div>
+    <div className="flex flex-col gap-3 rounded-xl bg-background p-4">
+      <div className="text-sm leading-snug font-medium text-fg-primary">
+        {title}
       </div>
 
-      {showInfo && (
-        <CourseInfoModal
-          course={course}
-          allCourses={allCourses}
-          passedIds={passedIds}
-          onClose={() => setShowInfo(false)}
+      <Separator />
+
+      {variant === "select" ? (
+        <div className="mt-auto flex justify-center">
+          <Button variant="outline" size="xs" onClick={onSelect}>
+            <span className="text-base">Выбрать</span>
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-auto flex items-center justify-between gap-2">
+          <Button
+            variant="tertiary"
+            size="xs"
+            onClick={() => setDetailsOpen(true)}
+          >
+            <span className="text-base">О курсе</span>
+          </Button>
+          {variant === "planned" ? (
+            <Button
+              variant="outline"
+              size="xs"
+              className="text-negative"
+              onClick={onRemove}
+            >
+              <span className="text-base">Удалить</span>
+            </Button>
+          ) : (
+            <Button variant="outline" size="xs">
+              <span className="text-base">Выбрать</span>
+            </Button>
+          )}
+        </div>
+      )}
+
+      {showDetails && (
+        <DetailsDrawer
+          course={MOCK_COURSE_DETAILS}
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
         />
       )}
-    </>
+    </div>
   );
-}
+};

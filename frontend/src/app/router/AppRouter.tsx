@@ -19,7 +19,7 @@ const HarnessLayout = () => (
 export const AppRouter = () => (
   <Routes>
     <Route element={<HarnessLayout />}>
-      <Route path="/" element={<Navigate to="/" replace />} />
+      <Route path="/" element={<Navigate to="/catalog" replace />} />
       {sidebarRoutes.map(({ path, element }) => (
         <Route key={path} path={path} element={element} />
       ))}
