@@ -123,7 +123,7 @@ export function AdminPage() {
         body: JSON.stringify({
           title: major.title,
           school: major.school,
-          requirements: major.requirements?.map(r => r.course_id) || []
+          requirements: major.requirements || []
         }),
       });
 
@@ -223,8 +223,8 @@ export function AdminPage() {
             <thead>
               <tr className="border-b" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-bg-card)" }}>
                 <th className="p-4 font-semibold">Название</th>
-                <th className="p-4 font-semibold">Тип</th>
                 <th className="p-4 font-semibold">Категория</th>
+                <th className="p-4 font-semibold">Потоки</th>
                 <th className="p-4 font-semibold">Нагрузка</th>
                 <th className="p-4 font-semibold w-16">Действия</th>
               </tr>
@@ -233,8 +233,8 @@ export function AdminPage() {
               {courses.map((c) => (
                 <tr key={c.id} className="border-b last:border-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: "var(--color-border)" }}>
                   <td className="p-4">{c.title}</td>
-                  <td className="p-4">{c.course_type}</td>
-                  <td className="p-4">{c.category}</td>
+                  <td className="p-4"><span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: 'var(--color-primary)', color: '#000', opacity: 0.85 }}>{c.category}</span></td>
+                  <td className="p-4">{c.allowed_cohorts?.join(', ') || '—'}</td>
                   <td className="p-4">{c.workload} з.е.</td>
                   <td className="p-4">
                     <div className="flex gap-2">
@@ -262,7 +262,8 @@ export function AdminPage() {
               <tr className="border-b" style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-bg-card)" }}>
                 <th className="p-4 font-semibold">Название</th>
                 <th className="p-4 font-semibold">Школа / Факультет</th>
-                <th className="p-4 font-semibold">Обязательных курсов</th>
+                <th className="p-4 font-semibold">Core</th>
+                <th className="p-4 font-semibold">Choice</th>
                 <th className="p-4 font-semibold w-16">Действия</th>
               </tr>
             </thead>
@@ -271,7 +272,8 @@ export function AdminPage() {
                 <tr key={m.id} className="border-b last:border-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: "var(--color-border)" }}>
                   <td className="p-4">{m.title}</td>
                   <td className="p-4">{m.school}</td>
-                  <td className="p-4">{m.requirements?.length || 0} шт.</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'core').length || 0}</td>
+                  <td className="p-4">{m.requirements?.filter(r => r.type === 'minor_recommended').length || 0}</td>
                   <td className="p-4">
                     <div className="flex gap-2">
                       <button
@@ -464,8 +466,9 @@ function CourseMultiSelect({ allCourses, selectedIds, onChange, label }: { allCo
 function MajorEditor({ major, allCourses, onSave, onCancel }: { major: Major; allCourses: Course[]; onSave: (m: Major) => void; onCancel: () => void }) {
   const [formData, setFormData] = useState({
     ...major,
-    requirements: major.requirements?.map(r => r.course_id) || []
+    requirements: major.requirements || [] as { course_id: string; type: string }[]
   });
+  const [search, setSearch] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -473,12 +476,32 @@ function MajorEditor({ major, allCourses, onSave, onCancel }: { major: Major; al
       ...major,
       title: formData.title,
       school: formData.school,
-      requirements: formData.requirements.map(id => ({ course_id: id, type: "core" }))
+      requirements: formData.requirements
     });
   };
 
+  const toggleCourse = (id: string) => {
+    const exists = formData.requirements.find(r => r.course_id === id);
+    if (exists) {
+      setFormData(p => ({ ...p, requirements: p.requirements.filter(r => r.course_id !== id) }));
+    } else {
+      setFormData(p => ({ ...p, requirements: [...p.requirements, { course_id: id, type: "core" }] }));
+    }
+  };
+
+  const setReqType = (courseId: string, type: string) => {
+    setFormData(p => ({
+      ...p,
+      requirements: p.requirements.map(r => r.course_id === courseId ? { ...r, type } : r)
+    }));
+  };
+
+  const filtered = allCourses.filter(c => c.title.toLowerCase().includes(search.toLowerCase()));
+  const selectedIds = formData.requirements.map(r => r.course_id);
+  const reqMap = Object.fromEntries(formData.requirements.map(r => [r.course_id, r.type]));
+
   return (
-    <div className="max-w-2xl mx-auto w-full p-6 rounded-2xl border" style={{ backgroundColor: "var(--color-bg-card)", borderColor: "var(--color-border)" }}>
+    <div className="max-w-3xl mx-auto w-full p-6 rounded-2xl border" style={{ backgroundColor: "var(--color-bg-card)", borderColor: "var(--color-border)" }}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Редактировать направление</h2>
         <button onClick={onCancel} className="p-2 rounded-md hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer text-gray-500">
@@ -495,12 +518,30 @@ function MajorEditor({ major, allCourses, onSave, onCancel }: { major: Major; al
           <input name="school" value={formData.school || ""} onChange={e => setFormData(p => ({ ...p, school: e.target.value }))} className="px-3 py-2 rounded-lg border bg-transparent text-base" style={{ borderColor: "var(--color-border)", color: "var(--color-text-main)" }} />
         </label>
         
-        <CourseMultiSelect 
-          allCourses={allCourses} 
-          selectedIds={formData.requirements} 
-          onChange={(ids) => setFormData(p => ({ ...p, requirements: ids }))} 
-          label="Обязательные курсы для направления" 
-        />
+        <div className="flex flex-col gap-1.5 text-sm font-medium text-gray-400">
+          Курсы направления ({formData.requirements.length} выбрано: {formData.requirements.filter(r=>r.type==='core').length} core, {formData.requirements.filter(r=>r.type==='minor_recommended').length} choice)
+          <div className="border rounded-lg p-2 flex flex-col gap-2" style={{ borderColor: "var(--color-border)" }}>
+            <input type="text" placeholder="Поиск курса..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 rounded-md bg-transparent border text-base" style={{ borderColor: "var(--color-border)", color: "var(--color-text-main)" }} />
+            <div className="max-h-72 overflow-y-auto flex flex-col gap-1 pr-2">
+              {filtered.map(c => {
+                const isSelected = selectedIds.includes(c.id);
+                return (
+                  <div key={c.id} className={`flex items-center gap-2 p-1.5 rounded-md ${isSelected ? 'bg-blue-500/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                    <input type="checkbox" checked={isSelected} onChange={() => toggleCourse(c.id)} className="w-4 h-4 rounded border-gray-600 cursor-pointer" />
+                    <span className="truncate flex-1 text-gray-800 dark:text-gray-300 cursor-pointer" onClick={() => toggleCourse(c.id)}>{c.title}</span>
+                    {isSelected && (
+                      <select value={reqMap[c.id] || 'core'} onChange={e => setReqType(c.id, e.target.value)} className="text-xs px-2 py-1 rounded border bg-transparent cursor-pointer" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-main)' }}>
+                        <option value="core" className="bg-black text-white">Core</option>
+                        <option value="minor_recommended" className="bg-black text-white">Choice</option>
+                      </select>
+                    )}
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && <div className="text-gray-500 p-2 text-center">Ничего не найдено</div>}
+            </div>
+          </div>
+        </div>
         
         <div className="flex justify-end gap-3 mt-4">
           <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-lg border font-medium cursor-pointer" style={{ borderColor: "var(--color-border)" }}>

@@ -130,9 +130,12 @@ func updateMajor(c *gin.Context) {
 
 	s := store.GetStore()
 	var req struct {
-		Title        string   `json:"title" binding:"required"`
-		School       string   `json:"school"`
-		Requirements []string `json:"requirements"` // Course IDs
+		Title        string `json:"title" binding:"required"`
+		School       string `json:"school"`
+		Requirements []struct {
+			CourseID string `json:"course_id"`
+			Type     string `json:"type"`
+		} `json:"requirements"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -155,15 +158,21 @@ func updateMajor(c *gin.Context) {
 	}
 
 	s.DeleteMajorRequirements(majorID)
-	for _, pid := range req.Requirements {
-		if cid, err := uuid.Parse(pid); err == nil {
-			s.CreateMajorRequirement(store.MajorRequirementData{
-				ID:              uuid.New(),
-				MajorID:         majorID,
-				CourseID:        cid,
-				RequirementType: enums.RequirementTypeCore,
-			})
+	for _, r := range req.Requirements {
+		cid, err := uuid.Parse(r.CourseID)
+		if err != nil {
+			continue
 		}
+		reqType := enums.RequirementTypeCore
+		if r.Type == string(enums.RequirementTypeMinorRecommended) {
+			reqType = enums.RequirementTypeMinorRecommended
+		}
+		s.CreateMajorRequirement(store.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        cid,
+			RequirementType: reqType,
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"id": updated.ID.String()})
