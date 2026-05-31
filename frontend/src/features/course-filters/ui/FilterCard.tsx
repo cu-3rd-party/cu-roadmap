@@ -22,4 +22,4 @@ export const FilterCard = ({
       {children}
     </div>
   );
-};
+}

@@ -1,12 +1,9 @@
 export { CourseFilters } from "./ui/CourseFilters";
 export { CourseSearchFilter } from "./ui/CourseSearchFilter";
-export { createCourseFiltersStore } from "./model";
 export {
-  buildCategoryFilters,
-  buildTypeFilters,
+  YEAR_OPTIONS,
   MAJOR_OPTIONS,
-  MAJOR_LABELS,
-  EMPTY_FILTERS,
+  ACTIVE_MAJOR,
+  CATEGORY_FILTERS,
   type CategoryFilterOption,
-  type CourseFilterState,
 } from "./model/options";

@@ -1,2 +1,4 @@
-export { CoursesSection } from "./ui/CoursesSection";
-export { CoursesSectionSkeleton } from "./ui/CoursesSectionSkeleton";
+export {
+  CoursesSection,
+  type CategoryCourse,
+} from "./ui/CoursesSection";

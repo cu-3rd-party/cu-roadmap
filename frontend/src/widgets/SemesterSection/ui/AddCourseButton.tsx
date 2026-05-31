@@ -1,33 +1,17 @@
 import { Plus } from "lucide-react";
 
-import { cn } from "@/shared/lib";
-
 interface AddCourseButtonProps {
   onClick?: () => void;
-  /**
-   - full (default): wide button spanning the row (empty semester).
-   - card: course-card-sized tile, used as the last cell in a populated grid.
-  **/
-  variant?: "full" | "card";
 }
 
-export const AddCourseButton = ({
-  onClick,
-  variant = "full",
-}: AddCourseButtonProps) => {
+export const AddCourseButton = ({ onClick }: AddCourseButtonProps) => {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "flex items-center justify-center gap-2 rounded-[16px] border border-border bg-background font-medium text-fg-primary transition-[border-color] duration-(--std-duration)",
-        "hover:border-border-hover hover:text-fg-hover cursor-pointer",
-        variant === "full"
-          ? "w-full px-4 py-4 text-base"
-          : "h-full min-h-24 w-full p-4 text-sm",
-      )}
+      className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-4 text-base font-medium text-fg-primary transition-colors hover:border-border-hover hover:text-fg-hover"
     >
-      <Plus className={cn(variant === "full" ? "size-5" : "size-6")} />
+      <Plus className="size-5" />
       Курс
     </button>
   );

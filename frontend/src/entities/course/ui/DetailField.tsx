@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shared/ui";
+} from "@/shared/ui/kit/tooltip";
 
 interface DetailFieldProps {
   label: string;
@@ -14,7 +14,11 @@ interface DetailFieldProps {
   children: ReactNode;
 }
 
-export const DetailField = ({ label, hint, children }: DetailFieldProps) => (
+export const DetailField = ({
+  label,
+  hint,
+  children,
+}: DetailFieldProps) => (
   <div className="space-y-2">
     <div className="flex items-center gap-1 text-sm text-fg-tertiary">
       {label}
@@ -25,7 +29,7 @@ export const DetailField = ({ label, hint, children }: DetailFieldProps) => (
               <button
                 type="button"
                 aria-label={hint}
-                className="text-fg-tertiary transition-colors hover:text-fg-secondary cursor-help"
+                className="text-fg-tertiary transition-colors hover:text-fg-secondary"
               >
                 <HelpCircle className="size-4" />
               </button>

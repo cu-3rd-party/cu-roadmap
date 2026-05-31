@@ -1,19 +1,19 @@
+import { Badge } from "@/shared/ui/kit/badge";
 import {
-  Badge,
-  RevealImage,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/shared/ui";
+} from "@/shared/ui/kit/sheet";
 
 import { SEASON_BADGE_VARIANT, SEASON_LABELS } from "../lib";
-import type { CourseDetails } from "../model";
+import type { CourseDetails } from "../model/details";
 
 import { DetailField } from "./DetailField";
 import { RequisiteList } from "./RequisiteList";
-import { SyllabusCard } from "./SyllabusCard";
+import { StatusPanel } from "./StatusPanel";
+import { TemplanCard } from "./TemplanCard";
 
 interface DetailsDrawerProps {
   course: CourseDetails;
@@ -36,25 +36,29 @@ export const DetailsDrawer = ({
         <SheetTitle className="text-xl font-bold text-fg-primary">
           О курсе
         </SheetTitle>
-        <SheetDescription className="max-w-[60%] text-sm text-fg-primary">
+        <SheetDescription className="text-sm text-fg-primary">
           {course.title}
         </SheetDescription>
-        <RevealImage
-          src="/character1.png"
-          alt="Персонаж 1"
+        <img
+          src="/character.png"
+          alt=""
           aria-hidden
           className="pointer-events-none absolute top-0 right-2 h-55 w-50 select-none object-contain"
         />
       </SheetHeader>
 
       <div className="flex-1 space-y-6 overflow-y-auto rounded-t-2xl bg-background px-6 pt-5 pb-8">
-        <SyllabusCard link={course.syllabus} />
-
-        {course.description && (
-          <DetailField label="Описание">
-            <p className="text-fg-primary">{course.description}</p>
-          </DetailField>
+        {course.status && (
+          <StatusPanel
+            title={course.status.title}
+            description={course.status.description}
+          />
         )}
+
+        <TemplanCard
+          label={course.templan.label}
+          value={course.templan.value}
+        />
 
         <DetailField label="Год поступления">
           <p className="text-fg-primary">{course.admissionYears}</p>
@@ -62,20 +66,15 @@ export const DetailsDrawer = ({
 
         <DetailField label="Тип курса">
           <Badge variant="orange" size="xs">
-            {course.category}
+            {course.type}
           </Badge>
         </DetailField>
+
         <DetailField label="Специализация">
           <ul className="list-disc space-y-1 pl-5 text-fg-primary">
-            {course.specialisations.length > 0 ? (
-              course.specialisations.map((item) => (
-                <li key={item} className="pl-1">
-                  {item}
-                </li>
-              ))
-            ) : (
-              <li>Общеуниверситетская дисциплина</li>
-            )}
+            {course.specialisations.map((item) => (
+              <li key={item} className="pl-1">{item}</li>
+            ))}
           </ul>
         </DetailField>
 
@@ -104,15 +103,31 @@ export const DetailsDrawer = ({
         </DetailField>
 
         <DetailField label="Пререквизиты">
-          <RequisiteList type="pre" items={course.prerequisites} />
+          <RequisiteList items={course.prerequisites} variant="prereq" />
         </DetailField>
 
         <DetailField label="Постреквизиты">
-          <RequisiteList type="post" items={course.postrequisites} />
+          <RequisiteList items={course.postrequisites} variant="link" />
         </DetailField>
 
-        <DetailField label="Кореквизиты">
-          <RequisiteList type="co" items={course.corequisites} />
+        <DetailField 
+          label="Кореквизиты, двухсторонняя связь"
+          hint="Когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A"
+        >
+          <RequisiteList
+            items={course.corequisitesTwoSided}
+            variant="link"
+          />
+        </DetailField>
+
+        <DetailField
+          label="Кореквизиты, односторонняя связь"
+          hint="Когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A"
+        >
+          <RequisiteList
+            items={course.corequisitesOneSided}
+            variant="link"
+          />
         </DetailField>
       </div>
     </SheetContent>

@@ -1,21 +1,23 @@
-import { Course, CourseCard, courseToDetails } from "@/entities/course";
-import type { UUID } from "@/shared/model";
+import { CourseCard } from "@/entities/course";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
+
+export interface CategoryCourse {
+  id: string;
+  title: string;
+}
 
 interface CourseCategorySectionProps {
   title: string;
-  courses: Course[];
-  titleMap: Map<UUID, string>;
-  majorTitleMap: Map<UUID, string>;
+  selected: number;
+  total: number;
+  courses: CategoryCourse[];
   panelTitle?: string;
 }
 
 export const CoursesSection = ({
   title,
   courses,
-  titleMap,
-  majorTitleMap,
-  panelTitle,
+  panelTitle = "Выбери 5 курсов из категории",
 }: CourseCategorySectionProps) => {
   return (
     <Panel>
@@ -26,17 +28,10 @@ export const CoursesSection = ({
       <CollapsiblePanel title={panelTitle}>
         <div className="grid gap-1 sm:grid-cols-4 lg:grid-cols-6">
           {courses.map((course) => (
-            <CourseCard
-              key={course.id}
-              title={course.title}
-              recommendedSemester={course.recommendedSemester}
-              category={course.category}
-              type={course.type}
-              details={courseToDetails(course, { titleMap, majorTitleMap })}
-            />
+            <CourseCard key={course.id} title={course.title} />
           ))}
         </div>
       </CollapsiblePanel>
     </Panel>
   );
-};
+}
