@@ -10,10 +10,7 @@ function Panel({ className, ...props }: React.ComponentProps<"section">) {
   return (
     <section
       data-slot="panel"
-      className={cn(
-        "rounded-2xl bg-background p-4 sm:p-6 sm:pt-8",
-        className,
-      )}
+      className={cn("rounded-2xl bg-background p-4 sm:p-6 sm:pt-8", className)}
       {...props}
     />
   );

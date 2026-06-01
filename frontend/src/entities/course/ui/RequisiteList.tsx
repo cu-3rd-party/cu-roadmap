@@ -8,10 +8,7 @@ interface RequisiteListProps {
   variant: "prereq" | "link";
 }
 
-export const RequisiteList = ({
-  items,
-  variant,
-}: RequisiteListProps) => {
+export const RequisiteList = ({ items, variant }: RequisiteListProps) => {
   if (items.length === 0) {
     return <p className="text-fg-primary">Нет</p>;
   }

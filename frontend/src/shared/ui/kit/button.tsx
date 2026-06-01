@@ -8,7 +8,8 @@ const PADDED_VARIANTS = [
   "default",
   "outline",
   "secondary",
-  "nav",
+  "navInactive",
+  "navActive",
   "ghost",
   "destructive",
   "link",
@@ -42,8 +43,8 @@ const buttonVariants = cva(
           "active:border-border-pressed",
           "disabled:text-fg-muted",
         ].join(" "),
-        nav:
-          "text-fg-primary hover:bg-accent-pale-hover",
+        navInactive: "text-fg-primary hover:bg-accent-pale-hover",
+        navActive: "text-fg-primary bg-accent-pale-hover",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-muted hover:text-foreground",

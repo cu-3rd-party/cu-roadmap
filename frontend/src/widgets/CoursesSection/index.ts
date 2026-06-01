@@ -1,4 +1,1 @@
-export {
-  CoursesSection,
-  type CategoryCourse,
-} from "./ui/CoursesSection";
+export { CoursesSection, type CategoryCourse } from "./ui/CoursesSection";

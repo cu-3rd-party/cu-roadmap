@@ -73,7 +73,9 @@ export const DetailsDrawer = ({
         <DetailField label="Специализация">
           <ul className="list-disc space-y-1 pl-5 text-fg-primary">
             {course.specialisations.map((item) => (
-              <li key={item} className="pl-1">{item}</li>
+              <li key={item} className="pl-1">
+                {item}
+              </li>
             ))}
           </ul>
         </DetailField>
@@ -110,24 +112,18 @@ export const DetailsDrawer = ({
           <RequisiteList items={course.postrequisites} variant="link" />
         </DetailField>
 
-        <DetailField 
+        <DetailField
           label="Кореквизиты, двухсторонняя связь"
           hint="Когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A"
         >
-          <RequisiteList
-            items={course.corequisitesTwoSided}
-            variant="link"
-          />
+          <RequisiteList items={course.corequisitesTwoSided} variant="link" />
         </DetailField>
 
         <DetailField
           label="Кореквизиты, односторонняя связь"
           hint="Когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A"
         >
-          <RequisiteList
-            items={course.corequisitesOneSided}
-            variant="link"
-          />
+          <RequisiteList items={course.corequisitesOneSided} variant="link" />
         </DetailField>
       </div>
     </SheetContent>

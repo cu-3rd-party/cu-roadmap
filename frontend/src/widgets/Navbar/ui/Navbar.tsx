@@ -1,13 +1,21 @@
 import { Compass, Map } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
+import { isPathActive } from "@/shared/lib";
 import { Button } from "@/shared/ui/kit/button";
 
 const NAV_ITEMS = [
-  { label: "Каталог курсов", active: true, icon: <Compass /> },
-  { label: "Планировщик", active: false, icon: <Map /> },
+  { label: "Планировщик", active: false, icon: <Map />, path: "/planner" },
+  {
+    label: "Каталог курсов",
+    active: true,
+    icon: <Compass />,
+    path: "/catalog",
+  },
 ] as const;
 
-export const CatalogNav = () => {
+export const Navbar = () => {
+  const navigate = useNavigate();
   return (
     <header className="relative flex h-16 items-center justify-between border-b border-border bg-background px-6">
       <img src="/cu.svg" width={36} height={36} alt="ЦУ" />
@@ -16,12 +24,12 @@ export const CatalogNav = () => {
         {NAV_ITEMS.map((item) => (
           <Button
             key={item.label}
-            variant="nav"
+            onClick={() => navigate(item.path)}
+            variant={isPathActive(item.path) ? "navActive" : "navInactive"}
             size="sm"
             icon={item.icon}
             className="rounded-full"
           >
-            
             {item.label}
           </Button>
         ))}

@@ -1,5 +1,10 @@
+import { useMemo } from "react";
+
 import { CourseCard } from "@/entities/course";
-import { CourseSearchFilter } from "@/features/course-filters";
+import {
+  CourseSearchFilter,
+  useCourseFilters,
+} from "@/features/course-filters";
 import { usePlannerStore } from "@/shared/store";
 import {
   Dialog,
@@ -9,6 +14,10 @@ import {
 } from "@/shared/ui/kit/dialog";
 
 import { AVAILABLE_COURSES } from "../model/courses";
+import {
+  availableCategoryOptions,
+  filterAvailableCourses,
+} from "../model/filter";
 
 interface CourseSelectModalProps {
   semester: number;
@@ -22,6 +31,17 @@ export const CourseSelectModal = ({
   onOpenChange,
 }: CourseSelectModalProps) => {
   const { addCourse } = usePlannerStore();
+  const { filters, toggleCategory, setSearch } = useCourseFilters();
+
+  const categoryOptions = useMemo(
+    () => availableCategoryOptions(AVAILABLE_COURSES, filters),
+    [filters],
+  );
+
+  const visibleCourses = useMemo(
+    () => filterAvailableCourses(AVAILABLE_COURSES, filters),
+    [filters],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,11 +63,17 @@ export const CourseSelectModal = ({
 
         <div className="flex flex-col gap-1 overflow-y-auto px-3 pb-3 z-1">
           <div className="flex flex-col gap-3 rounded-2xl bg-background p-4">
-            <CourseSearchFilter />
+            <CourseSearchFilter
+              search={filters.search}
+              onSearchChange={setSearch}
+              selectedCategories={filters.categories}
+              onToggleCategory={toggleCategory}
+              categories={categoryOptions}
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-5">
-            {AVAILABLE_COURSES.map((course) => (
+            {visibleCourses.map((course) => (
               <CourseCard
                 key={course.id}
                 title={course.title}

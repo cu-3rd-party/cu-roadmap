@@ -1,9 +1,9 @@
 import { useState } from "react";
 
 import { CourseCard } from "@/entities/course";
+import { CourseSelectModal } from "@/features/course-select";
 import { usePlannerStore } from "@/shared/store";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
-import { CourseSelectModal } from "@/widgets/CourseSelectModal";
 
 import { AddCourseButton } from "./AddCourseButton";
 
