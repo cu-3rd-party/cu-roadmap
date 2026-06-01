@@ -46,6 +46,7 @@
   --expert-orange-pale: oklch(0.938567 0.036563 55.3623);
   --optimistic-t-yellow-pale: oklch(0.9755 0.0717 103.38);
   --sure-blue-pale: oklch(0.949 0.0269 241.15);
+  --sure-blue-transparent: oklch(0.9764 0.0133 233.74);
   --sure-pink-pale: oklch(0.9464 0.0335 341.02);
 
   /* text */
@@ -105,6 +106,7 @@
   --expert-orange-pale: oklch(0.938567 0.036563 55.3623);
   --optimistic-t-yellow-pale: oklch(0.9755 0.0717 103.38);
   --sure-blue-pale: oklch(0.949 0.0269 241.15);
+  --sure-blue-transparent: oklch(0.9764 0.0133 233.74);
   --sure-pink-pale: oklch(0.9464 0.0335 341.02);
 
   --fg-education-green: oklch(0.4276 0.1035 154.38);
@@ -173,6 +175,7 @@
   --color-expert-orange-pale: var(--expert-orange-pale);
   --color-optimistic-t-yellow-pale: var(--optimistic-t-yellow-pale);
   --color-sure-blue-pale: var(--sure-blue-pale);
+  --color-sure-blue-transparent: var(--sure-blue-transparent);
   --color-sure-pink-pale: var(--sure-pink-pale);
 
   --color-fg-education-green: var(--fg-education-green);

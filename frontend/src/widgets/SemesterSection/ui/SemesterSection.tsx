@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 import { CourseCard } from "@/entities/course";
+import { usePlannerStore } from "@/entities/roadmap";
 import { CourseSelectModal } from "@/features/course-select";
-import { usePlannerStore } from "@/shared/store";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
 
 import { AddCourseButton } from "./AddCourseButton";
@@ -26,7 +26,7 @@ export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
 
       <CollapsiblePanel title="Выбери курсы">
         <div className="flex flex-col gap-1 p-1">
-          {courses.length > 0 && (
+          {courses.length > 0 ? (
             <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-6">
               {courses.map((course) => (
                 <CourseCard
@@ -36,9 +36,14 @@ export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
                   onRemove={() => removeCourse(index, course.id)}
                 />
               ))}
+              <AddCourseButton
+                variant="card"
+                onClick={() => setModalOpen(true)}
+              />
             </div>
+          ) : (
+            <AddCourseButton onClick={() => setModalOpen(true)} />
           )}
-          <AddCourseButton onClick={() => setModalOpen(true)} />
         </div>
       </CollapsiblePanel>
 

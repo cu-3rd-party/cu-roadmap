@@ -1,4 +1,4 @@
-import { Chip } from "@/shared/ui/kit/chip";
+import { Chip } from "@/shared/ui";
 
 import {
   CATEGORY_FILTERS,
@@ -6,7 +6,7 @@ import {
   YEAR_OPTIONS,
   type CategoryFilterOption,
   type CourseFilterState,
-} from "../model/options";
+} from "../model";
 
 import { CourseSearchFilter } from "./CourseSearchFilter";
 import { FilterCard } from "./FilterCard";

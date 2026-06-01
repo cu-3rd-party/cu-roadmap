@@ -1,11 +1,9 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
 
-import { Chip } from "@/shared/ui/kit/chip";
-import { Counter } from "@/shared/ui/kit/counter";
-import { Input } from "@/shared/ui/kit/input";
+import { Chip, Counter, Input } from "@/shared/ui";
 
-import { CATEGORY_FILTERS, type CategoryFilterOption } from "../model/options";
+import { CATEGORY_FILTERS, type CategoryFilterOption } from "../model";
 
 interface CourseSearchFilterProps {
   categories?: CategoryFilterOption[];

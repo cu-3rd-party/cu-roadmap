@@ -1,11 +1,8 @@
 import { useMemo } from "react";
 
 import { CourseCard } from "@/entities/course";
-import {
-  CourseSearchFilter,
-  useCourseFilters,
-} from "@/features/course-filters";
-import { usePlannerStore } from "@/shared/store";
+import { usePlannerStore } from "@/entities/roadmap";
+import { CourseSearchFilter } from "@/features/course-filters";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +15,7 @@ import {
   availableCategoryOptions,
   filterAvailableCourses,
 } from "../model/filter";
+import { useCourseSelectFiltersStore } from "../model/store";
 
 interface CourseSelectModalProps {
   semester: number;
@@ -30,8 +28,13 @@ export const CourseSelectModal = ({
   open,
   onOpenChange,
 }: CourseSelectModalProps) => {
-  const { addCourse } = usePlannerStore();
-  const { filters, toggleCategory, setSearch } = useCourseFilters();
+  const { selections, addCourse, removeCourse } = usePlannerStore();
+  const { filters, toggleCategory, setSearch } = useCourseSelectFiltersStore();
+
+  const selectedIds = useMemo(
+    () => new Set((selections[semester] ?? []).map((c) => c.id)),
+    [selections, semester],
+  );
 
   const categoryOptions = useMemo(
     () => availableCategoryOptions(AVAILABLE_COURSES, filters),
@@ -47,9 +50,9 @@ export const CourseSelectModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="flex max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0 sm:max-w-screen-xl"
+        className="flex h-[42rem] max-h-[90vh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0 max-w-xl md:max-w-2xl lg:max-w-5xl xl:max-w-7xl"
       >
-        <DialogHeader className="relative shrink-0 px-8 pt-7 pb-4">
+        <DialogHeader className="relative shrink-0 px-8 pt-7 pb-4 overflow-hidden">
           <DialogTitle className="text-2xl font-bold text-fg-primary">
             Доступные курсы
           </DialogTitle>
@@ -61,8 +64,8 @@ export const CourseSelectModal = ({
           />
         </DialogHeader>
 
-        <div className="flex flex-col gap-1 overflow-y-auto px-3 pb-3 z-1">
-          <div className="flex flex-col gap-3 rounded-2xl bg-background p-4">
+        <div className="relative z-10 shrink-0 px-3 pb-1">
+          <div className="flex flex-col gap-3 rounded-2xl bg-background p-4 ">
             <CourseSearchFilter
               search={filters.search}
               onSearchChange={setSearch}
@@ -71,16 +74,26 @@ export const CourseSelectModal = ({
               categories={categoryOptions}
             />
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-5">
-            {visibleCourses.map((course) => (
-              <CourseCard
-                key={course.id}
-                title={course.title}
-                variant="select"
-                onSelect={() => addCourse(semester, course)}
-              />
-            ))}
+        <div className="min-h-0 flex-1 overflow-y-auto bg-expert-blue-pale pl-4 pr-3 pb-3">
+          <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
+            {visibleCourses.map((course) => {
+              const isSelected = selectedIds.has(course.id);
+              return (
+                <CourseCard
+                  key={course.id}
+                  title={course.title}
+                  variant="select"
+                  selected={isSelected}
+                  onSelect={() =>
+                    isSelected
+                      ? removeCourse(semester, course.id)
+                      : addCourse(semester, course)
+                  }
+                />
+              );
+            })}
           </div>
         </div>
       </DialogContent>
