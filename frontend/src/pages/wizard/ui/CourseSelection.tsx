@@ -2,12 +2,7 @@ import React, { useState } from "react";
 import { Check, Search } from "lucide-react";
 import { CourseCard } from "./CourseCard";
 
-interface Course {
-  id: string;
-  title: string;
-  
-  workload: number;
-}
+import type { Course } from "@/shared/config";
 
 interface CourseSelectionProps {
   courses: Course[];

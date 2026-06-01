@@ -436,3 +436,107 @@ func TestGetGraphDataWithRecommendedSemester(t *testing.T) {
 func ptr[T any](v T) *T {
 	return &v
 }
+
+func TestCreateCourseAdmin(t *testing.T) {
+	router := setupRouterRoot(t, nil)
+
+	body := `{"title":"New Course","course_type":"mandatory","category":"tech","workload":5.0}`
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/courses/", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Admin-Token", "admin")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 201, w.Code)
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	assert.NotNil(t, resp["id"])
+}
+
+func TestUpdateCourseAdmin(t *testing.T) {
+	router := setupRouterRoot(t, func(s store.StoreBase) {
+		c := store.CourseData{ID: uuid.New(), Title: "Old", Category: enums.CourseCategoryTech}
+		s.CreateCourse(c)
+	})
+
+	courses := getCoursesList(router, t)
+	assert.Len(t, courses, 1)
+	courseID := courses[0]["id"].(string)
+
+	body := `{"title":"Updated Course","course_type":"mandatory","category":"tech","workload":6.0}`
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/v1/courses/"+courseID, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Admin-Token", "admin")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	// Verify
+	coursesAfter := getCoursesList(router, t)
+	assert.Equal(t, "Updated Course", coursesAfter[0]["title"])
+}
+
+func TestDeleteCourseAdmin(t *testing.T) {
+	router := setupRouterRoot(t, func(s store.StoreBase) {
+		c := store.CourseData{ID: uuid.New(), Title: "To Delete"}
+		s.CreateCourse(c)
+	})
+
+	courses := getCoursesList(router, t)
+	assert.Len(t, courses, 1)
+	courseID := courses[0]["id"].(string)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/api/v1/courses/"+courseID, nil)
+	req.Header.Set("X-Admin-Token", "admin")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	coursesAfter := getCoursesList(router, t)
+	assert.Len(t, coursesAfter, 0)
+}
+
+func TestUpdateMajorAdmin(t *testing.T) {
+	router := setupRouterRoot(t, func(s store.StoreBase) {
+		m := store.MajorData{ID: uuid.New(), Title: "Old Major", School: "Tech"}
+		s.CreateMajor(m)
+		c := store.CourseData{ID: uuid.New(), Title: "Course"}
+		s.CreateCourse(c)
+	})
+
+	majors := getMajorsList(router, t)
+	assert.Len(t, majors, 1)
+	majorID := majors[0]["id"].(string)
+
+	courses := getCoursesList(router, t)
+	courseID := courses[0]["id"].(string)
+
+	body := `{"title":"Updated Major","school":"New School","requirements":[{"course_id":"` + courseID + `","type":"major_core"}]}`
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/v1/majors/"+majorID, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Admin-Token", "admin")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	// Verify
+	majorsAfter := getMajorsList(router, t)
+	assert.Equal(t, "Updated Major", majorsAfter[0]["title"])
+	assert.Equal(t, "New School", majorsAfter[0]["school"])
+	reqs := majorsAfter[0]["requirements"].([]interface{})
+	assert.Len(t, reqs, 1)
+}
+
+func TestAdminUnauthorized(t *testing.T) {
+	router := setupRouterRoot(t, nil)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/courses/", strings.NewReader(`{}`))
+	// No token
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 401, w.Code)
+}

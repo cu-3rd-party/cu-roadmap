@@ -37,7 +37,7 @@ export function CourseCard({
       >
         <div
           className="h-28 relative"
-          style={{ backgroundColor: "var(--color-primary)" }}
+          style={{ backgroundColor: course.category ? getCategoryColor(course.category) : "var(--color-primary)" }}
         >
           <svg width="100%" height="100%" viewBox="0 0 200 120" opacity="0.4">
             <path
