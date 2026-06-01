@@ -45,7 +45,7 @@ func getGraphData(c *gin.Context) {
 			"id":                   c.ID.String(),
 			"label":                c.Title,
 			"group":                string(c.Category),
-			"title":                desc,
+			"description":          desc,
 			"recommended_semester": recSem,
 		})
 	}

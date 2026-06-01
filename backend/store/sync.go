@@ -203,7 +203,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 				ID:               uuid.New(),
 				CourseID:         entry.Course.ID,
 				RequiredCourseID: target.ID,
-				DependencyType:   enums.DependencyTypeCorequisite1,
+				DependencyType:   enums.DependencyTypeCorequisite,
 			}); err != nil {
 				return SyncResult{}, fmt.Errorf("create coreq dependency: %w", err)
 			}
