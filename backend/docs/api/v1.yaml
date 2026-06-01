@@ -49,7 +49,7 @@ paths:
           description: Чето не получилось к бд обратиться
 
 
-  /api/v1/majors:
+  /api/v1/majors/:
     description: возвращает все мейджоры с требованиями
     get:
       responses:
@@ -66,7 +66,7 @@ paths:
         500:
           description: Чето не получилось к бд обратиться
 
-  /api/v1/majors/identify/:
+  /api/v1/majors/identify:
     description: анализирует куда соответствуешь
     post:
       requestBody:
@@ -107,7 +107,7 @@ paths:
         400:
           description: Чето ты хуйню какую-то написал в body
 
-  /api/v1/planner/generate/:
+  /api/v1/planner/generate:
     description: возвращает роадмапу (для конкретного мейджора)
     post:
       requestBody:
@@ -326,7 +326,7 @@ paths:
         400:
           description: Чето ты хуйню какую-то написал в body
 
-  /api/v1/planenr/test-engine2/:
+  /api/v1/planenr/test-engine2:
     description: отладочный эндпоинт, использует первого студента. это придумал федя жаков, пусть он и документирует. я это было перенес в го)
 
 components:
