@@ -1,1 +1,5 @@
-export { usePlannerStore, type PlannedCourse } from "./model/usePlannerStore";
+export {
+  usePlannerStore,
+  TOTAL_SEMESTERS,
+  type PlannedCourse,
+} from "./model/usePlannerStore";

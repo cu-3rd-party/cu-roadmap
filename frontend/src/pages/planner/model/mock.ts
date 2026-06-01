@@ -1,3 +1,4 @@
+import { TOTAL_SEMESTERS } from "@/entities/roadmap";
 import type { MajorProgress, SummaryStat } from "@/widgets/PlannerSummary";
 import type { SemesterSectionProps } from "@/widgets/SemesterSection";
 
@@ -16,6 +17,6 @@ export const PLANNER_MAJORS: MajorProgress[] = [
 const SEMESTER_DATE_RANGE = "Сентябрь 2026 - Январь 2027";
 
 export const SEMESTERS: SemesterSectionProps[] = Array.from(
-  { length: 8 },
+  { length: TOTAL_SEMESTERS },
   (_, i) => ({ index: i + 1, dateRange: SEMESTER_DATE_RANGE }),
 );

@@ -57,10 +57,10 @@ export const CourseSelectModal = ({
             Доступные курсы
           </DialogTitle>
           <img
-            src="/character.png"
-            alt=""
+            src="/character3.png"
+            alt="Персонаж 3"
             aria-hidden
-            className="pointer-events-none absolute -top-1 right-16 h-32 w-auto select-none object-contain"
+            className="pointer-events-none absolute top-1 right-16 h-32 w-auto select-none object-contain"
           />
         </DialogHeader>
 
@@ -76,7 +76,7 @@ export const CourseSelectModal = ({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-expert-blue-pale pl-4 pr-3 pb-3">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-expert-blue-pale pl-4 pr-3 pb-3 scrollbar-gutter-stable">
           <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
             {visibleCourses.map((course) => {
               const isSelected = selectedIds.has(course.id);
