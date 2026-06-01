@@ -98,6 +98,7 @@ func TestGetCoursesWithData(t *testing.T) {
 		c := store.CourseData{
 			ID:                 uuid.New(),
 			Title:              "Python",
+			Category:           enums.CourseCategoryTech,
 			AvailableSemesters: []int{1, 2},
 			Workload:           4.0,
 		}
@@ -410,6 +411,7 @@ func TestGetGraphDataWithRecommendedSemester(t *testing.T) {
 		c := store.CourseData{
 			ID:                  uuid.New(),
 			Title:               "Algo",
+			Category:            enums.CourseCategorySTEM,
 			AvailableSemesters:  []int{1, 3},
 			RecommendedSemester: ptr(2),
 			Workload:            5.0,
