@@ -130,7 +130,7 @@ func createCourse(c *gin.Context) {
 				ID:               uuid.New(),
 				CourseID:         created.ID,
 				RequiredCourseID: pid,
-				DependencyType:   enums.DependencyTypeCorequisite1,
+				DependencyType:   enums.DependencyTypeCorequisite,
 			})
 		}
 	}
@@ -208,7 +208,7 @@ func updateCourse(c *gin.Context) {
 				ID:               uuid.New(),
 				CourseID:         updated.ID,
 				RequiredCourseID: pid,
-				DependencyType:   enums.DependencyTypeCorequisite1,
+				DependencyType:   enums.DependencyTypeCorequisite,
 			})
 		}
 	}

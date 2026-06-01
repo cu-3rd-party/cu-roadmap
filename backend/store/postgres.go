@@ -329,7 +329,7 @@ func toCourseData(c *models.Course) CourseData {
 	for _, dep := range c.CourseDependencies {
 		if dep.DependencyType == enums.DependencyTypePrerequisite {
 			cd.Prerequisites = append(cd.Prerequisites, dep.RequiredCourseID)
-		} else if dep.DependencyType == enums.DependencyTypeCorequisite1 {
+		} else if dep.DependencyType == enums.DependencyTypeCorequisite {
 			cd.Corequisites = append(cd.Corequisites, dep.RequiredCourseID)
 		}
 	}

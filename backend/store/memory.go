@@ -73,7 +73,7 @@ func (s *MemoryStore) getPrereqsLocked(courseID uuid.UUID) []uuid.UUID {
 func (s *MemoryStore) getCoreqsLocked(courseID uuid.UUID) []uuid.UUID {
 	var coreqs []uuid.UUID
 	for _, dep := range s.courseDependencies {
-		if dep.CourseID == courseID && dep.DependencyType == enums.DependencyTypeCorequisite1 {
+		if dep.CourseID == courseID && dep.DependencyType == enums.DependencyTypeCorequisite {
 			coreqs = append(coreqs, dep.RequiredCourseID)
 		}
 	}
