@@ -373,9 +373,10 @@ func syncWithSheets(s StoreBase) error {
 	return nil
 }
 
+var NormalizeSheetTileRegexp = regexp.MustCompile("^[\u2600-\u27BF\U0001F300-\U0001F64F\U0001F680-\U0001F6FF\U0001F534\U0001F535\u26AB]\\s*")
+
 func NormalizeSheetTitle(raw string) string {
-	re := regexp.MustCompile("^[\u2600-\u27BF\U0001F300-\U0001F64F\U0001F680-\U0001F6FF\U0001F534\U0001F535\u26AB]\\s*")
-	s := strings.TrimSpace(re.ReplaceAllString(raw, ""))
+	s := strings.TrimSpace(NormalizeSheetTileRegexp.ReplaceAllString(raw, ""))
 	// Prefer Cyrillic lookalikes for a few common gremlins.
 	s = strings.ReplaceAll(s, "C++", "С++")
 	return s
@@ -413,6 +414,8 @@ func getFirst(row map[string]string, keys ...string) string {
 	return ""
 }
 
+var AllowedCohortsRegexp = regexp.MustCompile(`^(\d{4})\s*[-–]\s*(\d{4})$`)
+
 func parseAllowedCohorts(raw string) []int {
 	if raw == "" {
 		return nil
@@ -422,13 +425,12 @@ func parseAllowedCohorts(raw string) []int {
 	raw = strings.ReplaceAll(raw, "/", ",")
 	seen := make(map[int]bool)
 	var result []int
-	re := regexp.MustCompile(`^(\d{4})\s*[-–]\s*(\d{4})$`)
 	for _, part := range strings.Split(raw, ",") {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue
 		}
-		if matches := re.FindStringSubmatch(part); len(matches) == 3 {
+		if matches := AllowedCohortsRegexp.FindStringSubmatch(part); len(matches) == 3 {
 			start, _ := strconv.Atoi(matches[1])
 			end, _ := strconv.Atoi(matches[2])
 			if start > 0 && end > 0 && start <= end {
@@ -449,6 +451,9 @@ func parseAllowedCohorts(raw string) []int {
 	sort.Ints(result)
 	return result
 }
+
+var RecommendedSemesterRegexp = regexp.MustCompile(`\d+`)
+var WorkloadRegexp = regexp.MustCompile(`(\d+(?:\.\d+)?)`)
 
 func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) CourseData {
 	rawType := strings.ToLower(getFirst(row, "Тип курса"))
@@ -473,8 +478,7 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) C
 
 	var recommendedSemester *int
 	rawRec := getFirst(row, "Рекомендованный к прохождению семестр", "Семестр")
-	re := regexp.MustCompile(`\d+`)
-	if match := re.FindString(rawRec); match != "" {
+	if match := RecommendedSemesterRegexp.FindString(rawRec); match != "" {
 		v := 0
 		fmt.Sscanf(match, "%d", &v)
 		recommendedSemester = &v
@@ -485,8 +489,7 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) C
 		rawWorkload = "5"
 	}
 	workload := 5.0
-	reW := regexp.MustCompile(`(\d+(?:\.\d+)?)`)
-	if match := reW.FindString(rawWorkload); match != "" {
+	if match := WorkloadRegexp.FindString(rawWorkload); match != "" {
 		fmt.Sscanf(match, "%f", &workload)
 	}
 
