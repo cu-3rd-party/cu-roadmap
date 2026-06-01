@@ -98,19 +98,19 @@ Tests live in `tests/` as a separate Go package. They import `store`, `service`,
 
 ## API Endpoints
 
-| Method | Path | Handler file | Notes |
-|---|---|---|---|
-| GET | `/` | main.go:85 | redirects → `/static/index.html` |
-| GET | `/health` | main.go:88 | `{"status":"healthy"}` |
-| GET | `/api/v1/graph/data` | graph.go | nodes + edges for vis-network |
-| GET | `/api/v1/courses/` | courses.go | all courses with prereqs |
-| GET | `/api/v1/majors/` | majors.go | majors with requirements |
-| POST | `/api/v1/majors/identify` | majors.go | body: `["uuid1","uuid2"]` → score-sorted analysis |
-| POST | `/api/v1/planner/generate` | planner.go | `PlannerRequest` → roadmap |
+| Method | Path                                 | Handler file | Notes |
+|---|--------------------------------------|---|---|
+| GET | `/`                                  | main.go:85 | redirects → `/static/index.html` |
+| GET | `/api/health`                        | main.go:88 | `{"status":"healthy"}` |
+| GET | `/api/v1/graph/data`                 | graph.go | nodes + edges for vis-network |
+| GET | `/api/v1/courses/`                   | courses.go | all courses with prereqs |
+| GET | `/api/v1/majors/`                    | majors.go | majors with requirements |
+| POST | `/api/v1/majors/identify`            | majors.go | body: `["uuid1","uuid2"]` → score-sorted analysis |
+| POST | `/api/v1/planner/generate`           | planner.go | `PlannerRequest` → roadmap |
 | POST | `/api/v1/planner/validate-semester/` | planner.go | `SemesterValidationRequest` → `ValidationResult` |
-| POST | `/api/v1/planner/validate-roadmap/` | planner.go | `RoadmapValidationRequest` → `{"validation_results":[…]}` |
-| POST | `/api/v1/planner/goal-path/` | planner.go | `GoalPathRequest` → roadmap |
-| GET | `/api/v1/planner/test-engine2` | planner.go | debug endpoint, uses first student |
+| POST | `/api/v1/planner/validate-roadmap/`  | planner.go | `RoadmapValidationRequest` → `{"validation_results":[…]}` |
+| POST | `/api/v1/planner/goal-path/`         | planner.go | `GoalPathRequest` → roadmap |
+| GET | `/api/v1/planner/test-engine2`       | planner.go | debug endpoint, uses first student |
 
 ## Data Model
 
