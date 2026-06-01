@@ -22,8 +22,6 @@ type SheetMajorMapping struct {
 	Category   enums.CourseCategory
 }
 
-
-
 func requirementTypeFromSheetCourseType(raw string) enums.RequirementType {
 	raw = strings.ToLower(strings.TrimSpace(raw))
 	if strings.Contains(raw, "major core") || strings.Contains(raw, "core") || strings.Contains(raw, "обязательный") {

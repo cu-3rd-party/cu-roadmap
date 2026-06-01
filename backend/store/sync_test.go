@@ -173,7 +173,6 @@ func TestMapSheetRowToCourse(t *testing.T) {
 	assert.NotNil(t, course.HandbookLink)
 	assert.Equal(t, "https://cu.ru", *course.HandbookLink)
 
-
 	assert.Equal(t, []int{1, 3, 5, 7}, course.AvailableSemesters)
 	assert.NotNil(t, course.RecommendedSemester)
 	assert.Equal(t, 3, *course.RecommendedSemester)
@@ -193,7 +192,6 @@ func TestMapSheetRowToCourseElective(t *testing.T) {
 
 	assert.Equal(t, "Факультатив", course.Title)
 
-
 	assert.Equal(t, []int{2, 4, 6, 8}, course.AvailableSemesters)
 	assert.Nil(t, course.RecommendedSemester)
 	assert.Equal(t, 5.0, course.Workload)
@@ -208,7 +206,6 @@ func TestMapSheetRowToCourseWorkloadVariants(t *testing.T) {
 	}
 	course := MapSheetRowToCourse(row, enums.CourseCategoryTech)
 	assert.Equal(t, 7.5, course.Workload)
-
 
 	row2 := map[string]string{
 		"Название курса": "Курс 2",

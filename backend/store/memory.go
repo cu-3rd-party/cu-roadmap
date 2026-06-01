@@ -111,7 +111,7 @@ func (s *MemoryStore) CreateCourse(course CourseData) (CourseData, error) {
 func (s *MemoryStore) UpdateCourse(course CourseData) (CourseData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	oldCourse, exists := s.courses[course.ID]
 	if exists && oldCourse.Title != course.Title {
 		delete(s.coursesByTitle, oldCourse.Title)
@@ -164,7 +164,7 @@ func (s *MemoryStore) CreateMajor(major MajorData) (MajorData, error) {
 func (s *MemoryStore) UpdateMajor(major MajorData) (MajorData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	oldMajor, exists := s.majors[major.ID]
 	if exists && oldMajor.Title != major.Title {
 		delete(s.majorsByTitle, oldMajor.Title)
