@@ -1,18 +1,19 @@
-import { Course } from "@/entities/course";
 import type {
   CategoryFilterOption,
   CourseFilterState,
 } from "@/features/course-filters";
 
-import type { CatalogCategory } from "./category";
+import type { CatalogCategory, CatalogCourse } from "./mock";
 
-// Card-level match: type + major + search.
-const matchesCourse = (course: Course, filters: CourseFilterState) => {
-  const typeOk =
-    filters.types.length === 0 || filters.types.includes(course.type);
-
-  // TODO
-  const majorOk = true;
+/**
+ * Card-level match: year + major + search. Each group is OR within itself and
+ * AND across groups. An empty group means "no constraint".
+ */
+const matchesCourse = (course: CatalogCourse, filters: CourseFilterState) => {
+  const yearOk =
+    filters.years.length === 0 || filters.years.includes(course.year);
+  const majorOk =
+    filters.majors.length === 0 || filters.majors.includes(course.major);
 
   const query = filters.search.trim().toLowerCase();
   const searchOk =
@@ -20,10 +21,15 @@ const matchesCourse = (course: Course, filters: CourseFilterState) => {
     course.title.toLowerCase().includes(query) ||
     (course.description?.toLowerCase().includes(query) ?? false);
 
-  return typeOk && majorOk && searchOk;
+  return yearOk && majorOk && searchOk;
 };
 
-// Apply all filters to all catalogs, if catalog is not included in catalog filters or becomes empty after inside filtration - the whole block will not show up
+/**
+ * Apply all filters to the catalog:
+ * 1. type chips (`categories`) hide whole blocks,
+ * 2. year/major/search filter cards inside the remaining blocks,
+ * 3. blocks left with zero matching cards are dropped.
+ */
 export const filterCatalog = (
   categories: CatalogCategory[],
   filters: CourseFilterState,
@@ -42,7 +48,10 @@ export const filterCatalog = (
     }))
     .filter((category) => category.courses.length > 0);
 
-// Map each category to the amount of filtrated courses in it
+/**
+ * Type-chip options with a live count of cards matching the current
+ * year/major/search filters (independent of the type selection itself).
+ */
 export const categoryOptionsWithCounts = (
   categories: CatalogCategory[],
   filters: CourseFilterState,

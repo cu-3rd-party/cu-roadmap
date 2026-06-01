@@ -1,9 +1,6 @@
-import { Compass, Map, Moon, Settings, Sun } from "lucide-react";
-import { useState } from "react";
+import { Compass, Map } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { useTheme } from "@/app/providers";
-import { SettingsModal } from "@/features/settings";
 import { isPathActive } from "@/shared/lib";
 import { Button } from "@/shared/ui/kit/button";
 
@@ -15,13 +12,10 @@ const NAV_ITEMS = [
     icon: <Compass />,
     path: "/catalog",
   },
-  { label: "Админка", active: false, icon: <Settings />, path: "/admin" },
 ] as const;
 
 export const Navbar = () => {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <header className="relative flex h-16 items-center justify-between border-b border-border bg-background px-6">
       <img src="/cu.svg" width={36} height={36} alt="ЦУ" />
@@ -40,28 +34,6 @@ export const Navbar = () => {
           </Button>
         ))}
       </nav>
-
-      <div className="flex items-center gap-2">
-        <Button
-          onClick={toggleTheme}
-          variant="navInactive"
-          size="sm"
-          icon={theme === "dark" ? <Sun /> : <Moon />}
-          className="rounded-full"
-          aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-        />
-
-        <Button
-          onClick={() => setSettingsOpen(true)}
-          variant="navInactive"
-          size="sm"
-          icon={<Settings />}
-          className="rounded-full"
-          aria-label="Настройки"
-        />
-      </div>
-
-      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
     </header>
   );
 };

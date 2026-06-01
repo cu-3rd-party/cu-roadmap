@@ -34,4 +34,4 @@ export const CoursesSection = ({
       </CollapsiblePanel>
     </Panel>
   );
-}
+};

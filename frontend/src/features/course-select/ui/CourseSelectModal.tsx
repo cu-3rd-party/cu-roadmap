@@ -1,86 +1,68 @@
 import { useMemo } from "react";
 
-import { CourseCard, CourseCardSkeleton, type Course } from "@/entities/course";
-import { usePlannerStore } from "@/entities/roadmap";
-import { CourseSearchFilter } from "@/features/course-filters";
-import type { SemesterNumber } from "@/shared/constants";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui";
-import { RevealImage } from "@/shared/ui/reveal-image";
+import { CourseCard } from "@/entities/course";
+import {
+  CourseSearchFilter,
+  useCourseFilters,
+} from "@/features/course-filters";
+import { usePlannerStore } from "@/shared/store";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/kit/dialog";
 
+import { AVAILABLE_COURSES } from "../model/courses";
 import {
   availableCategoryOptions,
   filterAvailableCourses,
-  useCourseSelectFiltersStore,
-} from "../model";
+} from "../model/filter";
 
 interface CourseSelectModalProps {
   semester: number;
-  courses: Course[];
-  isLoading: boolean;
-  isError: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export const CourseSelectModal = ({
   semester,
-  courses,
-  isLoading,
-  isError,
   open,
   onOpenChange,
 }: CourseSelectModalProps) => {
-  const { selections, addCourse, removeCourse } = usePlannerStore();
-  const { filters, toggleCategory, setSearch } = useCourseSelectFiltersStore();
-
-  // Selection is tracked across ALL semesters
-  const semesterByCourseId = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const [sem, list] of Object.entries(selections)) {
-      for (const c of list) map.set(c.id, Number(sem));
-    }
-    return map;
-  }, [selections]);
-
-  // Only courses offered in this semester are selectable from this modal.
-  const semesterCourses = useMemo(
-    () =>
-      courses.filter((course) =>
-        course.availableSemesters.includes(semester as SemesterNumber),
-      ),
-    [courses, semester],
-  );
+  const { addCourse } = usePlannerStore();
+  const { filters, toggleCategory, setSearch } = useCourseFilters();
 
   const categoryOptions = useMemo(
-    () => availableCategoryOptions(semesterCourses, filters),
-    [semesterCourses, filters],
+    () => availableCategoryOptions(AVAILABLE_COURSES, filters),
+    [filters],
   );
 
   const visibleCourses = useMemo(
-    () => filterAvailableCourses(semesterCourses, filters),
-    [semesterCourses, filters],
+    () => filterAvailableCourses(AVAILABLE_COURSES, filters),
+    [filters],
   );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="flex h-[42rem] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0 max-w-xl md:max-w-2xl lg:max-w-5xl xl:max-w-7xl"
+        className="flex max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0 sm:max-w-screen-xl"
       >
-        <DialogHeader className="relative shrink-0 px-8 pt-7 pb-4 overflow-hidden">
+        <DialogHeader className="relative shrink-0 px-8 pt-7 pb-4">
           <DialogTitle className="text-2xl font-bold text-fg-primary">
-            Доступные курсы ({semester} семестр)
+            Доступные курсы
           </DialogTitle>
-          <RevealImage
-            src="/character3.png"
-            alt="Персонаж 3"
+          <img
+            src="/character.png"
+            alt=""
             aria-hidden
-            className="pointer-events-none absolute top-1 right-16 h-32 w-auto select-none object-contain"
+            className="pointer-events-none absolute -top-1 right-16 h-32 w-auto select-none object-contain"
           />
         </DialogHeader>
 
-        <div className="relative z-10 shrink-0 px-3 pb-1">
-          <div className="flex flex-col gap-3 rounded-2xl bg-background p-4 ">
+        <div className="flex flex-col gap-1 overflow-y-auto px-3 pb-3 z-1">
+          <div className="flex flex-col gap-3 rounded-2xl bg-background p-4">
             <CourseSearchFilter
               search={filters.search}
               onSearchChange={setSearch}
@@ -89,54 +71,17 @@ export const CourseSelectModal = ({
               categories={categoryOptions}
             />
           </div>
-        </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-expert-blue-pale pl-4 pr-3 pb-3 scrollbar-gutter-stable">
-          {isLoading ? (
-            <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
-              {Array.from({ length: 10 }).map((_, index) => (
-                <CourseCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : isError ? (
-            <p className="px-1 py-4 text-sm text-fg-negative">
-              Не удалось загрузить курсы. Попробуйте обновить страницу.
-            </p>
-          ) : visibleCourses.length === 0 ? (
-            <div className="flex w-full items-center justify-center rounded-2xl bg-background px-4 py-10 text-sm text-fg-secondary">
-              Нет курсов, доступных в этом семестре.
-            </div>
-          ) : (
-            <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
-              {visibleCourses.map((course) => {
-                const selectedSemester = semesterByCourseId.get(
-                  course.id,
-                ) as SemesterNumber;
-                const isSelected = selectedSemester !== undefined;
-                return (
-                  <CourseCard
-                    key={course.id}
-                    title={course.title}
-                    variant="select"
-                    category={course.category}
-                    type={course.type}
-                    selected={isSelected}
-                    selectedSemester={selectedSemester}
-                    onSelect={() =>
-                      selectedSemester !== undefined
-                        ? removeCourse(selectedSemester, course.id)
-                        : addCourse(semester, {
-                            id: course.id,
-                            title: course.title,
-                            category: course.category,
-                            type: course.type,
-                          })
-                    }
-                  />
-                );
-              })}
-            </div>
-          )}
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-5">
+            {visibleCourses.map((course) => (
+              <CourseCard
+                key={course.id}
+                title={course.title}
+                variant="select"
+                onSelect={() => addCourse(semester, course)}
+              />
+            ))}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
