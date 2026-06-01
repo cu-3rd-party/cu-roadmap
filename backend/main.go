@@ -105,7 +105,7 @@ func main() {
 		c.Redirect(http.StatusTemporaryRedirect, "/static/index.html")
 	})
 
-	router.GET("/health", func(c *gin.Context) {
+	router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 

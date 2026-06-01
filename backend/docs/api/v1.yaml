@@ -1,0 +1,520 @@
+openapi: 3.1.0
+info:
+  title: cu roadmap api v1
+  description: cu roadmap api v1
+  version: 1.0.0
+servers:
+  - url: 'https://roadmap.cu3rd.ru'
+paths:
+  /:
+    description: тут висит админ панелька. ее открыть на реальном апи невозможно.
+
+  /api/health:
+    description: статус сервера
+    get:
+      responses:
+        200:
+          description: все хорошо
+
+  /api/v1/graph/data:
+    description: возвращает информацию, которая используется для графа
+    get:
+      responses:
+        200:
+          description: все прошло хорошо
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphData'
+        503:
+          description: Еще не успели отпарсить таблицу
+        500:
+          description: Чето не получилось к бд обратиться
+
+  /api/v1/courses/:
+    description: возвращает все курсы с пререквизитами
+    get:
+      responses:
+        200:
+          description: на держи вообще все курсы
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+        503:
+          description: Еще не успели отпарсить таблицу
+        500:
+          description: Чето не получилось к бд обратиться
+
+
+  /api/v1/majors/:
+    description: возвращает все мейджоры с требованиями
+    get:
+      responses:
+        200:
+          description: ок
+          content:
+            application/josn:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Major'
+        503:
+          description: Еще не успели отпарсить таблицу
+        500:
+          description: Чето не получилось к бд обратиться
+
+  /api/v1/majors/identify:
+    description: анализирует куда соответствуешь
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: Список UUID курсов, которые ты успел пройти
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        200:
+          description: Все ок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      description: Айди мейджора
+                      type: string
+                      format: uuid
+                    title:
+                      type: string
+                      description: Название мейджора
+                    score:
+                      type: number
+                      description: литералли covered_count/total_count
+                    covered_count: { type: integer }
+                    total_count: { type: integer }
+        503:
+          description: Еще не успели отпарсить таблицу
+        500:
+          description: Чето не получилось к бд обратиться
+        400:
+          description: Чето ты хуйню какую-то написал в body
+
+  /api/v1/planner/generate:
+    description: возвращает роадмапу (для конкретного мейджора)
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: Запрос на генерирование роадмапы
+              type: object
+              properties:
+                passed_course_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: UUID всех пройденных курсов
+                major_id:
+                  type: string
+                  format: uuid
+                  description: UUID мейджора куда стремишься
+                current_semester:
+                  type: integer
+                  description: Измеряется в кредитах, по дефолту 1
+                max_load:
+                  type: number
+                  description: Измеряется в кредитах, по дефолту 12.0
+                cohort:
+                  type: integer
+                  description: Год, когда поступил в цу
+      responses:
+        200:
+          description: Вот держи роадмапу
+          content:
+            application/json:
+              schema:
+                description: Роадмапа
+                type: object
+                properties:
+                  error:
+                    description: Бля если чето пойдет не так при генерации тут будет ошибка
+                    type: string
+                    optional: true
+                  major_id:
+                    type: string
+                    format: uuid
+                  roadmap:
+                    $ref: '#/definitions/Roadmap'
+        503:
+          description: Еще не успели отпарсить таблицу
+        500:
+          description: Чето не получилось к бд обратиться
+        400:
+          description: Чето ты хуйню какую-то написал в body
+
+  /api/v1/planner/validate-semester/:
+    description: валидирует семестр
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_semester:
+                  type: integer
+                course_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                passed_course_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                max_load:
+                  type: number
+                  default: 12.0
+      responses:
+        200:
+          description: лови
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  is_valid:
+                    type: boolean
+                  messages:
+                    type: object
+                    properties:
+                      level:
+                        type: string
+                      message:
+                        type: string
+                      course_id:
+                        type: string
+                        format: uuid
+                        nullable: true
+                  total_load:
+                    type: number
+        503:
+          description: Еще не успели отпарсить таблицу
+        500:
+          description: Чето не получилось к бд обратиться
+        400:
+          description: Чето ты хуйню какую-то написал в body
+
+
+  /api/v1/planner/validate-roadmap/:
+    description: валидирует роадмапу
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                passed_course_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                max_load:
+                  type: number
+                  default: 12.0
+                roadmap:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      semester:
+                        type: integer
+                      course_ids:
+                        type: array
+                        items:
+                          type: string
+                          format: uuid
+      responses:
+        200:
+          description: лови
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  validation_results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        semester: { type: integer }
+                        valid: { type: boolean }
+                        total_load: { type: number }
+                        messages:
+                          description: Тут литералли вызывается та же функция, что и в /api/v1/validate-semester
+                          type: object
+                          properties:
+                            level:
+                              type: string
+                            message:
+                              type: string
+                            course_id:
+                              type: string
+                              format: uuid
+                              nullable: true
+
+        503:
+          description: Еще не успели отпарсить таблицу
+        500:
+          description: Чето не получилось к бд обратиться
+        400:
+          description: Чето ты хуйню какую-то написал в body
+
+  /api/v1/planner/goal-path/:
+    description: валидирует роадмапу (для конкретного курса)
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target_course_id:
+                  type: string
+                  format: uuid
+                passed_course_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                current_semester:
+                  type: integer
+                  default: 1
+                max_load:
+                  type: number
+                  default: 12.0
+      responses:
+        200:
+          description: Держи роадмапу
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    optional: true
+                    description: Бля если чето пойдет не так при генерации тут будет ошибка
+                    type: string
+                  roadmap:
+                    $ref: '#/definitions/Roadmap'
+
+        503:
+          description: Еще не успели отпарсить таблицу
+        500:
+          description: Чето не получилось к бд обратиться
+        400:
+          description: Чето ты хуйню какую-то написал в body
+
+  /api/v1/planenr/test-engine2:
+    description: отладочный эндпоинт, использует первого студента. это придумал федя жаков, пусть он и документирует. я это было перенес в го)
+
+components:
+  schemas:
+    MajorRequirement:
+      description: Что надо для получения
+      properties:
+        course_id:
+          type: string
+          format: uuid
+          description: какой курс надо пройти
+
+        requirement_type:
+          type: string
+          description: поч
+          enum:
+            - core
+            - minor_recommended
+
+    Major:
+      description: Мейджор
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: уникальынй айди мейджора
+
+        title:
+          type: string
+          description: Название мейджора
+
+        school:
+          type: string
+          description: Название школы (блять я хз нахуя это)
+
+        requirements:
+          type: array
+          items: { $ref: '#/components/schemas/MajorRequirement' }
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: уникальный id курса
+
+        title:
+          type: string
+          description: название курса
+
+        description:
+          type: string
+          description: описание курса
+          nullable: true
+
+        course_type:
+          type: string
+          description: тип курса
+          enum:
+            - mandatory
+            - elective
+            - other
+
+        category:
+          type: string
+          description: категория курса
+          enum:
+            - fundamentals
+            - ai
+            - stem
+            - soft
+            - business
+            - tech
+            - design
+
+        available_semesters:
+          type: array
+          items: { type: integer }
+
+        allowed_cohorts:
+          type: array
+          items: { type: integer }
+
+        recommended_semester:
+          type: integer
+          nullable: true
+
+        workload:
+          type: number
+
+        prerequisites:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: uuid курсов, которые являются пререквизитами перед конкретным
+
+    GraphNode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: уникальный id курса
+
+        label:
+          type: string
+          description: title курса
+
+        group:
+          type: string
+          description: категория курса
+          enum:
+            - fundamentals
+            - ai
+            - stem
+            - soft
+            - business
+            - tech
+            - design
+
+        description:
+          type: string
+          description: описание курса
+          nullable: true
+
+        recommended_semester:
+          type: string
+          description: соответственно рекомендованный семестр
+          nullable: true
+
+    GraphEdge:
+      type: object
+      properties:
+        from:
+          type: string
+          format: uuid
+          description: откуда
+
+        to:
+          type: string
+          format: uuid
+          description: куда
+
+        label:
+          type: string
+          description: тип связи
+          enum:
+            - prerequisite
+            - corequisite
+
+    GraphData:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEdge'
+
+definitions:
+  Roadmap:
+    type: array
+    items:
+      type: object
+      properties:
+        semester:
+          type: integer
+        total_load:
+          type: number
+        courses:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              title: { type: string }
+              workload: { type: number }
+              type:
+                type: string
+                description: тип курса
+                enum:
+                  - mandatory
+                  - elective
+                  - other

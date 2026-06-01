@@ -104,7 +104,7 @@ func (v *RoadmapValidator) ValidateSemester(
 						CourseID: &c.ID,
 					})
 				}
-			} else if dep.DependencyType == enums.DependencyTypeCorequisite1 {
+			} else if dep.DependencyType == enums.DependencyTypeCorequisite {
 				if !inSemIDs[reqID] {
 					messages = append(messages, schemas.ValidationMessage{
 						Level:    "error",

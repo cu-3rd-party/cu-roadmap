@@ -513,7 +513,7 @@ func TestSyncFromSheetDataWithCorequisites(t *testing.T) {
 
 	deps, _ := s.GetCourseDependencies()
 	assert.Len(t, deps, 1)
-	assert.Equal(t, enums.DependencyTypeCorequisite1, deps[0].DependencyType)
+	assert.Equal(t, enums.DependencyTypeCorequisite, deps[0].DependencyType)
 }
 
 func TestSyncFromSheetDataWithEmojiPrefix(t *testing.T) {

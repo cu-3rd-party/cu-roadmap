@@ -37,7 +37,7 @@ func setupRouter(t *testing.T, seed func(s store.StoreBase)) *gin.RouterGroup {
 	RegisterMajorsRoutes(apiV1.Group("/majors"))
 	RegisterCoursesRoutes(apiV1.Group("/courses"))
 	RegisterPlannerRoutes(apiV1.Group("/planner"))
-	router.GET("/health", func(c *gin.Context) {
+	router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
@@ -62,7 +62,7 @@ func setupRouterRoot(t *testing.T, seed func(s store.StoreBase)) *gin.Engine {
 	RegisterMajorsRoutes(apiV1.Group("/majors"))
 	RegisterCoursesRoutes(apiV1.Group("/courses"))
 	RegisterPlannerRoutes(apiV1.Group("/planner"))
-	router.GET("/health", func(c *gin.Context) {
+	router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
@@ -73,7 +73,7 @@ func TestHealthEndpoint(t *testing.T) {
 	router := setupRouterRoot(t, nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/health", nil)
+	req, _ := http.NewRequest("GET", "/api/health", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)

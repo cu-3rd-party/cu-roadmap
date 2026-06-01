@@ -55,18 +55,15 @@ func (p *GreedyPlanner) GenerateRoadmap(
 
 	unlocksCount := make(map[uuid.UUID]int)
 	prereqs := make(map[uuid.UUID][]uuid.UUID)
-	coreqsType1 := make(map[uuid.UUID][]uuid.UUID)
-	coreqsType2 := make(map[uuid.UUID][]uuid.UUID)
+	coreqs := make(map[uuid.UUID][]uuid.UUID)
 
 	for _, dep := range allDeps {
 		switch dep.DependencyType {
 		case enums.DependencyTypePrerequisite:
 			prereqs[dep.CourseID] = append(prereqs[dep.CourseID], dep.RequiredCourseID)
 			unlocksCount[dep.RequiredCourseID]++
-		case enums.DependencyTypeCorequisite1:
-			coreqsType1[dep.CourseID] = append(coreqsType1[dep.CourseID], dep.RequiredCourseID)
-		case enums.DependencyTypeCorequisite2:
-			coreqsType2[dep.CourseID] = append(coreqsType2[dep.CourseID], dep.RequiredCourseID)
+		case enums.DependencyTypeCorequisite:
+			coreqs[dep.CourseID] = append(coreqs[dep.CourseID], dep.RequiredCourseID)
 		}
 	}
 
@@ -100,12 +97,16 @@ func (p *GreedyPlanner) GenerateRoadmap(
 				continue
 			}
 
-			for _, reqID := range coreqsType2[cid] {
-				if !passedIDs[reqID] {
-					if _, inTodo := coursesTodo[reqID]; !inTodo {
-						canTake = false
-						break
-					}
+			for _, reqID := range coreqs[cid] {
+				if passedIDs[reqID] {
+					continue
+				}
+				// Coreqs must be schedulable in the same semester. If the required
+				// course isn't already passed, it must still be in todo so it can be
+				// picked together.
+				if _, inTodo := coursesTodo[reqID]; !inTodo {
+					canTake = false
+					break
 				}
 			}
 			if !canTake {
@@ -149,7 +150,7 @@ func (p *GreedyPlanner) GenerateRoadmap(
 			totalCLoad := c.Workload
 			var neededTogether []store.CourseData
 
-			for _, reqID := range coreqsType1[c.ID] {
+			for _, reqID := range coreqs[c.ID] {
 				if !passedIDs[reqID] {
 					if rc, inTodo := coursesTodo[reqID]; inTodo {
 						totalCLoad += rc.Workload
