@@ -452,8 +452,10 @@ func parseAllowedCohorts(raw string) []int {
 	return result
 }
 
-var RecommendedSemesterRegexp = regexp.MustCompile(`\d+`)
-var WorkloadRegexp = regexp.MustCompile(`(\d+(?:\.\d+)?)`)
+var (
+	RecommendedSemesterRegexp = regexp.MustCompile(`\d+`)
+	WorkloadRegexp            = regexp.MustCompile(`(\d+(?:\.\d+)?)`)
+)
 
 func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) CourseData {
 	rawType := strings.ToLower(getFirst(row, "Тип курса"))
