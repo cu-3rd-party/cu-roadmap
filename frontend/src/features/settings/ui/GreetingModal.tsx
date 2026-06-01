@@ -8,7 +8,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  RevealImage,
   Select,
   SelectContent,
   SelectItem,
@@ -20,11 +19,11 @@ import { useSettingsStore } from "../model";
 
 export const GreetingModal = () => {
   const { hasSeenGreeting, completeGreeting } = useSettingsStore();
-  const [admissionYear, setAdmissionYear] = useState("");
+  const [year, setYear] = useState("");
 
   const handleProceed = () => {
-    if (!admissionYear) return;
-    completeGreeting(Number(admissionYear) as (typeof ADMISSION_YEARS)[number]);
+    if (!year) return;
+    completeGreeting(Number(year) as (typeof ADMISSION_YEARS)[number]);
   };
 
   return (
@@ -39,7 +38,7 @@ export const GreetingModal = () => {
           <DialogTitle className="text-2xl font-bold text-fg-primary">
             Привет!
           </DialogTitle>
-          <RevealImage
+          <img
             src="/character2.png"
             alt="Персонаж 1"
             aria-hidden
@@ -50,18 +49,12 @@ export const GreetingModal = () => {
         <div className="flex flex-col">
           <div className="flex flex-col gap-4 rounded-2xl bg-background p-5">
             <DialogDescription className="text-sm leading-snug text-fg-primary flex flex-col gap-4">
-              <p>
-                Цель этого конструктора - помочь тебе собрать свою оптимальную
-                траекторию учебы.
-              </p>
-              <p>
-                Для начала выбери год своего поступления в ЦУ (позже его можно
-                будет изменить в настройках):
-              </p>
+              <p>Цель этого конструктора - помочь тебе собрать свою оптимальную траекторию учебы.</p>
+              <p>Для начала выбери год своего поступления в ЦУ (позже его можно будет изменить в настройках):</p>
             </DialogDescription>
 
             <div className="flex flex-col gap-1.5">
-              <Select value={admissionYear} onValueChange={setAdmissionYear}>
+              <Select value={year} onValueChange={setYear}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="" />
                 </SelectTrigger>
@@ -79,7 +72,7 @@ export const GreetingModal = () => {
               size="md"
               className="w-full"
               variant="outline"
-              disabled={!admissionYear}
+              disabled={!year}
               onClick={handleProceed}
             >
               Продолжить

@@ -1,7 +1,14 @@
+import { ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "@/shared/lib";
 import { Button } from "@/shared/ui/kit/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/kit/dropdown-menu";
 import { Separator } from "@/shared/ui/kit/separator";
 
 import { MOCK_COURSE_DETAILS } from "../model";
@@ -19,18 +26,23 @@ interface CourseCardProps {
    - planned: "О курсе" + "Удалить" (used inside a semester block)
   **/
   variant?: CourseCardVariant;
-  /** select variant only: renders a brand-colored border when true */
+  // select variant only: renders a brand-colored border when true 
   selected?: boolean;
+  // planned variant only: semesters offered in the "move to" menu (already excludes current)
+  moveTargets?: number[];
   onSelect?: () => void;
   onRemove?: () => void;
+  onMove?: (toSemester: number) => void;
 }
 
 export const CourseCard = ({
   title,
   variant = "catalog",
   selected = false,
+  moveTargets,
   onSelect,
   onRemove,
+  onMove,
 }: CourseCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -54,14 +66,38 @@ export const CourseCard = ({
     );
   }
 
+  const showMoveMenu =
+    variant === "planned" && moveTargets && moveTargets.length > 0;
+
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-background p-4">
+    <div className="relative flex flex-col gap-3 rounded-xl bg-background p-4">
       <div
         title={title}
-        className="line-clamp-2 text-sm leading-snug font-medium text-fg-primary"
+        className={cn(
+          "line-clamp-2 text-sm leading-snug font-medium text-fg-primary",
+          showMoveMenu && "pr-7",
+        )}
       >
         {title}
       </div>
+
+      {showMoveMenu && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label="Перенести в семестр"
+            className="absolute top-2 right-2 grid size-6 cursor-pointer place-items-center rounded-md text-fg-secondary transition-colors hover:bg-accent-pale-hover hover:text-fg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            <ArrowRightLeft className="size-4" aria-hidden />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {moveTargets.map((n) => (
+              <DropdownMenuItem key={n} onSelect={() => onMove?.(n)}>
+                {n} семестр
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       <Separator />
 

@@ -40,8 +40,8 @@ export const DetailsDrawer = ({
           {course.title}
         </SheetDescription>
         <img
-          src="/character.png"
-          alt=""
+          src="/character1.png"
+          alt="Персонаж 1"
           aria-hidden
           className="pointer-events-none absolute top-0 right-2 h-55 w-50 select-none object-contain"
         />

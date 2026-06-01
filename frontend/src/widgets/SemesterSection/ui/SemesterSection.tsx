@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CourseCard } from "@/entities/course";
-import { usePlannerStore } from "@/entities/roadmap";
+import { TOTAL_SEMESTERS, usePlannerStore } from "@/entities/roadmap";
 import { CourseSelectModal } from "@/features/course-select";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
 
@@ -14,8 +14,16 @@ export interface SemesterSectionProps {
 
 export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
   const [modalOpen, setModalOpen] = useState(false);
-  const { selections, removeCourse } = usePlannerStore();
+  const { selections, removeCourse, moveCourse } = usePlannerStore();
   const courses = selections[index] ?? [];
+
+  const moveTargets = useMemo(
+    () =>
+      Array.from({ length: TOTAL_SEMESTERS }, (_, i) => i + 1).filter(
+        (n) => n !== index,
+      ),
+    [index],
+  );
 
   return (
     <Panel>
@@ -33,7 +41,9 @@ export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
                   key={course.id}
                   title={course.title}
                   variant="planned"
+                  moveTargets={moveTargets}
                   onRemove={() => removeCourse(index, course.id)}
+                  onMove={(to) => moveCourse(index, to, course.id)}
                 />
               ))}
               <AddCourseButton

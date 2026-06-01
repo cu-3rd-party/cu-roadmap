@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { GreetingModal } from "@/features/settings";
 import { Navbar } from "@/widgets/Navbar";
 
 interface MainLayoutProps {
@@ -13,6 +14,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <main className="flex-1 overflow-y-auto bg-background-alt px-6 py-8 text-fg-primary">
         {children}
       </main>
+      <GreetingModal />
     </div>
   );
 }
