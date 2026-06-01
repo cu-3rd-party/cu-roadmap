@@ -19,7 +19,7 @@ const buttonVariants = cva(
   [
     "inline-flex shrink-0 items-center justify-center",
     "font-medium whitespace-nowrap",
-    "transition-colors duration-(--std-duration) outline-none select-none cursor-pointer",
+    "transition-colors outline-none select-none cursor-pointer",
     "disabled:pointer-events-none duration-(--std-duration)",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0",
   ].join(" "),
@@ -49,7 +49,7 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-muted hover:text-foreground",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40",
+          "bg-transparent text-negative hover:bg-negative-pale focus-visible:border-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

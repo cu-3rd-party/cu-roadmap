@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/shared/ui/kit/tooltip";
+} from "@/shared/ui";
 
 interface DetailFieldProps {
   label: string;
@@ -25,7 +25,7 @@ export const DetailField = ({ label, hint, children }: DetailFieldProps) => (
               <button
                 type="button"
                 aria-label={hint}
-                className="text-fg-tertiary transition-colors hover:text-fg-secondary"
+                className="text-fg-tertiary transition-colors hover:text-fg-secondary cursor-help"
               >
                 <HelpCircle className="size-4" />
               </button>

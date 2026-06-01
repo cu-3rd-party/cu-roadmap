@@ -3,6 +3,8 @@ import {
   Lock,
   LockOpen,
   Spline,
+  ArrowsUpFromLine,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -16,8 +18,10 @@ export const REQUISITE_LABELS: Record<RequisiteType, string> = {
   post: "Постреквизит",
 };
 
-export const REQUISITE_ICONS: Partial<Record<RequisiteType, LucideIcon>> = {
+export const REQUISITE_ICONS: Record<RequisiteType, LucideIcon> = {
   pre: Bookmark,
+  co: ArrowsUpFromLine,
+  post: GraduationCap
 };
 
 export const SEASON_LABELS: Record<Season, string> = {

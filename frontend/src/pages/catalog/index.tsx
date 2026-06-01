@@ -1,17 +1,18 @@
 import { Compass } from "lucide-react";
 import { useMemo } from "react";
 
-import { CourseFilters, useCourseFilters } from "@/features/course-filters";
+import { CourseFilters } from "@/features/course-filters";
 import { Chip } from "@/shared/ui/kit/chip";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
 import { CoursesSection } from "@/widgets/CoursesSection";
 
 import { categoryOptionsWithCounts, filterCatalog } from "./model/filter";
 import { CATALOG_CATEGORIES } from "./model/mock";
+import { useCatalogFiltersStore } from "./model/store";
 
 const CatalogPage = () => {
   const { filters, toggleYear, toggleMajor, toggleCategory, setSearch } =
-    useCourseFilters();
+    useCatalogFiltersStore();
 
   const categoryOptions = useMemo(
     () => categoryOptionsWithCounts(CATALOG_CATEGORIES, filters),

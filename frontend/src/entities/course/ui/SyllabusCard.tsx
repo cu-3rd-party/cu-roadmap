@@ -1,5 +1,3 @@
-import { RevealImage } from "@/shared/ui/reveal-image";
-
 interface SyllabusCardProps {
   link: string;
 }
@@ -13,7 +11,7 @@ export const SyllabusCard = ({ link }: SyllabusCardProps) => (
   >
     <div className="text-sm text-fg-sure-blue">О курсе</div>
     <div className="text-lg font-medium text-fg-primary">Силлабус</div>
-    <RevealImage
+    <img
       src="/confederate.png"
       alt=""
       aria-hidden

@@ -8,12 +8,12 @@ import {
 } from "@/shared/ui/kit/sheet";
 
 import { SEASON_BADGE_VARIANT, SEASON_LABELS } from "../lib";
-import type { CourseDetails } from "../model/details";
+import type { CourseDetails } from "../model";
 
 import { DetailField } from "./DetailField";
 import { RequisiteList } from "./RequisiteList";
 import { StatusPanel } from "./StatusPanel";
-import { TemplanCard } from "./TemplanCard";
+import { SyllabusCard } from "./SyllabusCard";
 
 interface DetailsDrawerProps {
   course: CourseDetails;
@@ -55,9 +55,8 @@ export const DetailsDrawer = ({
           />
         )}
 
-        <TemplanCard
-          label={course.templan.label}
-          value={course.templan.value}
+        <SyllabusCard
+          link={course.syllabus}
         />
 
         <DetailField label="Год поступления">

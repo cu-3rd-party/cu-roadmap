@@ -10,7 +10,7 @@ const toggle = (list: string[], value: string) =>
 
 interface CourseFiltersStore {
   filters: CourseFilterState;
-  toggleType: (type: string) => void;
+  toggleYear: (year: string) => void;
   toggleMajor: (major: string) => void;
   toggleCategory: (id: string) => void;
   setSearch: (search: string) => void;
@@ -32,12 +32,9 @@ export const createCourseFiltersStore = ({
     ) => void,
   ): CourseFiltersStore => ({
     filters: EMPTY_FILTERS,
-    toggleType: (type) =>
+    toggleYear: (year) =>
       set((state) => ({
-        filters: {
-          ...state.filters,
-          types: toggle(state.filters.types, type),
-        },
+        filters: { ...state.filters, years: toggle(state.filters.years, year) },
       })),
     toggleMajor: (major) =>
       set((state) => ({
@@ -69,23 +66,12 @@ export const createCourseFiltersStore = ({
       // Persist chip selections only; search always rehydrates empty.
       partialize: (state) => ({
         filters: {
-          types: state.filters.types,
+          years: state.filters.years,
           majors: state.filters.majors,
           categories: state.filters.categories,
           search: "",
         },
       }),
-      // Backfill any missing keys from EMPTY_FILTERS so older persisted shapes
-      // (e.g. pre-`types` state) can't leave a filter dimension undefined.
-      merge: (persisted, current) => {
-        const persistedFilters =
-          (persisted as { filters?: Partial<CourseFilterState> } | undefined)
-            ?.filters ?? {};
-        return {
-          ...current,
-          filters: { ...EMPTY_FILTERS, ...persistedFilters, search: "" },
-        };
-      },
     }),
   );
 };

@@ -1,7 +1,6 @@
-import type { PlannedCourse } from "@/shared/store";
+import type { PlannedCourse } from "@/entities/roadmap";
 
 export interface AvailableCourse extends PlannedCourse {
-  /** Matches a CATEGORY_FILTERS id from @/features/course-filters. */
   category: string;
   description?: string;
 }
@@ -29,4 +28,36 @@ export const AVAILABLE_COURSES: AvailableCourse[] = [
   { id: "ac8", title: LINEAR, category: "stem", description: DESC_LINEAR },
   { id: "ac9", title: LONG, category: "stem", description: DESC_MATH },
   { id: "ac10", title: SHORT, category: "soft", description: DESC_MATH },
+    { id: "ac11", title: LONG, category: "fundamentals", description: DESC_MATH },
+  { id: "ac12", title: SHORT, category: "fundamentals", description: DESC_MATH },
+  {
+    id: "ac13",
+    title: LINEAR,
+    category: "major-core",
+    description: DESC_LINEAR,
+  },
+  { id: "ac14", title: LONG, category: "major-core", description: DESC_MATH },
+  { id: "ac15", title: SHORT, category: "choice", description: DESC_MATH },
+  { id: "ac16", title: LINEAR, category: "choice", description: DESC_LINEAR },
+  { id: "ac17", title: LONG, category: "minor", description: DESC_MATH },
+  { id: "ac18", title: LINEAR, category: "stem", description: DESC_LINEAR },
+  { id: "ac19", title: LONG, category: "stem", description: DESC_MATH },
+  { id: "ac20", title: SHORT, category: "soft", description: DESC_MATH },
+    { id: "ac21", title: LONG, category: "fundamentals", description: DESC_MATH },
+  { id: "ac22", title: SHORT, category: "fundamentals", description: DESC_MATH },
+  {
+    id: "ac23",
+    title: LINEAR,
+    category: "major-core",
+    description: DESC_LINEAR,
+  },
+  { id: "ac24", title: LONG, category: "major-core", description: DESC_MATH },
+  { id: "ac25", title: SHORT, category: "choice", description: DESC_MATH },
+  { id: "ac26", title: LINEAR, category: "choice", description: DESC_LINEAR },
+  { id: "ac27", title: LONG, category: "minor", description: DESC_MATH },
+  { id: "ac28", title: LINEAR, category: "stem", description: DESC_LINEAR },
+  { id: "ac29", title: LONG, category: "stem", description: DESC_MATH },
+  { id: "ac30", title: SHORT, category: "soft", description: DESC_MATH },
+    { id: "ac31", title: LONG, category: "fundamentals", description: DESC_MATH },
+  { id: "ac32", title: SHORT, category: "fundamentals", description: DESC_MATH },
 ];

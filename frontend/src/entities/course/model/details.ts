@@ -13,7 +13,7 @@ export interface CourseStatus {
 export interface CourseDetails {
   title: string;
   status?: CourseStatus;
-  templan: { label: string; value: string };
+  syllabus: string;
   admissionYears: string;
   type: string;
   specialisations: string[];
@@ -31,7 +31,7 @@ export const MOCK_COURSE_DETAILS: CourseDetails = {
     title: "Не все пререквизиты выполнены",
     description: "Нужно пройти: Дискретная математика",
   },
-  templan: { label: "О курсе", value: "Темплан" },
+  syllabus: "https://note.cu.ru/space/5eb4b5a4-70b8-4312-89ab-5729678a81a2/article/a5fd270b-937d-51fb-9b80-b3fa0c6dd0e3",
   admissionYears: "2026-2030",
   type: "Major core",
   specialisations: ["Мобильная разработка", "Веб-разработка"],
