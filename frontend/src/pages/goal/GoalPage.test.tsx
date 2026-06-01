@@ -27,7 +27,7 @@ describe("GoalPage", () => {
         {
           id: "course-1",
           title: "Python Basics",
-          
+
           workload: 4,
         },
       ],
@@ -42,7 +42,7 @@ describe("GoalPage", () => {
               {
                 id: "course-1",
                 title: "Python Basics",
-                
+
                 workload: 4,
               },
             ],
