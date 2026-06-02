@@ -100,6 +100,7 @@ func main() {
 
 	apiV1 := router.Group("/api/v1")
 	{
+		api.RegisterDocsRoutes(apiV1)
 		api.RegisterGraphRoutes(apiV1.Group("/graph"))
 		api.RegisterMajorsRoutes(apiV1.Group("/majors"))
 		api.RegisterCoursesRoutes(apiV1.Group("/courses"))

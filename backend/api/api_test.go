@@ -32,6 +32,7 @@ func setupRouter(t *testing.T, seed func(s interfaces.StoreBase)) *gin.RouterGro
 
 	router := gin.New()
 	apiV1 := router.Group("/api/v1")
+	RegisterDocsRoutes(apiV1)
 	RegisterGraphRoutes(apiV1.Group("/graph"))
 	RegisterMajorsRoutes(apiV1.Group("/majors"))
 	RegisterCoursesRoutes(apiV1.Group("/courses"))
@@ -55,6 +56,7 @@ func setupRouterRoot(t *testing.T, seed func(s interfaces.StoreBase)) *gin.Engin
 
 	router := gin.New()
 	apiV1 := router.Group("/api/v1")
+	RegisterDocsRoutes(apiV1)
 	RegisterGraphRoutes(apiV1.Group("/graph"))
 	RegisterMajorsRoutes(apiV1.Group("/majors"))
 	RegisterCoursesRoutes(apiV1.Group("/courses"))
@@ -77,6 +79,31 @@ func TestHealthEndpoint(t *testing.T) {
 	var resp map[string]string
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.Equal(t, "healthy", resp["status"])
+}
+
+func TestDocsEndpoint(t *testing.T) {
+	router := setupRouterRoot(t, nil)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/docs", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Type"), "text/html")
+	assert.Contains(t, w.Body.String(), "SwaggerUIBundle")
+	assert.Contains(t, w.Body.String(), "/api/v1/docs/openapi.yaml")
+}
+
+func TestDocsOpenAPISpecEndpoint(t *testing.T) {
+	router := setupRouterRoot(t, nil)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/docs/openapi.yaml", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Type"), "application/yaml")
+	assert.Contains(t, w.Body.String(), "openapi: 3.1.0")
 }
 
 func TestGetCoursesEmpty(t *testing.T) {
