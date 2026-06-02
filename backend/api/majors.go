@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
@@ -13,7 +14,9 @@ import (
 
 func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 	rg.GET("/", getMajors)
+	rg.GET("/:cohort_year", getMajors)
 	rg.POST("/identify", identifyMajor)
+	rg.POST("/identify/:cohort_year", identifyMajor)
 
 	admin := rg.Group("/")
 	admin.Use(middleware.AuthMiddleware())
@@ -21,6 +24,11 @@ func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 }
 
 func getMajors(c *gin.Context) {
+	cohortYear, ok := parseOptionalCohortYear(c)
+	if !ok {
+		return
+	}
+
 	s := store.GetStore()
 	if s == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
@@ -37,6 +45,11 @@ func getMajors(c *gin.Context) {
 		reqs, err := s.GetMajorRequirements(m.ID)
 		if err != nil {
 			continue
+		}
+		reqs, err = filterMajorRequirementsByCohort(s, reqs, cohortYear)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 		var reqList []gin.H
 		for _, r := range reqs {
@@ -74,6 +87,11 @@ func identifyMajor(c *gin.Context) {
 		return
 	}
 
+	cohortYear, ok := parseOptionalCohortYear(c)
+	if !ok {
+		return
+	}
+
 	passedUUIDs := make(map[uuid.UUID]bool)
 	for _, pid := range passedIDs {
 		uid, err := uuid.Parse(pid)
@@ -87,6 +105,11 @@ func identifyMajor(c *gin.Context) {
 		reqs, err := s.GetMajorRequirements(m.ID)
 		if err != nil {
 			continue
+		}
+		reqs, err = filterMajorRequirementsByCohort(s, reqs, cohortYear)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 		reqIDs := make(map[uuid.UUID]bool)
 		for _, r := range reqs {
@@ -120,6 +143,52 @@ func identifyMajor(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, analysis)
+}
+
+func parseOptionalCohortYear(c *gin.Context) (int, bool) {
+	cohortStr := c.Param("cohort_year")
+	if cohortStr == "" {
+		return 0, true
+	}
+	cohortYear, err := strconv.Atoi(cohortStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid cohort_year"})
+		return 0, false
+	}
+	return cohortYear, true
+}
+
+func filterMajorRequirementsByCohort(s interfaces.StoreBase, reqs []interfaces.MajorRequirementData, cohortYear int) ([]interfaces.MajorRequirementData, error) {
+	if cohortYear == 0 {
+		return reqs, nil
+	}
+
+	courses, err := s.GetAllCourses()
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := make([]interfaces.MajorRequirementData, 0, len(reqs))
+	for _, req := range reqs {
+		course, ok := courses[req.CourseID]
+		if !ok || !courseAllowedForCohort(course, cohortYear) {
+			continue
+		}
+		filtered = append(filtered, req)
+	}
+	return filtered, nil
+}
+
+func courseAllowedForCohort(course interfaces.CourseData, cohortYear int) bool {
+	if cohortYear == 0 || len(course.AllowedCohorts) == 0 {
+		return true
+	}
+	for _, year := range course.AllowedCohorts {
+		if year == cohortYear {
+			return true
+		}
+	}
+	return false
 }
 
 func updateMajor(c *gin.Context) {

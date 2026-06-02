@@ -150,6 +150,50 @@ func TestGetMajorsWithData(t *testing.T) {
 	assert.Len(t, reqs, 1)
 }
 
+func TestGetMajorsWithCohortYear(t *testing.T) {
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		m := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+		s.CreateMajor(m)
+		c1 := interfaces.CourseData{ID: uuid.New(), Title: "Python", AllowedCohorts: []int{2025}, AvailableSemesters: []int{1}, Workload: 4.0}
+		c2 := interfaces.CourseData{ID: uuid.New(), Title: "Math", AllowedCohorts: []int{2026}, AvailableSemesters: []int{1}, Workload: 4.0}
+		s.CreateCourse(c1)
+		s.CreateCourse(c2)
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
+	})
+
+	t.Run("without cohort returns all requirements", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/v1/majors/", nil)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, 200, w.Code)
+		var majors []map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &majors)
+		reqs := majors[0]["requirements"].([]interface{})
+		assert.Len(t, reqs, 2)
+	})
+
+	t.Run("with cohort filters requirements", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/v1/majors/2025", nil)
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, 200, w.Code)
+		var majors []map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &majors)
+		reqs := majors[0]["requirements"].([]interface{})
+		assert.Len(t, reqs, 1)
+	})
+
+	t.Run("invalid cohort returns bad request", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/v1/majors/abc", nil)
+		router.ServeHTTP(w, req)
+		assert.Equal(t, 400, w.Code)
+	})
+}
+
 func TestGetGraphDataEmpty(t *testing.T) {
 	router := setupRouterRoot(t, nil)
 
@@ -213,6 +257,39 @@ func TestIdentifyMajor(t *testing.T) {
 	var analysis []map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &analysis)
 	assert.NotZero(t, len(analysis))
+}
+
+func TestIdentifyMajorWithCohortYear(t *testing.T) {
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		m1 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+		m2 := interfaces.MajorData{ID: uuid.New(), Title: "AI", School: "Tech"}
+		s.CreateMajor(m1)
+		s.CreateMajor(m2)
+
+		c1 := interfaces.CourseData{ID: uuid.New(), Title: "Common", AllowedCohorts: []int{2025}, AvailableSemesters: []int{1}, Workload: 3.0}
+		c2 := interfaces.CourseData{ID: uuid.New(), Title: "Old", AllowedCohorts: []int{2024}, AvailableSemesters: []int{1}, Workload: 3.0}
+		s.CreateCourse(c1)
+		s.CreateCourse(c2)
+
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m2.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
+	})
+
+	courses := getCoursesList(router, t)
+	commonID := findCourseByTitle(courses, "Common")["id"].(string)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/majors/identify/2025", strings.NewReader(`["`+commonID+`"]`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var analysis []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &analysis)
+	assert.Len(t, analysis, 1)
+	assert.Equal(t, "SE", analysis[0]["title"])
+	assert.Equal(t, float64(1), analysis[0]["score"])
 }
 
 func findCourseByTitle(courses []map[string]interface{}, title string) map[string]interface{} {
