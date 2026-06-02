@@ -49,7 +49,7 @@ func main() {
 	useMemoryStore := settings.UseMemoryStore
 
 	slog.Info("initializing store", "USE_MEMORY_STORE", useMemoryStore)
-	s, err := store.InitStore(useMemoryStore, settings.DBURL())
+	s, err := store.InitStore(useMemoryStore, settings.DBURL(), settings.AdminPassword)
 	if err != nil {
 		log.Fatalf("failed to init store: %v", err)
 	}
@@ -99,6 +99,7 @@ func main() {
 		api.RegisterMajorsRoutes(apiV1.Group("/majors"))
 		api.RegisterCoursesRoutes(apiV1.Group("/courses"))
 		api.RegisterPlannerRoutes(apiV1.Group("/planner"))
+		api.RegisterAuthRoutes(apiV1.Group("/auth"))
 	}
 
 	router.GET("/", func(c *gin.Context) {

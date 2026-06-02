@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -13,8 +14,8 @@ type Course struct {
 	HandbookLink        *string              `gorm:"type:text"`
 	CourseType          enums.CourseType     `gorm:"type:varchar(20);not null"`
 	Category            enums.CourseCategory `gorm:"type:varchar(20);not null"`
-	AllowedCohorts      []int                `gorm:"type:integer[]"`
-	AvailableSemesters  []int                `gorm:"type:integer[];not null"`
+	AllowedCohorts      pq.Int64Array        `gorm:"type:integer[]"`
+	AvailableSemesters  pq.Int64Array        `gorm:"type:integer[];not null"`
 	RecommendedSemester *int
 	Workload            float64 `gorm:"not null"`
 	CsatMetric          *float64

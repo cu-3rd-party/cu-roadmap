@@ -1,6 +1,7 @@
 package store
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"time"
@@ -15,20 +16,22 @@ import (
 )
 
 type PostgresStore struct {
-	db          *gorm.DB
-	databaseURL string
+	db            *gorm.DB
+	databaseURL   string
+	adminPassword [32]byte
 }
 
 func NewPostgresStore(databaseURL string) *PostgresStore {
 	return &PostgresStore{databaseURL: databaseURL}
 }
 
-func (s *PostgresStore) Init() error {
+func (s *PostgresStore) Init(password string) error {
 	var err error
 	s.db, err = gorm.Open(postgres.Open(s.databaseURL), &gorm.Config{})
 	if err != nil {
 		return err
 	}
+	s.SetAdminPassword(password)
 	return s.db.AutoMigrate(
 		&models.Course{},
 		&models.Major{},
@@ -298,4 +301,13 @@ func (s *PostgresStore) CheckAuthToken(token uuid.UUID) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (s *PostgresStore) CheckPassword(password string) bool {
+	hash := sha256.Sum256([]byte(password))
+	return hash == s.adminPassword
+}
+
+func (s *PostgresStore) SetAdminPassword(password string) {
+	s.adminPassword = sha256.Sum256([]byte(password))
 }

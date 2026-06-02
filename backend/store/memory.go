@@ -1,6 +1,7 @@
 package store
 
 import (
+	"crypto/sha256"
 	"encoding/csv"
 	"fmt"
 	"os"
@@ -24,6 +25,16 @@ type MemoryStore struct {
 	coursesByTitle     map[string]uuid.UUID
 	majorsByTitle      map[string]uuid.UUID
 	authTokens         map[uuid.UUID]models.AuthToken
+	adminPassword      [32]byte
+}
+
+func (s *MemoryStore) CheckPassword(password string) bool {
+	hash := sha256.Sum256([]byte(password))
+	return hash == s.adminPassword
+}
+
+func (s *MemoryStore) SetAdminPassword(password string) {
+	s.adminPassword = sha256.Sum256([]byte(password))
 }
 
 func NewMemoryStore() *MemoryStore {
@@ -37,7 +48,10 @@ func NewMemoryStore() *MemoryStore {
 	}
 }
 
-func (s *MemoryStore) Init() error  { return nil }
+func (s *MemoryStore) Init(password string) error {
+	s.SetAdminPassword(password)
+	return nil
+}
 func (s *MemoryStore) Close() error { return nil }
 
 func (s *MemoryStore) ClearAll() error {

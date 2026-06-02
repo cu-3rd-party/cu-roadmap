@@ -6,7 +6,7 @@ import (
 )
 
 type StoreBase interface {
-	Init() error
+	Init(password string) error
 	Close() error
 	ClearAll() error
 
@@ -41,4 +41,6 @@ type StoreBase interface {
 
 	CreateAuthToken() (*models.AuthToken, error)
 	CheckAuthToken(token uuid.UUID) (bool, error)
+	SetAdminPassword(password string)
+	CheckPassword(password string) bool
 }
