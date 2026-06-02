@@ -94,14 +94,11 @@ export function AdminPage() {
 
   const handleSaveMajor = async (major: Major) => {
     try {
-      await api.admin.updateMajor(
-        major.id,
-        {
-          title: major.title,
-          school: major.school,
-          requirements: major.requirements || [],
-        },
-      );
+      await api.admin.updateMajor(major.id, {
+        title: major.title,
+        school: major.school,
+        requirements: major.requirements || [],
+      });
       await fetchData();
       setEditingMajor(null);
     } catch (e: any) {

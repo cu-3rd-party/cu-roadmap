@@ -48,8 +48,7 @@ export const api = {
 
   getGraphData: () => client.get<GraphData>("/graph/data"),
 
-  login: (password: string) =>
-    client.post("/auth/login", { password }),
+  login: (password: string) => client.post("/auth/login", { password }),
 
   admin: {
     getCourses: () => client.get<Course[]>("/courses/"),
@@ -58,8 +57,7 @@ export const api = {
       client.post<Course>("/courses/", course),
     updateCourse: (id: string, course: Partial<Course>) =>
       client.put<Course>(`/courses/${id}`, course),
-    deleteCourse: (id: string) =>
-      client.delete(`/courses/${id}`),
+    deleteCourse: (id: string) => client.delete(`/courses/${id}`),
     updateMajor: (id: string, major: Record<string, unknown>) =>
       client.put(`/majors/${id}`, major),
   },

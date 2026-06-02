@@ -82,10 +82,15 @@ func main() {
 
 	router := gin.Default()
 
+	origins := make([]string, 0, 2)
+	origins = append(origins, "https://roadmap.cu3rd.ru")
+	if gin.IsDebugging() {
+		origins = append(origins, "http://localhost:5173")
+	}
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     origins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Admin-Token"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Cookie"},
 		AllowCredentials: true,
 	}))
 
