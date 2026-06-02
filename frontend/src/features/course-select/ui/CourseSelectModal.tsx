@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { CourseCard } from "@/entities/course";
 import { usePlannerStore } from "@/entities/roadmap";
-import { CourseSearchFilter } from "@/features/course-filters";
+import { COURSE_TYPE_LABELS, CourseSearchFilter } from "@/features/course-filters";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,7 @@ export const CourseSelectModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="flex h-[42rem] max-h-[90vh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0 max-w-xl md:max-w-2xl lg:max-w-5xl xl:max-w-7xl"
+        className="flex h-[42rem] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0 max-w-xl md:max-w-2xl lg:max-w-5xl xl:max-w-7xl"
       >
         <DialogHeader className="relative shrink-0 px-8 pt-7 pb-4 overflow-hidden">
           <DialogTitle className="text-2xl font-bold text-fg-primary">
@@ -80,16 +80,25 @@ export const CourseSelectModal = ({
           <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
             {visibleCourses.map((course) => {
               const isSelected = selectedIds.has(course.id);
+              const courseType =
+                COURSE_TYPE_LABELS[course.category] ?? course.category;
               return (
                 <CourseCard
                   key={course.id}
                   title={course.title}
                   variant="select"
+                  courseType={courseType}
+                  major={course.major}
                   selected={isSelected}
                   onSelect={() =>
                     isSelected
                       ? removeCourse(semester, course.id)
-                      : addCourse(semester, course)
+                      : addCourse(semester, {
+                          id: course.id,
+                          title: course.title,
+                          courseType,
+                          major: course.major,
+                        })
                   }
                 />
               );

@@ -1,6 +1,8 @@
-import { Compass, Map } from "lucide-react";
+import { Compass, Map, Settings } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { SettingsModal } from "@/features/settings";
 import { isPathActive } from "@/shared/lib";
 import { Button } from "@/shared/ui/kit/button";
 
@@ -16,6 +18,7 @@ const NAV_ITEMS = [
 
 export const Navbar = () => {
   const navigate = useNavigate();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <header className="relative flex h-16 items-center justify-between border-b border-border bg-background px-6">
       <img src="/cu.svg" width={36} height={36} alt="ЦУ" />
@@ -34,6 +37,17 @@ export const Navbar = () => {
           </Button>
         ))}
       </nav>
+
+      <Button
+        onClick={() => setSettingsOpen(true)}
+        variant="navInactive"
+        size="sm"
+        icon={<Settings />}
+        className="rounded-full"
+        aria-label="Настройки"
+      />
+
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
     </header>
   );
 };

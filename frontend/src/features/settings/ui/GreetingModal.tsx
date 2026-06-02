@@ -19,11 +19,11 @@ import { useSettingsStore } from "../model";
 
 export const GreetingModal = () => {
   const { hasSeenGreeting, completeGreeting } = useSettingsStore();
-  const [year, setYear] = useState("");
+  const [admissionYear, setAdmissionYear] = useState("");
 
   const handleProceed = () => {
-    if (!year) return;
-    completeGreeting(Number(year) as (typeof ADMISSION_YEARS)[number]);
+    if (!admissionYear) return;
+    completeGreeting(Number(admissionYear) as (typeof ADMISSION_YEARS)[number]);
   };
 
   return (
@@ -54,7 +54,7 @@ export const GreetingModal = () => {
             </DialogDescription>
 
             <div className="flex flex-col gap-1.5">
-              <Select value={year} onValueChange={setYear}>
+              <Select value={admissionYear} onValueChange={setAdmissionYear}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="" />
                 </SelectTrigger>
@@ -72,7 +72,7 @@ export const GreetingModal = () => {
               size="md"
               className="w-full"
               variant="outline"
-              disabled={!year}
+              disabled={!admissionYear}
               onClick={handleProceed}
             >
               Продолжить

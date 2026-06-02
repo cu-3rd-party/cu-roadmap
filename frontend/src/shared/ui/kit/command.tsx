@@ -1,15 +1,15 @@
-import { Command as CommandPrimitive } from "cmdk";
-import { CheckIcon, SearchIcon } from "lucide-react";
-import * as React from "react";
+import { Command as CommandPrimitive } from "cmdk"
+import { CheckIcon, SearchIcon } from "lucide-react"
+import * as React from "react"
 
-import { cn } from "@/shared/lib/cn";
+import { cn } from "@/shared/lib/cn"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/shared/ui/kit/dialog";
+} from "@/shared/ui/kit/dialog"
 
 function Command({
   className,
@@ -24,7 +24,7 @@ function Command({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function CommandDialog({
@@ -35,10 +35,10 @@ function CommandDialog({
   showCloseButton = false,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
-  title?: string;
-  description?: string;
-  className?: string;
-  showCloseButton?: boolean;
+  title?: string
+  description?: string
+  className?: string
+  showCloseButton?: boolean
 }) {
   return (
     <Dialog {...props}>
@@ -53,7 +53,7 @@ function CommandDialog({
         {children}
       </DialogContent>
     </Dialog>
-  );
+  )
 }
 
 function CommandInput({
@@ -61,7 +61,7 @@ function CommandInput({
   wrapperClassName,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input> & {
-  wrapperClassName?: string;
+  wrapperClassName?: string
 }) {
   return (
     <div
@@ -81,7 +81,7 @@ function CommandInput({
         {...props}
       />
     </div>
-  );
+  )
 }
 
 function CommandList({
@@ -97,7 +97,7 @@ function CommandList({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function CommandEmpty({
@@ -110,7 +110,7 @@ function CommandEmpty({
       className={cn("py-6 text-center text-sm text-fg-tertiary", className)}
       {...props}
     />
-  );
+  )
 }
 
 function CommandGroup({
@@ -126,7 +126,7 @@ function CommandGroup({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function CommandSeparator({
@@ -139,7 +139,7 @@ function CommandSeparator({
       className={cn("-mx-1 my-1 h-px bg-border", className)}
       {...props}
     />
-  );
+  )
 }
 
 function CommandItem({
@@ -155,18 +155,15 @@ function CommandItem({
       )}
       {...props}
     />
-  );
+  )
 }
 
 function CommandCheck({ checked }: { checked: boolean }) {
   return (
     <CheckIcon
-      className={cn(
-        "ml-auto size-4 shrink-0",
-        checked ? "opacity-100" : "opacity-0",
-      )}
+      className={cn("ml-auto size-4 shrink-0", checked ? "opacity-100" : "opacity-0")}
     />
-  );
+  )
 }
 
 function CommandShortcut({
@@ -176,13 +173,10 @@ function CommandShortcut({
   return (
     <span
       data-slot="command-shortcut"
-      className={cn(
-        "ml-auto text-xs tracking-widest text-fg-tertiary",
-        className,
-      )}
+      className={cn("ml-auto text-xs tracking-widest text-fg-tertiary", className)}
       {...props}
     />
-  );
+  )
 }
 
 export {
@@ -196,4 +190,4 @@ export {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-};
+}

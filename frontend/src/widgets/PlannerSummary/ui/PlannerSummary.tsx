@@ -1,7 +1,10 @@
 import { Waypoints } from "lucide-react";
+import { useState } from "react";
 
 import { usePlannerStore } from "@/entities/roadmap";
-import { Button, Chip, Panel } from "@/shared/ui";
+import { useSettingsStore } from "@/features/settings";
+import { TrajectorySelectModal } from "@/features/trajectory-select";
+import { Button, Checkbox, Chip, Label, Panel } from "@/shared/ui";
 
 import { type MajorProgress, MajorProgressCard } from "./MajorProgressCard";
 import { type SummaryStat, SummaryStatCard } from "./SummaryStatCard";
@@ -13,6 +16,8 @@ interface PlannerSummaryProps {
 
 export const PlannerSummary = ({ stats, majors }: PlannerSummaryProps) => {
   const { reset } = usePlannerStore();
+  const { hideCompletedSemesters, setHideCompletedSemesters } = useSettingsStore();
+  const [trajectoryOpen, setTrajectoryOpen] = useState(false);
 
   return (
     <Panel className="flex flex-col gap-4">
@@ -27,9 +32,22 @@ export const PlannerSummary = ({ stats, majors }: PlannerSummaryProps) => {
             </h1>
             <p className="text-sm text-fg-secondary">
               Расставь курсы по семестрам и собери свой план обучения
-              <br />
-              Курсы можно перетягивать между семестрами
             </p>
+            <div className="mt-1 flex items-center gap-2">
+              <Checkbox
+                id="hide-completed-semesters"
+                checked={hideCompletedSemesters}
+                onCheckedChange={(checked) =>
+                  setHideCompletedSemesters(checked === true)
+                }
+              />
+              <Label
+                htmlFor="hide-completed-semesters"
+                className="cursor-pointer text-sm font-normal text-fg-secondary"
+              >
+                Скрыть пройденные семестры 
+              </Label>
+            </div>
           </div>
         </div>
 
@@ -37,8 +55,9 @@ export const PlannerSummary = ({ stats, majors }: PlannerSummaryProps) => {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setTrajectoryOpen(true)}
           >
-            Рекомендация
+            Подбор траектории
           </Button>
           <Button
             variant="outline"
@@ -60,6 +79,11 @@ export const PlannerSummary = ({ stats, majors }: PlannerSummaryProps) => {
           <MajorProgressCard key={major.title} {...major} />
         ))}
       </div>
+
+      <TrajectorySelectModal
+        open={trajectoryOpen}
+        onOpenChange={setTrajectoryOpen}
+      />
     </Panel>
   );
 };

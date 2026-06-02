@@ -1,9 +1,11 @@
 import { CourseCard } from "@/entities/course";
+import { MAJOR_LABELS } from "@/features/course-filters";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
 
 export interface CategoryCourse {
   id: string;
   title: string;
+  major: string;
 }
 
 interface CourseCategorySectionProps {
@@ -28,7 +30,12 @@ export const CoursesSection = ({
       <CollapsiblePanel title={panelTitle}>
         <div className="grid gap-1 sm:grid-cols-4 lg:grid-cols-6">
           {courses.map((course) => (
-            <CourseCard key={course.id} title={course.title} />
+            <CourseCard
+              key={course.id}
+              title={course.title}
+              courseType={title}
+              major={MAJOR_LABELS[course.major] ?? course.major}
+            />
           ))}
         </div>
       </CollapsiblePanel>

@@ -1,2 +1,2 @@
 export { createCourseFiltersStore } from "./createCourseFiltersStore"
-export { CATEGORY_FILTERS, MAJOR_OPTIONS, YEAR_OPTIONS, type CategoryFilterOption, type CourseFilterState } from "./options"
+export { CATEGORY_FILTERS, COURSE_TYPE_LABELS, MAJOR_LABELS, MAJOR_OPTIONS, YEAR_OPTIONS, type CategoryFilterOption, type CourseFilterState } from "./options"

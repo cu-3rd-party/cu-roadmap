@@ -30,3 +30,15 @@ export const CATEGORY_FILTERS: CategoryFilterOption[] = [
   { id: "stem", label: "STEM", count: 4 },
   { id: "soft", label: "Soft", count: 3 },
 ];
+
+/** Course-type badge labels, keyed by category id (mirrors CATEGORY_FILTERS). */
+export const COURSE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  CATEGORY_FILTERS.map((option) => [option.id, option.label]),
+);
+
+/** Major badge labels: maps the filter's RU major values to short display labels. */
+export const MAJOR_LABELS: Record<string, string> = {
+  "ИИ": "AI",
+  "Разработка": "SE",
+  "Бизнес": "Business",
+};

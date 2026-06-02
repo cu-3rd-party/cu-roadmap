@@ -2,21 +2,17 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { CSSProperties } from "react";
 
-import { CourseCard, type CourseDetails } from "@/entities/course";
+import { CourseCard } from "@/entities/course";
 import { cn } from "@/shared/lib";
-import { CourseCategory, CourseType } from "@/shared/model";
 
 interface SortableCourseCardProps {
   id: string;
   title: string;
-  category?: CourseCategory;
-  type?: CourseType;
+  courseType?: string;
+  major?: string;
   moveTargets: number[];
-  conflict?: boolean;
-  generated?: boolean;
   onRemove: () => void;
   onMove: (toSemester: number) => void;
-  details?: CourseDetails;
 }
 
 export const SortableCourseCard = ({

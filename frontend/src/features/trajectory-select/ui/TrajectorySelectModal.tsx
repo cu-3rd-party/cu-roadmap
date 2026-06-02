@@ -1,19 +1,8 @@
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 
-import { useCoursesQuery } from "@/entities/course";
-import { useMajorsQuery } from "@/entities/major";
-import {
-  buildGenerateRoadmapRequest,
-  buildGoalPathRequest,
-  useGenerateRoadmapMutation,
-  useGoalPathMutation,
-  usePlannerStore,
-} from "@/entities/roadmap";
-import type { Roadmap } from "@/entities/roadmap";
-import { useSettingsStore } from "@/features/settings";
-import { admissionYearToSemester, SEMESTER_NUMBERS } from "@/shared/constants";
-import type { SemesterNumber } from "@/shared/constants";
+import { AVAILABLE_COURSES } from "@/features/course-select/model/courses";
+import { SEMESTER_NUMBERS } from "@/shared/constants";
 import {
   Button,
   Command,
@@ -28,7 +17,6 @@ import {
   DialogTitle,
   Select,
   SelectContent,
-  RevealImage,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -49,42 +37,22 @@ export const TrajectorySelectModal = ({
   open,
   onOpenChange,
 }: TrajectorySelectModalProps) => {
-  const { admissionYear } = useSettingsStore();
-  const { data: courses } = useCoursesQuery(admissionYear);
-  const { data: majors } = useMajorsQuery(admissionYear);
-  const { addCourse, markGenerated } = usePlannerStore();
-  const { mutateAsync: generateRoadmap, isPending } =
-    useGenerateRoadmapMutation();
-  const { mutateAsync: generateGoalPath, isPending: goalPending } =
-    useGoalPathMutation();
-
   const [courseQuery, setCourseQuery] = useState("");
   const [courseId, setCourseId] = useState("");
   const [courseOpen, setCourseOpen] = useState(false);
   const [courseCommitted, setCourseCommitted] = useState(true);
   const [semester, setSemester] = useState("");
-  const [tab, setTab] = useState("major");
-  const [majorId, setMajorId] = useState("");
-  // Which of the already-saved courses count as "passed" for the generate
-  const [scope, setScope] = useState<"completed" | "all">("completed");
-
-  const canSubmit =
-    tab === "major" ? majorId !== "" : courseId !== "" && semester !== "";
-
-  // Course tab: only target semesters at or after the cohort's current semester.
-  const minSemester =
-    admissionYear != null ? admissionYearToSemester[admissionYear] : 1;
 
   const savedCourseTitle =
-    courses?.find((course) => course.id === courseId)?.title ?? "";
+    AVAILABLE_COURSES.find((course) => course.id === courseId)?.title ?? "";
 
   const courseHints = useMemo(() => {
     const q = courseQuery.trim().toLowerCase();
-    if (!q || !courses) return [];
-    return courses
-      .filter((course) => course.title.toLowerCase().includes(q))
-      .slice(0, 5);
-  }, [courseQuery, courses]);
+    if (!q) return [];
+    return AVAILABLE_COURSES.filter((course) =>
+      course.title.toLowerCase().includes(q),
+    ).slice(0, 5);
+  }, [courseQuery]);
 
   // The course field always shows a committed option (or nothing). Typing over a
   // committed value wipes it so the user can search again; blurring without
@@ -114,64 +82,6 @@ export const TrajectorySelectModal = ({
 
   const close = () => onOpenChange(false);
 
-  // Merge a generated/goal-path roadmap into the plan (addCourse dedups per
-  // semester) and mark the added courses for the blue highlight.
-  const applyRoadmap = (result: Roadmap) => {
-    const byId = new Map((courses ?? []).map((course) => [course.id, course]));
-    for (const { semester: sem, courseIds } of result.semesters) {
-      for (const id of courseIds) {
-        const course = byId.get(id);
-        addCourse(
-          sem,
-          course
-            ? {
-                id: course.id,
-                title: course.title,
-                category: course.category,
-                type: course.type,
-              }
-            : { id, title: id },
-        );
-      }
-    }
-    markGenerated(result.semesters.flatMap((s) => s.courseIds));
-  };
-
-  const handleSubmit = async () => {
-    if (admissionYear == null) {
-      close();
-      return;
-    }
-    const selections = usePlannerStore.getState().selections;
-
-    if (tab === "major") {
-      if (!majorId) {
-        close();
-        return;
-      }
-      const result = await generateRoadmap(
-        buildGenerateRoadmapRequest(selections, admissionYear, majorId, scope),
-      );
-      // TODO
-      if (result.error) return; // keep the modal open so the user can retry
-      applyRoadmap(result);
-    } else {
-      if (!courseId || semester === "") {
-        close();
-        return;
-      }
-      const goalSemester =
-        semester === "any" ? undefined : (Number(semester) as SemesterNumber);
-      const result = await generateGoalPath(
-        buildGoalPathRequest(selections, admissionYear, courseId, goalSemester),
-      );
-      if (result.error) return;
-      applyRoadmap(result);
-    }
-
-    close();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -182,7 +92,7 @@ export const TrajectorySelectModal = ({
           <DialogTitle className="text-2xl font-bold text-fg-primary">
             Подбор траектории
           </DialogTitle>
-          <RevealImage
+          <img
             src="/character1.png"
             alt="Персонаж"
             aria-hidden
@@ -192,63 +102,31 @@ export const TrajectorySelectModal = ({
 
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex h-full flex-col gap-4 rounded-2xl bg-background p-5">
-            <Tabs value={tab} onValueChange={setTab} className="gap-4">
+            <Tabs defaultValue="major" className="gap-4">
               <div className="text-sm text-fg-secondary">
                 <p>Выберите тип построения траектории:</p>
                 <ol className="mt-1 flex list-decimal flex-col gap-1 pl-5">
                   <li>
-                    <span className="font-medium text-fg-primary">Мейджор</span>{" "}
-                    - собрать траекторию для выбранного вами мейджора
+                    <span className="font-medium text-fg-primary">Мейджор</span> - собрать траекторию для выбранного вами мейджора
                   </li>
                   <li>
-                    <span className="font-medium text-fg-primary">Курс</span> -
-                    добавить все пререквизиты и кореквизиты в траекторию так,
-                    чтобы пройти курс в выбранном семестре
+                    <span className="font-medium text-fg-primary">Курс</span> - добавить все пререквизиты и кореквизиты в траекторию так, чтобы пройти курс в выбранном семестре
                   </li>
                 </ol>
               </div>
-
-              <TabsList className="grid grid-flow-col auto-cols-fr self-center">
+              
+              <TabsList className="self-center">
                 <TabsTrigger value="major">Мейджор</TabsTrigger>
                 <TabsTrigger value="course">Курс</TabsTrigger>
               </TabsList>
 
-              <TabsContent
-                value="major"
-                className="flex flex-col gap-3 self-center"
-              >
-                <p className="text-sm text-fg-secondary self-center">
-                  Выберите мейджор
-                </p>
-                <Tabs
-                  value={majorId}
-                  onValueChange={setMajorId}
-                  className="gap-4"
-                >
-                  <TabsList className="grid grid-flow-col auto-cols-fr">
-                    {majors?.map((major) => (
-                      <TabsTrigger key={major.id} value={major.id}>
-                        {major.title}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-
-                <p className="text-sm text-fg-secondary self-center">
-                  Какие курсы учитывать в построении траектории
-                </p>
-                <Tabs
-                  value={scope}
-                  onValueChange={(value) =>
-                    setScope(value as "completed" | "all")
-                  }
-                  className="gap-4"
-                >
-                  <TabsList className="grid grid-flow-col auto-cols-fr self-center">
-                    <TabsTrigger value="completed">
-                      Только пройденные
-                    </TabsTrigger>
-                    <TabsTrigger value="all">Все добавленные</TabsTrigger>
+              <TabsContent value="major" className="flex flex-col gap-3 self-center">
+                <p className="text-sm text-fg-secondary self-center">Выберите мейджор</p>
+                <Tabs defaultValue="business" className="gap-4">
+                  <TabsList>
+                    <TabsTrigger value="business">Business</TabsTrigger>
+                    <TabsTrigger value="se">Software Engineering</TabsTrigger>
+                    <TabsTrigger value="ai">AI</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </TabsContent>
@@ -293,12 +171,8 @@ export const TrajectorySelectModal = ({
                                     selectCourse(course.id, course.title)
                                   }
                                 >
-                                  <span className="truncate">
-                                    {course.title}
-                                  </span>
-                                  <CommandCheck
-                                    checked={courseId === course.id}
-                                  />
+                                  <span className="truncate">{course.title}</span>
+                                  <CommandCheck checked={courseId === course.id} />
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -322,14 +196,11 @@ export const TrajectorySelectModal = ({
                       <SelectValue placeholder="" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="any">Любой</SelectItem>
-                      {SEMESTER_NUMBERS.filter((s) => s >= minSemester).map(
-                        (s) => (
-                          <SelectItem key={s} value={String(s)}>
-                            {s} семестр
-                          </SelectItem>
-                        ),
-                      )}
+                      {SEMESTER_NUMBERS.map((s) => (
+                        <SelectItem key={s} value={String(s)}>
+                          {s} семестр
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -348,13 +219,7 @@ export const TrajectorySelectModal = ({
                 <Button variant="tertiaryPadded" size="md" onClick={close}>
                   Отмена
                 </Button>
-                <Button
-                  variant="outline"
-                  size="md"
-                  onClick={handleSubmit}
-                  disabled={!canSubmit}
-                  loading={isPending || goalPending}
-                >
+                <Button variant="outline" size="md" onClick={close}>
                   Обновить траекторию
                 </Button>
               </div>

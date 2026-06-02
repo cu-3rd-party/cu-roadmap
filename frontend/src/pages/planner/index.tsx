@@ -5,7 +5,7 @@ import { PLANNER_MAJORS, PLANNER_STATS, SEMESTERS } from "./model/mock";
 
 const PlannerPage = () => {
   return (
-    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-1">
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
       <PlannerSummary stats={PLANNER_STATS} majors={PLANNER_MAJORS} />
 
       {SEMESTERS.map((semester) => (
