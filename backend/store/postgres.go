@@ -83,8 +83,7 @@ func (s *PostgresStore) GetCourseByID(courseID uuid.UUID) (*CourseData, error) {
 		}
 		return nil, err
 	}
-	cd := toCourseData(&c)
-	return &cd, nil
+	return new(toCourseData(&c)), nil
 }
 
 func (s *PostgresStore) GetCourseDependencies() ([]CourseDependencyData, error) {
@@ -265,8 +264,7 @@ func (s *PostgresStore) GetStudentByID(studentID uuid.UUID) (*StudentData, error
 		}
 		return nil, err
 	}
-	sd := toStudentData(&st)
-	return &sd, nil
+	return new(toStudentData(&st)), nil
 }
 
 func (s *PostgresStore) CreateStudent(student StudentData) (StudentData, error) {

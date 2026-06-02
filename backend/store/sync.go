@@ -509,8 +509,8 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) C
 	return CourseData{
 		ID:                  uuid.New(),
 		Title:               strings.TrimSpace(getFirst(row, "Название курса")),
-		Description:         ptr(getFirst(row, "Контекст", "Контекст, чтобы правильно отобразить на траектории\nесли есть")),
-		HandbookLink:        ptr(getFirst(row, "Силлабус если есть", "Силлабус\nесли есть", "Силлабус")),
+		Description:         new(getFirst(row, "Контекст", "Контекст, чтобы правильно отобразить на траектории\nесли есть")),
+		HandbookLink:        new(getFirst(row, "Силлабус если есть", "Силлабус\nесли есть", "Силлабус")),
 		CourseType:          courseType,
 		Category:            category,
 		AllowedCohorts:      parseAllowedCohorts(getFirst(row, "Поток")),

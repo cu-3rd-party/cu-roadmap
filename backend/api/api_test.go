@@ -413,7 +413,7 @@ func TestGetGraphDataWithRecommendedSemester(t *testing.T) {
 			Title:               "Algo",
 			Category:            enums.CourseCategorySTEM,
 			AvailableSemesters:  []int{1, 3},
-			RecommendedSemester: ptr(2),
+			RecommendedSemester: new(2),
 			Workload:            5.0,
 		}
 		s.CreateCourse(c)
@@ -431,10 +431,6 @@ func TestGetGraphDataWithRecommendedSemester(t *testing.T) {
 	node := nodes[0].(map[string]interface{})
 	assert.Equal(t, float64(2), node["recommended_semester"])
 	assert.Equal(t, "stem", node["group"])
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }
 
 func TestCreateCourseAdmin(t *testing.T) {

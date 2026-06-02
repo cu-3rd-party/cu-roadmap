@@ -28,13 +28,13 @@ func (s *MemoryStoreTestSuite) TestCreateAndGetCourse() {
 	course := CourseData{
 		ID:                  uuid.New(),
 		Title:               "Test Course",
-		Description:         ptr("A test course"),
-		HandbookLink:        ptr("http://example.com"),
+		Description:         new("A test course"),
+		HandbookLink:        new("http://example.com"),
 		AllowedCohorts:      []int{2024, 2025},
 		AvailableSemesters:  []int{1, 2},
-		RecommendedSemester: ptr(1),
+		RecommendedSemester: new(1),
 		Workload:            5.0,
-		CsatMetric:          ptr(4.5),
+		CsatMetric:          new(4.5),
 	}
 
 	created, err := s.s.CreateCourse(course)

@@ -304,11 +304,10 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 			recSem = &r
 		}
 
-		desc := row[2]
 		s.courses[uid] = CourseData{
 			ID:                  uid,
 			Title:               row[1],
-			Description:         &desc,
+			Description:         new(row[2]),
 			CourseType:          courseType,
 			Category:            category,
 			AvailableSemesters:  sems,
@@ -600,8 +599,4 @@ func calculateRecommendedSemesters(coursesPath, depsPath string) map[string]int 
 		recommended[cid] = rec
 	}
 	return recommended
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }
