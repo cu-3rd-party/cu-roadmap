@@ -5,23 +5,30 @@ import { AdmissionYear } from "@/shared/constants";
 
 interface SettingsState {
   hasSeenGreeting: boolean;
-  year: AdmissionYear | null;
-  completeGreeting: (year: AdmissionYear) => void;
+  admissionYear: AdmissionYear | null;
+  hideCompletedSemesters: boolean;
+  completeGreeting: (admissionYear: AdmissionYear) => void;
+  setAdmissionYear: (admissionYear: AdmissionYear) => void;
+  setHideCompletedSemesters: (hide: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       hasSeenGreeting: false,
-      year: null,
-      completeGreeting: (year) => set({ hasSeenGreeting: true, year }),
+      admissionYear: null,
+      hideCompletedSemesters: false,
+      completeGreeting: (admissionYear) => set({ hasSeenGreeting: true, admissionYear }),
+      setAdmissionYear: (admissionYear) => set({ admissionYear }),
+      setHideCompletedSemesters: (hide) => set({ hideCompletedSemesters: hide }),
     }),
     {
       name: "settings",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         hasSeenGreeting: state.hasSeenGreeting,
-        year: state.year,
+        admissionYear: state.admissionYear,
+        hideCompletedSemesters: state.hideCompletedSemesters,
       }),
     },
   ),

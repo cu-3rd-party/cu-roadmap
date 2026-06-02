@@ -1,4 +1,4 @@
-import { TOTAL_SEMESTERS } from "@/entities/roadmap";
+import { TOTAL_SEMESTERS } from "@/shared/constants";
 import type { MajorProgress, SummaryStat } from "@/widgets/PlannerSummary";
 import type { SemesterSectionProps } from "@/widgets/SemesterSection";
 

@@ -8,6 +8,8 @@ export {
   YEAR_OPTIONS,
   MAJOR_OPTIONS,
   CATEGORY_FILTERS,
+  COURSE_TYPE_LABELS,
+  MAJOR_LABELS,
   EMPTY_FILTERS,
   type CategoryFilterOption,
   type CourseFilterState,

@@ -12,6 +12,7 @@ const PADDED_VARIANTS = [
   "navActive",
   "ghost",
   "destructive",
+  "tertiaryPadded",
   "link",
 ] as const;
 
@@ -36,6 +37,14 @@ const buttonVariants = cva(
           "disabled:text-fg-muted disabled:border-border-muted",
         ].join(" "),
         tertiary: [
+          "bg-transparent",
+          "text-fg-primary",
+          "hover:text-fg-hover",
+          "focus-visible:border-border-focus",
+          "active:border-border-pressed",
+          "disabled:text-fg-muted",
+        ].join(" "),
+        tertiaryPadded: [
           "bg-transparent",
           "text-fg-primary",
           "hover:text-fg-hover",

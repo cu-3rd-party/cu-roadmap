@@ -1,18 +1,15 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-export const TOTAL_SEMESTERS = 8;
+import { PlannedCourse } from "./types";
 
-export interface PlannedCourse {
-  id: string;
-  title: string;
-}
 
 interface PlannerState {
   selections: Record<number, PlannedCourse[]>;
   addCourse: (semester: number, course: PlannedCourse) => void;
   removeCourse: (semester: number, courseId: string) => void;
   moveCourse: (from: number, to: number, courseId: string) => void;
+  reorderCourses: (semester: number, activeId: string, overId: string) => void;
   reset: () => void;
 }
 
@@ -56,6 +53,20 @@ export const usePlannerStore = create<PlannerState>()(
                 ? {}
                 : { [to]: [...toList, course] }),
             },
+          };
+        }),
+      reorderCourses: (semester, activeId, overId) =>
+        set((state) => {
+          if (activeId === overId) return state;
+          const list = state.selections[semester] ?? [];
+          const oldIndex = list.findIndex((c) => c.id === activeId);
+          const newIndex = list.findIndex((c) => c.id === overId);
+          if (oldIndex === -1 || newIndex === -1) return state;
+          const next = list.slice();
+          const [moved] = next.splice(oldIndex, 1);
+          next.splice(newIndex, 0, moved);
+          return {
+            selections: { ...state.selections, [semester]: next },
           };
         }),
       reset: () => {

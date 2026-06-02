@@ -2,6 +2,7 @@ import { ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "@/shared/lib";
+import { Badge } from "@/shared/ui/kit/badge";
 import { Button } from "@/shared/ui/kit/button";
 import {
   DropdownMenu,
@@ -26,7 +27,11 @@ interface CourseCardProps {
    - planned: "О курсе" + "Удалить" (used inside a semester block)
   **/
   variant?: CourseCardVariant;
-  // select variant only: renders a brand-colored border when true 
+  // course-type badge label (orange), e.g. "Fundamentals", "Major Core"
+  courseType?: string;
+  // major badge label (blue), e.g. "SE", "Business", "AI"
+  major?: string;
+  // select variant only: renders a brand-colored border when true
   selected?: boolean;
   // planned variant only: semesters offered in the "move to" menu (already excludes current)
   moveTargets?: number[];
@@ -35,9 +40,32 @@ interface CourseCardProps {
   onMove?: (toSemester: number) => void;
 }
 
+const CourseBadges = ({
+  courseType,
+  major,
+}: Pick<CourseCardProps, "courseType" | "major">) => {
+  if (!courseType && !major) return null;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {courseType && (
+        <Badge variant="orange" size="3xs">
+          {courseType}
+        </Badge>
+      )}
+      {major && (
+        <Badge variant="blue" size="3xs">
+          {major}
+        </Badge>
+      )}
+    </div>
+  );
+};
+
 export const CourseCard = ({
   title,
   variant = "catalog",
+  courseType,
+  major,
   selected = false,
   moveTargets,
   onSelect,
@@ -52,7 +80,7 @@ export const CourseCard = ({
         type="button"
         onClick={onSelect}
         aria-pressed={selected}
-        className={cn("flex flex-col border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
+        className={cn("flex flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
                       "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                       selected && "border-accent/80")}
       >
@@ -62,6 +90,7 @@ export const CourseCard = ({
         >
           {title}
         </div>
+        <CourseBadges courseType={courseType} major={major} />
       </button>
     );
   }
@@ -71,21 +100,24 @@ export const CourseCard = ({
 
   return (
     <div className="relative flex flex-col gap-3 rounded-xl bg-background p-4">
-      <div
-        title={title}
-        className={cn(
-          "line-clamp-2 text-sm leading-snug font-medium text-fg-primary",
-          showMoveMenu && "pr-7",
-        )}
-      >
-        {title}
+      <div className="flex flex-col gap-2">
+        <div
+          title={title}
+          className={cn(
+            "line-clamp-2 text-sm leading-snug font-medium text-fg-primary",
+            showMoveMenu && "pr-7",
+          )}
+        >
+          {title}
+        </div>
+        <CourseBadges courseType={courseType} major={major} />
       </div>
 
       {showMoveMenu && (
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Перенести в семестр"
-            className="absolute top-2 right-2 grid size-6 cursor-pointer place-items-center rounded-md text-fg-secondary transition-colors hover:bg-accent-pale-hover hover:text-fg-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="absolute top-2 right-2 grid size-6 cursor-pointer place-items-center rounded-md text-fg-secondary transition-colors duration-(--std-duration) hover:bg-accent-pale-hover hover:text-fg-primary focus-visible:ring-0 focus-visible:outline-none"
           >
             <ArrowRightLeft className="size-4" aria-hidden />
           </DropdownMenuTrigger>

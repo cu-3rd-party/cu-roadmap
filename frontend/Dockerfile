@@ -1,16 +1,22 @@
-FROM oven/bun:1-alpine AS base
+FROM node:22-alpine AS base
 
 WORKDIR /app
 
+# pnpm via corepack (pinned to match pnpm-lock.yaml lockfileVersion 9.0)
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable && corepack prepare pnpm@9.14.2 --activate
+
+
 FROM base AS install
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 
 FROM base AS build
 COPY --from=install /app/node_modules /app/node_modules
 COPY . .
-RUN bun run build
+RUN pnpm run build
 
 
 FROM base AS runner
@@ -24,4 +30,4 @@ COPY index.html /app/
 
 EXPOSE 5173
 
-CMD ["bun", "x", "vite", "preview", "--host", "0.0.0.0", "--port", "5173"]
+CMD ["pnpm", "exec", "vite", "preview", "--host", "0.0.0.0", "--port", "5173"]
