@@ -28,3 +28,7 @@ func CloseStore() error {
 	}
 	return nil
 }
+
+func SetStoreForTest(s interfaces.StoreBase) {
+	globalStore = s
+}

@@ -18,7 +18,7 @@ type MemoryStoreTestSuite struct {
 
 func (s *MemoryStoreTestSuite) SetupTest() {
 	s.s = NewMemoryStore()
-	s.s.Init()
+	s.s.Init("admin")
 }
 
 func (s *MemoryStoreTestSuite) TearDownTest() {
@@ -187,7 +187,7 @@ func TestMemoryStoreSuite(t *testing.T) {
 
 func TestLoadCoursesFromCSV(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	err := s.LoadCoursesFromCSV("../courses.csv", "../course_dependencies.csv", "../majors.csv")
@@ -209,7 +209,7 @@ func TestSeedAllData(t *testing.T) {
 	defer os.Chdir(oldWd)
 
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	err := s.SeedAllData()

@@ -24,7 +24,7 @@ func setupRouter(t *testing.T, seed func(s interfaces.StoreBase)) *gin.RouterGro
 	t.Helper()
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "")
+	_, err := store.InitStore(true, "", "admin")
 	assert.NoError(t, err)
 
 	s := store.GetStore()
@@ -49,7 +49,7 @@ func setupRouterRoot(t *testing.T, seed func(s interfaces.StoreBase)) *gin.Engin
 	t.Helper()
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "")
+	_, err := store.InitStore(true, "", "admin")
 	assert.NoError(t, err)
 
 	s := store.GetStore()
@@ -403,7 +403,7 @@ func TestStoreNotInitialized(t *testing.T) {
 	assert.Contains(t, resp["error"], "store not initialized")
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "")
+	_, err := store.InitStore(true, "", "admin")
 	assert.NoError(t, err)
 }
 
@@ -434,6 +434,14 @@ func TestGetGraphDataWithRecommendedSemester(t *testing.T) {
 	assert.Equal(t, "stem", node["group"])
 }
 
+func addAuthCookie(t *testing.T, req *http.Request) {
+	t.Helper()
+	s := store.GetStore()
+	token, err := s.CreateAuthToken()
+	assert.NoError(t, err)
+	req.AddCookie(&http.Cookie{Name: "auth-token", Value: token.Token.String()})
+}
+
 func TestCreateCourseAdmin(t *testing.T) {
 	router := setupRouterRoot(t, nil)
 
@@ -441,7 +449,7 @@ func TestCreateCourseAdmin(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/v1/courses/", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Admin-Token", "admin")
+	addAuthCookie(t, req)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 201, w.Code)
@@ -464,7 +472,7 @@ func TestUpdateCourseAdmin(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/courses/"+courseID, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Admin-Token", "admin")
+	addAuthCookie(t, req)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
@@ -486,7 +494,7 @@ func TestDeleteCourseAdmin(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", "/api/v1/courses/"+courseID, nil)
-	req.Header.Set("X-Admin-Token", "admin")
+	addAuthCookie(t, req)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
@@ -514,7 +522,7 @@ func TestUpdateMajorAdmin(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/api/v1/majors/"+majorID, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Admin-Token", "admin")
+	addAuthCookie(t, req)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)

@@ -510,7 +510,7 @@ func (s *MemoryStore) CheckAuthToken(token uuid.UUID) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if authToken, ok := s.authTokens[token]; ok {
-		if authToken.Ttl < time.Now().Unix()+interfaces.AuthTokenLifetime {
+		if authToken.Ttl > time.Now().Unix() {
 			return true, nil
 		}
 		return false, nil

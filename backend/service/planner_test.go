@@ -13,7 +13,7 @@ import (
 
 func newTestData() (interfaces.StoreBase, *interfaces.CourseData, *interfaces.CourseData, *interfaces.CourseData) {
 	s := store.NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 
 	c1 := interfaces.CourseData{ID: uuid.New(), Title: "Python Basics", Description: new("Intro"), AvailableSemesters: []int{1, 2}, RecommendedSemester: new(1), Workload: 4.0}
 	c2 := interfaces.CourseData{ID: uuid.New(), Title: "Advanced Python", Description: new("Advanced"), AvailableSemesters: []int{3, 4}, RecommendedSemester: new(3), Workload: 5.0}
@@ -64,7 +64,7 @@ func TestGenerateRoadmapWithPassedCourses(t *testing.T) {
 
 func TestGenerateRoadmapMajorNotFound(t *testing.T) {
 	s := store.NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	planner := NewGreedyPlanner(s)
