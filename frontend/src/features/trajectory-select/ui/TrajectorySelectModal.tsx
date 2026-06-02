@@ -42,6 +42,12 @@ export const TrajectorySelectModal = ({
   const [courseOpen, setCourseOpen] = useState(false);
   const [courseCommitted, setCourseCommitted] = useState(true);
   const [semester, setSemester] = useState("");
+  const [tab, setTab] = useState("major");
+
+  // On the course tab, a trajectory can only be built once both the course and
+  // the target semester are picked. Other tabs don't gate the action.
+  const canSubmit =
+    tab !== "course" || (courseQuery.trim() !== "" && semester !== "");
 
   const savedCourseTitle =
     AVAILABLE_COURSES.find((course) => course.id === courseId)?.title ?? "";
@@ -102,7 +108,7 @@ export const TrajectorySelectModal = ({
 
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex h-full flex-col gap-4 rounded-2xl bg-background p-5">
-            <Tabs defaultValue="major" className="gap-4">
+            <Tabs value={tab} onValueChange={setTab} className="gap-4">
               <div className="text-sm text-fg-secondary">
                 <p>Выберите тип построения траектории:</p>
                 <ol className="mt-1 flex list-decimal flex-col gap-1 pl-5">
@@ -219,7 +225,12 @@ export const TrajectorySelectModal = ({
                 <Button variant="tertiaryPadded" size="md" onClick={close}>
                   Отмена
                 </Button>
-                <Button variant="outline" size="md" onClick={close}>
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={close}
+                  disabled={!canSubmit}
+                >
                   Обновить траекторию
                 </Button>
               </div>
