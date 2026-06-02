@@ -24,10 +24,9 @@ func setupRouter(t *testing.T, seed func(s interfaces.StoreBase)) *gin.RouterGro
 	t.Helper()
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "", "admin")
+	s, err := initTestStore()
 	assert.NoError(t, err)
 
-	s := store.GetStore()
 	if seed != nil {
 		seed(s)
 	}
@@ -45,14 +44,24 @@ func setupRouter(t *testing.T, seed func(s interfaces.StoreBase)) *gin.RouterGro
 	return router.Group("")
 }
 
+func initTestStore() (interfaces.StoreBase, error) {
+	if testDatabaseURL != "" {
+		s, err := store.InitStore(false, testDatabaseURL, "admin")
+		if err != nil {
+			return nil, err
+		}
+		return s, s.ClearAll()
+	}
+	return store.InitStore(true, "", "admin")
+}
+
 func setupRouterRoot(t *testing.T, seed func(s interfaces.StoreBase)) *gin.Engine {
 	t.Helper()
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "", "admin")
+	s, err := initTestStore()
 	assert.NoError(t, err)
 
-	s := store.GetStore()
 	if seed != nil {
 		seed(s)
 	}

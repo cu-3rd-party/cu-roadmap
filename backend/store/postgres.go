@@ -95,7 +95,7 @@ func (s *PostgresStore) GetCourses(filter interfaces.CourseFilter) ([]interfaces
 		for i, y := range filter.CohortYears {
 			years[i] = int64(y)
 		}
-		query = query.Where("(allowed_cohorts IS NULL OR allowed_cohorts && ?)", years)
+		query = query.Where("(allowed_cohorts IS NULL OR array_length(allowed_cohorts, 1) IS NULL OR allowed_cohorts && ?)", years)
 	}
 
 	if filter.Title != "" {
