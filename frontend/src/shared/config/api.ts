@@ -21,6 +21,8 @@ export const api = {
 
   generateRoadmap: (params: {
     passed_course_ids: string[];
+    selected_course_ids?: string[];
+    course_source?: "passed" | "selected";
     major_id: string;
     current_semester: number;
     max_load: number;

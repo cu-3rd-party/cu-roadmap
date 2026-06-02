@@ -861,13 +861,29 @@ components:
 
     PlannerGenerateRequest:
       type: object
+      required:
+        - passed_course_ids
+        - major_id
       properties:
         passed_course_ids:
           type: array
-          description: UUID всех пройденных курсов
+          description: UUID реально пройденных курсов
           items:
             type: string
             format: uuid
+        selected_course_ids:
+          type: array
+          description: UUID курсов, которые пользователь включил в свою траекторию
+          items:
+            type: string
+            format: uuid
+        course_source:
+          type: string
+          description: какие курсы использовать как уже учтенные при генерации
+          enum:
+            - passed
+            - selected
+          default: passed
         major_id:
           type: string
           format: uuid
@@ -882,24 +898,6 @@ components:
           type: integer
           description: год, когда поступил в цу
 
-    RoadmapCourse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        workload:
-          type: number
-        type:
-          type: string
-          description: тип курса
-          enum:
-            - mandatory
-            - elective
-            - other
-
     RoadmapSemester:
       type: object
       properties:
@@ -907,10 +905,55 @@ components:
           type: integer
         total_load:
           type: number
+        error:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
         courses:
           type: array
+          description: используется в ответе goal-path
           items:
-            $ref: '#/components/schemas/RoadmapCourse'
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              title:
+                type: string
+              workload:
+                type: number
+
+    PlannerRoadmapSemester:
+      type: object
+      properties:
+        semester:
+          type: integer
+        total_load:
+          type: number
+        error:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        course_ids:
+          type: array
+          description: список UUID курсов, детали фронт подтягивает сам
+          items:
+            type: string
+            format: uuid
+
+    PlannerRoadmap:
+      type: array
+      items:
+        $ref: '#/components/schemas/PlannerRoadmapSemester'
+
+    GoalPathRoadmap:
+      type: array
+      items:
+        $ref: '#/components/schemas/RoadmapSemester'
 
     Roadmap:
       type: array
@@ -928,7 +971,7 @@ components:
           type: string
           format: uuid
         roadmap:
-          $ref: '#/components/schemas/Roadmap'
+          $ref: '#/components/schemas/PlannerRoadmap'
 
     ValidationMessage:
       type: object
@@ -1046,4 +1089,4 @@ components:
           nullable: true
           description: если чето пойдет не так при генерации тут будет ошибка
         roadmap:
-          $ref: '#/components/schemas/Roadmap'
+          $ref: '#/components/schemas/GoalPathRoadmap'

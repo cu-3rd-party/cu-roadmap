@@ -30,6 +30,7 @@ export interface CourseBasic {
 
 export interface SemesterData {
   semester: number;
+  course_ids?: string[];
   total_load?: number;
   error?: string;
   status?: string;

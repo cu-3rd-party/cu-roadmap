@@ -246,6 +246,9 @@ export default function App() {
             <PlannerPage
               passedIds={passedIds}
               setPassedIds={setPassedIds}
+              roadmapCourseIds={manualRoadmap.flatMap(
+                (semester) => semester.course_ids,
+              )}
               triggerGenerate={triggerGenerate}
               setData={setRoadmapData}
               data={roadmapData}

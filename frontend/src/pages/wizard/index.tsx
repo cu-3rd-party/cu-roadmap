@@ -13,6 +13,21 @@ import {
 } from "./ui";
 import type { RoadmapResponse } from "@/shared/config";
 
+function hydrateRoadmap(
+  roadmap: RoadmapResponse["roadmap"],
+  courses: Course[],
+): RoadmapResponse["roadmap"] {
+  return roadmap.map((semester) => ({
+    ...semester,
+    courses:
+      semester.courses?.length > 0
+        ? semester.courses
+        : (semester.course_ids || [])
+            .map((id) => courses.find((course) => course.id === id))
+            .filter((course): course is Course => Boolean(course)),
+  }));
+}
+
 interface WizardPageProps {
   passedIds: string[];
   setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -61,7 +76,10 @@ export function WizardPage({
         max_load: 12.0,
       })
       .then((res) => {
-        setRoadmapData(res.data);
+        setRoadmapData({
+          ...res.data,
+          roadmap: hydrateRoadmap(res.data.roadmap, courses),
+        });
         setLoading(false);
         setCurrentStep(3);
       })

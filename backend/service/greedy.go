@@ -181,18 +181,13 @@ func (p *GreedyPlanner) GenerateRoadmap(
 		}
 
 		if len(semCourses) > 0 {
-			var coursesOut []map[string]interface{}
+			courseIDs := make([]string, 0, len(semCourses))
 			for _, c := range semCourses {
-				coursesOut = append(coursesOut, map[string]interface{}{
-					"id":       c.ID.String(),
-					"title":    c.Title,
-					"workload": c.Workload,
-					"type":     string(c.CourseType),
-				})
+				courseIDs = append(courseIDs, c.ID.String())
 			}
 			roadmap = append(roadmap, map[string]interface{}{
 				"semester":   currentSem,
-				"courses":    coursesOut,
+				"course_ids": courseIDs,
 				"total_load": semLoad,
 			})
 		}

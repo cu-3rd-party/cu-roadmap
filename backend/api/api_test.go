@@ -362,6 +362,13 @@ func TestPlannerGenerate(t *testing.T) {
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.Equal(t, majors[0]["id"].(string), resp["major_id"])
+	roadmap, ok := resp["roadmap"].([]interface{})
+	assert.True(t, ok)
+	assert.NotEmpty(t, roadmap)
+	semester, ok := roadmap[0].(map[string]interface{})
+	assert.True(t, ok)
+	_, hasCourseIDs := semester["course_ids"]
+	assert.True(t, hasCourseIDs)
 }
 
 func getCoursesList(router *gin.Engine, t *testing.T) []map[string]interface{} {

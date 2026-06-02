@@ -5,12 +5,15 @@ import { SemesterCard } from "@/widgets/SemesterCard";
 interface PlannerPageProps {
   passedIds: string[];
   setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
+  roadmapCourseIds: string[];
   triggerGenerate: number;
   setData: React.Dispatch<React.SetStateAction<RoadmapData | null>>;
   data: RoadmapData | null;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
 }
+
+type PlannerCourseSource = "passed" | "selected";
 
 interface Major {
   id: string;
@@ -20,6 +23,7 @@ interface Major {
 export function PlannerPage({
   passedIds,
   setPassedIds,
+  roadmapCourseIds,
   triggerGenerate,
   setData,
   data,
@@ -30,6 +34,8 @@ export function PlannerPage({
   const [majors, setMajors] = useState<Major[]>([]);
   const [selectedMajor, setSelectedMajor] = useState("");
   const [startSem, setStartSem] = useState(1);
+  const [courseSource, setCourseSource] =
+    useState<PlannerCourseSource>("passed");
 
   useEffect(() => {
     api.getCourses().then((res) => setCourses(res.data));
@@ -45,19 +51,41 @@ export function PlannerPage({
     api
       .generateRoadmap({
         passed_course_ids: passedIds,
+        selected_course_ids: roadmapCourseIds,
+        course_source: courseSource,
         major_id: selectedMajor,
         current_semester: startSem,
         max_load: 12.0,
       })
       .then((res) => {
-        setData(res.data);
+        setData({
+          ...res.data,
+          roadmap: res.data.roadmap.map((semester) => ({
+            ...semester,
+            courses:
+              semester.courses?.length > 0
+                ? semester.courses
+                : (semester.course_ids || [])
+                    .map((id) => courses.find((course) => course.id === id))
+                    .filter((course): course is Course => Boolean(course)),
+          })),
+        });
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
         setLoading(false);
       });
-  }, [selectedMajor, passedIds, startSem, setData, setLoading]);
+  }, [
+    selectedMajor,
+    passedIds,
+    roadmapCourseIds,
+    courseSource,
+    startSem,
+    setData,
+    setLoading,
+    courses,
+  ]);
 
   useEffect(() => {
     if (triggerGenerate > 0) generatePlan();
@@ -137,6 +165,29 @@ export function PlannerPage({
               borderColor: "var(--color-border)",
             }}
           />
+        </div>
+        <div className="flex flex-col gap-2 w-72">
+          <label
+            className="text-xs font-bold uppercase"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Учитывать курсы
+          </label>
+          <select
+            value={courseSource}
+            onChange={(e) =>
+              setCourseSource(e.target.value as PlannerCourseSource)
+            }
+            className="w-full p-2.5 border rounded-lg text-base"
+            style={{
+              backgroundColor: "var(--color-bg-main)",
+              color: "var(--color-text-main)",
+              borderColor: "var(--color-border)",
+            }}
+          >
+            <option value="passed">Только реально пройденные</option>
+            <option value="selected">Все курсы из траектории</option>
+          </select>
         </div>
         <button
           className="text-white border-none px-5 py-2.5 rounded-lg font-bold text-sm cursor-pointer h-10"

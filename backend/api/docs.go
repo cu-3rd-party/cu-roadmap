@@ -36,6 +36,9 @@ func RegisterDocsRoutes(rg *gin.RouterGroup) {
 }
 
 func getSwaggerUI(c *gin.Context) {
+	c.Header("Cache-Control", "no-store, no-cache, must-revalidate")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(swaggerUIHTML))
 }
 
@@ -53,5 +56,8 @@ func getOpenAPISpec(c *gin.Context) {
 		return
 	}
 
+	c.Header("Cache-Control", "no-store, no-cache, must-revalidate")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
 	c.Data(http.StatusOK, "application/yaml; charset=utf-8", data)
 }

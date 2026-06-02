@@ -11,6 +11,14 @@ import (
 	"github.com/google/uuid"
 )
 
+func getPlannerCourseIDs(req schemas.PlannerRequest) []uuid.UUID {
+	if req.CourseSource == "selected" && len(req.SelectedCourseIDs) > 0 {
+		return req.SelectedCourseIDs
+	}
+
+	return req.PassedCourseIDs
+}
+
 func RegisterPlannerRoutes(rg *gin.RouterGroup) {
 	rg.POST("/generate", generateRoadmap)
 	rg.POST("/validate-semester/", validateSemester)
@@ -33,7 +41,7 @@ func generateRoadmap(c *gin.Context) {
 	}
 
 	planner := service.NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap(req.PassedCourseIDs, req.MajorID, req.CurrentSemester, req.MaxLoad, req.Cohort)
+	roadmap, err := planner.GenerateRoadmap(getPlannerCourseIDs(req), req.MajorID, req.CurrentSemester, req.MaxLoad, req.Cohort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
