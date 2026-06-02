@@ -1,6 +1,6 @@
-import type { Course } from "@/shared/config";
+import type { CourseDto } from "@/entities/course";
 
-export const MOCK_COURSES: Course[] = [
+export const MOCK_COURSES: CourseDto[] = [
   {
     id: "8c3ff068-c93e-4eca-9034-c33c541a6862",
     title: "Разработка на Python. Основной",

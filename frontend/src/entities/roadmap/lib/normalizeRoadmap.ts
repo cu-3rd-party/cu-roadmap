@@ -6,40 +6,36 @@ import type {
   ValidationMessageDto,
   ValidationResultDto,
 } from "../api";
-import type {
-  Roadmap,
-  RoadmapSemester,
-  RoadmapValidation,
-  SemesterValidation,
-  ValidationMessage,
-} from "../model";
+import type { Roadmap, RoadmapSemester, RoadmapValidation, SemesterValidation, ValidationMessage } from "../model";
 
-const normalizeRoadmapSemester = (dto: RoadmapSemesterDto): RoadmapSemester => {
+const normalizeRoadmapSemester = (
+  dto: RoadmapSemesterDto
+): RoadmapSemester => {
   return {
     semester: dto.semester,
     totalLoad: dto.total_load,
-    courseIds: dto.course_ids,
-  };
-};
+    courses: dto.courses
+  }
+}
 
 export const normalizeRoadmap = (
   dto: GenerateRoadmapResponseDto | GoalPathResponseDto,
 ): Roadmap => {
   return {
     error: dto.error,
-    semesters: dto.roadmap?.map((sem) => normalizeRoadmapSemester(sem)) ?? [],
-  };
+    semesters: dto.roadmap.map(sem => normalizeRoadmapSemester(sem))
+  }
 };
 
 const normalizeValidationMessage = (
-  dto: ValidationMessageDto,
+  dto: ValidationMessageDto
 ): ValidationMessage => {
   return {
     level: dto.level,
     message: dto.message,
-    courseId: dto.course_id,
-  };
-};
+    courseId: dto.course_id
+  }
+}
 
 export const normalizeValidationResult = (
   dto: ValidationResultDto,
@@ -48,11 +44,10 @@ export const normalizeValidationResult = (
     semester: dto.semester,
     valid: dto.valid,
     totalLoad: dto.total_load,
-    messages: dto.messages?.map((mes) => normalizeValidationMessage(mes)) ?? [],
-  };
+    messages: dto.messages.map(mes => normalizeValidationMessage(mes))
+  }
 };
 
 export const normalizeValidationRoadmap = (
-  dto: ValidateRoadmapResponseDto,
-): RoadmapValidation =>
-  dto.validation_results?.map((res) => normalizeValidationResult(res)) ?? [];
+  dto: ValidateRoadmapResponseDto
+): RoadmapValidation => dto.validation_results.map(res => normalizeValidationResult(res))

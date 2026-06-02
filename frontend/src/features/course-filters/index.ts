@@ -2,8 +2,7 @@ export { CourseFilters } from "./ui/CourseFilters";
 export { CourseSearchFilter } from "./ui/CourseSearchFilter";
 export {
   createCourseFiltersStore,
-  type CourseFiltersStore,
-} from "./model/createCourseFiltersStore";
+} from "./model";
 export {
   YEAR_OPTIONS,
   MAJOR_OPTIONS,

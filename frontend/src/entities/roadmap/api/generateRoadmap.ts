@@ -8,5 +8,9 @@ import type {
 export const generateRoadmap = async (
   body: GenerateRoadmapRequestDto,
 ): Promise<GenerateRoadmapResponseDto> =>
-  (await apiClient.post<GenerateRoadmapResponseDto>("planner/generate/", body))
-    .data;
+  (
+    await apiClient.post<GenerateRoadmapResponseDto>(
+      "planner/generate/",
+      body,
+    )
+  ).data;

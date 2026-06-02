@@ -1,12 +1,10 @@
 import { UUID } from "@/shared/model";
 
-import { MessageLevel } from "../api";
-
 // Frontend domain models for planner results (normalized from the DTOs).
 export interface RoadmapSemester {
   semester: number;
   totalLoad: number;
-  courseIds: UUID[];
+  courses: UUID[];
 }
 
 export interface Roadmap {
@@ -15,7 +13,7 @@ export interface Roadmap {
 }
 
 export interface ValidationMessage {
-  level: MessageLevel;
+  level: string;
   message: string;
   courseId?: string | null;
 }

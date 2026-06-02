@@ -1,19 +1,28 @@
+import type { CourseDto } from "@/entities/course";
+import type { MajorMatchDto } from "@/entities/major";
 import type {
-  Course,
-  MajorResult,
-  RoadmapResponse,
-  ValidationResult,
-} from "@/shared/config";
+  GenerateRoadmapResponseDto,
+  RoadmapCourseDto,
+  ValidationResultDto,
+} from "@/entities/roadmap";
 
 import { MOCK_COURSES } from "./courses";
 
-const courseById = (id: string): Course | undefined =>
+const courseById = (id: string): CourseDto | undefined =>
   MOCK_COURSES.find((c) => c.id === id);
 
-const pick = (...ids: string[]): Course[] =>
-  ids.map(courseById).filter((c): c is Course => Boolean(c));
+const pick = (...ids: string[]): RoadmapCourseDto[] =>
+  ids
+    .map(courseById)
+    .filter((c): c is CourseDto => Boolean(c))
+    .map((c) => ({
+      id: c.id,
+      title: c.title,
+      workload: c.workload,
+      type: c.course_type,
+    }));
 
-const sumLoad = (courses: Course[]): number =>
+const sumLoad = (courses: RoadmapCourseDto[]): number =>
   courses.reduce((acc, c) => acc + c.workload, 0);
 
 const sem1 = pick(
@@ -37,7 +46,8 @@ const sem4 = pick(
   "a804aa38-d91d-43fa-9590-fa79b8a46e7b", // Многопоточность
 );
 
-export const MOCK_ROADMAP: RoadmapResponse = {
+export const MOCK_ROADMAP: GenerateRoadmapResponseDto = {
+  major_id: "a24aa7f7-e004-4942-8062-ef2a52b2debc",
   roadmap: [
     { semester: 1, total_load: sumLoad(sem1), courses: sem1 },
     { semester: 2, total_load: sumLoad(sem2), courses: sem2 },
@@ -46,25 +56,31 @@ export const MOCK_ROADMAP: RoadmapResponse = {
   ],
 };
 
-export const MOCK_MAJOR_RESULTS: MajorResult[] = [
+export const MOCK_MAJOR_RESULTS: MajorMatchDto[] = [
   {
     id: "a24aa7f7-e004-4942-8062-ef2a52b2debc",
     title: "AI",
     score: 0.82,
+    covered_count: 9,
+    total_count: 11,
   },
   {
     id: "58d9f79d-35c6-4247-9435-38844a2aba6b",
     title: "Software Engineering",
     score: 0.64,
+    covered_count: 7,
+    total_count: 11,
   },
   {
     id: "bd5e402f-1121-4f5c-84b2-ad328cb952d3",
     title: "Business",
     score: 0.31,
+    covered_count: 3,
+    total_count: 11,
   },
 ];
 
-export const MOCK_VALIDATION: ValidationResult[] = [
+export const MOCK_VALIDATION: ValidationResultDto[] = [
   {
     semester: 1,
     valid: true,
