@@ -8,7 +8,7 @@ import (
 )
 
 func RegisterAuthRoutes(rg *gin.RouterGroup) {
-	rg.POST("/login")
+	rg.POST("/login", login)
 }
 
 func login(c *gin.Context) {
