@@ -378,9 +378,7 @@ function CourseEditor({
   const [formData, setFormData] = useState(course);
 
   const handleChange = (
-    e: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({

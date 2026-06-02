@@ -62,10 +62,7 @@ export const api = {
       client.put<Course>(`/courses/${id}`, course, adminHeaders(token)),
     deleteCourse: (id: string, token: string) =>
       client.delete(`/courses/${id}`, adminHeaders(token)),
-    updateMajor: (
-      id: string,
-      major: Record<string, unknown>,
-      token: string,
-    ) => client.put(`/majors/${id}`, major, adminHeaders(token)),
+    updateMajor: (id: string, major: Record<string, unknown>, token: string) =>
+      client.put(`/majors/${id}`, major, adminHeaders(token)),
   },
 };
