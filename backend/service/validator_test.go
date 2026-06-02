@@ -3,25 +3,21 @@ package service
 import (
 	"testing"
 
-	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 )
 
-func createCourse(id *uuid.UUID, title string, workload float64, sems []int) store.CourseData {
+func createCourse(id *uuid.UUID, title string, workload float64, sems []int) interfaces.CourseData {
 	if id == nil {
 		id = new(uuid.New())
 	}
 	if sems == nil {
 		sems = []int{1, 2}
 	}
-	return store.CourseData{
+	return interfaces.CourseData{
 		ID:                 *id,
 		Title:              title,
-		CourseType:         enums.CourseTypeMandatory,
-		Category:           enums.CourseCategoryTech,
 		AvailableSemesters: sems,
 		Workload:           workload,
 	}
@@ -36,7 +32,7 @@ func TestValidateSemesterValid(t *testing.T) {
 	validator.LoadDependencies(s)
 
 	result := validator.ValidateSemester(
-		[]store.CourseData{*c1},
+		[]interfaces.CourseData{*c1},
 		make(map[uuid.UUID]bool),
 		1,
 		12.0,
@@ -53,7 +49,7 @@ func TestValidateSemesterWorkloadExceeded(t *testing.T) {
 	validator.LoadDependencies(s)
 
 	result := validator.ValidateSemester(
-		[]store.CourseData{*c1, *c2},
+		[]interfaces.CourseData{*c1, *c2},
 		make(map[uuid.UUID]bool),
 		1,
 		4.0,
@@ -71,7 +67,7 @@ func TestValidateSemesterWrongSemesterOffering(t *testing.T) {
 	validator.LoadDependencies(s)
 
 	result := validator.ValidateSemester(
-		[]store.CourseData{*c2},
+		[]interfaces.CourseData{*c2},
 		make(map[uuid.UUID]bool),
 		1,
 		12.0,
@@ -96,7 +92,7 @@ func TestValidateSemesterMissingPrerequisite(t *testing.T) {
 	validator.LoadDependencies(s)
 
 	result := validator.ValidateSemester(
-		[]store.CourseData{*c2},
+		[]interfaces.CourseData{*c2},
 		make(map[uuid.UUID]bool),
 		1,
 		12.0,
@@ -115,7 +111,7 @@ func TestValidateSemesterPassedPrerequisite(t *testing.T) {
 
 	passed := map[uuid.UUID]bool{c1.ID: true}
 	result := validator.ValidateSemester(
-		[]store.CourseData{*c2},
+		[]interfaces.CourseData{*c2},
 		passed,
 		1,
 		12.0,

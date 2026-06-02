@@ -26,6 +26,23 @@ Copy example.env to .env and fill in the real values if needed.
 
 The application reads configuration from environment variables. Default values are provided for local development.
 
+## Admin API Endpoints
+
+The following administrative endpoints are available and require the `X-Admin-Token` header (default value in dev: `admin`):
+
+### Courses
+- `POST /api/v1/courses/`
+  Creates a new course.
+- `PUT /api/v1/courses/:id`
+  Updates an existing course.
+- `DELETE /api/v1/courses/:id`
+  Deletes an existing course.
+
+### Majors
+- `PUT /api/v1/majors/:id`
+  Updates a major's details and its course requirements.
+
+
 ## Local Development
 
 Install the repo Git hooks once after cloning:

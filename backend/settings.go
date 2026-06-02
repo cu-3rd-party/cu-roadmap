@@ -16,12 +16,13 @@ type Settings struct {
 	GoogleSheetsSpreadsheetID      string `envconfig:"GOOGLE_SHEETS_SPREADSHEET_ID" default:""`
 	GoogleServiceAccountJSON       string `envconfig:"GOOGLE_SERVICE_ACCOUNT_JSON" default:""`
 	GoogleServiceAccountJSONB64    string `envconfig:"GOOGLE_SERVICE_ACCOUNT_JSON_B64" default:""`
-	GoogleSheetsSyncSheets         string `envconfig:"GOOGLE_SHEETS_SYNC_SHEETS" default:"Бизнес и аналитика,Искусственный интеллект,Разработка"`
+	GoogleSheetsSyncSheets         string `envconfig:"GOOGLE_SHEETS_SYNC_SHEETS" default:""`
 	GoogleSheetsSyncEnabled        bool   `envconfig:"GOOGLE_SHEETS_SYNC_ENABLED" default:"true"`
 	GoogleSheetsSyncIntervalSecond int    `envconfig:"GOOGLE_SHEETS_SYNC_INTERVAL_SECONDS" default:"3600"`
 	Host                           string `envconfig:"HOST" default:"0.0.0.0"`
 	Port                           int    `envconfig:"PORT" default:"8080"`
 	LogLevel                       string `envconfig:"LOG_LEVEL" default:"INFO"`
+	AdminPassword                  string `envconfig:"ADMIN_PASSWORD" default:"admin"`
 }
 
 func (s *Settings) DBURL() string {

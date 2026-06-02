@@ -1,8 +1,10 @@
 package store
 
-var globalStore StoreBase
+import "github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 
-func InitStore(useMemory bool, databaseURL string) (StoreBase, error) {
+var globalStore interfaces.StoreBase
+
+func InitStore(useMemory bool, databaseURL string) (interfaces.StoreBase, error) {
 	if useMemory {
 		globalStore = NewMemoryStore()
 	} else {
@@ -14,7 +16,7 @@ func InitStore(useMemory bool, databaseURL string) (StoreBase, error) {
 	return globalStore, nil
 }
 
-func GetStore() StoreBase {
+func GetStore() interfaces.StoreBase {
 	return globalStore
 }
 

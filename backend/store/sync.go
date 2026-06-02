@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
@@ -22,36 +23,40 @@ type SheetMajorMapping struct {
 	Category   enums.CourseCategory
 }
 
-func majorTitleWithCohort(base string, cohorts []int) string {
-	if len(cohorts) == 0 {
-		return base
-	}
-	// One course row can list multiple cohorts; to keep store semantics simple
-	// we use the earliest cohort as the major "track" discriminator.
-	min := cohorts[0]
-	for _, y := range cohorts[1:] {
-		if y < min {
-			min = y
-		}
-	}
-	return fmt.Sprintf("%s (%d)", base, min)
-}
-
 func requirementTypeFromSheetCourseType(raw string) enums.RequirementType {
 	raw = strings.ToLower(strings.TrimSpace(raw))
-	if strings.Contains(raw, "core") || strings.Contains(raw, "общеуниверситет") {
-		return enums.RequirementTypeCore
+	if strings.Contains(raw, "major core") || strings.Contains(raw, "core") || strings.Contains(raw, "обязательный") {
+		return enums.RequirementTypeMajorCore
 	}
-	if strings.Contains(raw, "choice") || strings.Contains(raw, "flex") || strings.Contains(raw, "факультатив") {
-		return enums.RequirementTypeMinorRecommended
+	if strings.Contains(raw, "major choice") {
+		return enums.RequirementTypeMajorChoice
 	}
-	return enums.RequirementTypeCore
+	if strings.Contains(raw, "flex") {
+		return enums.RequirementTypeFlex
+	}
+	if strings.Contains(raw, "общеуниверситетский") || strings.Contains(raw, "универ") {
+		return enums.RequirementTypeUniversity
+	}
+	if strings.Contains(raw, "факультатив") {
+		return enums.RequirementTypeElective
+	}
+	if strings.Contains(raw, "minor") || strings.Contains(raw, "майнор") {
+		return enums.RequirementTypeMinor
+	}
+	if strings.Contains(raw, "soft") || strings.Contains(raw, "софт") {
+		return enums.RequirementTypeSoft
+	}
+	if strings.Contains(raw, "selected topics") {
+		return enums.RequirementTypeSelectedTopics
+	}
+	// fallback
+	return enums.RequirementTypeElective
 }
 
 var SheetToMajor = map[string]SheetMajorMapping{
-	"Бизнес и аналитика":      {"Business", "Business", enums.CourseCategoryBusiness},
-	"Искусственный интеллект": {"AI", "Tech", enums.CourseCategoryAI},
-	"Разработка":              {"Software Engineering", "Tech", enums.CourseCategoryTech},
+	"Бизнес и аналитика":      {"Бизнес и аналитика", "Business", enums.CourseCategoryBusiness},
+	"Искусственный интеллект": {"Искусственный интеллект", "Tech", enums.CourseCategoryAI},
+	"Разработка":              {"Разработка", "Tech", enums.CourseCategoryTech},
 }
 
 type SyncResult struct {
@@ -88,11 +93,11 @@ func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 		mapping  SheetMajorMapping
 	}
 	keywordMap := []kwEntry{
-		{[]string{"бизнес", "business", "экономика", "финанс", "маркетинг", "аналитик"}, SheetMajorMapping{"Business", "Business", enums.CourseCategoryBusiness}},
-		{[]string{"искусственный интеллект", "интеллект", "machine learning", "deep learning", "ml", "dl", "ai", "ии", "нейро"}, SheetMajorMapping{"AI", "Tech", enums.CourseCategoryAI}},
-		{[]string{"разработка", "software", "программирован", "программист", "swe", "engineering", "development", "web", "mobile", "backend", "frontend"}, SheetMajorMapping{"Software Engineering", "Tech", enums.CourseCategoryTech}},
-		{[]string{"дизайн", "design", "ux", "ui", "график"}, SheetMajorMapping{"Design", "Design", enums.CourseCategoryDesign}},
-		{[]string{"общ", "common", "general", "fundamental", "базов", "основ"}, SheetMajorMapping{"Common", "Common", enums.CourseCategoryFundamentals}},
+		{[]string{"бизнес", "business", "экономика", "финанс", "маркетинг", "аналитик"}, SheetMajorMapping{"Бизнес и аналитика", "Business", enums.CourseCategoryBusiness}},
+		{[]string{"искусственный интеллект", "интеллект", "machine learning", "deep learning", "ml", "dl", "ai", "ии", "нейро"}, SheetMajorMapping{"Искусственный интеллект", "Tech", enums.CourseCategoryAI}},
+		{[]string{"разработка", "software", "программирован", "программист", "swe", "engineering", "development", "web", "mobile", "backend", "frontend"}, SheetMajorMapping{"Разработка", "Tech", enums.CourseCategoryTech}},
+		{[]string{"дизайн", "design", "ux", "ui", "график"}, SheetMajorMapping{"Дизайн", "Design", enums.CourseCategoryDesign}},
+		{[]string{"общ", "common", "general", "fundamental", "базов", "основ"}, SheetMajorMapping{"Общие", "Common", enums.CourseCategoryFundamentals}},
 	}
 
 	for _, entry := range keywordMap {
@@ -106,17 +111,17 @@ func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 	return SheetMajorMapping{}, false
 }
 
-func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, sheetMapping map[string]SheetMajorMapping) (SyncResult, error) {
+func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[string]string, sheetMapping map[string]SheetMajorMapping) (SyncResult, error) {
 	if err := s.ClearAll(); err != nil {
 		return SyncResult{}, fmt.Errorf("clear store: %w", err)
 	}
 
-	majorsByTitle := make(map[string]MajorData)
-	courseMap := make(map[string]CourseData)
+	majorsByTitle := make(map[string]interfaces.MajorData)
+	courseMap := make(map[string]interfaces.CourseData)
 	courseToMajorReqs := make(map[string]map[string]enums.RequirementType)
 	type rowEntry struct {
 		Row    map[string]string
-		Course CourseData
+		Course interfaces.CourseData
 	}
 	var allRows []rowEntry
 
@@ -135,13 +140,13 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 
 			norm := NormalizeSheetTitle(title)
 			cohorts := parseAllowedCohorts(getFirst(row, "Поток"))
-			majorTitle := majorTitleWithCohort(mapping.MajorTitle, cohorts)
-			if _, exists := majorsByTitle[majorTitle]; !exists {
-				major := MajorData{ID: uuid.New(), Title: majorTitle, School: mapping.School}
-				if _, err := s.CreateMajor(major); err != nil {
-					return SyncResult{}, fmt.Errorf("create major %s: %w", majorTitle, err)
+			var majorTitles []string
+			if len(cohorts) == 0 {
+				majorTitles = append(majorTitles, mapping.MajorTitle)
+			} else {
+				for _, c := range cohorts {
+					majorTitles = append(majorTitles, fmt.Sprintf("%s (%d)", mapping.MajorTitle, c))
 				}
-				majorsByTitle[majorTitle] = major
 			}
 
 			reqType := requirementTypeFromSheetCourseType(getFirst(row, "Тип курса"))
@@ -155,10 +160,20 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 				allRows = append(allRows, rowEntry{Row: row, Course: course})
 			}
 
-			cur, ok := courseToMajorReqs[norm][majorTitle]
-			if !ok || cur != enums.RequirementTypeCore {
-				// core wins over minor_recommended if the course appears multiple times.
-				courseToMajorReqs[norm][majorTitle] = reqType
+			for _, majorTitle := range majorTitles {
+				if _, exists := majorsByTitle[majorTitle]; !exists {
+					major := interfaces.MajorData{ID: uuid.New(), Title: majorTitle, School: mapping.School}
+					if _, err := s.CreateMajor(major); err != nil {
+						return SyncResult{}, fmt.Errorf("create major %s: %w", majorTitle, err)
+					}
+					majorsByTitle[majorTitle] = major
+				}
+
+				cur, ok := courseToMajorReqs[norm][majorTitle]
+				if !ok || cur != enums.RequirementTypeMajorCore {
+					// major_core wins over others if the course appears multiple times.
+					courseToMajorReqs[norm][majorTitle] = reqType
+				}
 			}
 		}
 	}
@@ -173,7 +188,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 					continue
 				}
 			}
-			if _, err := s.CreateCourseDependency(CourseDependencyData{
+			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         entry.Course.ID,
 				RequiredCourseID: target.ID,
@@ -199,7 +214,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 					continue
 				}
 			}
-			if _, err := s.CreateCourseDependency(CourseDependencyData{
+			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         entry.Course.ID,
 				RequiredCourseID: target.ID,
@@ -218,7 +233,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 			if !exists {
 				continue
 			}
-			if _, err := s.CreateMajorRequirement(MajorRequirementData{
+			if _, err := s.CreateMajorRequirement(interfaces.MajorRequirementData{
 				ID:              uuid.New(),
 				MajorID:         major.ID,
 				CourseID:        course.ID,
@@ -237,7 +252,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 	}, nil
 }
 
-func syncWithSheets(s StoreBase) error {
+func syncWithSheets(s interfaces.StoreBase) error {
 	if sheetsCfg.SpreadsheetID == "" || sheetsCfg.CredentialsJSON == "" {
 		slog.Warn("Google Sheets not configured, skipping sync")
 		return nil
@@ -432,13 +447,10 @@ func parseAllowedCohorts(raw string) []int {
 		}
 		if matches := AllowedCohortsRegexp.FindStringSubmatch(part); len(matches) == 3 {
 			start, _ := strconv.Atoi(matches[1])
-			end, _ := strconv.Atoi(matches[2])
-			if start > 0 && end > 0 && start <= end {
-				for y := start; y <= end; y++ {
-					if !seen[y] {
-						seen[y] = true
-						result = append(result, y)
-					}
+			if start > 0 {
+				if !seen[start] {
+					seen[start] = true
+					result = append(result, start)
 				}
 			}
 		} else if year, err := strconv.Atoi(part); err == nil {
@@ -457,7 +469,7 @@ var (
 	WorkloadRegexp            = regexp.MustCompile(`(\d+(?:\.\d+)?)`)
 )
 
-func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) CourseData {
+func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) interfaces.CourseData {
 	rawType := strings.ToLower(getFirst(row, "Тип курса"))
 	var courseType enums.CourseType
 	if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
@@ -495,7 +507,7 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) C
 		fmt.Sscanf(match, "%f", &workload)
 	}
 
-	return CourseData{
+	return interfaces.CourseData{
 		ID:                  uuid.New(),
 		Title:               strings.TrimSpace(getFirst(row, "Название курса")),
 		Description:         new(getFirst(row, "Контекст", "Контекст, чтобы правильно отобразить на траектории\nесли есть")),

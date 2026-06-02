@@ -31,7 +31,6 @@ describe("WizardPage", () => {
         {
           id: "course-1",
           title: "Python Basics",
-          category: "tech",
           workload: 4,
         },
       ],
@@ -49,7 +48,6 @@ describe("WizardPage", () => {
               {
                 id: "course-1",
                 title: "Python Basics",
-                category: "tech",
                 workload: 4,
               },
             ],

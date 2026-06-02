@@ -2,12 +2,7 @@ import React, { useState } from "react";
 import { Check, Search } from "lucide-react";
 import { CourseCard } from "./CourseCard";
 
-interface Course {
-  id: string;
-  title: string;
-  category: string;
-  workload: number;
-}
+import type { Course } from "@/shared/config";
 
 interface CourseSelectionProps {
   courses: Course[];
@@ -21,7 +16,8 @@ export function CourseSelection({
   onToggleCourse,
 }: CourseSelectionProps) {
   const [search, setSearch] = useState("");
-  const filtered = courses.filter((c) =>
+  const safeCourses = Array.isArray(courses) ? courses : [];
+  const filtered = safeCourses.filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase()),
   );
 

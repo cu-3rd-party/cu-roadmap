@@ -1,16 +1,18 @@
 export interface Course {
   id: string;
   title: string;
-  category: string;
+  category?: string;
   type?: string;
   course_type?: string;
   workload: number;
   description?: string;
   available_semesters?: number[];
   allowed_cohorts?: number[];
-  recommended_semester?: number;
+  recommended_semester?: number | null;
   prerequisites?: string[];
+  corequisites?: string[];
   postrequisites?: string[];
+  handbook_link?: string;
 }
 
 export interface Major {

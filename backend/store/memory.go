@@ -8,25 +8,26 @@ import (
 	"sync"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
 
 type MemoryStore struct {
 	mu                 sync.RWMutex
-	courses            map[uuid.UUID]CourseData
-	majors             map[uuid.UUID]MajorData
-	majorRequirements  []MajorRequirementData
-	courseDependencies []CourseDependencyData
-	students           map[uuid.UUID]StudentData
+	courses            map[uuid.UUID]interfaces.CourseData
+	majors             map[uuid.UUID]interfaces.MajorData
+	majorRequirements  []interfaces.MajorRequirementData
+	courseDependencies []interfaces.CourseDependencyData
+	students           map[uuid.UUID]interfaces.StudentData
 	coursesByTitle     map[string]uuid.UUID
 	majorsByTitle      map[string]uuid.UUID
 }
 
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
-		courses:        make(map[uuid.UUID]CourseData),
-		majors:         make(map[uuid.UUID]MajorData),
-		students:       make(map[uuid.UUID]StudentData),
+		courses:        make(map[uuid.UUID]interfaces.CourseData),
+		majors:         make(map[uuid.UUID]interfaces.MajorData),
+		students:       make(map[uuid.UUID]interfaces.StudentData),
 		coursesByTitle: make(map[string]uuid.UUID),
 		majorsByTitle:  make(map[string]uuid.UUID),
 	}
@@ -38,22 +39,23 @@ func (s *MemoryStore) Close() error { return nil }
 func (s *MemoryStore) ClearAll() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.courses = make(map[uuid.UUID]CourseData)
-	s.majors = make(map[uuid.UUID]MajorData)
+	s.courses = make(map[uuid.UUID]interfaces.CourseData)
+	s.majors = make(map[uuid.UUID]interfaces.MajorData)
 	s.majorRequirements = nil
 	s.courseDependencies = nil
-	s.students = make(map[uuid.UUID]StudentData)
+	s.students = make(map[uuid.UUID]interfaces.StudentData)
 	s.coursesByTitle = make(map[string]uuid.UUID)
 	s.majorsByTitle = make(map[string]uuid.UUID)
 	return nil
 }
 
-func (s *MemoryStore) GetAllCourses() (map[uuid.UUID]CourseData, error) {
+func (s *MemoryStore) GetAllCourses() (map[uuid.UUID]interfaces.CourseData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	out := make(map[uuid.UUID]CourseData, len(s.courses))
+	out := make(map[uuid.UUID]interfaces.CourseData, len(s.courses))
 	for id, c := range s.courses {
 		c.Prerequisites = s.getPrereqsLocked(id)
+		c.Corequisites = s.getCoreqsLocked(id)
 		out[id] = c
 	}
 	return out, nil
@@ -69,7 +71,17 @@ func (s *MemoryStore) getPrereqsLocked(courseID uuid.UUID) []uuid.UUID {
 	return prereqs
 }
 
-func (s *MemoryStore) GetCourseByID(courseID uuid.UUID) (*CourseData, error) {
+func (s *MemoryStore) getCoreqsLocked(courseID uuid.UUID) []uuid.UUID {
+	var coreqs []uuid.UUID
+	for _, dep := range s.courseDependencies {
+		if dep.CourseID == courseID && dep.DependencyType == enums.DependencyTypeCorequisite {
+			coreqs = append(coreqs, dep.RequiredCourseID)
+		}
+	}
+	return coreqs
+}
+
+func (s *MemoryStore) GetCourseByID(courseID uuid.UUID) (*interfaces.CourseData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	c, ok := s.courses[courseID]
@@ -77,18 +89,19 @@ func (s *MemoryStore) GetCourseByID(courseID uuid.UUID) (*CourseData, error) {
 		return nil, nil
 	}
 	c.Prerequisites = s.getPrereqsLocked(courseID)
+	c.Corequisites = s.getCoreqsLocked(courseID)
 	return &c, nil
 }
 
-func (s *MemoryStore) GetCourseDependencies() ([]CourseDependencyData, error) {
+func (s *MemoryStore) GetCourseDependencies() ([]interfaces.CourseDependencyData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	out := make([]CourseDependencyData, len(s.courseDependencies))
+	out := make([]interfaces.CourseDependencyData, len(s.courseDependencies))
 	copy(out, s.courseDependencies)
 	return out, nil
 }
 
-func (s *MemoryStore) CreateCourse(course CourseData) (CourseData, error) {
+func (s *MemoryStore) CreateCourse(course interfaces.CourseData) (interfaces.CourseData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.courses[course.ID] = course
@@ -96,17 +109,42 @@ func (s *MemoryStore) CreateCourse(course CourseData) (CourseData, error) {
 	return course, nil
 }
 
-func (s *MemoryStore) GetAllMajors() (map[uuid.UUID]MajorData, error) {
+func (s *MemoryStore) UpdateCourse(course interfaces.CourseData) (interfaces.CourseData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	oldCourse, exists := s.courses[course.ID]
+	if exists && oldCourse.Title != course.Title {
+		delete(s.coursesByTitle, oldCourse.Title)
+	}
+	s.courses[course.ID] = course
+	s.coursesByTitle[course.Title] = course.ID
+	return course, nil
+}
+
+func (s *MemoryStore) DeleteCourse(courseID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	course, exists := s.courses[courseID]
+	if exists {
+		delete(s.coursesByTitle, course.Title)
+		delete(s.courses, courseID)
+	}
+	return nil
+}
+
+func (s *MemoryStore) GetAllMajors() (map[uuid.UUID]interfaces.MajorData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	out := make(map[uuid.UUID]MajorData, len(s.majors))
+	out := make(map[uuid.UUID]interfaces.MajorData, len(s.majors))
 	for id, m := range s.majors {
 		out[id] = m
 	}
 	return out, nil
 }
 
-func (s *MemoryStore) GetMajorByID(majorID uuid.UUID) (*MajorData, error) {
+func (s *MemoryStore) GetMajorByID(majorID uuid.UUID) (*interfaces.MajorData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	m, ok := s.majors[majorID]
@@ -116,7 +154,7 @@ func (s *MemoryStore) GetMajorByID(majorID uuid.UUID) (*MajorData, error) {
 	return &m, nil
 }
 
-func (s *MemoryStore) CreateMajor(major MajorData) (MajorData, error) {
+func (s *MemoryStore) CreateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.majors[major.ID] = major
@@ -124,10 +162,35 @@ func (s *MemoryStore) CreateMajor(major MajorData) (MajorData, error) {
 	return major, nil
 }
 
-func (s *MemoryStore) GetMajorRequirements(majorID uuid.UUID) ([]MajorRequirementData, error) {
+func (s *MemoryStore) UpdateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	oldMajor, exists := s.majors[major.ID]
+	if exists && oldMajor.Title != major.Title {
+		delete(s.majorsByTitle, oldMajor.Title)
+	}
+	s.majors[major.ID] = major
+	s.majorsByTitle[major.Title] = major.ID
+	return major, nil
+}
+
+func (s *MemoryStore) DeleteMajor(majorID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	major, exists := s.majors[majorID]
+	if exists {
+		delete(s.majorsByTitle, major.Title)
+		delete(s.majors, majorID)
+	}
+	return nil
+}
+
+func (s *MemoryStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.MajorRequirementData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	var out []MajorRequirementData
+	var out []interfaces.MajorRequirementData
 	for _, r := range s.majorRequirements {
 		if r.MajorID == majorID {
 			out = append(out, r)
@@ -136,31 +199,58 @@ func (s *MemoryStore) GetMajorRequirements(majorID uuid.UUID) ([]MajorRequiremen
 	return out, nil
 }
 
-func (s *MemoryStore) CreateMajorRequirement(req MajorRequirementData) (MajorRequirementData, error) {
+func (s *MemoryStore) CreateMajorRequirement(req interfaces.MajorRequirementData) (interfaces.MajorRequirementData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.majorRequirements = append(s.majorRequirements, req)
 	return req, nil
 }
 
-func (s *MemoryStore) CreateCourseDependency(dep CourseDependencyData) (CourseDependencyData, error) {
+func (s *MemoryStore) DeleteMajorRequirements(majorID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var newReqs []interfaces.MajorRequirementData
+	for _, r := range s.majorRequirements {
+		if r.MajorID != majorID {
+			newReqs = append(newReqs, r)
+		}
+	}
+	s.majorRequirements = newReqs
+	return nil
+}
+
+func (s *MemoryStore) CreateCourseDependency(dep interfaces.CourseDependencyData) (interfaces.CourseDependencyData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.courseDependencies = append(s.courseDependencies, dep)
 	return dep, nil
 }
 
-func (s *MemoryStore) GetAllStudents() (map[uuid.UUID]StudentData, error) {
+func (s *MemoryStore) DeleteCourseDependencies(courseID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var newDeps []interfaces.CourseDependencyData
+	for _, d := range s.courseDependencies {
+		if d.CourseID != courseID {
+			newDeps = append(newDeps, d)
+		}
+	}
+	s.courseDependencies = newDeps
+	return nil
+}
+
+func (s *MemoryStore) GetAllStudents() (map[uuid.UUID]interfaces.StudentData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	out := make(map[uuid.UUID]StudentData, len(s.students))
+	out := make(map[uuid.UUID]interfaces.StudentData, len(s.students))
 	for id, st := range s.students {
 		out[id] = st
 	}
 	return out, nil
 }
 
-func (s *MemoryStore) GetStudentByID(studentID uuid.UUID) (*StudentData, error) {
+func (s *MemoryStore) GetStudentByID(studentID uuid.UUID) (*interfaces.StudentData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	st, ok := s.students[studentID]
@@ -170,14 +260,14 @@ func (s *MemoryStore) GetStudentByID(studentID uuid.UUID) (*StudentData, error) 
 	return &st, nil
 }
 
-func (s *MemoryStore) CreateStudent(student StudentData) (StudentData, error) {
+func (s *MemoryStore) CreateStudent(student interfaces.StudentData) (interfaces.StudentData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.students[student.ID] = student
 	return student, nil
 }
 
-func (s *MemoryStore) UpdateStudent(student StudentData) (StudentData, error) {
+func (s *MemoryStore) UpdateStudent(student interfaces.StudentData) (interfaces.StudentData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.students[student.ID] = student
@@ -215,7 +305,7 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 			recSem = &r
 		}
 
-		s.courses[uid] = CourseData{
+		s.courses[uid] = interfaces.CourseData{
 			ID:                  uid,
 			Title:               row[1],
 			Description:         new(row[2]),
@@ -243,7 +333,7 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 		if containsAny(row[1], "AI", "Software") {
 			school = "Tech"
 		}
-		s.majors[uid] = MajorData{ID: uid, Title: row[1], School: school}
+		s.majors[uid] = interfaces.MajorData{ID: uid, Title: row[1], School: school}
 		s.majorsByTitle[row[1]] = uid
 	}
 
@@ -262,7 +352,7 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 		if !ok1 || !ok2 {
 			continue
 		}
-		s.courseDependencies = append(s.courseDependencies, CourseDependencyData{
+		s.courseDependencies = append(s.courseDependencies, interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         cid,
 			RequiredCourseID: rid,
@@ -277,11 +367,11 @@ func (s *MemoryStore) LoadMockData() error {
 	allCourses := s.courses
 	allMajors := s.majors
 
-	coursesByTitle := make(map[string]CourseData)
+	coursesByTitle := make(map[string]interfaces.CourseData)
 	for _, c := range allCourses {
 		coursesByTitle[c.Title] = c
 	}
-	majorsByTitle := make(map[string]MajorData)
+	majorsByTitle := make(map[string]interfaces.MajorData)
 	for _, m := range allMajors {
 		majorsByTitle[m.Title] = m
 	}
@@ -345,17 +435,17 @@ func (s *MemoryStore) LoadMockData() error {
 			if !ok {
 				continue
 			}
-			s.majorRequirements = append(s.majorRequirements, MajorRequirementData{
+			s.majorRequirements = append(s.majorRequirements, interfaces.MajorRequirementData{
 				ID:              uuid.New(),
 				MajorID:         major.ID,
 				CourseID:        c.ID,
-				RequirementType: enums.RequirementTypeCore,
+				RequirementType: enums.RequirementTypeMajorCore,
 			})
 		}
 	}
 
 	if sweMajor, ok := majorsByTitle["Software Engineering"]; ok {
-		student := StudentData{
+		student := interfaces.StudentData{
 			ID:              uuid.New(),
 			Cohort:          2025,
 			CurrentSemester: 3,

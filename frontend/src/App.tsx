@@ -9,6 +9,7 @@ import {
   Sun,
   Target,
   Wand2,
+  Lock,
 } from "lucide-react";
 import { useTheme } from "@/app/providers";
 import { SidebarButton } from "@/shared/ui";
@@ -20,6 +21,7 @@ import { CalculatorPage } from "@/pages/calculator";
 import { ManualPage } from "@/pages/manual";
 import { GraphPage } from "@/pages/graph";
 import { MajorsPage } from "@/pages/majors";
+import { AdminPage } from "@/pages/admin";
 import type { RoadmapData } from "@/shared/config";
 
 export default function App() {
@@ -132,6 +134,12 @@ export default function App() {
             onClick={() => setActiveTab("manual")}
             title="Manual"
           />
+          <SidebarButton
+            icon={Lock}
+            active={activeTab === "admin"}
+            onClick={() => setActiveTab("admin")}
+            title="Admin"
+          />
           <div className="flex-1" />
           <SidebarButton
             icon={theme === "dark" ? Sun : Moon}
@@ -190,6 +198,12 @@ export default function App() {
             onClick={() => setActiveTab("manual")}
             title="Manual"
           />
+          <SidebarButton
+            icon={Lock}
+            active={activeTab === "admin"}
+            onClick={() => setActiveTab("admin")}
+            title="Admin"
+          />
           <div className="flex-1" />
           <SidebarButton
             icon={theme === "dark" ? Sun : Moon}
@@ -243,6 +257,7 @@ export default function App() {
           )}
           {activeTab === "graph" && <GraphPage />}
           {activeTab === "majors" && <MajorsPage />}
+          {activeTab === "admin" && <AdminPage />}
         </main>
       </div>
 

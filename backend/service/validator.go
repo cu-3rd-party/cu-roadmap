@@ -5,35 +5,35 @@ import (
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
-	"github.com/cu-3rd-party/cu-roadmap/backend/store"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
 
 type RoadmapValidator struct {
-	AllCourses   map[uuid.UUID]store.CourseData
-	depsByCourse map[uuid.UUID][]store.CourseDependencyData
+	AllCourses   map[uuid.UUID]interfaces.CourseData
+	depsByCourse map[uuid.UUID][]interfaces.CourseDependencyData
 }
 
-func NewRoadmapValidator(allCourses map[uuid.UUID]store.CourseData) *RoadmapValidator {
+func NewRoadmapValidator(allCourses map[uuid.UUID]interfaces.CourseData) *RoadmapValidator {
 	return &RoadmapValidator{
 		AllCourses:   allCourses,
-		depsByCourse: make(map[uuid.UUID][]store.CourseDependencyData),
+		depsByCourse: make(map[uuid.UUID][]interfaces.CourseDependencyData),
 	}
 }
 
-func (v *RoadmapValidator) LoadDependencies(s store.StoreBase) error {
+func (v *RoadmapValidator) LoadDependencies(s interfaces.StoreBase) error {
 	deps, err := s.GetCourseDependencies()
 	if err != nil {
 		return err
 	}
-	v.depsByCourse = make(map[uuid.UUID][]store.CourseDependencyData)
+	v.depsByCourse = make(map[uuid.UUID][]interfaces.CourseDependencyData)
 	for _, dep := range deps {
 		v.depsByCourse[dep.CourseID] = append(v.depsByCourse[dep.CourseID], dep)
 	}
 	return nil
 }
 
-func CreateValidatorFromStore(s store.StoreBase) (*RoadmapValidator, error) {
+func CreateValidatorFromStore(s interfaces.StoreBase) (*RoadmapValidator, error) {
 	allCourses, err := s.GetAllCourses()
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func CreateValidatorFromStore(s store.StoreBase) (*RoadmapValidator, error) {
 }
 
 func (v *RoadmapValidator) ValidateSemester(
-	coursesInSem []store.CourseData,
+	coursesInSem []interfaces.CourseData,
 	previouslyPassedIDs map[uuid.UUID]bool,
 	currentSemNum int,
 	maxLoad float64,
@@ -146,7 +146,7 @@ func (v *RoadmapValidator) ValidateFullRoadmap(
 		semNum := toInt(semData["semester"])
 		courseIDs := parseCourseIDs(semData["course_ids"])
 
-		var courses []store.CourseData
+		var courses []interfaces.CourseData
 		for _, cid := range courseIDs {
 			if c, ok := v.AllCourses[cid]; ok {
 				courses = append(courses, c)
