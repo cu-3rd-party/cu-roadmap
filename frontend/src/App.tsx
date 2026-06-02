@@ -1,4 +1,4 @@
-import React, { useState, type FormEvent } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Book,
   Calculator,
@@ -9,11 +9,10 @@ import {
   Sun,
   Target,
   Wand2,
-  Lock,
-  Loader2,
 } from "lucide-react";
-import { useTheme, useAuth } from "@/app/providers";
-import { PrimaryButton, SidebarButton } from "@/shared/ui";
+import { useTheme } from "@/app/providers";
+import { SidebarButton } from "@/shared/ui";
+import { AdminPage } from "@/pages/admin";
 import { WizardPage } from "@/pages/wizard";
 import { CoursesPage } from "@/pages/courses";
 import { PlannerPage } from "@/pages/planner";
@@ -22,15 +21,15 @@ import { CalculatorPage } from "@/pages/calculator";
 import { ManualPage } from "@/pages/manual";
 import { GraphPage } from "@/pages/graph";
 import { MajorsPage } from "@/pages/majors";
-import { AdminPage } from "@/pages/admin";
 import type { RoadmapData } from "@/shared/config";
 
+function isAdminRoute() {
+  return window.location.pathname.startsWith("/admin");
+}
+
 export default function App() {
-  const { isAuthenticated, isLoading, login } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(isAdminRoute);
   const [activeTab, setActiveTab] = useState("wizard");
   const [passedIds, setPassedIds] = useState<string[]>([]);
   const [manualRoadmap, setManualRoadmap] = useState<
@@ -45,76 +44,20 @@ export default function App() {
   const [plannerLoading, setPlannerLoading] = useState(false);
   const [triggerGenerate, _setTriggerGenerate] = useState(0);
 
-  const handleLogin = async (e: FormEvent) => {
-    e.preventDefault();
-    setLoginLoading(true);
-    setLoginError("");
-    try {
-      await login(password);
-    } catch (e: any) {
-      if (e.response?.status === 401) {
-        setLoginError("Неверный пароль");
-      } else if (e.response?.status === 503) {
-        setLoginError("Сервер недоступен");
-      } else {
-        setLoginError(e.message);
-      }
-    }
-    setLoginLoading(false);
-  };
+  useEffect(() => {
+    const onPopState = () => setIsAdmin(isAdminRoute());
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
-  if (isLoading) {
+  if (isAdmin) {
     return (
-      <div
-        className="flex items-center justify-center h-screen"
-        style={{
-          backgroundColor: "var(--color-bg-main)",
-          color: "var(--color-text-muted)",
+      <AdminPage
+        onBack={() => {
+          window.history.pushState({}, "", "/");
+          setIsAdmin(false);
         }}
-      >
-        <Loader2 className="animate-spin" size={32} />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center h-screen"
-        style={{ backgroundColor: "var(--color-bg-main)" }}
-      >
-        <div
-          className="p-8 rounded-2xl border"
-          style={{
-            backgroundColor: "var(--color-bg-card)",
-            borderColor: "var(--color-border)",
-          }}
-        >
-          <div
-            className="flex items-center gap-3 mb-6 text-xl font-bold"
-            style={{ color: "var(--color-text-main)" }}
-          >
-            <Lock /> Админ панель
-          </div>
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <input
-              type="password"
-              placeholder="Пароль"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="px-4 py-2 rounded-md border bg-transparent"
-              style={{
-                borderColor: "var(--color-border)",
-                color: "var(--color-text-main)",
-              }}
-            />
-            {loginError && (
-              <div className="text-red-500 text-sm">{loginError}</div>
-            )}
-            <PrimaryButton disabled={loginLoading}>Войти</PrimaryButton>
-          </form>
-        </div>
-      </div>
+      />
     );
   }
 
@@ -212,12 +155,6 @@ export default function App() {
             onClick={() => setActiveTab("manual")}
             title="Manual"
           />
-          <SidebarButton
-            icon={Lock}
-            active={activeTab === "admin"}
-            onClick={() => setActiveTab("admin")}
-            title="Admin"
-          />
           <div className="flex-1" />
           <SidebarButton
             icon={theme === "dark" ? Sun : Moon}
@@ -276,12 +213,6 @@ export default function App() {
             onClick={() => setActiveTab("manual")}
             title="Manual"
           />
-          <SidebarButton
-            icon={Lock}
-            active={activeTab === "admin"}
-            onClick={() => setActiveTab("admin")}
-            title="Admin"
-          />
           <div className="flex-1" />
           <SidebarButton
             icon={theme === "dark" ? Sun : Moon}
@@ -335,11 +266,8 @@ export default function App() {
           )}
           {activeTab === "graph" && <GraphPage />}
           {activeTab === "majors" && <MajorsPage />}
-          {activeTab === "admin" && <AdminPage />}
         </main>
       </div>
-
-      {/*<StickyTracker count={passedIds.length} activeTab={activeTab} onGenerate={() => setTriggerGenerate((v) => v + 1)} />*/}
     </div>
   );
 }

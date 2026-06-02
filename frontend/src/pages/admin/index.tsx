@@ -1,6 +1,15 @@
-import { useState, type ChangeEvent, useEffect } from "react";
-import { Plus, Edit, Save, X, Trash2 } from "lucide-react";
-import { useAuth } from "@/app/providers";
+import { useState, type FormEvent, type ChangeEvent, useEffect } from "react";
+import {
+  Plus,
+  Edit,
+  Save,
+  X,
+  Trash2,
+  Lock,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react";
+import { PrimaryButton } from "@/shared/ui";
 import { api } from "@/shared/config";
 import type { Course } from "@/shared/config";
 
@@ -11,15 +20,31 @@ interface Major {
   requirements?: { course_id: string; type: string }[];
 }
 
-export function AdminPage() {
-  const { logout } = useAuth();
+export function AdminPage({ onBack }: { onBack: () => void }) {
+  const [authState, setAuthState] = useState<
+    "loading" | "login" | "authenticated"
+  >("loading");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
   const [activeTab, setActiveTab] = useState<"courses" | "majors">("courses");
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    api
+      .authCheck()
+      .then(() => {
+        setAuthState("authenticated");
+        fetchData();
+      })
+      .catch(() => setAuthState("login"))
+      .finally(() => setDataLoading(false));
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -31,7 +56,8 @@ export function AdminPage() {
       setMajors(majorsRes.data);
     } catch (e: any) {
       if (e.response?.status === 401) {
-        logout();
+        setAuthState("login");
+        setError("Сессия истекла, войдите снова");
         return;
       }
       setError(e.message);
@@ -39,8 +65,31 @@ export function AdminPage() {
   };
 
   useEffect(() => {
-    fetchData().finally(() => setLoading(false));
-  }, []);
+    if (authState === "authenticated") {
+      fetchData().finally(() => setDataLoading(false));
+    }
+  }, [authState]);
+
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError("");
+    try {
+      await api.login(password);
+      setAuthState("authenticated");
+      setDataLoading(true);
+      await fetchData();
+    } catch (e: any) {
+      if (e.response?.status === 401) {
+        setLoginError("Неверный пароль");
+      } else if (e.response?.status === 503) {
+        setLoginError("Сервер недоступен");
+      } else {
+        setLoginError(e.message);
+      }
+    }
+    setLoginLoading(false);
+  };
 
   const handleSave = async (course: Course) => {
     try {
@@ -53,7 +102,8 @@ export function AdminPage() {
       setEditingCourse(null);
     } catch (e: any) {
       if (e.response?.status === 401) {
-        logout();
+        setAuthState("login");
+        setError("Сессия истекла, войдите снова");
         return;
       }
       alert(e.message);
@@ -67,7 +117,8 @@ export function AdminPage() {
       await fetchData();
     } catch (e: any) {
       if (e.response?.status === 401) {
-        logout();
+        setAuthState("login");
+        setError("Сессия истекла, войдите снова");
         return;
       }
       alert(e.message);
@@ -85,12 +136,75 @@ export function AdminPage() {
       setEditingMajor(null);
     } catch (e: any) {
       if (e.response?.status === 401) {
-        logout();
+        setAuthState("login");
+        setError("Сессия истекла, войдите снова");
         return;
       }
       alert(e.message);
     }
   };
+
+  if (authState === "loading") {
+    return (
+      <div
+        className="flex items-center justify-center h-screen"
+        style={{
+          backgroundColor: "var(--color-bg-main)",
+          color: "var(--color-text-muted)",
+        }}
+      >
+        <Loader2 className="animate-spin" size={32} />
+      </div>
+    );
+  }
+
+  if (authState === "login") {
+    return (
+      <div
+        className="flex flex-col items-center justify-center h-screen"
+        style={{ backgroundColor: "var(--color-bg-main)" }}
+      >
+        <div
+          className="p-8 rounded-2xl border"
+          style={{
+            backgroundColor: "var(--color-bg-card)",
+            borderColor: "var(--color-border)",
+          }}
+        >
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-sm mb-6 cursor-pointer bg-transparent border-none"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            <ArrowLeft size={16} /> На главную
+          </button>
+          <div
+            className="flex items-center gap-3 mb-6 text-xl font-bold"
+            style={{ color: "var(--color-text-main)" }}
+          >
+            <Lock /> Админ панель
+          </div>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <input
+              type="password"
+              placeholder="Пароль"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="px-4 py-2 rounded-md border bg-transparent"
+              style={{
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-main)",
+              }}
+            />
+            {(loginError || error) && (
+              <div className="text-red-500 text-sm">{loginError || error}</div>
+            )}
+            <PrimaryButton disabled={loginLoading}>Войти</PrimaryButton>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (editingCourse) {
     return (
