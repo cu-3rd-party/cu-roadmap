@@ -391,7 +391,7 @@ func TestStoreNotInitialized(t *testing.T) {
 	store.CloseStore()
 
 	router := gin.New()
-	router.GET("/api/v1/courses/", GetCourses)
+	router.GET("/api/v1/courses/", getCourses)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/v1/courses/", nil)
