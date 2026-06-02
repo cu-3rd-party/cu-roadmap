@@ -2,16 +2,16 @@ package service
 
 import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
-	"github.com/cu-3rd-party/cu-roadmap/backend/store"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
 
-// TODO: abstract out the planner into an interface and create DP planner, ILP planner and Linear Programming Relaxation
+// TODO: abstract out the planner into an interfaces and create DP planner, ILP planner and Linear Programming Relaxation
 type GreedyPlanner struct {
-	store store.StoreBase
+	store interfaces.StoreBase
 }
 
-func NewGreedyPlanner(s store.StoreBase) *GreedyPlanner {
+func NewGreedyPlanner(s interfaces.StoreBase) *GreedyPlanner {
 	return &GreedyPlanner{store: s}
 }
 
@@ -35,7 +35,7 @@ func (p *GreedyPlanner) GenerateRoadmap(
 		return nil, err
 	}
 
-	targetCourses := make(map[uuid.UUID]store.CourseData)
+	targetCourses := make(map[uuid.UUID]interfaces.CourseData)
 	for _, req := range requirements {
 		if c, ok := allCourses[req.CourseID]; ok {
 			if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
@@ -72,7 +72,7 @@ func (p *GreedyPlanner) GenerateRoadmap(
 		passedIDs[id] = true
 	}
 
-	coursesTodo := make(map[uuid.UUID]store.CourseData)
+	coursesTodo := make(map[uuid.UUID]interfaces.CourseData)
 	for cid, c := range targetCourses {
 		if !passedIDs[cid] {
 			coursesTodo[cid] = c
@@ -83,7 +83,7 @@ func (p *GreedyPlanner) GenerateRoadmap(
 	var roadmap []map[string]interface{}
 
 	for len(coursesTodo) > 0 {
-		var available []store.CourseData
+		var available []interfaces.CourseData
 		for cid, c := range coursesTodo {
 			canTake := true
 
@@ -128,7 +128,7 @@ func (p *GreedyPlanner) GenerateRoadmap(
 			}
 		}
 
-		var semCourses []store.CourseData
+		var semCourses []interfaces.CourseData
 		semLoad := 0.0
 		isOddSem := currentSem%2 != 0
 
@@ -148,7 +148,7 @@ func (p *GreedyPlanner) GenerateRoadmap(
 
 			canAdd := true
 			totalCLoad := c.Workload
-			var neededTogether []store.CourseData
+			var neededTogether []interfaces.CourseData
 
 			for _, reqID := range coreqs[c.ID] {
 				if !passedIDs[reqID] {

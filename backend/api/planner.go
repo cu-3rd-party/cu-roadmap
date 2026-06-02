@@ -6,6 +6,7 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/service"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -72,7 +73,7 @@ func validateSemester(c *gin.Context) {
 		return
 	}
 
-	var courses []store.CourseData
+	var courses []interfaces.CourseData
 	for _, cid := range req.CourseIDs {
 		if c, ok := allCourses[cid]; ok {
 			courses = append(courses, c)
@@ -201,7 +202,7 @@ func testEngine2(c *gin.Context) {
 		return
 	}
 
-	var student store.StudentData
+	var student interfaces.StudentData
 	for _, st := range allStudents {
 		student = st
 		break

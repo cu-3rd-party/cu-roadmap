@@ -6,6 +6,7 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -168,7 +169,7 @@ func updateMajor(c *gin.Context) {
 		if err != nil {
 			continue
 		}
-		_, err = s.CreateMajorRequirement(store.MajorRequirementData{
+		_, err = s.CreateMajorRequirement(interfaces.MajorRequirementData{
 			ID:              uuid.New(),
 			MajorID:         majorID,
 			CourseID:        cid,

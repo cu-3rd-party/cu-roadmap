@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
@@ -110,17 +111,17 @@ func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 	return SheetMajorMapping{}, false
 }
 
-func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, sheetMapping map[string]SheetMajorMapping) (SyncResult, error) {
+func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[string]string, sheetMapping map[string]SheetMajorMapping) (SyncResult, error) {
 	if err := s.ClearAll(); err != nil {
 		return SyncResult{}, fmt.Errorf("clear store: %w", err)
 	}
 
-	majorsByTitle := make(map[string]MajorData)
-	courseMap := make(map[string]CourseData)
+	majorsByTitle := make(map[string]interfaces.MajorData)
+	courseMap := make(map[string]interfaces.CourseData)
 	courseToMajorReqs := make(map[string]map[string]enums.RequirementType)
 	type rowEntry struct {
 		Row    map[string]string
-		Course CourseData
+		Course interfaces.CourseData
 	}
 	var allRows []rowEntry
 
@@ -161,7 +162,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 
 			for _, majorTitle := range majorTitles {
 				if _, exists := majorsByTitle[majorTitle]; !exists {
-					major := MajorData{ID: uuid.New(), Title: majorTitle, School: mapping.School}
+					major := interfaces.MajorData{ID: uuid.New(), Title: majorTitle, School: mapping.School}
 					if _, err := s.CreateMajor(major); err != nil {
 						return SyncResult{}, fmt.Errorf("create major %s: %w", majorTitle, err)
 					}
@@ -187,7 +188,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 					continue
 				}
 			}
-			if _, err := s.CreateCourseDependency(CourseDependencyData{
+			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         entry.Course.ID,
 				RequiredCourseID: target.ID,
@@ -213,7 +214,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 					continue
 				}
 			}
-			if _, err := s.CreateCourseDependency(CourseDependencyData{
+			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         entry.Course.ID,
 				RequiredCourseID: target.ID,
@@ -232,7 +233,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 			if !exists {
 				continue
 			}
-			if _, err := s.CreateMajorRequirement(MajorRequirementData{
+			if _, err := s.CreateMajorRequirement(interfaces.MajorRequirementData{
 				ID:              uuid.New(),
 				MajorID:         major.ID,
 				CourseID:        course.ID,
@@ -251,7 +252,7 @@ func SyncFromSheetData(s StoreBase, sheetsData map[string][]map[string]string, s
 	}, nil
 }
 
-func syncWithSheets(s StoreBase) error {
+func syncWithSheets(s interfaces.StoreBase) error {
 	if sheetsCfg.SpreadsheetID == "" || sheetsCfg.CredentialsJSON == "" {
 		slog.Warn("Google Sheets not configured, skipping sync")
 		return nil
@@ -468,7 +469,7 @@ var (
 	WorkloadRegexp            = regexp.MustCompile(`(\d+(?:\.\d+)?)`)
 )
 
-func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) CourseData {
+func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) interfaces.CourseData {
 	rawType := strings.ToLower(getFirst(row, "Тип курса"))
 	var courseType enums.CourseType
 	if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
@@ -506,7 +507,7 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) C
 		fmt.Sscanf(match, "%f", &workload)
 	}
 
-	return CourseData{
+	return interfaces.CourseData{
 		ID:                  uuid.New(),
 		Title:               strings.TrimSpace(getFirst(row, "Название курса")),
 		Description:         new(getFirst(row, "Контекст", "Контекст, чтобы правильно отобразить на траектории\nесли есть")),

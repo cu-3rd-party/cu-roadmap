@@ -1,11 +1,15 @@
 package store
 
 import (
-	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"errors"
+
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type PostgresStore struct {
@@ -62,38 +66,38 @@ func (s *PostgresStore) ClearAll() error {
 	)
 }
 
-func (s *PostgresStore) GetAllCourses() (map[uuid.UUID]CourseData, error) {
+func (s *PostgresStore) GetAllCourses() (map[uuid.UUID]interfaces.CourseData, error) {
 	var courses []models.Course
 	if err := s.db.Preload("CourseDependencies").Find(&courses).Error; err != nil {
 		return nil, err
 	}
-	out := make(map[uuid.UUID]CourseData)
+	out := make(map[uuid.UUID]interfaces.CourseData)
 	for _, c := range courses {
-		cd := toCourseData(&c)
+		cd := helpers.ToCourseData(&c)
 		out[c.ID] = cd
 	}
 	return out, nil
 }
 
-func (s *PostgresStore) GetCourseByID(courseID uuid.UUID) (*CourseData, error) {
+func (s *PostgresStore) GetCourseByID(courseID uuid.UUID) (*interfaces.CourseData, error) {
 	var c models.Course
 	if err := s.db.Preload("CourseDependencies").First(&c, "id = ?", courseID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return new(toCourseData(&c)), nil
+	return new(helpers.ToCourseData(&c)), nil
 }
 
-func (s *PostgresStore) GetCourseDependencies() ([]CourseDependencyData, error) {
+func (s *PostgresStore) GetCourseDependencies() ([]interfaces.CourseDependencyData, error) {
 	var deps []models.CourseDependency
 	if err := s.db.Find(&deps).Error; err != nil {
 		return nil, err
 	}
-	out := make([]CourseDependencyData, len(deps))
+	out := make([]interfaces.CourseDependencyData, len(deps))
 	for i, d := range deps {
-		out[i] = CourseDependencyData{
+		out[i] = interfaces.CourseDependencyData{
 			ID:               d.ID,
 			CourseID:         d.CourseID,
 			RequiredCourseID: d.RequiredCourseID,
@@ -103,43 +107,18 @@ func (s *PostgresStore) GetCourseDependencies() ([]CourseDependencyData, error) 
 	return out, nil
 }
 
-func (s *PostgresStore) CreateCourse(course CourseData) (CourseData, error) {
-	c := models.Course{
-		ID:                  course.ID,
-		Title:               course.Title,
-		Description:         course.Description,
-		HandbookLink:        course.HandbookLink,
-		CourseType:          course.CourseType,
-		Category:            course.Category,
-		AllowedCohorts:      course.AllowedCohorts,
-		AvailableSemesters:  course.AvailableSemesters,
-		RecommendedSemester: course.RecommendedSemester,
-		Workload:            course.Workload,
-		CsatMetric:          course.CsatMetric,
-	}
-	if err := s.db.Create(&c).Error; err != nil {
+func (s *PostgresStore) CreateCourse(course interfaces.CourseData) (interfaces.CourseData, error) {
+	if err := s.db.Create(new(helpers.ToCourseModel(course))).Error; err != nil {
 		return course, err
 	}
 	return course, nil
 }
 
-func (s *PostgresStore) UpdateCourse(course CourseData) (CourseData, error) {
-	var c models.Course
-	if err := s.db.First(&c, "id = ?", course.ID).Error; err != nil {
-		return course, err
-	}
-	c.Title = course.Title
-	c.Description = course.Description
-	c.HandbookLink = course.HandbookLink
-	c.CourseType = course.CourseType
-	c.Category = course.Category
-	c.AllowedCohorts = course.AllowedCohorts
-	c.AvailableSemesters = course.AvailableSemesters
-	c.RecommendedSemester = course.RecommendedSemester
-	c.Workload = course.Workload
-	c.CsatMetric = course.CsatMetric
-
-	if err := s.db.Save(&c).Error; err != nil {
+func (s *PostgresStore) UpdateCourse(course interfaces.CourseData) (interfaces.CourseData, error) {
+	if err := s.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"title", "description", "handbook_link", "course_type", "category", "allowed_cohorts", "available_semesters", "recommended_semester", "workload", "csat_metric"}),
+	}).Create(new(helpers.ToCourseModel(course))).Error; err != nil {
 		return course, err
 	}
 	return course, nil
@@ -149,58 +128,54 @@ func (s *PostgresStore) DeleteCourse(courseID uuid.UUID) error {
 	return s.db.Delete(&models.Course{}, "id = ?", courseID).Error
 }
 
-func (s *PostgresStore) GetAllMajors() (map[uuid.UUID]MajorData, error) {
+func (s *PostgresStore) GetAllMajors() (map[uuid.UUID]interfaces.MajorData, error) {
 	var majors []models.Major
 	if err := s.db.Find(&majors).Error; err != nil {
 		return nil, err
 	}
-	out := make(map[uuid.UUID]MajorData)
+	out := make(map[uuid.UUID]interfaces.MajorData)
 	for _, m := range majors {
-		out[m.ID] = MajorData{ID: m.ID, Title: m.Title, School: m.School}
+		out[m.ID] = interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School}
 	}
 	return out, nil
 }
 
-func (s *PostgresStore) GetMajorByID(majorID uuid.UUID) (*MajorData, error) {
+func (s *PostgresStore) GetMajorByID(majorID uuid.UUID) (*interfaces.MajorData, error) {
 	var m models.Major
 	if err := s.db.First(&m, "id = ?", majorID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &MajorData{ID: m.ID, Title: m.Title, School: m.School}, nil
+	return &interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School}, nil
 }
 
-func (s *PostgresStore) CreateMajor(major MajorData) (MajorData, error) {
-	m := models.Major{ID: major.ID, Title: major.Title, School: major.School}
-	if err := s.db.Create(&m).Error; err != nil {
+func (s *PostgresStore) CreateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
+	if err := s.db.Create(new(helpers.ToMajorModel(major))).Error; err != nil {
 		return major, err
 	}
 	return major, nil
 }
 
-func (s *PostgresStore) UpdateMajor(major MajorData) (MajorData, error) {
-	var m models.Major
-	if err := s.db.First(&m, "id = ?", major.ID).Error; err != nil {
-		return major, err
-	}
-	m.Title = major.Title
-	m.School = major.School
-	if err := s.db.Save(&m).Error; err != nil {
+func (s *PostgresStore) UpdateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
+	if err := s.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"title", "school"}),
+	}).Create(new(helpers.ToMajorModel(major))).Error; err != nil {
 		return major, err
 	}
 	return major, nil
 }
 
-func (s *PostgresStore) GetMajorRequirements(majorID uuid.UUID) ([]MajorRequirementData, error) {
+func (s *PostgresStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.MajorRequirementData, error) {
 	var reqs []models.MajorRequirement
 	if err := s.db.Where("major_id = ?", majorID).Find(&reqs).Error; err != nil {
 		return nil, err
 	}
-	out := make([]MajorRequirementData, len(reqs))
+	out := make([]interfaces.MajorRequirementData, len(reqs))
 	for i, r := range reqs {
-		out[i] = MajorRequirementData{
+		out[i] = interfaces.MajorRequirementData{
 			ID:              r.ID,
 			MajorID:         r.MajorID,
 			CourseID:        r.CourseID,
@@ -210,7 +185,7 @@ func (s *PostgresStore) GetMajorRequirements(majorID uuid.UUID) ([]MajorRequirem
 	return out, nil
 }
 
-func (s *PostgresStore) CreateMajorRequirement(req MajorRequirementData) (MajorRequirementData, error) {
+func (s *PostgresStore) CreateMajorRequirement(req interfaces.MajorRequirementData) (interfaces.MajorRequirementData, error) {
 	r := models.MajorRequirement{
 		ID:              req.ID,
 		MajorID:         req.MajorID,
@@ -227,7 +202,7 @@ func (s *PostgresStore) DeleteMajorRequirements(majorID uuid.UUID) error {
 	return s.db.Where("major_id = ?", majorID).Delete(&models.MajorRequirement{}).Error
 }
 
-func (s *PostgresStore) CreateCourseDependency(dep CourseDependencyData) (CourseDependencyData, error) {
+func (s *PostgresStore) CreateCourseDependency(dep interfaces.CourseDependencyData) (interfaces.CourseDependencyData, error) {
 	d := models.CourseDependency{
 		ID:               dep.ID,
 		CourseID:         dep.CourseID,
@@ -244,51 +219,41 @@ func (s *PostgresStore) DeleteCourseDependencies(courseID uuid.UUID) error {
 	return s.db.Where("course_id = ?", courseID).Delete(&models.CourseDependency{}).Error
 }
 
-func (s *PostgresStore) GetAllStudents() (map[uuid.UUID]StudentData, error) {
+func (s *PostgresStore) GetAllStudents() (map[uuid.UUID]interfaces.StudentData, error) {
 	var students []models.Student
 	if err := s.db.Preload("PassedCourses").Find(&students).Error; err != nil {
 		return nil, err
 	}
-	out := make(map[uuid.UUID]StudentData)
+	out := make(map[uuid.UUID]interfaces.StudentData)
 	for _, st := range students {
-		out[st.ID] = toStudentData(&st)
+		out[st.ID] = helpers.ToStudentData(&st)
 	}
 	return out, nil
 }
 
-func (s *PostgresStore) GetStudentByID(studentID uuid.UUID) (*StudentData, error) {
+func (s *PostgresStore) GetStudentByID(studentID uuid.UUID) (*interfaces.StudentData, error) {
 	var st models.Student
 	if err := s.db.Preload("PassedCourses").First(&st, "id = ?", studentID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return new(toStudentData(&st)), nil
+	return new(helpers.ToStudentData(&st)), nil
 }
 
-func (s *PostgresStore) CreateStudent(student StudentData) (StudentData, error) {
-	st := models.Student{
-		ID:              student.ID,
-		Cohort:          student.Cohort,
-		CurrentSemester: student.CurrentSemester,
-		TargetMajorID:   student.TargetMajorID,
-	}
-	if err := s.db.Create(&st).Error; err != nil {
+func (s *PostgresStore) CreateStudent(student interfaces.StudentData) (interfaces.StudentData, error) {
+	if err := s.db.Create(new(helpers.ToStudentModel(student))).Error; err != nil {
 		return student, err
 	}
 	return student, nil
 }
 
-func (s *PostgresStore) UpdateStudent(student StudentData) (StudentData, error) {
-	var st models.Student
-	if err := s.db.First(&st, "id = ?", student.ID).Error; err != nil {
-		return student, err
-	}
-	st.Cohort = student.Cohort
-	st.CurrentSemester = student.CurrentSemester
-	st.TargetMajorID = student.TargetMajorID
-	if err := s.db.Save(&st).Error; err != nil {
+func (s *PostgresStore) UpdateStudent(student interfaces.StudentData) (interfaces.StudentData, error) {
+	if err := s.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"cohort", "current_semester", "target_major_id"}),
+	}).Create(new(helpers.ToStudentModel(student))).Error; err != nil {
 		return student, err
 	}
 	return student, nil
@@ -308,41 +273,4 @@ func (s *PostgresStore) SeedAllData() error {
 
 func (s *PostgresStore) SyncGoogleSheetsData() error {
 	return syncWithSheets(s)
-}
-
-func toCourseData(c *models.Course) CourseData {
-	cd := CourseData{
-		ID:                  c.ID,
-		Title:               c.Title,
-		Description:         c.Description,
-		HandbookLink:        c.HandbookLink,
-		CourseType:          c.CourseType,
-		Category:            c.Category,
-		AllowedCohorts:      c.AllowedCohorts,
-		AvailableSemesters:  c.AvailableSemesters,
-		RecommendedSemester: c.RecommendedSemester,
-		Workload:            c.Workload,
-		CsatMetric:          c.CsatMetric,
-	}
-	for _, dep := range c.CourseDependencies {
-		if dep.DependencyType == enums.DependencyTypePrerequisite {
-			cd.Prerequisites = append(cd.Prerequisites, dep.RequiredCourseID)
-		} else if dep.DependencyType == enums.DependencyTypeCorequisite {
-			cd.Corequisites = append(cd.Corequisites, dep.RequiredCourseID)
-		}
-	}
-	return cd
-}
-
-func toStudentData(st *models.Student) StudentData {
-	sd := StudentData{
-		ID:              st.ID,
-		Cohort:          st.Cohort,
-		CurrentSemester: st.CurrentSemester,
-		TargetMajorID:   st.TargetMajorID,
-	}
-	for _, c := range st.PassedCourses {
-		sd.PassedCourseIDs = append(sd.PassedCourseIDs, c.ID)
-	}
-	return sd
 }

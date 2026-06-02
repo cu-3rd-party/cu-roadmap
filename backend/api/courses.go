@@ -7,6 +7,7 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
@@ -48,7 +49,7 @@ func createCourse(c *gin.Context) {
 		return
 	}
 
-	course := store.CourseData{
+	course := interfaces.CourseData{
 		ID:                  uuid.New(),
 		Title:               req.Title,
 		Description:         req.Description,

@@ -2,19 +2,19 @@ package service
 
 import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
-	"github.com/cu-3rd-party/cu-roadmap/backend/store"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
 
 type PlannerService struct {
-	store        store.StoreBase
-	depsByCourse map[uuid.UUID][]store.CourseDependencyData
+	store        interfaces.StoreBase
+	depsByCourse map[uuid.UUID][]interfaces.CourseDependencyData
 }
 
-func NewPlannerService(s store.StoreBase) *PlannerService {
+func NewPlannerService(s interfaces.StoreBase) *PlannerService {
 	return &PlannerService{
 		store:        s,
-		depsByCourse: make(map[uuid.UUID][]store.CourseDependencyData),
+		depsByCourse: make(map[uuid.UUID][]interfaces.CourseDependencyData),
 	}
 }
 
@@ -23,14 +23,14 @@ func (s *PlannerService) loadDependencies() error {
 	if err != nil {
 		return err
 	}
-	s.depsByCourse = make(map[uuid.UUID][]store.CourseDependencyData)
+	s.depsByCourse = make(map[uuid.UUID][]interfaces.CourseDependencyData)
 	for _, dep := range deps {
 		s.depsByCourse[dep.CourseID] = append(s.depsByCourse[dep.CourseID], dep)
 	}
 	return nil
 }
 
-func (s *PlannerService) GetAllCourses() (map[uuid.UUID]store.CourseData, error) {
+func (s *PlannerService) GetAllCourses() (map[uuid.UUID]interfaces.CourseData, error) {
 	return s.store.GetAllCourses()
 }
 
@@ -72,7 +72,7 @@ func (s *PlannerService) FindPathToCourse(
 		}
 	}
 
-	coursesTodo := make(map[uuid.UUID]store.CourseData)
+	coursesTodo := make(map[uuid.UUID]interfaces.CourseData)
 	for cid := range neededIDs {
 		if c, ok := allCourses[cid]; ok {
 			coursesTodo[cid] = c
@@ -88,7 +88,7 @@ func (s *PlannerService) FindPathToCourse(
 	currentSem := currentSemester
 
 	for len(coursesTodo) > 0 {
-		var available []store.CourseData
+		var available []interfaces.CourseData
 		for cid, c := range coursesTodo {
 			canTake := true
 			for _, dep := range s.depsByCourse[cid] {
@@ -111,7 +111,7 @@ func (s *PlannerService) FindPathToCourse(
 		}
 
 		isOdd := currentSem%2 != 0
-		var availableOffered []store.CourseData
+		var availableOffered []interfaces.CourseData
 		for _, c := range available {
 			if len(c.AvailableSemesters) > 0 {
 				courseIsOdd := false
@@ -135,7 +135,7 @@ func (s *PlannerService) FindPathToCourse(
 				"status":   "Waiting for correct semester offering",
 			})
 		} else {
-			var semCourses []store.CourseData
+			var semCourses []interfaces.CourseData
 			semLoad := 0.0
 			for _, c := range availableOffered {
 				if semLoad+c.Workload <= maxLoad {
