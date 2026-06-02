@@ -14,6 +14,8 @@ RUN pnpm install --frozen-lockfile
 
 
 FROM base AS build
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 COPY --from=install /app/node_modules /app/node_modules
 COPY . .
 RUN pnpm build
