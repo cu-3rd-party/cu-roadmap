@@ -28,7 +28,6 @@ describe("ManualPage", () => {
         {
           id: "course-1",
           title: "Python Basics",
-
           workload: 4,
         },
       ],

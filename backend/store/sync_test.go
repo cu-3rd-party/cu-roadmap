@@ -85,7 +85,6 @@ func TestMapSheetRowToCourseSupportsXLSXHeaderVariants(t *testing.T) {
 	assert.Equal(t, "Desc", *c.Description)
 	assert.NotNil(t, c.HandbookLink)
 	assert.Equal(t, "https://example.com", *c.HandbookLink)
-
 	assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 7, 8}, c.AvailableSemesters)
 	assert.NotNil(t, c.RecommendedSemester)
 	assert.Equal(t, 1, *c.RecommendedSemester)
