@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
@@ -14,6 +15,7 @@ import (
 
 func RegisterCoursesRoutes(rg *gin.RouterGroup) {
 	rg.GET("/", getCourses)
+	rg.GET("/:cohort_year", getCourses)
 
 	admin := rg.Group("/")
 	admin.Use(middleware.AuthMiddleware())
@@ -28,11 +30,30 @@ func getCourses(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
 		return
 	}
-	courses, err := s.GetAllCourses()
+	courseMap, err := s.GetAllCourses()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	f := parseCourseFilter(c)
+
+	if len(f.CohortYears) == 0 {
+		if cohortStr := c.Param("cohort_year"); cohortStr != "" {
+			year, err := strconv.Atoi(cohortStr)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid cohort_year"})
+				return
+			}
+			f.CohortYears = []int{year}
+		}
+	}
+
+	var courses []interfaces.CourseData
+	for _, c := range courseMap {
+		courses = append(courses, c)
+	}
+	courses = filterCourses(courses, f)
 
 	allReqs, err := s.GetAllMajorRequirements()
 	if err != nil {
