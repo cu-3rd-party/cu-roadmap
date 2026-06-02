@@ -1,21 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { Lock, Plus, Edit, Save, X, Trash2 } from "lucide-react";
 import { PrimaryButton } from "@/shared/ui";
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  category?: string;
-  course_type?: string;
-  workload: number;
-  available_semesters: number[];
-  allowed_cohorts: number[];
-  recommended_semester: number | null;
-  prerequisites?: string[];
-  corequisites?: string[];
-  handbook_link?: string;
-}
+import { api } from "@/shared/config";
+import type { Course } from "@/shared/config";
 
 interface Major {
   id: string;
@@ -40,27 +27,20 @@ export function AdminPage() {
     setError("");
     try {
       const [coursesRes, majorsRes] = await Promise.all([
-        fetch("http://localhost:8080/api/v1/courses/", {
-          headers: { "X-Admin-Token": t },
-        }),
-        fetch("http://localhost:8080/api/v1/majors/", {
-          headers: { "X-Admin-Token": t },
-        }),
+        api.admin.getCourses(t),
+        api.admin.getMajors(t),
       ]);
-
-      if (coursesRes.status === 401 || majorsRes.status === 401) {
+      setCourses(coursesRes.data);
+      setMajors(majorsRes.data);
+      setIsAuthenticated(true);
+      localStorage.setItem("adminToken", t);
+    } catch (e: any) {
+      if (e.response?.status === 401) {
         setIsAuthenticated(false);
         setError("Неверный пароль");
       } else {
-        const coursesData = await coursesRes.json();
-        const majorsData = await majorsRes.json();
-        setCourses(coursesData);
-        setMajors(majorsData);
-        setIsAuthenticated(true);
-        localStorage.setItem("adminToken", t);
+        setError(e.message);
       }
-    } catch (e: any) {
-      setError(e.message);
     }
     setLoading(false);
   };
@@ -71,30 +51,18 @@ export function AdminPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: FormEvent) => {
     e.preventDefault();
     checkAuthAndFetch(token);
   };
 
   const handleSave = async (course: Course) => {
-    const isNew = !course.id;
-    const url = isNew
-      ? "http://localhost:8080/api/v1/courses/"
-      : `http://localhost:8080/api/v1/courses/${course.id}`;
-    const method = isNew ? "POST" : "PUT";
-
     try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Token": token,
-        },
-        body: JSON.stringify(course),
-      });
-
-      if (!res.ok) throw new Error("Ошибка при сохранении");
-
+      if (course.id) {
+        await api.admin.updateCourse(course.id, course, token);
+      } else {
+        await api.admin.createCourse(course, token);
+      }
       await checkAuthAndFetch(token);
       setEditingCourse(null);
     } catch (e: any) {
@@ -105,11 +73,7 @@ export function AdminPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Вы уверены, что хотите удалить этот курс?")) return;
     try {
-      const res = await fetch(`http://localhost:8080/api/v1/courses/${id}`, {
-        method: "DELETE",
-        headers: { "X-Admin-Token": token },
-      });
-      if (!res.ok) throw new Error("Ошибка при удалении");
+      await api.admin.deleteCourse(id, token);
       await checkAuthAndFetch(token);
     } catch (e: any) {
       alert(e.message);
@@ -118,24 +82,15 @@ export function AdminPage() {
 
   const handleSaveMajor = async (major: Major) => {
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/v1/majors/${major.id}`,
+      await api.admin.updateMajor(
+        major.id,
         {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Admin-Token": token,
-          },
-          body: JSON.stringify({
-            title: major.title,
-            school: major.school,
-            requirements: major.requirements || [],
-          }),
+          title: major.title,
+          school: major.school,
+          requirements: major.requirements || [],
         },
+        token,
       );
-
-      if (!res.ok) throw new Error("Ошибка при сохранении");
-
       await checkAuthAndFetch(token);
       setEditingMajor(null);
     } catch (e: any) {
@@ -423,7 +378,7 @@ function CourseEditor({
   const [formData, setFormData] = useState(course);
 
   const handleChange = (
-    e: React.ChangeEvent<
+    e: ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >,
   ) => {
