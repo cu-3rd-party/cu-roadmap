@@ -11,6 +11,7 @@ type StoreBase interface {
 	ClearAll() error
 
 	GetAllCourses() (map[uuid.UUID]CourseData, error)
+	GetCourses(filter CourseFilter) ([]CourseData, error)
 	GetCourseByID(courseID uuid.UUID) (*CourseData, error)
 	GetCourseDependencies() ([]CourseDependencyData, error)
 	CreateCourse(course CourseData) (CourseData, error)

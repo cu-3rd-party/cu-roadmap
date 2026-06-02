@@ -18,8 +18,8 @@ func TestFilterCourses_NoFilter(t *testing.T) {
 		{ID: uuid.New(), Title: "A", CourseType: enums.CourseTypeMandatory, Category: enums.CourseCategoryTech, Workload: 3.0},
 		{ID: uuid.New(), Title: "B", CourseType: enums.CourseTypeElective, Category: enums.CourseCategoryAI, Workload: 5.0},
 	}
-	f := CourseFilter{}
-	result := filterCourses(courses, f)
+	f := interfaces.CourseFilter{}
+	result := interfaces.FilterCourses(courses, f)
 	assert.Equal(t, courses, result)
 }
 
@@ -32,8 +32,8 @@ func TestFilterCourses_CohortYears(t *testing.T) {
 	}
 
 	t.Run("single year match", func(t *testing.T) {
-		f := CourseFilter{CohortYears: []int{2025}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{CohortYears: []int{2025}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 3)
 		for _, c := range result {
 			assert.NotEqual(t, "2026", c.Title)
@@ -41,14 +41,14 @@ func TestFilterCourses_CohortYears(t *testing.T) {
 	})
 
 	t.Run("multiple years match", func(t *testing.T) {
-		f := CourseFilter{CohortYears: []int{2025, 2026}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{CohortYears: []int{2025, 2026}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 4)
 	})
 
 	t.Run("no match", func(t *testing.T) {
-		f := CourseFilter{CohortYears: []int{2024}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{CohortYears: []int{2024}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "all", result[0].Title)
 	})
@@ -58,8 +58,8 @@ func TestFilterCourses_CohortYears(t *testing.T) {
 			{ID: uuid.New(), Title: "no restriction", AllowedCohorts: nil},
 			{ID: uuid.New(), Title: "empty slice", AllowedCohorts: []int{}},
 		}
-		f := CourseFilter{CohortYears: []int{2025}}
-		result := filterCourses(c, f)
+		f := interfaces.CourseFilter{CohortYears: []int{2025}}
+		result := interfaces.FilterCourses(c, f)
 		assert.Len(t, result, 2)
 	})
 }
@@ -72,22 +72,22 @@ func TestFilterCourses_Title(t *testing.T) {
 	}
 
 	t.Run("contains match", func(t *testing.T) {
-		f := CourseFilter{Title: "образ"}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{Title: "образ"}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "Образовательный курс", result[0].Title)
 	})
 
 	t.Run("case insensitive", func(t *testing.T) {
-		f := CourseFilter{Title: "python"}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{Title: "python"}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "Python Programming", result[0].Title)
 	})
 
 	t.Run("no match", func(t *testing.T) {
-		f := CourseFilter{Title: "nonexistent"}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{Title: "nonexistent"}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Empty(t, result)
 	})
 }
@@ -100,21 +100,21 @@ func TestFilterCourses_CourseTypes(t *testing.T) {
 	}
 
 	t.Run("single type", func(t *testing.T) {
-		f := CourseFilter{CourseTypes: []enums.CourseType{enums.CourseTypeMandatory}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{CourseTypes: []enums.CourseType{enums.CourseTypeMandatory}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "mandatory", result[0].Title)
 	})
 
 	t.Run("multiple types", func(t *testing.T) {
-		f := CourseFilter{CourseTypes: []enums.CourseType{enums.CourseTypeMandatory, enums.CourseTypeElective}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{CourseTypes: []enums.CourseType{enums.CourseTypeMandatory, enums.CourseTypeElective}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 2)
 	})
 
 	t.Run("no match", func(t *testing.T) {
-		f := CourseFilter{CourseTypes: []enums.CourseType{"invalid"}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{CourseTypes: []enums.CourseType{"invalid"}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Empty(t, result)
 	})
 }
@@ -127,21 +127,21 @@ func TestFilterCourses_Categories(t *testing.T) {
 	}
 
 	t.Run("single category", func(t *testing.T) {
-		f := CourseFilter{Categories: []enums.CourseCategory{enums.CourseCategoryTech}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{Categories: []enums.CourseCategory{enums.CourseCategoryTech}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "tech", result[0].Title)
 	})
 
 	t.Run("multiple categories", func(t *testing.T) {
-		f := CourseFilter{Categories: []enums.CourseCategory{enums.CourseCategoryAI, enums.CourseCategorySTEM}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{Categories: []enums.CourseCategory{enums.CourseCategoryAI, enums.CourseCategorySTEM}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 2)
 	})
 
 	t.Run("no match", func(t *testing.T) {
-		f := CourseFilter{Categories: []enums.CourseCategory{enums.CourseCategoryFundamentals}}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{Categories: []enums.CourseCategory{enums.CourseCategoryFundamentals}}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Empty(t, result)
 	})
 }
@@ -154,29 +154,29 @@ func TestFilterCourses_Workload(t *testing.T) {
 	}
 
 	t.Run("less than", func(t *testing.T) {
-		f := CourseFilter{WorkloadOp: "<", WorkloadVal: 4.0}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{WorkloadOp: "<", WorkloadVal: 4.0}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "light", result[0].Title)
 	})
 
 	t.Run("equal to", func(t *testing.T) {
-		f := CourseFilter{WorkloadOp: "=", WorkloadVal: 4.0}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{WorkloadOp: "=", WorkloadVal: 4.0}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "medium", result[0].Title)
 	})
 
 	t.Run("greater than", func(t *testing.T) {
-		f := CourseFilter{WorkloadOp: ">", WorkloadVal: 4.0}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{WorkloadOp: ">", WorkloadVal: 4.0}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "heavy", result[0].Title)
 	})
 
 	t.Run("no match", func(t *testing.T) {
-		f := CourseFilter{WorkloadOp: "<", WorkloadVal: 1.0}
-		result := filterCourses(courses, f)
+		f := interfaces.CourseFilter{WorkloadOp: "<", WorkloadVal: 1.0}
+		result := interfaces.FilterCourses(courses, f)
 		assert.Empty(t, result)
 	})
 }
@@ -188,14 +188,14 @@ func TestFilterCourses_Combined(t *testing.T) {
 		{ID: uuid.New(), Title: "Art", CourseType: enums.CourseTypeElective, Category: enums.CourseCategoryDesign, Workload: 3.0, AllowedCohorts: []int{2026}},
 	}
 
-	f := CourseFilter{
+	f := interfaces.CourseFilter{
 		CohortYears: []int{2025},
 		Title:       "P",
 		CourseTypes: []enums.CourseType{enums.CourseTypeMandatory},
 		WorkloadOp:  ">",
 		WorkloadVal: 3.0,
 	}
-	result := filterCourses(courses, f)
+	result := interfaces.FilterCourses(courses, f)
 	assert.Len(t, result, 1)
 	assert.Equal(t, "Python", result[0].Title)
 }

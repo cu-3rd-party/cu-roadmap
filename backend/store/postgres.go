@@ -4,12 +4,14 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -81,6 +83,52 @@ func (s *PostgresStore) GetAllCourses() (map[uuid.UUID]interfaces.CourseData, er
 	for _, c := range courses {
 		cd := helpers.ToCourseData(&c)
 		out[c.ID] = cd
+	}
+	return out, nil
+}
+
+func (s *PostgresStore) GetCourses(filter interfaces.CourseFilter) ([]interfaces.CourseData, error) {
+	query := s.db.Preload("CourseDependencies")
+
+	if len(filter.CohortYears) > 0 {
+		years := make(pq.Int64Array, len(filter.CohortYears))
+		for i, y := range filter.CohortYears {
+			years[i] = int64(y)
+		}
+		query = query.Where("(allowed_cohorts IS NULL OR allowed_cohorts && ?)", years)
+	}
+
+	if filter.Title != "" {
+		query = query.Where("LOWER(title) LIKE ?", "%"+strings.ToLower(filter.Title)+"%")
+	}
+
+	if len(filter.CourseTypes) > 0 {
+		query = query.Where("course_type IN ?", filter.CourseTypes)
+	}
+
+	if len(filter.Categories) > 0 {
+		query = query.Where("category IN ?", filter.Categories)
+	}
+
+	if filter.WorkloadOp != "" {
+		switch filter.WorkloadOp {
+		case "<":
+			query = query.Where("workload < ?", filter.WorkloadVal)
+		case "=":
+			query = query.Where("workload = ?", filter.WorkloadVal)
+		case ">":
+			query = query.Where("workload > ?", filter.WorkloadVal)
+		}
+	}
+
+	var courses []models.Course
+	if err := query.Find(&courses).Error; err != nil {
+		return nil, err
+	}
+
+	out := make([]interfaces.CourseData, len(courses))
+	for i, c := range courses {
+		out[i] = helpers.ToCourseData(&c)
 	}
 	return out, nil
 }

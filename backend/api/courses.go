@@ -30,12 +30,6 @@ func getCourses(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
 		return
 	}
-	courseMap, err := s.GetAllCourses()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	f := parseCourseFilter(c)
 
 	if len(f.CohortYears) == 0 {
@@ -49,11 +43,11 @@ func getCourses(c *gin.Context) {
 		}
 	}
 
-	var courses []interfaces.CourseData
-	for _, c := range courseMap {
-		courses = append(courses, c)
+	courses, err := s.GetCourses(f)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-	courses = filterCourses(courses, f)
 
 	allReqs, err := s.GetAllMajorRequirements()
 	if err != nil {

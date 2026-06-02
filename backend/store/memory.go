@@ -81,6 +81,18 @@ func (s *MemoryStore) GetAllCourses() (map[uuid.UUID]interfaces.CourseData, erro
 	return out, nil
 }
 
+func (s *MemoryStore) GetCourses(filter interfaces.CourseFilter) ([]interfaces.CourseData, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	courses := make([]interfaces.CourseData, 0, len(s.courses))
+	for id, c := range s.courses {
+		c.Prerequisites = s.getPrereqsLocked(id)
+		c.Corequisites = s.getCoreqsLocked(id)
+		courses = append(courses, c)
+	}
+	return interfaces.FilterCourses(courses, filter), nil
+}
+
 func (s *MemoryStore) getPrereqsLocked(courseID uuid.UUID) []uuid.UUID {
 	var prereqs []uuid.UUID
 	for _, dep := range s.courseDependencies {
