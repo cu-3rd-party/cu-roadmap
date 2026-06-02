@@ -21,6 +21,7 @@ export interface Major {
   title: string;
   name?: string;
   school?: string;
+  cohort_year?: number;
 }
 
 export interface CourseBasic {
@@ -44,6 +45,7 @@ export interface RoadmapResponse {
 export interface MajorResult {
   id: string;
   title: string;
+  cohort_year?: number;
   score: number;
 }
 

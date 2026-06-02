@@ -189,7 +189,7 @@ func (s *PostgresStore) GetAllMajors() (map[uuid.UUID]interfaces.MajorData, erro
 	}
 	out := make(map[uuid.UUID]interfaces.MajorData)
 	for _, m := range majors {
-		out[m.ID] = interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School}
+		out[m.ID] = interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School, CohortYear: m.CohortYear}
 	}
 	return out, nil
 }
@@ -202,7 +202,7 @@ func (s *PostgresStore) GetMajorByID(majorID uuid.UUID) (*interfaces.MajorData, 
 		}
 		return nil, err
 	}
-	return &interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School}, nil
+	return &interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School, CohortYear: m.CohortYear}, nil
 }
 
 func (s *PostgresStore) CreateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
@@ -215,7 +215,7 @@ func (s *PostgresStore) CreateMajor(major interfaces.MajorData) (interfaces.Majo
 func (s *PostgresStore) UpdateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
 	if err := s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"title", "school"}),
+		DoUpdates: clause.AssignmentColumns([]string{"title", "school", "cohort_year"}),
 	}).Create(new(helpers.ToMajorModel(major))).Error; err != nil {
 		return major, err
 	}

@@ -140,12 +140,12 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 
 			norm := NormalizeSheetTitle(title)
 			cohorts := parseAllowedCohorts(getFirst(row, "Поток"))
-			var majorTitles []string
+			var majors []interfaces.MajorData
 			if len(cohorts) == 0 {
-				majorTitles = append(majorTitles, mapping.MajorTitle)
+				majors = append(majors, interfaces.MajorData{ID: uuid.New(), Title: mapping.MajorTitle, School: mapping.School})
 			} else {
 				for _, c := range cohorts {
-					majorTitles = append(majorTitles, fmt.Sprintf("%s (%d)", mapping.MajorTitle, c))
+					majors = append(majors, interfaces.MajorData{ID: uuid.New(), Title: mapping.MajorTitle, School: mapping.School, CohortYear: c})
 				}
 			}
 
@@ -160,19 +160,22 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				allRows = append(allRows, rowEntry{Row: row, Course: course})
 			}
 
-			for _, majorTitle := range majorTitles {
-				if _, exists := majorsByTitle[majorTitle]; !exists {
-					major := interfaces.MajorData{ID: uuid.New(), Title: majorTitle, School: mapping.School}
+			for _, major := range majors {
+				majorKey := major.Title
+				if major.CohortYear != 0 {
+					majorKey = fmt.Sprintf("%s (%d)", major.Title, major.CohortYear)
+				}
+				if _, exists := majorsByTitle[majorKey]; !exists {
 					if _, err := s.CreateMajor(major); err != nil {
-						return SyncResult{}, fmt.Errorf("create major %s: %w", majorTitle, err)
+						return SyncResult{}, fmt.Errorf("create major %s: %w", majorKey, err)
 					}
-					majorsByTitle[majorTitle] = major
+					majorsByTitle[majorKey] = major
 				}
 
-				cur, ok := courseToMajorReqs[norm][majorTitle]
+				cur, ok := courseToMajorReqs[norm][majorKey]
 				if !ok || cur != enums.RequirementTypeMajorCore {
 					// major_core wins over others if the course appears multiple times.
-					courseToMajorReqs[norm][majorTitle] = reqType
+					courseToMajorReqs[norm][majorKey] = reqType
 				}
 			}
 		}

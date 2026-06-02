@@ -42,14 +42,12 @@ func getMajors(c *gin.Context) {
 
 	var res []gin.H
 	for _, m := range majors {
+		if cohortYear != 0 && m.CohortYear != cohortYear {
+			continue
+		}
 		reqs, err := s.GetMajorRequirements(m.ID)
 		if err != nil {
 			continue
-		}
-		reqs, err = filterMajorRequirementsByCohort(s, reqs, cohortYear)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
 		}
 		var reqList []gin.H
 		for _, r := range reqs {
@@ -62,6 +60,7 @@ func getMajors(c *gin.Context) {
 			"id":           m.ID.String(),
 			"title":        m.Title,
 			"school":       m.School,
+			"cohort_year":  m.CohortYear,
 			"requirements": reqList,
 		})
 	}
@@ -102,14 +101,12 @@ func identifyMajor(c *gin.Context) {
 
 	var analysis []gin.H
 	for _, m := range majors {
+		if cohortYear != 0 && m.CohortYear != cohortYear {
+			continue
+		}
 		reqs, err := s.GetMajorRequirements(m.ID)
 		if err != nil {
 			continue
-		}
-		reqs, err = filterMajorRequirementsByCohort(s, reqs, cohortYear)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
 		}
 		reqIDs := make(map[uuid.UUID]bool)
 		for _, r := range reqs {
@@ -128,6 +125,7 @@ func identifyMajor(c *gin.Context) {
 		analysis = append(analysis, gin.H{
 			"id":            m.ID.String(),
 			"title":         m.Title,
+			"cohort_year":   m.CohortYear,
 			"score":         score,
 			"covered_count": covered,
 			"total_count":   len(reqIDs),
@@ -156,39 +154,6 @@ func parseOptionalCohortYear(c *gin.Context) (int, bool) {
 		return 0, false
 	}
 	return cohortYear, true
-}
-
-func filterMajorRequirementsByCohort(s interfaces.StoreBase, reqs []interfaces.MajorRequirementData, cohortYear int) ([]interfaces.MajorRequirementData, error) {
-	if cohortYear == 0 {
-		return reqs, nil
-	}
-
-	courses, err := s.GetAllCourses()
-	if err != nil {
-		return nil, err
-	}
-
-	filtered := make([]interfaces.MajorRequirementData, 0, len(reqs))
-	for _, req := range reqs {
-		course, ok := courses[req.CourseID]
-		if !ok || !courseAllowedForCohort(course, cohortYear) {
-			continue
-		}
-		filtered = append(filtered, req)
-	}
-	return filtered, nil
-}
-
-func courseAllowedForCohort(course interfaces.CourseData, cohortYear int) bool {
-	if cohortYear == 0 || len(course.AllowedCohorts) == 0 {
-		return true
-	}
-	for _, year := range course.AllowedCohorts {
-		if year == cohortYear {
-			return true
-		}
-	}
-	return false
 }
 
 func updateMajor(c *gin.Context) {

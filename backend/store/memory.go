@@ -369,11 +369,12 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 	mrows, _ := mreader.ReadAll()
 	for _, row := range mrows {
 		uid := uuid.New()
+		title, cohortYear := splitMajorTitleAndCohort(row[1])
 		school := "Business"
-		if containsAny(row[1], "AI", "Software") {
+		if containsAny(title, "AI", "Software") {
 			school = "Tech"
 		}
-		s.majors[uid] = interfaces.MajorData{ID: uid, Title: row[1], School: school}
+		s.majors[uid] = interfaces.MajorData{ID: uid, Title: title, School: school, CohortYear: cohortYear}
 		s.majorsByTitle[row[1]] = uid
 	}
 

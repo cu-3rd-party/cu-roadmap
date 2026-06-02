@@ -6,9 +6,10 @@ import (
 )
 
 type MajorData struct {
-	ID     uuid.UUID
-	Title  string
-	School string
+	ID         uuid.UUID
+	Title      string
+	School     string
+	CohortYear int
 }
 
 type MajorRequirementData struct {

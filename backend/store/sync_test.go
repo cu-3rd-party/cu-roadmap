@@ -259,6 +259,7 @@ func TestSyncFromSheetData(t *testing.T) {
 	for _, m := range majors {
 		assert.Equal(t, "Разработка", m.Title)
 		assert.Equal(t, "Tech", m.School)
+		assert.Equal(t, 0, m.CohortYear)
 	}
 
 	courses, _ := s.GetAllCourses()
@@ -414,13 +415,14 @@ func TestSyncFromSheetDataMajorsAreCohortSpecificAndRequirementTypeRespectsMajor
 	assert.Equal(t, 2, result.Majors)
 
 	majors, _ := s.GetAllMajors()
-	found := map[string]uuid.UUID{}
+	found := map[int]uuid.UUID{}
 	for _, m := range majors {
-		found[m.Title] = m.ID
+		assert.Equal(t, "Искусственный интеллект", m.Title)
+		found[m.CohortYear] = m.ID
 	}
-	_, ok := found["Искусственный интеллект (2026)"]
+	_, ok := found[2026]
 	assert.True(t, ok)
-	_, ok = found["Искусственный интеллект (2025)"]
+	_, ok = found[2025]
 	assert.True(t, ok)
 
 	courses, _ := s.GetAllCourses()
@@ -437,7 +439,7 @@ func TestSyncFromSheetDataMajorsAreCohortSpecificAndRequirementTypeRespectsMajor
 	assert.NotEqual(t, uuid.Nil, discID)
 	assert.NotEqual(t, uuid.Nil, speakID)
 
-	reqs2026, _ := s.GetMajorRequirements(found["Искусственный интеллект (2026)"])
+	reqs2026, _ := s.GetMajorRequirements(found[2026])
 	assert.Len(t, reqs2026, 2)
 	for _, r := range reqs2026 {
 		if r.CourseID == discID {

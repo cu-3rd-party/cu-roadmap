@@ -9,6 +9,7 @@ type Major struct {
 	ID           uuid.UUID          `gorm:"type:uuid;primaryKey"`
 	Title        string             `gorm:"not null"`
 	School       string             `gorm:"not null"`
+	CohortYear   int                `gorm:"index"`
 	Requirements []MajorRequirement `gorm:"foreignKey:MajorID"`
 }
 

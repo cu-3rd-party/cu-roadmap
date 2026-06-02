@@ -172,6 +172,7 @@ func TestGetMajorsWithData(t *testing.T) {
 	assert.Len(t, majors, 1)
 	assert.Equal(t, "SE", majors[0]["title"])
 	assert.Equal(t, "Tech", majors[0]["school"])
+	assert.Equal(t, float64(0), majors[0]["cohort_year"])
 	reqs, ok := majors[0]["requirements"].([]interface{})
 	assert.True(t, ok)
 	assert.Len(t, reqs, 1)
@@ -179,17 +180,19 @@ func TestGetMajorsWithData(t *testing.T) {
 
 func TestGetMajorsWithCohortYear(t *testing.T) {
 	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
-		m := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
-		s.CreateMajor(m)
+		m2025 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech", CohortYear: 2025}
+		m2026 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech", CohortYear: 2026}
+		s.CreateMajor(m2025)
+		s.CreateMajor(m2026)
 		c1 := interfaces.CourseData{ID: uuid.New(), Title: "Python", AllowedCohorts: []int{2025}, AvailableSemesters: []int{1}, Workload: 4.0}
 		c2 := interfaces.CourseData{ID: uuid.New(), Title: "Math", AllowedCohorts: []int{2026}, AvailableSemesters: []int{1}, Workload: 4.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m2025.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m2026.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
 	})
 
-	t.Run("without cohort returns all requirements", func(t *testing.T) {
+	t.Run("without cohort returns all majors", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/majors/", nil)
 		router.ServeHTTP(w, req)
@@ -197,11 +200,10 @@ func TestGetMajorsWithCohortYear(t *testing.T) {
 		assert.Equal(t, 200, w.Code)
 		var majors []map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &majors)
-		reqs := majors[0]["requirements"].([]interface{})
-		assert.Len(t, reqs, 2)
+		assert.Len(t, majors, 2)
 	})
 
-	t.Run("with cohort filters requirements", func(t *testing.T) {
+	t.Run("with cohort filters majors", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/v1/majors/2025", nil)
 		router.ServeHTTP(w, req)
@@ -209,6 +211,8 @@ func TestGetMajorsWithCohortYear(t *testing.T) {
 		assert.Equal(t, 200, w.Code)
 		var majors []map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &majors)
+		assert.Len(t, majors, 1)
+		assert.Equal(t, float64(2025), majors[0]["cohort_year"])
 		reqs := majors[0]["requirements"].([]interface{})
 		assert.Len(t, reqs, 1)
 	})
@@ -257,8 +261,8 @@ func TestGetGraphDataWithData(t *testing.T) {
 
 func TestIdentifyMajor(t *testing.T) {
 	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
-		m1 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
-		m2 := interfaces.MajorData{ID: uuid.New(), Title: "AI", School: "Tech"}
+		m1 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech", CohortYear: 2025}
+		m2 := interfaces.MajorData{ID: uuid.New(), Title: "AI", School: "Tech", CohortYear: 2024}
 		s.CreateMajor(m1)
 		s.CreateMajor(m2)
 
@@ -288,8 +292,8 @@ func TestIdentifyMajor(t *testing.T) {
 
 func TestIdentifyMajorWithCohortYear(t *testing.T) {
 	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
-		m1 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
-		m2 := interfaces.MajorData{ID: uuid.New(), Title: "AI", School: "Tech"}
+		m1 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech", CohortYear: 2025}
+		m2 := interfaces.MajorData{ID: uuid.New(), Title: "AI", School: "Tech", CohortYear: 2024}
 		s.CreateMajor(m1)
 		s.CreateMajor(m2)
 
@@ -316,7 +320,8 @@ func TestIdentifyMajorWithCohortYear(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &analysis)
 	assert.Len(t, analysis, 1)
 	assert.Equal(t, "SE", analysis[0]["title"])
-	assert.Equal(t, float64(1), analysis[0]["score"])
+	assert.Equal(t, float64(2025), analysis[0]["cohort_year"])
+	assert.Equal(t, 0.5, analysis[0]["score"])
 }
 
 func findCourseByTitle(courses []map[string]interface{}, title string) map[string]interface{} {

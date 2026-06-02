@@ -67,7 +67,7 @@ func (s *MemoryStoreTestSuite) TestGetCourseByIDNotFound() {
 }
 
 func (s *MemoryStoreTestSuite) TestCreateAndGetMajor() {
-	major := interfaces.MajorData{ID: uuid.New(), Title: "AI Engineering", School: "Tech"}
+	major := interfaces.MajorData{ID: uuid.New(), Title: "AI Engineering", School: "Tech", CohortYear: 2025}
 	created, err := s.s.CreateMajor(major)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), major.ID, created.ID)
@@ -77,6 +77,7 @@ func (s *MemoryStoreTestSuite) TestCreateAndGetMajor() {
 	assert.NotNil(s.T(), retrieved)
 	assert.Equal(s.T(), "AI Engineering", retrieved.Title)
 	assert.Equal(s.T(), "Tech", retrieved.School)
+	assert.Equal(s.T(), 2025, retrieved.CohortYear)
 }
 
 func (s *MemoryStoreTestSuite) TestGetMajorByIDNotFound() {
