@@ -383,6 +383,10 @@ components:
           description: описание курса
           nullable: true
 
+        handbook_link:
+          type: string
+          description: ссылка на хэндбук курса
+
         course_type:
           type: string
           description: тип курса
@@ -424,6 +428,13 @@ components:
             type: string
             format: uuid
           description: uuid курсов, которые являются пререквизитами перед конкретным
+
+        corequisites:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: uuid курсов, которые являются кореквизитами для конкретного
 
     GraphNode:
       type: object

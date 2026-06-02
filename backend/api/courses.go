@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -77,19 +78,7 @@ func getCourses(c *gin.Context) {
 
 func createCourse(c *gin.Context) {
 	s := store.GetStore()
-	var req struct {
-		Title               string               `json:"title" binding:"required"`
-		Description         *string              `json:"description"`
-		HandbookLink        *string              `json:"handbook_link"`
-		CourseType          enums.CourseType     `json:"course_type"`
-		Category            enums.CourseCategory `json:"category"`
-		AllowedCohorts      []int                `json:"allowed_cohorts"`
-		AvailableSemesters  []int                `json:"available_semesters"`
-		RecommendedSemester *int                 `json:"recommended_semester"`
-		Workload            float64              `json:"workload"`
-		Prerequisites       []string             `json:"prerequisites"`
-		Corequisites        []string             `json:"corequisites"`
-	}
+	var req schemas.CreateCourseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -116,22 +105,30 @@ func createCourse(c *gin.Context) {
 
 	for _, p := range req.Prerequisites {
 		if pid, err := uuid.Parse(p); err == nil {
-			s.CreateCourseDependency(store.CourseDependencyData{
+			_, err := s.CreateCourseDependency(store.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         created.ID,
 				RequiredCourseID: pid,
 				DependencyType:   enums.DependencyTypePrerequisite,
 			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 		}
 	}
 	for _, p := range req.Corequisites {
 		if pid, err := uuid.Parse(p); err == nil {
-			s.CreateCourseDependency(store.CourseDependencyData{
+			_, err := s.CreateCourseDependency(store.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         created.ID,
 				RequiredCourseID: pid,
 				DependencyType:   enums.DependencyTypeCorequisite,
 			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 		}
 	}
 
@@ -147,19 +144,7 @@ func updateCourse(c *gin.Context) {
 	}
 
 	s := store.GetStore()
-	var req struct {
-		Title               string               `json:"title" binding:"required"`
-		Description         *string              `json:"description"`
-		HandbookLink        *string              `json:"handbook_link"`
-		CourseType          enums.CourseType     `json:"course_type"`
-		Category            enums.CourseCategory `json:"category"`
-		AllowedCohorts      []int                `json:"allowed_cohorts"`
-		AvailableSemesters  []int                `json:"available_semesters"`
-		RecommendedSemester *int                 `json:"recommended_semester"`
-		Workload            float64              `json:"workload"`
-		Prerequisites       []string             `json:"prerequisites"`
-		Corequisites        []string             `json:"corequisites"`
-	}
+	var req schemas.UpdateCourseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -191,25 +176,37 @@ func updateCourse(c *gin.Context) {
 		return
 	}
 
-	s.DeleteCourseDependencies(updated.ID)
+	err = s.DeleteCourseDependencies(updated.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	for _, p := range req.Prerequisites {
 		if pid, err := uuid.Parse(p); err == nil {
-			s.CreateCourseDependency(store.CourseDependencyData{
+			_, err := s.CreateCourseDependency(store.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         updated.ID,
 				RequiredCourseID: pid,
 				DependencyType:   enums.DependencyTypePrerequisite,
 			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 		}
 	}
 	for _, p := range req.Corequisites {
 		if pid, err := uuid.Parse(p); err == nil {
-			s.CreateCourseDependency(store.CourseDependencyData{
+			_, err := s.CreateCourseDependency(store.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         updated.ID,
 				RequiredCourseID: pid,
 				DependencyType:   enums.DependencyTypeCorequisite,
 			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 		}
 	}
 
@@ -217,8 +214,7 @@ func updateCourse(c *gin.Context) {
 }
 
 func deleteCourse(c *gin.Context) {
-	idParam := c.Param("id")
-	courseID, err := uuid.Parse(idParam)
+	courseID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid course id"})
 		return
