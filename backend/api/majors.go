@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/gin-gonic/gin"
@@ -14,7 +15,7 @@ func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 	rg.POST("/identify", identifyMajor)
 
 	admin := rg.Group("/")
-	admin.Use(authMiddleware())
+	admin.Use(middleware.AuthMiddleware())
 	admin.PUT("/:id", updateMajor)
 }
 
@@ -157,18 +158,26 @@ func updateMajor(c *gin.Context) {
 		return
 	}
 
-	s.DeleteMajorRequirements(majorID)
+	err = s.DeleteMajorRequirements(majorID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	for _, r := range req.Requirements {
 		cid, err := uuid.Parse(r.CourseID)
 		if err != nil {
 			continue
 		}
-		s.CreateMajorRequirement(store.MajorRequirementData{
+		_, err = s.CreateMajorRequirement(store.MajorRequirementData{
 			ID:              uuid.New(),
 			MajorID:         majorID,
 			CourseID:        cid,
 			RequirementType: enums.RequirementType(r.Type),
 		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"id": updated.ID.String()})

@@ -2,35 +2,20 @@ package api
 
 import (
 	"net/http"
-	"os"
 
-	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
-
-func authMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := c.GetHeader("X-Admin-Token")
-		expected := os.Getenv("ADMIN_PASSWORD")
-		if expected == "" {
-			expected = "admin"
-		}
-		if token != expected {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-			return
-		}
-		c.Next()
-	}
-}
 
 func RegisterCoursesRoutes(rg *gin.RouterGroup) {
 	rg.GET("/", getCourses)
 
 	admin := rg.Group("/")
-	admin.Use(authMiddleware())
+	admin.Use(middleware.AuthMiddleware())
 	admin.POST("/", createCourse)
 	admin.PUT("/:id", updateCourse)
 	admin.DELETE("/:id", deleteCourse)
@@ -49,29 +34,8 @@ func getCourses(c *gin.Context) {
 	}
 
 	var res []gin.H
-	for _, c := range courses {
-		prereqs := make([]string, len(c.Prerequisites))
-		for i, p := range c.Prerequisites {
-			prereqs[i] = p.String()
-		}
-		coreqs := make([]string, len(c.Corequisites))
-		for i, p := range c.Corequisites {
-			coreqs[i] = p.String()
-		}
-		res = append(res, gin.H{
-			"id":                   c.ID.String(),
-			"title":                c.Title,
-			"description":          c.Description,
-			"handbook_link":        c.HandbookLink,
-			"course_type":          string(c.CourseType),
-			"category":             string(c.Category),
-			"available_semesters":  c.AvailableSemesters,
-			"allowed_cohorts":      c.AllowedCohorts,
-			"recommended_semester": c.RecommendedSemester,
-			"workload":             c.Workload,
-			"prerequisites":        prereqs,
-			"corequisites":         coreqs,
-		})
+	for _, course := range courses {
+		res = append(res, helpers.CourseToResponse(course))
 	}
 	c.JSON(http.StatusOK, res)
 }
@@ -103,33 +67,9 @@ func createCourse(c *gin.Context) {
 		return
 	}
 
-	for _, p := range req.Prerequisites {
-		if pid, err := uuid.Parse(p); err == nil {
-			_, err := s.CreateCourseDependency(store.CourseDependencyData{
-				ID:               uuid.New(),
-				CourseID:         created.ID,
-				RequiredCourseID: pid,
-				DependencyType:   enums.DependencyTypePrerequisite,
-			})
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		}
-	}
-	for _, p := range req.Corequisites {
-		if pid, err := uuid.Parse(p); err == nil {
-			_, err := s.CreateCourseDependency(store.CourseDependencyData{
-				ID:               uuid.New(),
-				CourseID:         created.ID,
-				RequiredCourseID: pid,
-				DependencyType:   enums.DependencyTypeCorequisite,
-			})
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		}
+	if err := helpers.SaveCourseDependencies(s, created.ID, req.Prerequisites, req.Corequisites); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"id": created.ID.String()})
@@ -176,38 +116,9 @@ func updateCourse(c *gin.Context) {
 		return
 	}
 
-	err = s.DeleteCourseDependencies(updated.ID)
-	if err != nil {
+	if err := helpers.ReplaceCourseDependencies(s, updated.ID, req.Prerequisites, req.Corequisites); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-	for _, p := range req.Prerequisites {
-		if pid, err := uuid.Parse(p); err == nil {
-			_, err := s.CreateCourseDependency(store.CourseDependencyData{
-				ID:               uuid.New(),
-				CourseID:         updated.ID,
-				RequiredCourseID: pid,
-				DependencyType:   enums.DependencyTypePrerequisite,
-			})
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		}
-	}
-	for _, p := range req.Corequisites {
-		if pid, err := uuid.Parse(p); err == nil {
-			_, err := s.CreateCourseDependency(store.CourseDependencyData{
-				ID:               uuid.New(),
-				CourseID:         updated.ID,
-				RequiredCourseID: pid,
-				DependencyType:   enums.DependencyTypeCorequisite,
-			})
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"id": updated.ID.String()})
