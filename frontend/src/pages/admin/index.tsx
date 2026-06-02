@@ -229,7 +229,13 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-screen overflow-y-auto p-10"
+      style={{
+        backgroundColor: "var(--color-bg-main)",
+        color: "var(--color-text-main)",
+      }}
+    >
       <div className="flex justify-between items-center mb-6">
         <div className="flex gap-4 border-b border-gray-700 w-full mb-4">
           <button
