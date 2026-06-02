@@ -17,6 +17,7 @@ interface Major {
   id: string;
   title: string;
   school?: string;
+  cohort_year?: number;
   requirements?: { course_id: string; type: string }[];
 }
 
@@ -130,6 +131,7 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
       await api.admin.updateMajor(major.id, {
         title: major.title,
         school: major.school,
+        cohort_year: major.cohort_year,
         requirements: major.requirements || [],
       });
       await fetchData();
@@ -208,23 +210,39 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
 
   if (editingCourse) {
     return (
-      <CourseEditor
-        course={editingCourse}
-        allCourses={courses}
-        onSave={handleSave}
-        onCancel={() => setEditingCourse(null)}
-      />
+      <div
+        className="h-screen overflow-y-auto p-6"
+        style={{
+          backgroundColor: "var(--color-bg-main)",
+          color: "var(--color-text-main)",
+        }}
+      >
+        <CourseEditor
+          course={editingCourse}
+          allCourses={courses}
+          onSave={handleSave}
+          onCancel={() => setEditingCourse(null)}
+        />
+      </div>
     );
   }
 
   if (editingMajor) {
     return (
-      <MajorEditor
-        major={editingMajor}
-        allCourses={courses}
-        onSave={handleSaveMajor}
-        onCancel={() => setEditingMajor(null)}
-      />
+      <div
+        className="h-screen overflow-y-auto p-6"
+        style={{
+          backgroundColor: "var(--color-bg-main)",
+          color: "var(--color-text-main)",
+        }}
+      >
+        <MajorEditor
+          major={editingMajor}
+          allCourses={courses}
+          onSave={handleSaveMajor}
+          onCancel={() => setEditingMajor(null)}
+        />
+      </div>
     );
   }
 
@@ -373,6 +391,7 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
               >
                 <th className="p-4 font-semibold">Название</th>
                 <th className="p-4 font-semibold">Школа / Факультет</th>
+                <th className="p-4 font-semibold">Год</th>
                 <th className="p-4 font-semibold">major core</th>
                 <th className="p-4 font-semibold">major choice</th>
                 <th className="p-4 font-semibold">flex</th>
@@ -393,6 +412,7 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
                 >
                   <td className="p-4">{m.title}</td>
                   <td className="p-4">{m.school}</td>
+                  <td className="p-4">{m.cohort_year || "-"}</td>
                   <td className="p-4">
                     {m.requirements?.filter((r) => r.type === "major_core")
                       .length || 0}
@@ -816,6 +836,7 @@ function MajorEditor({
       ...major,
       title: formData.title,
       school: formData.school,
+      cohort_year: formData.cohort_year,
       requirements: formData.requirements,
     });
   };
@@ -902,6 +923,29 @@ function MajorEditor({
               borderColor: "var(--color-border)",
               color: "var(--color-text-main)",
             }}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-gray-400">
+          Год мейджора
+          <input
+            type="number"
+            min="2000"
+            max="2100"
+            value={formData.cohort_year || ""}
+            onChange={(e) =>
+              setFormData((p) => ({
+                ...p,
+                cohort_year: e.target.value
+                  ? parseInt(e.target.value, 10)
+                  : undefined,
+              }))
+            }
+            className="px-3 py-2 rounded-lg border bg-transparent text-base"
+            style={{
+              borderColor: "var(--color-border)",
+              color: "var(--color-text-main)",
+            }}
+            placeholder="Например 2024"
           />
         </label>
 
