@@ -23,8 +23,7 @@ func init() {
 func setupRouter(t *testing.T, seed func(s interfaces.StoreBase)) *gin.RouterGroup {
 	t.Helper()
 
-	store.CloseStore()
-	s, err := initTestStore()
+	s, err := initTestStore(t)
 	assert.NoError(t, err)
 
 	if seed != nil {
@@ -44,22 +43,10 @@ func setupRouter(t *testing.T, seed func(s interfaces.StoreBase)) *gin.RouterGro
 	return router.Group("")
 }
 
-func initTestStore() (interfaces.StoreBase, error) {
-	if testDatabaseURL != "" {
-		s, err := store.InitStore(false, testDatabaseURL, "admin")
-		if err != nil {
-			return nil, err
-		}
-		return s, s.ClearAll()
-	}
-	return store.InitStore(true, "", "admin")
-}
-
 func setupRouterRoot(t *testing.T, seed func(s interfaces.StoreBase)) *gin.Engine {
 	t.Helper()
 
-	store.CloseStore()
-	s, err := initTestStore()
+	s, err := initTestStore(t)
 	assert.NoError(t, err)
 
 	if seed != nil {
