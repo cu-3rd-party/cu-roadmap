@@ -11,11 +11,8 @@ import type {
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1",
+  withCredentials: true,
 });
-
-function adminHeaders(token: string) {
-  return { headers: { "X-Admin-Token": token } };
-}
 
 export const api = {
   getCourses: () => client.get<Course[]>("/courses/"),
@@ -51,18 +48,17 @@ export const api = {
 
   getGraphData: () => client.get<GraphData>("/graph/data"),
 
+  login: (password: string) => client.post("/auth/login", { password }),
+
   admin: {
-    getCourses: (token: string) =>
-      client.get<Course[]>("/courses/", adminHeaders(token)),
-    getMajors: (token: string) =>
-      client.get<Major[]>("/majors/", adminHeaders(token)),
-    createCourse: (course: Partial<Course>, token: string) =>
-      client.post<Course>("/courses/", course, adminHeaders(token)),
-    updateCourse: (id: string, course: Partial<Course>, token: string) =>
-      client.put<Course>(`/courses/${id}`, course, adminHeaders(token)),
-    deleteCourse: (id: string, token: string) =>
-      client.delete(`/courses/${id}`, adminHeaders(token)),
-    updateMajor: (id: string, major: Record<string, unknown>, token: string) =>
-      client.put(`/majors/${id}`, major, adminHeaders(token)),
+    getCourses: () => client.get<Course[]>("/courses/"),
+    getMajors: () => client.get<Major[]>("/majors/"),
+    createCourse: (course: Partial<Course>) =>
+      client.post<Course>("/courses/", course),
+    updateCourse: (id: string, course: Partial<Course>) =>
+      client.put<Course>(`/courses/${id}`, course),
+    deleteCourse: (id: string) => client.delete(`/courses/${id}`),
+    updateMajor: (id: string, major: Record<string, unknown>) =>
+      client.put(`/majors/${id}`, major),
   },
 };

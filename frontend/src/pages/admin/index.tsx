@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
+import { useState, type FormEvent, type ChangeEvent } from "react";
 import { Lock, Plus, Edit, Save, X, Trash2 } from "lucide-react";
 import { PrimaryButton } from "@/shared/ui";
 import { api } from "@/shared/config";
@@ -12,7 +12,7 @@ interface Major {
 }
 
 export function AdminPage() {
-  const [token, setToken] = useState(localStorage.getItem("adminToken") || "");
+  const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
@@ -22,21 +22,34 @@ export function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const checkAuthAndFetch = async (t: string) => {
-    setLoading(true);
-    setError("");
+  const fetchData = async () => {
     try {
       const [coursesRes, majorsRes] = await Promise.all([
-        api.admin.getCourses(t),
-        api.admin.getMajors(t),
+        api.admin.getCourses(),
+        api.admin.getMajors(),
       ]);
       setCourses(coursesRes.data);
       setMajors(majorsRes.data);
-      setIsAuthenticated(true);
-      localStorage.setItem("adminToken", t);
     } catch (e: any) {
       if (e.response?.status === 401) {
         setIsAuthenticated(false);
+        setError("Сессия истекла, войдите снова");
+      } else {
+        setError(e.message);
+      }
+    }
+  };
+
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await api.login(password);
+      setIsAuthenticated(true);
+      await fetchData();
+    } catch (e: any) {
+      if (e.response?.status === 401) {
         setError("Неверный пароль");
       } else {
         setError(e.message);
@@ -45,56 +58,56 @@ export function AdminPage() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (token) {
-      checkAuthAndFetch(token);
-    }
-  }, []);
-
-  const handleLogin = (e: FormEvent) => {
-    e.preventDefault();
-    checkAuthAndFetch(token);
-  };
-
   const handleSave = async (course: Course) => {
     try {
       if (course.id) {
-        await api.admin.updateCourse(course.id, course, token);
+        await api.admin.updateCourse(course.id, course);
       } else {
-        await api.admin.createCourse(course, token);
+        await api.admin.createCourse(course);
       }
-      await checkAuthAndFetch(token);
+      await fetchData();
       setEditingCourse(null);
     } catch (e: any) {
-      alert(e.message);
+      if (e.response?.status === 401) {
+        setIsAuthenticated(false);
+        setError("Сессия истекла, войдите снова");
+      } else {
+        alert(e.message);
+      }
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Вы уверены, что хотите удалить этот курс?")) return;
     try {
-      await api.admin.deleteCourse(id, token);
-      await checkAuthAndFetch(token);
+      await api.admin.deleteCourse(id);
+      await fetchData();
     } catch (e: any) {
-      alert(e.message);
+      if (e.response?.status === 401) {
+        setIsAuthenticated(false);
+        setError("Сессия истекла, войдите снова");
+      } else {
+        alert(e.message);
+      }
     }
   };
 
   const handleSaveMajor = async (major: Major) => {
     try {
-      await api.admin.updateMajor(
-        major.id,
-        {
-          title: major.title,
-          school: major.school,
-          requirements: major.requirements || [],
-        },
-        token,
-      );
-      await checkAuthAndFetch(token);
+      await api.admin.updateMajor(major.id, {
+        title: major.title,
+        school: major.school,
+        requirements: major.requirements || [],
+      });
+      await fetchData();
       setEditingMajor(null);
     } catch (e: any) {
-      alert(e.message);
+      if (e.response?.status === 401) {
+        setIsAuthenticated(false);
+        setError("Сессия истекла, войдите снова");
+      } else {
+        alert(e.message);
+      }
     }
   };
 
@@ -115,8 +128,8 @@ export function AdminPage() {
             <input
               type="password"
               placeholder="Пароль"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="px-4 py-2 rounded-md border bg-transparent"
               style={{
                 borderColor: "var(--color-border)",

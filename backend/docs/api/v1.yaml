@@ -53,7 +53,7 @@ paths:
     post:
       description: создает курс
       security:
-        - AdminToken: []
+        - AdminCookie: []
       requestBody:
         required: true
         content:
@@ -80,7 +80,7 @@ paths:
     put:
       description: обновляет курс
       security:
-        - AdminToken: []
+        - AdminCookie: []
       requestBody:
         required: true
         content:
@@ -105,7 +105,7 @@ paths:
     delete:
       description: удаляет курс
       security:
-        - AdminToken: []
+        - AdminCookie: []
       responses:
         '200':
           description: курс удален
@@ -143,7 +143,7 @@ paths:
     put:
       description: обновляет мейджор
       security:
-        - AdminToken: []
+        - AdminCookie: []
       requestBody:
         required: true
         content:
@@ -287,18 +287,51 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
 
+  /api/v1/auth/login:
+    description: аутентификация администратора
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+      responses:
+        '201':
+          description: успешный вход, токен установлен в HttpOnly cookie `auth-token`
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "auth-token=<uuid>; Path=/; HttpOnly; Secure; SameSite=Strict"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
   /api/v1/planenr/test-engine2:
     description: отладочный эндпоинт, использует первого студента. это придумал федя жаков, пусть он и документирует. я это было перенес в го)
 
 components:
   securitySchemes:
-    AdminToken:
+    AdminCookie:
       type: apiKey
-      in: header
-      name: X-Admin-Token
+      in: cookie
+      name: auth-token
       description: |
-        Токен для админских эндпоинтов.
-        Введи только значение токена, OpenAPI UI сам отправит его в заголовке `X-Admin-Token`.
+        HttpOnly cookie, устанавливается после успешного `POST /api/v1/auth/login`.
+        Токен — UUIDv4, живёт 1 час.
+        В production устанавливается с флагами `Secure; HttpOnly; SameSite=Strict`.
+        В dev-режиме (gin debug) без `Secure`.
 
   parameters:
     ResourceId:

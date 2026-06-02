@@ -93,7 +93,7 @@ func TestMapSheetRowToCourseSupportsXLSXHeaderVariants(t *testing.T) {
 
 func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{
@@ -218,7 +218,7 @@ func TestMapSheetRowToCourseWorkloadVariants(t *testing.T) {
 
 func TestSyncFromSheetData(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{
@@ -271,7 +271,7 @@ func TestSyncFromSheetData(t *testing.T) {
 
 func TestSyncFromSheetDataWithMultipleMajors(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{
@@ -322,7 +322,7 @@ func TestSyncFromSheetDataWithMultipleMajors(t *testing.T) {
 
 func TestSyncFromSheetDataDeduplicatesCourses(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{
@@ -372,7 +372,7 @@ func TestSyncFromSheetDataDeduplicatesCourses(t *testing.T) {
 
 func TestSyncFromSheetDataMajorsAreCohortSpecificAndRequirementTypeRespectsMajorCoreChoice(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{
@@ -451,7 +451,7 @@ func TestSyncFromSheetDataMajorsAreCohortSpecificAndRequirementTypeRespectsMajor
 
 func TestSyncFromSheetDataSkipsUnknownSheet(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{
@@ -475,7 +475,7 @@ func TestSyncFromSheetDataSkipsUnknownSheet(t *testing.T) {
 
 func TestSyncFromSheetDataWithCorequisites(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{
@@ -514,7 +514,7 @@ func TestSyncFromSheetDataWithCorequisites(t *testing.T) {
 
 func TestSyncFromSheetDataWithEmojiPrefix(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{
@@ -553,7 +553,7 @@ func TestSyncFromSheetDataWithEmojiPrefix(t *testing.T) {
 
 func TestSyncFromSheetDataEmptyCourseTitleSkipped(t *testing.T) {
 	s := NewMemoryStore()
-	s.Init()
+	s.Init("admin")
 	defer s.Close()
 
 	sheetsData := map[string][]map[string]string{

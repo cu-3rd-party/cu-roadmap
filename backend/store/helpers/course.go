@@ -6,6 +6,7 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 func CourseToResponse(course interfaces.CourseData) gin.H {
@@ -33,6 +34,25 @@ func CourseUUIDsToStrings(ids []uuid.UUID) []string {
 	return res
 }
 
+func toInt64Slice(in []int) pq.Int64Array {
+	out := make(pq.Int64Array, len(in))
+	for i, v := range in {
+		out[i] = int64(v)
+	}
+	return out
+}
+
+func toIntSlice(in []int64) []int {
+	if in == nil {
+		return nil
+	}
+	out := make([]int, len(in))
+	for i, v := range in {
+		out[i] = int(v)
+	}
+	return out
+}
+
 func ToCourseModel(course interfaces.CourseData) models.Course {
 	return models.Course{
 		ID:                  course.ID,
@@ -41,8 +61,8 @@ func ToCourseModel(course interfaces.CourseData) models.Course {
 		HandbookLink:        course.HandbookLink,
 		CourseType:          course.CourseType,
 		Category:            course.Category,
-		AllowedCohorts:      course.AllowedCohorts,
-		AvailableSemesters:  course.AvailableSemesters,
+		AllowedCohorts:      toInt64Slice(course.AllowedCohorts),
+		AvailableSemesters:  toInt64Slice(course.AvailableSemesters),
 		RecommendedSemester: course.RecommendedSemester,
 		Workload:            course.Workload,
 		CsatMetric:          course.CsatMetric,
@@ -57,8 +77,8 @@ func ToCourseData(c *models.Course) interfaces.CourseData {
 		HandbookLink:        c.HandbookLink,
 		CourseType:          c.CourseType,
 		Category:            c.Category,
-		AllowedCohorts:      c.AllowedCohorts,
-		AvailableSemesters:  c.AvailableSemesters,
+		AllowedCohorts:      toIntSlice(c.AllowedCohorts),
+		AvailableSemesters:  toIntSlice(c.AvailableSemesters),
 		RecommendedSemester: c.RecommendedSemester,
 		Workload:            c.Workload,
 		CsatMetric:          c.CsatMetric,
