@@ -14,10 +14,12 @@ services:
     image: postgres:16-alpine
     profiles:
       - postgres
+    ports:
+      - "5432:5432"
     env_file:
       - .env
     volumes:
-      - postgres_data
+      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
   backend:

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, type FormEvent } from "react";
 import {
   Book,
   Calculator,
@@ -10,9 +10,10 @@ import {
   Target,
   Wand2,
   Lock,
+  Loader2,
 } from "lucide-react";
-import { useTheme } from "@/app/providers";
-import { SidebarButton } from "@/shared/ui";
+import { useTheme, useAuth } from "@/app/providers";
+import { PrimaryButton, SidebarButton } from "@/shared/ui";
 import { WizardPage } from "@/pages/wizard";
 import { CoursesPage } from "@/pages/courses";
 import { PlannerPage } from "@/pages/planner";
@@ -25,6 +26,11 @@ import { AdminPage } from "@/pages/admin";
 import type { RoadmapData } from "@/shared/config";
 
 export default function App() {
+  const { isAuthenticated, isLoading, login } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("wizard");
   const [passedIds, setPassedIds] = useState<string[]>([]);
   const [manualRoadmap, setManualRoadmap] = useState<
@@ -38,7 +44,79 @@ export default function App() {
   const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null);
   const [plannerLoading, setPlannerLoading] = useState(false);
   const [triggerGenerate, _setTriggerGenerate] = useState(0);
-  const { theme, toggleTheme } = useTheme();
+
+  const handleLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError("");
+    try {
+      await login(password);
+    } catch (e: any) {
+      if (e.response?.status === 401) {
+        setLoginError("Неверный пароль");
+      } else if (e.response?.status === 503) {
+        setLoginError("Сервер недоступен");
+      } else {
+        setLoginError(e.message);
+      }
+    }
+    setLoginLoading(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div
+        className="flex items-center justify-center h-screen"
+        style={{
+          backgroundColor: "var(--color-bg-main)",
+          color: "var(--color-text-muted)",
+        }}
+      >
+        <Loader2 className="animate-spin" size={32} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center h-screen"
+        style={{ backgroundColor: "var(--color-bg-main)" }}
+      >
+        <div
+          className="p-8 rounded-2xl border"
+          style={{
+            backgroundColor: "var(--color-bg-card)",
+            borderColor: "var(--color-border)",
+          }}
+        >
+          <div
+            className="flex items-center gap-3 mb-6 text-xl font-bold"
+            style={{ color: "var(--color-text-main)" }}
+          >
+            <Lock /> Админ панель
+          </div>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <input
+              type="password"
+              placeholder="Пароль"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="px-4 py-2 rounded-md border bg-transparent"
+              style={{
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-main)",
+              }}
+            />
+            {loginError && (
+              <div className="text-red-500 text-sm">{loginError}</div>
+            )}
+            <PrimaryButton disabled={loginLoading}>Войти</PrimaryButton>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen">

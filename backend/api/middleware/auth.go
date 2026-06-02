@@ -12,12 +12,13 @@ import (
 )
 
 func AuthMiddleware() gin.HandlerFunc {
-	s := store.GetStore()
-	if s == nil {
-		panic("failed to initialize store in auth middleware")
-	}
-
 	return func(c *gin.Context) {
+		s := store.GetStore()
+		if s == nil {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+			return
+		}
+
 		tokenStr, err := c.Cookie("auth-token")
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token string"})

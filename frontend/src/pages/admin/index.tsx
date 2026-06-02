@@ -1,6 +1,6 @@
-import { useState, type FormEvent, type ChangeEvent } from "react";
-import { Lock, Plus, Edit, Save, X, Trash2 } from "lucide-react";
-import { PrimaryButton } from "@/shared/ui";
+import { useState, type ChangeEvent, useEffect } from "react";
+import { Plus, Edit, Save, X, Trash2 } from "lucide-react";
+import { useAuth } from "@/app/providers";
 import { api } from "@/shared/config";
 import type { Course } from "@/shared/config";
 
@@ -12,14 +12,13 @@ interface Major {
 }
 
 export function AdminPage() {
-  const [password, setPassword] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { logout } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
   const [activeTab, setActiveTab] = useState<"courses" | "majors">("courses");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const fetchData = async () => {
@@ -32,31 +31,16 @@ export function AdminPage() {
       setMajors(majorsRes.data);
     } catch (e: any) {
       if (e.response?.status === 401) {
-        setIsAuthenticated(false);
-        setError("Сессия истекла, войдите снова");
-      } else {
-        setError(e.message);
+        logout();
+        return;
       }
+      setError(e.message);
     }
   };
 
-  const handleLogin = async (e: FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      await api.login(password);
-      setIsAuthenticated(true);
-      await fetchData();
-    } catch (e: any) {
-      if (e.response?.status === 401) {
-        setError("Неверный пароль");
-      } else {
-        setError(e.message);
-      }
-    }
-    setLoading(false);
-  };
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, []);
 
   const handleSave = async (course: Course) => {
     try {
@@ -69,11 +53,10 @@ export function AdminPage() {
       setEditingCourse(null);
     } catch (e: any) {
       if (e.response?.status === 401) {
-        setIsAuthenticated(false);
-        setError("Сессия истекла, войдите снова");
-      } else {
-        alert(e.message);
+        logout();
+        return;
       }
+      alert(e.message);
     }
   };
 
@@ -84,11 +67,10 @@ export function AdminPage() {
       await fetchData();
     } catch (e: any) {
       if (e.response?.status === 401) {
-        setIsAuthenticated(false);
-        setError("Сессия истекла, войдите снова");
-      } else {
-        alert(e.message);
+        logout();
+        return;
       }
+      alert(e.message);
     }
   };
 
@@ -103,46 +85,12 @@ export function AdminPage() {
       setEditingMajor(null);
     } catch (e: any) {
       if (e.response?.status === 401) {
-        setIsAuthenticated(false);
-        setError("Сессия истекла, войдите снова");
-      } else {
-        alert(e.message);
+        logout();
+        return;
       }
+      alert(e.message);
     }
   };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <div
-          className="p-8 rounded-2xl border"
-          style={{
-            backgroundColor: "var(--color-bg-card)",
-            borderColor: "var(--color-border)",
-          }}
-        >
-          <div className="flex items-center gap-3 mb-6 text-xl font-bold">
-            <Lock /> Админ панель
-          </div>
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <input
-              type="password"
-              placeholder="Пароль"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="px-4 py-2 rounded-md border bg-transparent"
-              style={{
-                borderColor: "var(--color-border)",
-                color: "var(--color-text-main)",
-              }}
-            />
-            {error && <div className="text-red-500 text-sm">{error}</div>}
-            <PrimaryButton disabled={loading}>Войти</PrimaryButton>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   if (editingCourse) {
     return (

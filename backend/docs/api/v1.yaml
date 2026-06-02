@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: cu roadmap api v1
   description: cu roadmap api v1
-  version: 1.0.0
+  version: 1.1.0
 servers:
   - url: https://roadmap.cu3rd.ru
   - url: http://localhost:8080
@@ -311,6 +311,22 @@ paths:
                 example: "auth-token=<uuid>; Path=/; HttpOnly; Secure; SameSite=Strict"
         '400':
           $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+  /api/v1/auth/check:
+    description: no-op эндпоинт для проверки аутентификации
+    get:
+      description: соответственно проверка
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: На удивление эндпоинт ничего не возвращает, только статус что ок
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '500':

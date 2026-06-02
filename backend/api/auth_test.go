@@ -42,6 +42,16 @@ func setupAuthRouter(t *testing.T, password string, seed func(s interfaces.Store
 	return router
 }
 
+func TestCheckSuccess(t *testing.T) {
+	router := setupAuthRouter(t, "admin", nil)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/check", nil)
+	addAuthCookie(t, req)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
 func TestLoginStoreNotInitialized(t *testing.T) {
 	store.CloseStore()
 

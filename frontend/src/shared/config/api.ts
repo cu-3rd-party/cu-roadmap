@@ -48,6 +48,7 @@ export const api = {
 
   getGraphData: () => client.get<GraphData>("/graph/data"),
 
+  authCheck: () => client.get("/auth/check"),
   login: (password: string) => client.post("/auth/login", { password }),
 
   admin: {

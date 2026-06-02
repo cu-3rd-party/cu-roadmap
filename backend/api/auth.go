@@ -6,12 +6,23 @@ package api
 import (
 	"net/http"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/gin-gonic/gin"
 )
 
 func RegisterAuthRoutes(rg *gin.RouterGroup) {
 	rg.POST("/login", login)
+
+	auth := rg.Group("/")
+	auth.Use(middleware.AuthMiddleware())
+	auth.GET("/check", check)
+}
+
+// check is a no-op endpoint that's under auth middleware so that user can check whether he's authorized or not
+func check(c *gin.Context) {
+	c.Status(http.StatusOK)
+	return
 }
 
 func login(c *gin.Context) {
