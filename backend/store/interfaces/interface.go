@@ -23,6 +23,7 @@ type StoreBase interface {
 	UpdateMajor(major MajorData) (MajorData, error)
 
 	GetMajorRequirements(majorID uuid.UUID) ([]MajorRequirementData, error)
+	GetAllMajorRequirements() ([]MajorRequirementData, error)
 	CreateMajorRequirement(req MajorRequirementData) (MajorRequirementData, error)
 	DeleteMajorRequirements(majorID uuid.UUID) error
 

@@ -219,6 +219,14 @@ func (s *MemoryStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.Majo
 	return out, nil
 }
 
+func (s *MemoryStore) GetAllMajorRequirements() ([]interfaces.MajorRequirementData, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]interfaces.MajorRequirementData, len(s.majorRequirements))
+	copy(out, s.majorRequirements)
+	return out, nil
+}
+
 func (s *MemoryStore) CreateMajorRequirement(req interfaces.MajorRequirementData) (interfaces.MajorRequirementData, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

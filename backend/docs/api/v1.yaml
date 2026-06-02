@@ -558,6 +558,22 @@ components:
           items:
             type: string
             format: uuid
+        to_major:
+          type: object
+          description: |
+            маппинг id мажора → тип требования, показывающий для каких мажоров
+            данный курс является требованием и какого типа
+          additionalProperties:
+            type: string
+            enum:
+              - major_core
+              - major_choice
+              - flex
+              - university
+              - elective
+              - minor
+              - soft
+              - selected_topics
 
     CourseWriteRequest:
       type: object

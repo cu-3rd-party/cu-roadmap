@@ -191,6 +191,23 @@ func (s *PostgresStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.Ma
 	return out, nil
 }
 
+func (s *PostgresStore) GetAllMajorRequirements() ([]interfaces.MajorRequirementData, error) {
+	var reqs []models.MajorRequirement
+	if err := s.db.Find(&reqs).Error; err != nil {
+		return nil, err
+	}
+	out := make([]interfaces.MajorRequirementData, len(reqs))
+	for i, r := range reqs {
+		out[i] = interfaces.MajorRequirementData{
+			ID:              r.ID,
+			MajorID:         r.MajorID,
+			CourseID:        r.CourseID,
+			RequirementType: r.RequirementType,
+		}
+	}
+	return out, nil
+}
+
 func (s *PostgresStore) CreateMajorRequirement(req interfaces.MajorRequirementData) (interfaces.MajorRequirementData, error) {
 	r := models.MajorRequirement{
 		ID:              req.ID,

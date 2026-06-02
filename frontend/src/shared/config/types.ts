@@ -13,6 +13,7 @@ export interface Course {
   corequisites?: string[];
   postrequisites?: string[];
   handbook_link?: string;
+  to_major?: Record<string, string>;
 }
 
 export interface Major {

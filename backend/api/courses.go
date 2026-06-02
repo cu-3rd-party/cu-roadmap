@@ -34,9 +34,33 @@ func getCourses(c *gin.Context) {
 		return
 	}
 
+	allReqs, err := s.GetAllMajorRequirements()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	courseToMajor := make(map[uuid.UUID]map[uuid.UUID]string)
+	for _, req := range allReqs {
+		if courseToMajor[req.CourseID] == nil {
+			courseToMajor[req.CourseID] = make(map[uuid.UUID]string)
+		}
+		courseToMajor[req.CourseID][req.MajorID] = string(req.RequirementType)
+	}
+
 	var res []gin.H
 	for _, course := range courses {
-		res = append(res, helpers.CourseToResponse(course))
+		item := helpers.CourseToResponse(course)
+		if m, ok := courseToMajor[course.ID]; ok {
+			toMajor := make(gin.H)
+			for majorID, reqType := range m {
+				toMajor[majorID.String()] = reqType
+			}
+			item["to_major"] = toMajor
+		} else {
+			item["to_major"] = gin.H{}
+		}
+		res = append(res, item)
 	}
 	c.JSON(http.StatusOK, res)
 }
