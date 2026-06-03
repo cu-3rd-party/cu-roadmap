@@ -66,7 +66,7 @@ func getCourses(c *gin.Context) {
 		courseToMajor[req.CourseID][req.MajorID] = string(req.RequirementType)
 	}
 
-	var res []gin.H
+	res := []gin.H{}
 	for _, course := range courses {
 		item := helpers.CourseToResponse(course)
 		if m, ok := courseToMajor[course.ID]; ok {

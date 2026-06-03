@@ -44,7 +44,7 @@ func getMajors(c *gin.Context) {
 		return
 	}
 
-	var res []gin.H
+	res := []gin.H{}
 	for _, m := range majors {
 		if cohortYear != 0 && m.CohortYear != cohortYear {
 			continue

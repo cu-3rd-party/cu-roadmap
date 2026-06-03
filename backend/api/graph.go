@@ -31,7 +31,7 @@ func getGraphData(c *gin.Context) {
 		return
 	}
 
-	var nodes []gin.H
+	nodes := []gin.H{}
 	for _, c := range courses {
 		var recSem interface{}
 		if c.RecommendedSemester != nil {
@@ -51,7 +51,7 @@ func getGraphData(c *gin.Context) {
 	}
 	log.Printf("Fetched %d courses for graph nodes", len(nodes))
 
-	var edges []gin.H
+	edges := []gin.H{}
 	for _, d := range deps {
 		edges = append(edges, gin.H{
 			"from":  d.RequiredCourseID.String(),
