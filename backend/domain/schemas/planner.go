@@ -1,13 +1,32 @@
 package schemas
 
-import "github.com/google/uuid"
+import (
+	"errors"
+
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/google/uuid"
+)
 
 type PlannerRequest struct {
-	PassedCourseIDs   []uuid.UUID `json:"passed_course_ids" binding:"required"`
-	SelectedCourseIDs []uuid.UUID `json:"selected_course_ids"`
-	CourseSource      string      `json:"course_source"`
-	MajorID           uuid.UUID   `json:"major_id" binding:"required"`
-	CurrentSemester   int         `json:"current_semester" default:"1"`
-	MaxLoad           float64     `json:"max_load" default:"12.0"`
-	Cohort            int         `json:"cohort"`
+	PassedCourseIDs   []uuid.UUID        `json:"passed_course_ids" binding:"required"`
+	SelectedCourseIDs []uuid.UUID        `json:"selected_course_ids"`
+	CourseSource      enums.CourseSource `json:"course_source"`
+	MajorID           uuid.UUID          `json:"major_id" binding:"required"`
+	CurrentSemester   int                `json:"current_semester" default:"1"`
+	MaxLoad           float64            `json:"max_load" default:"12.0"`
+	Cohort            int                `json:"cohort"`
+}
+
+func (p *PlannerRequest) Validate() error {
+	if p.CurrentSemester <= 0 {
+		return errors.New("current_semester must be greater than zero")
+	}
+	if p.MaxLoad <= 0 {
+		return errors.New("max_load must be greater than zero")
+	}
+	if p.Cohort <= 0 {
+		return errors.New("cohort must be greater than zero")
+	}
+
+	return nil
 }

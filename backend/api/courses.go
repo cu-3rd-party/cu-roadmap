@@ -90,6 +90,11 @@ func createCourse(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	err := req.Validate()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	course := interfaces.CourseData{
 		ID:                  uuid.New(),
@@ -130,6 +135,11 @@ func updateCourse(c *gin.Context) {
 	s := store.GetStore()
 	var req schemas.UpdateCourseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err = req.Validate()
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

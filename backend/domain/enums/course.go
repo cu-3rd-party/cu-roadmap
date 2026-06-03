@@ -19,3 +19,10 @@ const (
 	CourseCategoryTech         CourseCategory = "tech"
 	CourseCategoryDesign       CourseCategory = "design"
 )
+
+type CourseSource string
+
+const (
+	CourseSourceSelected CourseSource = "selected"
+	CourseSourcePassed   CourseSource = "passed"
+)

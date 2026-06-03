@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/service"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
@@ -12,7 +13,7 @@ import (
 )
 
 func getPlannerCourseIDs(req schemas.PlannerRequest) []uuid.UUID {
-	if req.CourseSource == "selected" && len(req.SelectedCourseIDs) > 0 {
+	if req.CourseSource == enums.CourseSourceSelected && len(req.SelectedCourseIDs) > 0 {
 		return req.SelectedCourseIDs
 	}
 
@@ -29,6 +30,11 @@ func RegisterPlannerRoutes(rg *gin.RouterGroup) {
 func generateRoadmap(c *gin.Context) {
 	var req schemas.PlannerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := req.Validate()
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -62,8 +68,10 @@ func validateSemester(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if req.MaxLoad == 0 {
-		req.MaxLoad = 12.0
+	err := req.Validate()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	s := store.GetStore()
@@ -106,8 +114,10 @@ func validateRoadmap(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if req.MaxLoad == 0 {
-		req.MaxLoad = 12.0
+	err := req.Validate()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	s := store.GetStore()
@@ -116,7 +126,7 @@ func validateRoadmap(c *gin.Context) {
 		return
 	}
 
-	_, err := s.GetAllCourses()
+	_, err = s.GetAllCourses()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -164,6 +174,11 @@ func validateRoadmap(c *gin.Context) {
 func getGoalPath(c *gin.Context) {
 	var req schemas.GoalPathRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := req.Validate()
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
