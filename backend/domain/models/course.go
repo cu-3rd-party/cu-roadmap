@@ -16,10 +16,10 @@ type Course struct {
 	Category            enums.CourseCategory `gorm:"type:varchar(20);not null"`
 	AllowedCohorts      pq.Int64Array        `gorm:"type:integer[]"`
 	AvailableSemesters  pq.Int64Array        `gorm:"type:integer[];not null"`
-	RecommendedSemester *int
-	Workload            float64 `gorm:"not null"`
-	CsatMetric          *float64
-	CourseDependencies  []CourseDependency `gorm:"foreignKey:CourseID"`
+	RecommendedSemester *int                 `gorm:"type:integer"`
+	Workload            float64              `gorm:"not null"`
+	CsatMetric          *float64             `gorm:"type:float"`
+	CourseDependencies  []CourseDependency   `gorm:"foreignKey:CourseID"`
 }
 
 func (c *Course) BeforeCreate(tx *gorm.DB) error {
