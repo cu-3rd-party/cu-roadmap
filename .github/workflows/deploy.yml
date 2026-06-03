@@ -28,9 +28,6 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || steps.resolve-ref.outputs.sha }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Set up SSH Key
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

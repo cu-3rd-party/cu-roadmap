@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
@@ -10,6 +11,40 @@ import (
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 )
+
+type plannerFactory struct {
+	name string
+	kind PlannerKind
+}
+
+var roadmapPlannerFactories = []plannerFactory{
+	{name: "greedy", kind: PlannerKindGreedy},
+	{name: "dp", kind: PlannerKindDynamicProgramming},
+	{name: "ilp", kind: PlannerKindIntegerLinearProgram},
+	{name: "lp_relaxation", kind: PlannerKindLinearRelaxation},
+}
+
+func TestNewRoadmapPlanner(t *testing.T) {
+	s := store.NewMemoryStore()
+	s.Init("admin")
+	defer s.Close()
+
+	tests := []PlannerKind{
+		PlannerKindGreedy,
+		PlannerKindDynamicProgramming,
+		PlannerKindIntegerLinearProgram,
+		PlannerKindLinearRelaxation,
+	}
+
+	for _, kind := range tests {
+		planner, err := NewRoadmapPlanner(kind, s)
+		assert.NoError(t, err)
+		assert.NotNil(t, planner)
+	}
+
+	_, err := NewRoadmapPlanner(PlannerKind("unknown"), s)
+	assert.Error(t, err)
+}
 
 func newTestData() (interfaces.StoreBase, *interfaces.CourseData, *interfaces.CourseData, *interfaces.CourseData) {
 	s := store.NewMemoryStore()
@@ -29,94 +64,295 @@ func newTestData() (interfaces.StoreBase, *interfaces.CourseData, *interfaces.Co
 	return s, &c1, &c2, &c3
 }
 
-func TestGenerateRoadmapBasic(t *testing.T) {
-	s, c1, c2, c3 := newTestData()
-	defer s.Close()
-
-	major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
-	s.CreateMajor(major)
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
-	_ = c3
-
-	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, major.ID, 1, 12.0, 0)
+func createPlannerForTest(t testing.TB, kind PlannerKind, s interfaces.StoreBase) RoadmapPlanner {
+	t.Helper()
+	planner, err := NewRoadmapPlanner(kind, s)
 	assert.NoError(t, err)
-	assert.IsType(t, []map[string]interface{}{}, roadmap)
-	assert.NotZero(t, len(roadmap.([]map[string]interface{})))
+	assert.NotNil(t, planner)
+	return planner
 }
 
-func TestGenerateRoadmapWithPassedCourses(t *testing.T) {
-	s, c1, c2, c3 := newTestData()
-	defer s.Close()
-
-	major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
-	s.CreateMajor(major)
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
-	_ = c3
-
-	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID}, major.ID, 3, 12.0, 0)
-	assert.NoError(t, err)
-	assert.IsType(t, []map[string]interface{}{}, roadmap)
-}
-
-func TestGenerateRoadmapMajorNotFound(t *testing.T) {
-	s := store.NewMemoryStore()
-	s.Init("admin")
-	defer s.Close()
-
-	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0, 0)
-	assert.NoError(t, err)
-	assert.IsType(t, map[string]interface{}{}, roadmap)
-	assert.Contains(t, roadmap.(map[string]interface{}), "error")
-}
-
-func TestGenerateRoadmapRespectsMaxLoad(t *testing.T) {
-	s, c1, c2, c3 := newTestData()
-	defer s.Close()
-
-	major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
-	s.CreateMajor(major)
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
-	_ = c3
-
-	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, major.ID, 1, 4.0, 0)
-	assert.NoError(t, err)
-	rm := roadmap.([]map[string]interface{})
-	for _, sem := range rm {
-		if load, ok := sem["total_load"]; ok {
-			assert.LessOrEqual(t, load.(float64), 4.0)
-		}
+func runRoadmapPlannerTests(t *testing.T, testFn func(t *testing.T, factory plannerFactory)) {
+	t.Helper()
+	for _, factory := range roadmapPlannerFactories {
+		factory := factory
+		t.Run(factory.name, func(t *testing.T) {
+			testFn(t, factory)
+		})
 	}
 }
 
-func TestGenerateRoadmapEmptyMajor(t *testing.T) {
-	s, _, _, _ := newTestData()
-	defer s.Close()
+func runRoadmapPlannerTestsWithStore(
+	t *testing.T,
+	s interfaces.StoreBase,
+	testFn func(t *testing.T, factory plannerFactory, planner RoadmapPlanner),
+) {
+	t.Helper()
+	for _, factory := range roadmapPlannerFactories {
+		factory := factory
+		t.Run(factory.name, func(t *testing.T) {
+			testFn(t, factory, createPlannerForTest(t, factory.kind, s))
+		})
+	}
+}
 
-	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0, 0)
-	assert.NoError(t, err)
-	assert.IsType(t, map[string]interface{}{}, roadmap)
-	assert.Contains(t, roadmap.(map[string]interface{}), "error")
+func createMajorWithRequirements(s interfaces.StoreBase, courseIDs ...uuid.UUID) uuid.UUID {
+	major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+	s.CreateMajor(major)
+	for _, courseID := range courseIDs {
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         major.ID,
+			CourseID:        courseID,
+			RequirementType: enums.RequirementTypeMajorCore,
+		})
+	}
+	return major.ID
+}
+
+func TestGenerateRoadmapBasic(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s, c1, c2, c3 := newTestData()
+		defer s.Close()
+
+		majorID := createMajorWithRequirements(s, c1.ID, c2.ID)
+		_ = c3
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, majorID, 1, 12.0, 0)
+		assert.NoError(t, err)
+		assert.IsType(t, []map[string]interface{}{}, roadmap)
+		assert.NotZero(t, len(roadmap.([]map[string]interface{})))
+	})
+}
+
+func TestGenerateRoadmapWithPassedCourses(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s, c1, c2, c3 := newTestData()
+		defer s.Close()
+
+		majorID := createMajorWithRequirements(s, c1.ID, c2.ID)
+		_ = c3
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID}, majorID, 3, 12.0, 0)
+		assert.NoError(t, err)
+		assert.IsType(t, []map[string]interface{}{}, roadmap)
+	})
+}
+
+func TestGenerateRoadmapMajorNotFound(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s := store.NewMemoryStore()
+		s.Init("admin")
+		defer s.Close()
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0, 0)
+		assert.NoError(t, err)
+		assert.IsType(t, map[string]interface{}{}, roadmap)
+		assert.Contains(t, roadmap.(map[string]interface{}), "error")
+	})
+}
+
+func TestGenerateRoadmapRespectsMaxLoad(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s, c1, c2, c3 := newTestData()
+		defer s.Close()
+
+		majorID := createMajorWithRequirements(s, c1.ID, c2.ID)
+		_ = c3
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, majorID, 1, 4.0, 0)
+		assert.NoError(t, err)
+		rm := roadmap.([]map[string]interface{})
+		for _, sem := range rm {
+			if load, ok := sem["total_load"]; ok {
+				assert.LessOrEqual(t, load.(float64), 4.0)
+			}
+		}
+	})
+}
+
+func TestGenerateRoadmapEmptyMajor(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s, _, _, _ := newTestData()
+		defer s.Close()
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, uuid.New(), 1, 12.0, 0)
+		assert.NoError(t, err)
+		assert.IsType(t, map[string]interface{}{}, roadmap)
+		assert.Contains(t, roadmap.(map[string]interface{}), "error")
+	})
 }
 
 func TestGenerateRoadmapAllPassed(t *testing.T) {
-	s, c1, c2, _ := newTestData()
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s, c1, c2, _ := newTestData()
+		defer s.Close()
+
+		majorID := createMajorWithRequirements(s, c1.ID, c2.ID)
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID, c2.ID}, majorID, 1, 12.0, 0)
+		assert.NoError(t, err)
+		assert.IsType(t, []map[string]interface{}{}, roadmap)
+	})
+}
+
+func TestGenerateRoadmapOptimizationStrategiesDiverge(t *testing.T) {
+	s, majorID := newOptimizationTradeoffData()
 	defer s.Close()
+
+	results := make(map[PlannerKind][]string)
+	runRoadmapPlannerTestsWithStore(t, s, func(t *testing.T, factory plannerFactory, planner RoadmapPlanner) {
+		roadmap, err := planner.GenerateRoadmap(nil, majorID, 1, 6.0, 0)
+		assert.NoError(t, err)
+
+		rm := roadmap.([]map[string]interface{})
+		assert.NotEmpty(t, rm)
+
+		firstSemester, ok := rm[0]["course_ids"].([]string)
+		assert.True(t, ok)
+		results[factory.kind] = append([]string{}, firstSemester...)
+	})
+
+	assert.Len(t, results[PlannerKindGreedy], 1)
+	assert.Len(t, results[PlannerKindDynamicProgramming], 2)
+	assert.Len(t, results[PlannerKindIntegerLinearProgram], 2)
+}
+
+func TestGenerateRoadmapBaselineCompletesAllRequiredCourses(t *testing.T) {
+	s, majorID := newSequentialPlannerData(8)
+	defer s.Close()
+
+	runRoadmapPlannerTestsWithStore(t, s, func(t *testing.T, factory plannerFactory, planner RoadmapPlanner) {
+		roadmap, err := planner.GenerateRoadmap(nil, majorID, 1, 6.0, 0)
+		assert.NoError(t, err)
+
+		rm := roadmap.([]map[string]interface{})
+		assert.NotEmpty(t, rm)
+
+		totalCourses := 0
+		for _, sem := range rm {
+			load, ok := sem["total_load"].(float64)
+			assert.True(t, ok)
+			assert.LessOrEqual(t, load, 6.0)
+
+			courseIDs, ok := sem["course_ids"].([]string)
+			assert.True(t, ok)
+			totalCourses += len(courseIDs)
+		}
+
+		assert.Equal(t, 8, totalCourses)
+		assert.LessOrEqual(t, len(rm), 8)
+	})
+}
+
+func newSequentialPlannerData(courseCount int) (interfaces.StoreBase, uuid.UUID) {
+	s := store.NewMemoryStore()
+	s.Init("admin")
 
 	major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
 	s.CreateMajor(major)
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
 
-	planner := NewGreedyPlanner(s)
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID, c2.ID}, major.ID, 1, 12.0, 0)
-	assert.NoError(t, err)
-	assert.IsType(t, []map[string]interface{}{}, roadmap)
+	courseIDs := make([]uuid.UUID, 0, courseCount)
+	for i := 0; i < courseCount; i++ {
+		course := interfaces.CourseData{
+			ID:                  uuid.New(),
+			Title:               fmt.Sprintf("Course %02d", i+1),
+			Description:         new("Generated"),
+			AvailableSemesters:  nil,
+			RecommendedSemester: new(i + 1),
+			Workload:            3.0,
+		}
+		s.CreateCourse(course)
+		courseIDs = append(courseIDs, course.ID)
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         major.ID,
+			CourseID:        course.ID,
+			RequirementType: enums.RequirementTypeMajorCore,
+		})
+
+		if i > 0 {
+			s.CreateCourseDependency(interfaces.CourseDependencyData{
+				ID:               uuid.New(),
+				CourseID:         course.ID,
+				RequiredCourseID: courseIDs[i-1],
+				DependencyType:   enums.DependencyTypePrerequisite,
+			})
+		}
+	}
+
+	return s, major.ID
+}
+
+func newOptimizationTradeoffData() (interfaces.StoreBase, uuid.UUID) {
+	s := store.NewMemoryStore()
+	s.Init("admin")
+
+	heavy := interfaces.CourseData{ID: uuid.New(), Title: "Heavy Course", Description: new("Heavy"), RecommendedSemester: new(1), Workload: 6.0}
+	mediumA := interfaces.CourseData{ID: uuid.New(), Title: "Medium A", Description: new("Medium"), RecommendedSemester: new(1), Workload: 3.0}
+	mediumB := interfaces.CourseData{ID: uuid.New(), Title: "Medium B", Description: new("Medium"), RecommendedSemester: new(1), Workload: 3.0}
+
+	s.CreateCourse(heavy)
+	s.CreateCourse(mediumA)
+	s.CreateCourse(mediumB)
+
+	majorID := createMajorWithRequirements(s, heavy.ID, mediumA.ID, mediumB.ID)
+
+	for i := 0; i < 3; i++ {
+		unlockCourse := interfaces.CourseData{ID: uuid.New(), Title: fmt.Sprintf("Heavy Unlock %d", i+1), Description: new("Unlock"), Workload: 3.0}
+		s.CreateCourse(unlockCourse)
+		s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         unlockCourse.ID,
+			RequiredCourseID: heavy.ID,
+			DependencyType:   enums.DependencyTypePrerequisite,
+		})
+	}
+
+	for i := 0; i < 2; i++ {
+		unlockCourse := interfaces.CourseData{ID: uuid.New(), Title: fmt.Sprintf("Medium A Unlock %d", i+1), Description: new("Unlock"), Workload: 3.0}
+		s.CreateCourse(unlockCourse)
+		s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         unlockCourse.ID,
+			RequiredCourseID: mediumA.ID,
+			DependencyType:   enums.DependencyTypePrerequisite,
+		})
+	}
+
+	for i := 0; i < 2; i++ {
+		unlockCourse := interfaces.CourseData{ID: uuid.New(), Title: fmt.Sprintf("Medium B Unlock %d", i+1), Description: new("Unlock"), Workload: 3.0}
+		s.CreateCourse(unlockCourse)
+		s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         unlockCourse.ID,
+			RequiredCourseID: mediumB.ID,
+			DependencyType:   enums.DependencyTypePrerequisite,
+		})
+	}
+
+	return s, majorID
+}
+
+func BenchmarkGenerateRoadmapImplementations(b *testing.B) {
+	for _, factory := range roadmapPlannerFactories {
+		b.Run(factory.name, func(b *testing.B) {
+			s, majorID := newSequentialPlannerData(24)
+			defer s.Close()
+			planner := createPlannerForTest(b, factory.kind, s)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_, err := planner.GenerateRoadmap(nil, majorID, 1, 6.0, 0)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
 }
