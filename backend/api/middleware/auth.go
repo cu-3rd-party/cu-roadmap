@@ -13,8 +13,8 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		s := store.GetStore()
-		if s == nil {
+		cache := store.GetCacheStore()
+		if cache == nil {
 			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
 			return
 		}
@@ -30,7 +30,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		valid, err := s.CheckAuthToken(token)
+		valid, err := cache.CheckAuthToken(token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

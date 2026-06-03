@@ -56,5 +56,5 @@ jobs:
           GOOGLE_ACCOUNT_JSON_B64=$(printf '%s' "$GOOGLE_ACCOUNT_JSON" | base64 -w 0)
           ssh $SSH_USER@$SSH_HOST "printf '%s' \"${{ secrets.ENV }}\" > ${{ secrets.DEPLOY_PATH }}/.env"
           ssh $SSH_USER@$SSH_HOST "printf 'GOOGLE_SERVICE_ACCOUNT_JSON_B64=%s\n' '$GOOGLE_ACCOUNT_JSON_B64' >> ${{ secrets.DEPLOY_PATH }}/.env"
-          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose --profile postgres down || true"
-          ssh $SSH_USER@$SSH_HOST "cd ~/cu-roadmap && docker compose --profile postgres -f docker-compose.yml up -d --build"
+          ssh $SSH_USER@$SSH_HOST "cd ${{ secrets.DEPLOY_PATH }} && docker compose down || true"
+          ssh $SSH_USER@$SSH_HOST "cd ${{ secrets.DEPLOY_PATH }} && docker compose -f docker-compose.yml up -d --build"

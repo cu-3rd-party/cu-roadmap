@@ -47,9 +47,10 @@ func main() {
 	)
 
 	useMemoryStore := settings.UseMemoryStore
+	useMemoryCacheStore := settings.UseMemoryCacheStore
 
-	slog.Info("initializing store", "USE_MEMORY_STORE", useMemoryStore)
-	s, err := store.InitStore(useMemoryStore, settings.DBURL(), settings.AdminPassword)
+	slog.Info("initializing stores", "USE_MEMORY_STORE", useMemoryStore, "USE_MEMORY_CACHE_STORE", useMemoryCacheStore)
+	s, err := store.InitStore(useMemoryStore, settings.DBURL(), settings.AdminPassword, useMemoryCacheStore, settings.RedisURL())
 	if err != nil {
 		log.Fatalf("failed to init store: %v", err)
 	}
@@ -95,7 +96,10 @@ func main() {
 	}))
 
 	staticDir, _ := filepath.Abs("static")
-	os.MkdirAll(staticDir, 0o755)
+	err = os.MkdirAll(staticDir, 0o755)
+	if err != nil {
+		return
+	}
 	router.Use(static.Serve("/static", static.LocalFile(staticDir, true)))
 
 	apiV1 := router.Group("/api/v1")

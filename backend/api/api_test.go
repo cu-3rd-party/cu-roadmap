@@ -559,7 +559,7 @@ func TestStoreNotInitialized(t *testing.T) {
 	assert.Contains(t, resp["error"], "store not initialized")
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "", "admin")
+	_, err := store.InitStore(true, "", "admin", true, "")
 	assert.NoError(t, err)
 }
 
@@ -593,7 +593,10 @@ func TestGetGraphDataWithRecommendedSemester(t *testing.T) {
 func addAuthCookie(t *testing.T, req *http.Request) {
 	t.Helper()
 	s := store.GetStore()
-	token, err := s.CreateAuthToken()
+	assert.NotNil(t, s)
+	cache := store.GetCacheStore()
+	assert.NotNil(t, cache)
+	token, err := cache.CreateAuthToken()
 	assert.NoError(t, err)
 	req.AddCookie(&http.Cookie{Name: "auth-token", Value: token.Token.String()})
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
@@ -12,7 +13,10 @@ type Settings struct {
 	PostgresDB                     string `envconfig:"POSTGRES_DB" default:"roadmap_db"`
 	PostgresHost                   string `envconfig:"POSTGRES_HOST" default:"db"`
 	SeedOnStartup                  bool   `envconfig:"SEED_ON_STARTUP" default:"true"`
-	UseMemoryStore                 bool   `envconfig:"USE_MEMORY_STORE" default:"false"`
+	UseMemoryStore                 bool   `envconfig:"USE_MEMORY_STORE" default:"true"`
+	UseMemoryCacheStore            bool   `envconfig:"USE_MEMORY_CACHE_STORE" default:"true"`
+	RedisURLValue                  string `envconfig:"REDIS_URL" default:""`
+	RedisPassword                  string `envconfig:"REDIS_PASSWORD" default:""`
 	GoogleSheetsSpreadsheetID      string `envconfig:"GOOGLE_SHEETS_SPREADSHEET_ID" default:""`
 	GoogleServiceAccountJSON       string `envconfig:"GOOGLE_SERVICE_ACCOUNT_JSON" default:""`
 	GoogleServiceAccountJSONB64    string `envconfig:"GOOGLE_SERVICE_ACCOUNT_JSON_B64" default:""`
@@ -28,6 +32,16 @@ type Settings struct {
 func (s *Settings) DBURL() string {
 	return "postgres://" + s.PostgresUser + ":" + s.PostgresPassword +
 		"@" + s.PostgresHost + ":5432/" + s.PostgresDB
+}
+
+func (s *Settings) RedisURL() string {
+	if s.RedisURLValue != "" {
+		return s.RedisURLValue
+	}
+	if s.RedisPassword == "" {
+		return "redis://redis:6379/0"
+	}
+	return "redis://:" + url.QueryEscape(s.RedisPassword) + "@redis:6379/0"
 }
 
 func (s *Settings) GoogleSheetsSyncSheetNames() []string {

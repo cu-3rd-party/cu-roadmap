@@ -25,7 +25,7 @@ func initTestStore(t *testing.T) (interfaces.StoreBase, error) {
 	store.CloseStore()
 
 	if testDatabaseURL == "" {
-		return store.InitStore(true, "", "admin")
+		return store.InitStore(true, "", "admin", true, "")
 	}
 
 	schema := fmt.Sprintf("test_%s", uuid.New().String()[:8])
@@ -53,7 +53,7 @@ func initTestStore(t *testing.T) (interfaces.StoreBase, error) {
 	q.Set("search_path", schema)
 	u.RawQuery = q.Encode()
 
-	s, err := store.InitStore(false, u.String(), "admin")
+	s, err := store.InitStore(false, u.String(), "admin", true, "")
 	if err != nil {
 		baseDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schema))
 		return nil, err

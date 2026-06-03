@@ -5,6 +5,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type CacheStoreBase interface {
+	Init() error
+	Close() error
+	ClearAll() error
+
+	CreateAuthToken() (*models.AuthToken, error)
+	CheckAuthToken(token uuid.UUID) (bool, error)
+}
+
 type StoreBase interface {
 	Init(password string) error
 	Close() error
@@ -41,8 +50,6 @@ type StoreBase interface {
 	SeedAllData() error
 	SyncGoogleSheetsData() error
 
-	CreateAuthToken() (*models.AuthToken, error)
-	CheckAuthToken(token uuid.UUID) (bool, error)
 	SetAdminPassword(password string)
 	CheckPassword(password string) bool
 }

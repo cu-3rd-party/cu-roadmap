@@ -27,7 +27,8 @@ func check(c *gin.Context) {
 
 func login(c *gin.Context) {
 	s := store.GetStore()
-	if s == nil {
+	cache := store.GetCacheStore()
+	if s == nil || cache == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
 		return
 	}
@@ -45,7 +46,7 @@ func login(c *gin.Context) {
 		return
 	}
 
-	token, err := s.CreateAuthToken()
+	token, err := cache.CreateAuthToken()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

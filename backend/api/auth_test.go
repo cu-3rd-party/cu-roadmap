@@ -12,22 +12,27 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-type authTokenErrorStore struct {
-	*store.MemoryStore
-}
+type authTokenErrorStore struct{}
+
+func (s *authTokenErrorStore) Init() error     { return nil }
+func (s *authTokenErrorStore) Close() error    { return nil }
+func (s *authTokenErrorStore) ClearAll() error { return nil }
 
 func (s *authTokenErrorStore) CreateAuthToken() (*models.AuthToken, error) {
 	return nil, fmt.Errorf("token creation failed")
 }
 
+func (s *authTokenErrorStore) CheckAuthToken(token uuid.UUID) (bool, error) { return true, nil }
+
 func setupAuthRouter(t *testing.T, password string, seed func(s interfaces.StoreBase)) *gin.Engine {
 	t.Helper()
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "", password)
+	_, err := store.InitStore(true, "", password, true, "")
 	assert.NoError(t, err)
 
 	s := store.GetStore()
@@ -71,7 +76,7 @@ func TestLoginStoreNotInitialized(t *testing.T) {
 	assert.Contains(t, resp["error"], "store not initialized")
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "", "")
+	_, err := store.InitStore(true, "", "", true, "")
 	assert.NoError(t, err)
 }
 
@@ -103,9 +108,9 @@ func TestLoginWrongPassword(t *testing.T) {
 
 func TestLoginAuthTokenError(t *testing.T) {
 	store.CloseStore()
-	ms := store.NewMemoryStore()
-	ms.Init("admin")
-	store.SetStoreForTest(&authTokenErrorStore{MemoryStore: ms})
+	_, err := store.InitStore(true, "", "admin", true, "")
+	assert.NoError(t, err)
+	store.SetCacheStoreForTest(&authTokenErrorStore{})
 
 	router := gin.New()
 	apiV1 := router.Group("/api/v1")
@@ -123,7 +128,7 @@ func TestLoginAuthTokenError(t *testing.T) {
 	assert.Contains(t, resp["error"], "token creation failed")
 
 	store.CloseStore()
-	_, err := store.InitStore(true, "", "")
+	_, err = store.InitStore(true, "", "", true, "")
 	assert.NoError(t, err)
 }
 
