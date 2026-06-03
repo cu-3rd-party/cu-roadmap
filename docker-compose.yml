@@ -87,14 +87,15 @@ services:
     env_file:
       - .env
     environment:
-      GF_SERVER_ROOT_URL: '%(protocol)s://%(domain)s/grafana/'
+      GF_SERVER_ROOT_URL: https://roadmap.cu3rd.ru/grafana/
+      GF_SERVER_DOMAIN: roadmap.cu3rd.ru
       GF_SERVER_SERVE_FROM_SUB_PATH: 'true'
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
       - ./metrics/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./metrics/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./metrics/grafana/dashboards:/etc/grafana/provisioning/dashboards/json:ro
+      - ./metrics/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus

@@ -21,6 +21,7 @@ COPY . .
 RUN pnpm build
 
 
+
 FROM base AS runner
 WORKDIR /app
 
@@ -30,6 +31,7 @@ COPY --from=install /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 COPY index.html /app/
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
+COPY vite.config.ts /app/
 
 EXPOSE 5173
 
