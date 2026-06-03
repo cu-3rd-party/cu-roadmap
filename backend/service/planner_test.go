@@ -164,12 +164,12 @@ func TestGenerateRoadmapRespectsMaxLoad(t *testing.T) {
 		_ = c3
 
 		planner := createPlannerForTest(t, factory.kind, s)
-		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, majorID, 1, 4.0, 0)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, majorID, 1, 5.0, 0)
 		assert.NoError(t, err)
 		rm := roadmap.([]map[string]interface{})
 		for _, sem := range rm {
 			if load, ok := sem["total_load"]; ok {
-				assert.LessOrEqual(t, load.(float64), 4.0)
+				assert.LessOrEqual(t, load.(float64), 5.0)
 			}
 		}
 	})

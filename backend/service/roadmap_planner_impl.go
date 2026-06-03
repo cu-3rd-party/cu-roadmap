@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -19,6 +20,7 @@ type roadmapPlanningContext struct {
 	unlocksCount  map[uuid.UUID]int
 	passedIDs     map[uuid.UUID]bool
 	coursesTodo   map[uuid.UUID]interfaces.CourseData
+	coreCourseIDs map[uuid.UUID]bool
 	maxLoad       float64
 }
 
@@ -49,12 +51,16 @@ func newRoadmapPlanningContext(
 	}
 
 	targetCourses := make(map[uuid.UUID]interfaces.CourseData)
+	coreCourseIDs := make(map[uuid.UUID]bool)
 	for _, req := range requirements {
 		if c, ok := allCourses[req.CourseID]; ok {
 			if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
 				continue
 			}
 			targetCourses[req.CourseID] = c
+			if req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity {
+				coreCourseIDs[req.CourseID] = true
+			}
 		}
 	}
 	if len(targetCourses) == 0 {
@@ -99,6 +105,7 @@ func newRoadmapPlanningContext(
 		unlocksCount:  unlocksCount,
 		passedIDs:     passedIDs,
 		coursesTodo:   coursesTodo,
+		coreCourseIDs: coreCourseIDs,
 		maxLoad:       maxLoad,
 	}, nil, nil
 }
@@ -121,7 +128,7 @@ func generateRoadmapWithStrategy(
 	for semester := currentSemester; len(ctx.coursesTodo) > 0 && semester <= 12; semester++ {
 		selected := selectSemester(ctx, semester)
 		if len(selected) == 0 {
-			break
+			continue
 		}
 
 		courseIDs := make([]string, 0, len(selected))
@@ -138,7 +145,7 @@ func generateRoadmapWithStrategy(
 		}
 
 		if len(courseIDs) == 0 {
-			break
+			continue
 		}
 
 		roadmap = append(roadmap, map[string]interface{}{
@@ -146,6 +153,13 @@ func generateRoadmapWithStrategy(
 			"course_ids": courseIDs,
 			"total_load": semLoad,
 		})
+	}
+
+	for cid := range ctx.coreCourseIDs {
+		if _, stillTodo := ctx.coursesTodo[cid]; stillTodo {
+			courseName := ctx.targetCourses[cid].Title
+			return nil, fmt.Errorf("Не удалось добавить обязательный курс '%s' в план (проверьте семестры или пререквизиты)", courseName)
+		}
 	}
 
 	return roadmap, nil
