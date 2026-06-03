@@ -45,10 +45,6 @@ deploy.env
 *.swo
 .DS_Store
 
-# Credentials
-credentials/
-*.json
-
 # DB
 *.sqlite
 *.db

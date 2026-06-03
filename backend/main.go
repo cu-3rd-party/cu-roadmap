@@ -16,6 +16,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/api"
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
@@ -95,6 +96,7 @@ func main() {
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Cookie"},
 		AllowCredentials: true,
 	}))
+	router.Use(middleware.MetricsMiddleware())
 
 	staticDir, _ := filepath.Abs("static")
 	err = os.MkdirAll(staticDir, 0o755)
@@ -121,6 +123,7 @@ func main() {
 	router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	addr := fmt.Sprintf("%s:%d", settings.Host, settings.Port)
 	slog.Info("listening", "addr", addr)

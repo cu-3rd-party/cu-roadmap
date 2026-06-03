@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
+	"github.com/cu-3rd-party/cu-roadmap/backend/metrics"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -69,11 +70,13 @@ func (s *RedisCacheStore) CheckAuthToken(token uuid.UUID) (bool, error) {
 func (s *RedisCacheStore) Get(key string) ([]byte, bool, error) {
 	value, err := s.client.Get(context.Background(), cacheEntryKey(key)).Bytes()
 	if errors.Is(err, redis.Nil) {
+		metrics.ObserveCacheResult("redis", false)
 		return nil, false, nil
 	}
 	if err != nil {
 		return nil, false, err
 	}
+	metrics.ObserveCacheResult("redis", true)
 	return value, true, nil
 }
 

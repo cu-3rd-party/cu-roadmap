@@ -8,6 +8,7 @@ services:
     depends_on:
       - backend
       - frontend
+      - grafana
     restart: unless-stopped
 
   db:
@@ -69,6 +70,36 @@ services:
       - .env
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./metrics/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    env_file:
+      - .env
+    environment:
+      GF_SERVER_ROOT_URL: '%(protocol)s://%(domain)s/grafana/'
+      GF_SERVER_SERVE_FROM_SUB_PATH: 'true'
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./metrics/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./metrics/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./metrics/grafana/dashboards:/etc/grafana/provisioning/dashboards/json:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 networks:
   default:
     name: cu-roadmap
@@ -76,3 +107,5 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
+	"github.com/cu-3rd-party/cu-roadmap/backend/metrics"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
@@ -70,16 +71,19 @@ func (s *MemoryCacheStore) Get(key string) ([]byte, bool, error) {
 	entry, ok := s.entries[key]
 	s.mu.RUnlock()
 	if !ok {
+		metrics.ObserveCacheResult("memory", false)
 		return nil, false, nil
 	}
 	if entry.expires <= time.Now().Unix() {
 		s.mu.Lock()
 		delete(s.entries, key)
 		s.mu.Unlock()
+		metrics.ObserveCacheResult("memory", false)
 		return nil, false, nil
 	}
 	value := make([]byte, len(entry.value))
 	copy(value, entry.value)
+	metrics.ObserveCacheResult("memory", true)
 	return value, true, nil
 }
 

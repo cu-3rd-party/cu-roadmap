@@ -7,6 +7,7 @@ import (
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
+	"github.com/cu-3rd-party/cu-roadmap/backend/metrics"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
@@ -32,6 +33,7 @@ func (s *PostgresStore) Init(password string) error {
 	if err != nil {
 		return err
 	}
+	registerDBMetricsCallbacks(s.db)
 	s.SetAdminPassword(password)
 	return s.db.AutoMigrate(
 		&models.Course{},
@@ -40,6 +42,27 @@ func (s *PostgresStore) Init(password string) error {
 		&models.MajorRequirement{},
 		&models.Student{},
 	)
+}
+
+func registerDBMetricsCallbacks(db *gorm.DB) {
+	db.Callback().Query().Before("gorm:query").Register("cu-roadmap:metrics:query", func(*gorm.DB) {
+		metrics.ObserveDBQuery("query")
+	})
+	db.Callback().Create().Before("gorm:create").Register("cu-roadmap:metrics:create", func(*gorm.DB) {
+		metrics.ObserveDBQuery("create")
+	})
+	db.Callback().Update().Before("gorm:update").Register("cu-roadmap:metrics:update", func(*gorm.DB) {
+		metrics.ObserveDBQuery("update")
+	})
+	db.Callback().Delete().Before("gorm:delete").Register("cu-roadmap:metrics:delete", func(*gorm.DB) {
+		metrics.ObserveDBQuery("delete")
+	})
+	db.Callback().Row().Before("gorm:row").Register("cu-roadmap:metrics:row", func(*gorm.DB) {
+		metrics.ObserveDBQuery("row")
+	})
+	db.Callback().Raw().Before("gorm:raw").Register("cu-roadmap:metrics:raw", func(*gorm.DB) {
+		metrics.ObserveDBQuery("raw")
+	})
 }
 
 func (s *PostgresStore) Close() error {
