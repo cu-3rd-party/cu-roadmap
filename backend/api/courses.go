@@ -30,6 +30,9 @@ func getCourses(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
 		return
 	}
+	if tryWriteCachedJSON(c, coursesCacheKey(c)) {
+		return
+	}
 	f := parseCourseFilter(c)
 
 	if len(f.CohortYears) == 0 {
@@ -77,7 +80,7 @@ func getCourses(c *gin.Context) {
 		}
 		res = append(res, item)
 	}
-	c.JSON(http.StatusOK, res)
+	writeCachedJSON(c, coursesCacheKey(c), res)
 }
 
 func createCourse(c *gin.Context) {
@@ -111,6 +114,7 @@ func createCourse(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	invalidateCachePrefixes("courses:", "majors:")
 
 	c.JSON(http.StatusCreated, gin.H{"id": created.ID.String()})
 }
@@ -160,6 +164,7 @@ func updateCourse(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	invalidateCachePrefixes("courses:", "majors:")
 
 	c.JSON(http.StatusOK, gin.H{"id": updated.ID.String()})
 }
@@ -176,5 +181,6 @@ func deleteCourse(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	invalidateCachePrefixes("courses:", "majors:")
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }

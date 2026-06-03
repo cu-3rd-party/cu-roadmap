@@ -12,6 +12,9 @@ type CacheStoreBase interface {
 
 	CreateAuthToken() (*models.AuthToken, error)
 	CheckAuthToken(token uuid.UUID) (bool, error)
+	Get(key string) ([]byte, bool, error)
+	Set(key string, value []byte, ttlSeconds int64) error
+	DeleteByPrefix(prefix string) error
 }
 
 type StoreBase interface {

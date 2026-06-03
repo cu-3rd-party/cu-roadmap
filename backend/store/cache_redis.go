@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
@@ -63,6 +64,42 @@ func (s *RedisCacheStore) CheckAuthToken(token uuid.UUID) (bool, error) {
 	return true, nil
 }
 
+func (s *RedisCacheStore) Get(key string) ([]byte, bool, error) {
+	value, err := s.client.Get(context.Background(), cacheEntryKey(key)).Bytes()
+	if errors.Is(err, redis.Nil) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return value, true, nil
+}
+
+func (s *RedisCacheStore) Set(key string, value []byte, ttlSeconds int64) error {
+	return s.client.Set(context.Background(), cacheEntryKey(key), value, time.Duration(ttlSeconds)*time.Second).Err()
+}
+
+func (s *RedisCacheStore) DeleteByPrefix(prefix string) error {
+	ctx := context.Background()
+	pattern := cacheEntryKey(prefix) + "*"
+	iter := s.client.Scan(ctx, 0, pattern, 0).Iterator()
+	keys := make([]string, 0)
+	for iter.Next(ctx) {
+		keys = append(keys, iter.Val())
+	}
+	if err := iter.Err(); err != nil {
+		return err
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+	return s.client.Del(ctx, keys...).Err()
+}
+
 func authTokenCacheKey(token uuid.UUID) string {
 	return "auth-token:" + token.String()
+}
+
+func cacheEntryKey(key string) string {
+	return "cache:" + strings.ReplaceAll(key, " ", "%20")
 }

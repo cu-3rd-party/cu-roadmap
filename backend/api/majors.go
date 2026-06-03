@@ -34,6 +34,9 @@ func getMajors(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
 		return
 	}
+	if tryWriteCachedJSON(c, majorsCacheKey(c)) {
+		return
+	}
 	majors, err := s.GetAllMajors()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -64,7 +67,7 @@ func getMajors(c *gin.Context) {
 			"requirements": reqList,
 		})
 	}
-	c.JSON(http.StatusOK, res)
+	writeCachedJSON(c, majorsCacheKey(c), res)
 }
 
 func identifyMajor(c *gin.Context) {
@@ -214,6 +217,7 @@ func updateMajor(c *gin.Context) {
 			return
 		}
 	}
+	invalidateCachePrefixes("majors:", "courses:")
 
 	c.JSON(http.StatusOK, gin.H{"id": updated.ID.String()})
 }

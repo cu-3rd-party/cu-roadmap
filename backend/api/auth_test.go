@@ -18,9 +18,14 @@ import (
 
 type authTokenErrorStore struct{}
 
-func (s *authTokenErrorStore) Init() error     { return nil }
-func (s *authTokenErrorStore) Close() error    { return nil }
-func (s *authTokenErrorStore) ClearAll() error { return nil }
+func (s *authTokenErrorStore) Init() error                          { return nil }
+func (s *authTokenErrorStore) Close() error                         { return nil }
+func (s *authTokenErrorStore) ClearAll() error                      { return nil }
+func (s *authTokenErrorStore) Get(key string) ([]byte, bool, error) { return nil, false, nil }
+func (s *authTokenErrorStore) Set(key string, value []byte, ttlSeconds int64) error {
+	return nil
+}
+func (s *authTokenErrorStore) DeleteByPrefix(prefix string) error { return nil }
 
 func (s *authTokenErrorStore) CreateAuthToken() (*models.AuthToken, error) {
 	return nil, fmt.Errorf("token creation failed")
