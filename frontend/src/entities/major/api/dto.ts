@@ -1,3 +1,4 @@
+import { SemesterNumber } from "@/shared/constants";
 import { MajorRequirementType, MajorSchool, UUID } from "@/shared/model";
 
 export interface MajorRequirementDto {
@@ -24,4 +25,7 @@ export interface MajorMatchDto {
 }
 
 // Request body for POST /api/v1/majors/identify/ - UUIDs of passed courses
-export type IdentifyMajorsRequestDto = string[];
+export type IdentifyMajorsRequestDto = {
+  passed_courses_ids: UUID[];
+  current_semester: SemesterNumber; 
+}

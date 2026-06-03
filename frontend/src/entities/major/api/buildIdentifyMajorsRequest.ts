@@ -9,7 +9,7 @@ export const buildIdentifyMajorsRequest = (
   admissionYear: AdmissionYear,
 ): IdentifyMajorsRequestDto => {
   return {
-    passed_course_ids: courseIds,
-    current_semester: admissionYearToSemester[admissionYear],
+    passed_courses_ids: courseIds,
+    current_semester: admissionYearToSemester[admissionYear]
   };
 };

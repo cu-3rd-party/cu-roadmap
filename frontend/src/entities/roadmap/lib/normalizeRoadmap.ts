@@ -27,7 +27,7 @@ export const normalizeRoadmap = (
 ): Roadmap => {
   return {
     error: dto.error,
-    semesters: dto.roadmap.map((sem) => normalizeRoadmapSemester(sem)),
+    semesters: dto.roadmap?.map((sem) => normalizeRoadmapSemester(sem)) ?? [],
   };
 };
 
