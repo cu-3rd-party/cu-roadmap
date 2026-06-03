@@ -89,6 +89,7 @@ func (s *MemoryStore) GetCourses(filter interfaces.CourseFilter) ([]interfaces.C
 	for id, c := range s.courses {
 		c.Prerequisites = s.getPrereqsLocked(id)
 		c.Corequisites = s.getCoreqsLocked(id)
+		c.Postrequisites = s.getPostrequisitesLocked(id)
 		courses = append(courses, c)
 	}
 	return interfaces.FilterCourses(courses, filter), nil
@@ -133,6 +134,7 @@ func (s *MemoryStore) GetCourseByID(courseID uuid.UUID) (*interfaces.CourseData,
 	}
 	c.Prerequisites = s.getPrereqsLocked(courseID)
 	c.Corequisites = s.getCoreqsLocked(courseID)
+	c.Postrequisites = s.getPostrequisitesLocked(courseID)
 	return &c, nil
 }
 

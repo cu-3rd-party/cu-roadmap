@@ -142,6 +142,50 @@ func TestGetCoursesWithData(t *testing.T) {
 	assert.Equal(t, float64(4.0), courses[0]["workload"])
 }
 
+func TestGetCoursesReturnsPostrequisites(t *testing.T) {
+	baseID := uuid.New()
+	advancedID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		_, _ = s.CreateCourse(interfaces.CourseData{
+			ID:                 baseID,
+			Title:              "Base",
+			AvailableSemesters: []int{1},
+			Workload:           3.0,
+		})
+		_, _ = s.CreateCourse(interfaces.CourseData{
+			ID:                 advancedID,
+			Title:              "Advanced",
+			AvailableSemesters: []int{2},
+			Workload:           4.0,
+		})
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         advancedID,
+			RequiredCourseID: baseID,
+			DependencyType:   enums.DependencyTypePrerequisite,
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	var courses []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &courses)
+
+	byID := make(map[string]map[string]interface{}, len(courses))
+	for _, course := range courses {
+		byID[course["id"].(string)] = course
+	}
+
+	assert.ElementsMatch(t, []interface{}{advancedID.String()}, byID[baseID.String()]["postrequisites"])
+	assert.ElementsMatch(t, []interface{}{baseID.String()}, byID[advancedID.String()]["prerequisites"])
+	assert.Empty(t, byID[advancedID.String()]["postrequisites"])
+}
+
 func TestGetMajorsEmpty(t *testing.T) {
 	router := setupRouterRoot(t, nil)
 
