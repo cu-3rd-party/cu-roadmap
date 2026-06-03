@@ -13,19 +13,24 @@ import (
 	"gorm.io/gorm"
 )
 
-var testDatabaseURL string
+var (
+	testDatabaseURL string
+	testRedisURL    string
+)
 
 func init() {
 	testDatabaseURL = os.Getenv("TEST_DATABASE_URL")
+	testRedisURL = os.Getenv("TEST_REDIS_URL")
 }
 
 func initTestStore(t *testing.T) (interfaces.StoreBase, error) {
 	t.Helper()
 
 	store.CloseStore()
+	useMemoryCacheStore := testRedisURL == ""
 
 	if testDatabaseURL == "" {
-		return store.InitStore(true, "", "admin", true, "")
+		return store.InitStore(true, "", "admin", useMemoryCacheStore, testRedisURL)
 	}
 
 	schema := fmt.Sprintf("test_%s", uuid.New().String()[:8])
@@ -53,7 +58,7 @@ func initTestStore(t *testing.T) (interfaces.StoreBase, error) {
 	q.Set("search_path", schema)
 	u.RawQuery = q.Encode()
 
-	s, err := store.InitStore(false, u.String(), "admin", true, "")
+	s, err := store.InitStore(false, u.String(), "admin", useMemoryCacheStore, testRedisURL)
 	if err != nil {
 		baseDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schema))
 		return nil, err
