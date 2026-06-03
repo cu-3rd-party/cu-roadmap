@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +19,12 @@ import (
 type RedisCacheStore struct {
 	client   *redis.Client
 	redisURL string
+}
+
+func (s *RedisCacheStore) Ready() bool {
+	status := s.client.Ping(context.Background())
+	slog.Error("failed to ping redis with", "error", status.Err().Error())
+	return status.Err() == nil
 }
 
 func NewRedisCacheStore(redisURL string) *RedisCacheStore {

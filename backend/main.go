@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -68,10 +69,12 @@ func main() {
 	}
 
 	if settings.GoogleSheetsSyncEnabled {
-		s := store.GetStore()
-		if err := s.SyncGoogleSheetsData(); err != nil {
-			slog.Warn("initial Google Sheets sync failed", "error", err)
-		}
+		go func() {
+			s := store.GetStore()
+			if err := s.SyncGoogleSheetsData(); err != nil {
+				slog.Warn("initial Google Sheets sync failed", "error", err)
+			}
+		}()
 		go func() {
 			ticker := time.NewTicker(time.Duration(settings.GoogleSheetsSyncIntervalSecond) * time.Second)
 			defer ticker.Stop()
@@ -121,7 +124,10 @@ func main() {
 	})
 
 	router.GET("/api/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+		if !s.Ready() {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "starting", "timestamp": time.Now().Format(time.RFC3339)})
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "starting", "timestamp": time.Now().Format(time.RFC3339)})
 	})
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
@@ -134,7 +140,7 @@ func main() {
 	}
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()

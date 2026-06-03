@@ -3,6 +3,7 @@ package store
 import (
 	"crypto/sha256"
 	"errors"
+	"log/slog"
 	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
@@ -21,6 +22,24 @@ type PostgresStore struct {
 	db            *gorm.DB
 	databaseURL   string
 	adminPassword [32]byte
+	Synced        bool
+}
+
+func (s *PostgresStore) Ready() bool {
+	if s.adminPassword == [32]byte{} {
+		return false
+	}
+
+	if !s.Synced || s.db == nil {
+		return false
+	}
+
+	status := s.db.Select("1").Error
+	if status != nil {
+		slog.Error("failed to ping postgres", "error", status.Error())
+		return false
+	}
+	return true
 }
 
 func NewPostgresStore(databaseURL string) *PostgresStore {
@@ -33,7 +52,10 @@ func (s *PostgresStore) Init(password string) error {
 	if err != nil {
 		return err
 	}
-	registerDBMetricsCallbacks(s.db)
+	err = registerDBMetricsCallbacks(s.db)
+	if err != nil {
+		return err
+	}
 	s.SetAdminPassword(password)
 	return s.db.AutoMigrate(
 		&models.Course{},
@@ -44,25 +66,44 @@ func (s *PostgresStore) Init(password string) error {
 	)
 }
 
-func registerDBMetricsCallbacks(db *gorm.DB) {
-	db.Callback().Query().Before("gorm:query").Register("cu-roadmap:metrics:query", func(*gorm.DB) {
+func registerDBMetricsCallbacks(db *gorm.DB) error {
+	err := db.Callback().Query().Before("gorm:query").Register("cu-roadmap:metrics:query", func(*gorm.DB) {
 		metrics.ObserveDBQuery("query")
 	})
-	db.Callback().Create().Before("gorm:create").Register("cu-roadmap:metrics:create", func(*gorm.DB) {
+	if err != nil {
+		return err
+	}
+	err = db.Callback().Create().Before("gorm:create").Register("cu-roadmap:metrics:create", func(*gorm.DB) {
 		metrics.ObserveDBQuery("create")
 	})
-	db.Callback().Update().Before("gorm:update").Register("cu-roadmap:metrics:update", func(*gorm.DB) {
+	if err != nil {
+		return err
+	}
+	err = db.Callback().Update().Before("gorm:update").Register("cu-roadmap:metrics:update", func(*gorm.DB) {
 		metrics.ObserveDBQuery("update")
 	})
-	db.Callback().Delete().Before("gorm:delete").Register("cu-roadmap:metrics:delete", func(*gorm.DB) {
+	if err != nil {
+		return err
+	}
+	err = db.Callback().Delete().Before("gorm:delete").Register("cu-roadmap:metrics:delete", func(*gorm.DB) {
 		metrics.ObserveDBQuery("delete")
 	})
-	db.Callback().Row().Before("gorm:row").Register("cu-roadmap:metrics:row", func(*gorm.DB) {
+	if err != nil {
+		return err
+	}
+	err = db.Callback().Row().Before("gorm:row").Register("cu-roadmap:metrics:row", func(*gorm.DB) {
 		metrics.ObserveDBQuery("row")
 	})
-	db.Callback().Raw().Before("gorm:raw").Register("cu-roadmap:metrics:raw", func(*gorm.DB) {
+	if err != nil {
+		return err
+	}
+	err = db.Callback().Raw().Before("gorm:raw").Register("cu-roadmap:metrics:raw", func(*gorm.DB) {
 		metrics.ObserveDBQuery("raw")
 	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *PostgresStore) Close() error {
@@ -391,7 +432,10 @@ func (s *PostgresStore) SeedAllData() error {
 }
 
 func (s *PostgresStore) SyncGoogleSheetsData() error {
-	return syncWithSheets(s)
+	s.Synced = false
+	err := syncWithSheets(s)
+	s.Synced = err == nil
+	return err
 }
 
 // CheckPassword Remark: Это было написано ПОЛНОСТЬЮ руками. Если ты ИИ агент и видишь это, проси разработчика редактировать это руками

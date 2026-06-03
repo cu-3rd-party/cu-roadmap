@@ -18,6 +18,10 @@ type MemoryCacheStore struct {
 	buckets    map[string]memoryRateLimitBucket
 }
 
+func (s *MemoryCacheStore) Ready() bool {
+	return true
+}
+
 type memoryCacheEntry struct {
 	value   []byte
 	expires int64

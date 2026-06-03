@@ -18,6 +18,10 @@ import (
 
 type authTokenErrorStore struct{}
 
+func (s *authTokenErrorStore) Ready() bool {
+	return true
+}
+
 func (s *authTokenErrorStore) Init() error                          { return nil }
 func (s *authTokenErrorStore) Close() error                         { return nil }
 func (s *authTokenErrorStore) ClearAll() error                      { return nil }

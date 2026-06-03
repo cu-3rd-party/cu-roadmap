@@ -12,7 +12,7 @@ type Settings struct {
 	PostgresPassword               string `envconfig:"POSTGRES_PASSWORD" default:"roadmap_password"`
 	PostgresDB                     string `envconfig:"POSTGRES_DB" default:"roadmap_db"`
 	PostgresHost                   string `envconfig:"POSTGRES_HOST" default:"db"`
-	SeedOnStartup                  bool   `envconfig:"SEED_ON_STARTUP" default:"true"`
+	SeedOnStartup                  bool   `envconfig:"SEED_ON_STARTUP" default:"true"` // SeedOnStartup отвечает за загрузку данных из .csv в бд
 	UseMemoryStore                 bool   `envconfig:"USE_MEMORY_STORE" default:"true"`
 	UseMemoryCacheStore            bool   `envconfig:"USE_MEMORY_CACHE_STORE" default:"true"`
 	RedisURLValue                  string `envconfig:"REDIS_URL" default:""`
@@ -21,7 +21,7 @@ type Settings struct {
 	GoogleServiceAccountJSON       string `envconfig:"GOOGLE_SERVICE_ACCOUNT_JSON" default:""`
 	GoogleServiceAccountJSONB64    string `envconfig:"GOOGLE_SERVICE_ACCOUNT_JSON_B64" default:""`
 	GoogleSheetsSyncSheets         string `envconfig:"GOOGLE_SHEETS_SYNC_SHEETS" default:""`
-	GoogleSheetsSyncEnabled        bool   `envconfig:"GOOGLE_SHEETS_SYNC_ENABLED" default:"true"`
+	GoogleSheetsSyncEnabled        bool   `envconfig:"GOOGLE_SHEETS_SYNC_ENABLED" default:"true"` // а вот GoogleSheetsSyncEnabled заставляет программу каждые 10 минут синхронизироваться с таблицей
 	GoogleSheetsSyncIntervalSecond int    `envconfig:"GOOGLE_SHEETS_SYNC_INTERVAL_SECONDS" default:"3600"`
 	Host                           string `envconfig:"HOST" default:"0.0.0.0"`
 	Port                           int    `envconfig:"PORT" default:"8080"`

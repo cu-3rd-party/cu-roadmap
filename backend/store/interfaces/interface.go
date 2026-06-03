@@ -9,6 +9,7 @@ type CacheStoreBase interface {
 	Init() error
 	Close() error
 	ClearAll() error
+	Ready() bool
 
 	CreateAuthToken() (*models.AuthToken, error)
 	CheckAuthToken(token uuid.UUID) (bool, error)
@@ -22,6 +23,7 @@ type StoreBase interface {
 	Init(password string) error
 	Close() error
 	ClearAll() error
+	Ready() bool
 
 	GetAllCourses() (map[uuid.UUID]CourseData, error)
 	GetCourses(filter CourseFilter) ([]CourseData, error)
