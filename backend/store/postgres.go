@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -79,12 +80,28 @@ func (s *PostgresStore) GetAllCourses() (map[uuid.UUID]interfaces.CourseData, er
 	if err := s.db.Preload("CourseDependencies").Find(&courses).Error; err != nil {
 		return nil, err
 	}
+
+	postrequisiteMap := buildPostrequisitesFromCourses(courses)
+
 	out := make(map[uuid.UUID]interfaces.CourseData)
 	for _, c := range courses {
 		cd := helpers.ToCourseData(&c)
+		cd.Postrequisites = postrequisiteMap[c.ID]
 		out[c.ID] = cd
 	}
 	return out, nil
+}
+
+func buildPostrequisitesFromCourses(courses []models.Course) map[uuid.UUID][]uuid.UUID {
+	m := make(map[uuid.UUID][]uuid.UUID)
+	for _, c := range courses {
+		for _, dep := range c.CourseDependencies {
+			if dep.DependencyType == enums.DependencyTypePrerequisite {
+				m[dep.RequiredCourseID] = append(m[dep.RequiredCourseID], c.ID)
+			}
+		}
+	}
+	return m
 }
 
 func (s *PostgresStore) GetCourses(filter interfaces.CourseFilter) ([]interfaces.CourseData, error) {
@@ -126,9 +143,12 @@ func (s *PostgresStore) GetCourses(filter interfaces.CourseFilter) ([]interfaces
 		return nil, err
 	}
 
+	postrequisiteMap := buildPostrequisitesFromCourses(courses)
+
 	out := make([]interfaces.CourseData, len(courses))
 	for i, c := range courses {
 		out[i] = helpers.ToCourseData(&c)
+		out[i].Postrequisites = postrequisiteMap[c.ID]
 	}
 	return out, nil
 }
@@ -141,7 +161,15 @@ func (s *PostgresStore) GetCourseByID(courseID uuid.UUID) (*interfaces.CourseDat
 		}
 		return nil, err
 	}
-	return new(helpers.ToCourseData(&c)), nil
+	cd := helpers.ToCourseData(&c)
+	var deps []models.CourseDependency
+	if err := s.db.Where("required_course_id = ? AND dependency_type = ?", courseID, enums.DependencyTypePrerequisite).Find(&deps).Error; err != nil {
+		return nil, err
+	}
+	for _, dep := range deps {
+		cd.Postrequisites = append(cd.Postrequisites, dep.CourseID)
+	}
+	return &cd, nil
 }
 
 func (s *PostgresStore) GetCourseDependencies() ([]interfaces.CourseDependencyData, error) {
