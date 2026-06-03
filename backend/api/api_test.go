@@ -704,3 +704,21 @@ func TestAdminUnauthorized(t *testing.T) {
 
 	assert.Equal(t, 401, w.Code)
 }
+
+func TestValidateRoadmapNoMaxLoad(t *testing.T) {
+	router := setupRouterRoot(t, nil)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/planner/validate-roadmap/", strings.NewReader(`{
+  "passed_course_ids": [],
+  "roadmap": [
+    {
+      "semester": 0,
+      "course_ids": []
+    }
+  ]
+}`))
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+}

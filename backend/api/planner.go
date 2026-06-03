@@ -114,6 +114,9 @@ func validateRoadmap(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if req.MaxLoad == 0 {
+		req.MaxLoad = 12.0
+	}
 	err := req.Validate()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
