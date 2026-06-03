@@ -1,9 +1,11 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
 
-import { Chip, Counter, Input } from "@/shared/ui";
+import { Chip, Counter, Input, Skeleton } from "@/shared/ui";
 
 import { buildCategoryFilters, type CategoryFilterOption } from "../model";
+
+import { ChipSkeletonRow } from "./FilterSkeleton";
 
 const CATEGORY_OPTIONS = buildCategoryFilters();
 
@@ -13,6 +15,7 @@ interface CourseSearchFilterProps {
   onSearchChange?: (search: string) => void;
   selectedCategories?: string[];
   onToggleCategory?: (id: string) => void;
+  loading?: boolean;
 }
 
 export const CourseSearchFilter = ({
@@ -21,6 +24,7 @@ export const CourseSearchFilter = ({
   onSearchChange,
   selectedCategories,
   onToggleCategory,
+  loading = false,
 }: CourseSearchFilterProps) => {
   const [localSearch, setLocalSearch] = useState("");
   const [localSelected, setLocalSelected] = useState<string[]>([]);
@@ -39,6 +43,15 @@ export const CourseSearchFilter = ({
             ? prev.filter((item) => item !== id)
             : [...prev, id],
         );
+
+  if (loading) {
+    return (
+      <>
+        <Skeleton className="h-10 w-full rounded-xl" />
+        <ChipSkeletonRow widths={[120, 96, 140, 88, 112, 104]} />
+      </>
+    );
+  }
 
   return (
     <>

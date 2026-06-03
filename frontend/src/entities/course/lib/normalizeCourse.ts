@@ -6,13 +6,13 @@ const sanitizeURL = (link: string | null | undefined): string => {
   try {
     return new URL(link).href;
   } catch {
-    return ""
+    return "";
   }
-}
+};
 
 export const normalizeCourse = (dto: CourseDto): Course => {
   return {
-    id: dto.id, 
+    id: dto.id,
     title: dto.title.trim(),
     description: dto.description?.trim() ?? null,
     type: dto.course_type,
@@ -25,6 +25,6 @@ export const normalizeCourse = (dto: CourseDto): Course => {
     prerequisites: dto.prerequisites,
     corequisites: dto.corequisites,
     postrequisites: dto.postrequisites,
-    toMajor: dto.to_major
-  }
+    toMajor: dto.to_major,
+  };
 };

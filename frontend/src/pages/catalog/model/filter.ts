@@ -4,7 +4,6 @@ import type {
   CourseFilterState,
 } from "@/features/course-filters";
 
-
 import type { CatalogCategory } from "./category";
 
 // Card-level match: type + major + search.

@@ -1,8 +1,6 @@
 export { CourseFilters } from "./ui/CourseFilters";
 export { CourseSearchFilter } from "./ui/CourseSearchFilter";
-export {
-  createCourseFiltersStore,
-} from "./model";
+export { createCourseFiltersStore } from "./model";
 export {
   buildCategoryFilters,
   buildTypeFilters,

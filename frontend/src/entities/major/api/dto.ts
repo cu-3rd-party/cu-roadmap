@@ -17,9 +17,9 @@ export interface MajorDto {
 export interface MajorMatchDto {
   id: UUID;
   title: string;
-  // covered_count / total_count
   score: number;
   covered_count: number;
+  can_cover_count: number;
   total_count: number;
 }
 

@@ -10,6 +10,7 @@ import {
 
 import { CourseSearchFilter } from "./CourseSearchFilter";
 import { FilterCard } from "./FilterCard";
+import { ChipSkeletonRow } from "./FilterSkeleton";
 
 const TYPE_OPTIONS = buildTypeFilters();
 const CATEGORY_OPTIONS = buildCategoryFilters();
@@ -23,6 +24,7 @@ interface CourseFiltersProps {
   types?: { id: string; label: string }[];
   majors?: readonly string[];
   categories?: CategoryFilterOption[];
+  loading?: boolean;
 }
 
 export const CourseFilters = ({
@@ -34,40 +36,49 @@ export const CourseFilters = ({
   types = TYPE_OPTIONS,
   majors = MAJOR_OPTIONS,
   categories = CATEGORY_OPTIONS,
+  loading = false,
 }: CourseFiltersProps) => {
   return (
     <div className="flex flex-col gap-1">
       <div className="grid gap-1 sm:grid-cols-2">
         <FilterCard label="Мейджор">
-          <div className="flex flex-wrap gap-2">
-            {majors.map((major) => (
-              <Chip
-                variant="action"
-                key={major}
-                size="xs"
-                active={value.majors.includes(major)}
-                onClick={() => onToggleMajor(major)}
-              >
-                {major}
-              </Chip>
-            ))}
-          </div>
+          {loading ? (
+            <ChipSkeletonRow widths={[72, 104, 88, 64, 96]} />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {majors.map((major) => (
+                <Chip
+                  variant="action"
+                  key={major}
+                  size="xs"
+                  active={value.majors.includes(major)}
+                  onClick={() => onToggleMajor(major)}
+                >
+                  {major}
+                </Chip>
+              ))}
+            </div>
+          )}
         </FilterCard>
 
         <FilterCard label="Тип курса">
-          <div className="flex flex-wrap gap-2">
-            {types.map((type) => (
-              <Chip
-                variant="action"
-                key={type.id}
-                size="xs"
-                active={value.types.includes(type.id)}
-                onClick={() => onToggleType(type.id)}
-              >
-                {type.label}
-              </Chip>
-            ))}
-          </div>
+          {loading ? (
+            <ChipSkeletonRow widths={[80, 96, 72]} />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {types.map((type) => (
+                <Chip
+                  variant="action"
+                  key={type.id}
+                  size="xs"
+                  active={value.types.includes(type.id)}
+                  onClick={() => onToggleType(type.id)}
+                >
+                  {type.label}
+                </Chip>
+              ))}
+            </div>
+          )}
         </FilterCard>
       </div>
 
@@ -76,6 +87,7 @@ export const CourseFilters = ({
           categories={categories}
           search={value.search}
           selectedCategories={value.categories}
+          loading={loading}
           onSearchChange={onSearchChange}
           onToggleCategory={onToggleCategory}
         />

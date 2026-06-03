@@ -1,1 +1,1 @@
-export { getInsertedText } from "./getInsertedText"
+export { getInsertedText } from "./getInsertedText";

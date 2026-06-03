@@ -19,5 +19,6 @@ export interface MajorMatch {
   title: string;
   score: number;
   coveredCount: number;
+  canCoverCount: number;
   totalCount: number;
 }

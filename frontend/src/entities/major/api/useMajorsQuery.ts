@@ -6,7 +6,8 @@ import { normalizeMajor } from "../lib";
 
 import { getMajors } from "./getMajors";
 
-export const majorsQueryKey = (year: AdmissionYear) => ["majors", year] as const;
+export const majorsQueryKey = (year: AdmissionYear) =>
+  ["majors", year] as const;
 
 export const useMajorsQuery = (year: AdmissionYear | null) =>
   useQuery({

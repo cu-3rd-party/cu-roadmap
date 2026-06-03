@@ -1,12 +1,11 @@
-export {
-  usePlannerStore,
-  type PlannedCourse,
-} from "./model";
+export { usePlannerStore, type PlannedCourse } from "./model";
 export {
   generateRoadmap,
   validateSemester,
   validateRoadmap,
   generateGoalPath,
+  useValidateRoadmapMutation,
+  useValidatePlan,
 } from "./api";
 export type {
   RoadmapSemesterDto,
@@ -28,4 +27,10 @@ export type {
   ValidationMessage,
   SemesterValidation,
 } from "./model/domain";
-export { normalizeRoadmap, normalizeValidationResult } from "./lib";
+export {
+  normalizeRoadmap,
+  normalizeValidationResult,
+  normalizeValidationRoadmap,
+  isSemesterCompleted,
+  buildValidateRoadmapRequest,
+} from "./lib";

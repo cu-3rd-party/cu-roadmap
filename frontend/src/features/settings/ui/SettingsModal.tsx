@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { usePlannerStore } from "@/entities/roadmap";
 import { ADMISSION_YEARS, type AdmissionYear } from "@/shared/constants";
 import {
   Button,
@@ -24,6 +25,7 @@ interface SettingsModalProps {
 
 export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const { admissionYear, setAdmissionYear } = useSettingsStore();
+  const { reset } = usePlannerStore();
   const [selectedYear, setSelectedYear] = useState("");
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const handleProceed = () => {
     if (!selectedYear) return;
     setAdmissionYear(Number(selectedYear) as AdmissionYear);
+    reset();
     onOpenChange(false);
   };
 

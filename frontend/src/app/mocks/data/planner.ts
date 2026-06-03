@@ -62,6 +62,7 @@ export const MOCK_MAJOR_RESULTS: MajorMatchDto[] = [
     title: "AI",
     score: 0.82,
     covered_count: 9,
+    can_cover_count: 1,
     total_count: 11,
   },
   {
@@ -69,6 +70,7 @@ export const MOCK_MAJOR_RESULTS: MajorMatchDto[] = [
     title: "Software Engineering",
     score: 0.64,
     covered_count: 7,
+    can_cover_count: 3,
     total_count: 11,
   },
   {
@@ -76,6 +78,7 @@ export const MOCK_MAJOR_RESULTS: MajorMatchDto[] = [
     title: "Business",
     score: 0.31,
     covered_count: 3,
+    can_cover_count: 4,
     total_count: 11,
   },
 ];

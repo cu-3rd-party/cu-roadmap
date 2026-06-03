@@ -1,4 +1,11 @@
-export { getMajors, useMajorsQuery, majorsQueryKey, identifyMajors } from "./api";
+export {
+  getMajors,
+  useMajorsQuery,
+  majorsQueryKey,
+  identifyMajors,
+  useIdentifyMajorsQuery,
+  identifyMajorsQueryKey,
+} from "./api";
 export type {
   MajorDto,
   MajorRequirementDto,

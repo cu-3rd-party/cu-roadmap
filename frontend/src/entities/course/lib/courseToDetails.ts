@@ -29,8 +29,8 @@ const resolveRequisites = (
   titleMap: Map<UUID, string>,
 ): RequisiteItem[] =>
   (ids ?? [])
-    .map((id) => ({id, title: titleMap.get(id)}))
-    .filter((item): item is RequisiteItem => Boolean(item.title))
+    .map((id) => ({ id, title: titleMap.get(id) }))
+    .filter((item): item is RequisiteItem => Boolean(item.title));
 
 interface CourseToDetailsLookups {
   titleMap: Map<UUID, string>;
