@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -71,10 +72,30 @@ func getMajors(c *gin.Context) {
 }
 
 func identifyMajor(c *gin.Context) {
-	var passedIDs []string
-	if err := c.ShouldBindJSON(&passedIDs); err != nil {
+	var rawMessage json.RawMessage
+	if err := c.ShouldBindJSON(&rawMessage); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	var passedIDs []string
+	currentSemester := 1
+
+	// Try array of strings first
+	if err := json.Unmarshal(rawMessage, &passedIDs); err != nil {
+		// Try struct format
+		var req struct {
+			PassedCourseIDs []string `json:"passed_course_ids"`
+			CurrentSemester int      `json:"current_semester"`
+		}
+		if err2 := json.Unmarshal(rawMessage, &req); err2 != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
+			return
+		}
+		passedIDs = req.PassedCourseIDs
+		if req.CurrentSemester > 0 {
+			currentSemester = req.CurrentSemester
+		}
 	}
 
 	s := store.GetStore()
@@ -102,6 +123,48 @@ func identifyMajor(c *gin.Context) {
 		}
 	}
 
+	// Build prerequisite map: courseID -> list of required course IDs
+	deps, _ := s.GetCourseDependencies()
+	prereqMap := make(map[uuid.UUID][]uuid.UUID)
+	for _, d := range deps {
+		if d.DependencyType == enums.DependencyTypePrerequisite {
+			prereqMap[d.CourseID] = append(prereqMap[d.CourseID], d.RequiredCourseID)
+		}
+	}
+
+	// DFS to compute longest prerequisite depth
+	memo := make(map[uuid.UUID]int)
+	var getDepth func(id uuid.UUID, visited map[uuid.UUID]bool) int
+	getDepth = func(id uuid.UUID, visited map[uuid.UUID]bool) int {
+		if passedUUIDs[id] {
+			return 0
+		}
+		if d, ok := memo[id]; ok {
+			return d
+		}
+		if visited[id] {
+			return 999 // Cycle detected
+		}
+		visited[id] = true
+
+		maxPrereqDepth := 0
+		for _, pid := range prereqMap[id] {
+			pd := getDepth(pid, visited)
+			if pd > maxPrereqDepth {
+				maxPrereqDepth = pd
+			}
+		}
+
+		visited[id] = false
+		memo[id] = 1 + maxPrereqDepth
+		return memo[id]
+	}
+
+	maxAllowedDepth := 8 - currentSemester + 1
+	if maxAllowedDepth < 0 {
+		maxAllowedDepth = 0
+	}
+
 	var analysis []gin.H
 	for _, m := range majors {
 		if cohortYear != 0 && m.CohortYear != cohortYear {
@@ -119,19 +182,26 @@ func identifyMajor(c *gin.Context) {
 			continue
 		}
 		covered := 0
-		for id := range passedUUIDs {
-			if reqIDs[id] {
+		canCover := 0
+		for id := range reqIDs {
+			if passedUUIDs[id] {
 				covered++
+			} else {
+				depth := getDepth(id, make(map[uuid.UUID]bool))
+				if depth <= maxAllowedDepth {
+					canCover++
+				}
 			}
 		}
 		score := float64(covered) / float64(len(reqIDs))
 		analysis = append(analysis, gin.H{
-			"id":            m.ID.String(),
-			"title":         m.Title,
-			"cohort_year":   m.CohortYear,
-			"score":         score,
-			"covered_count": covered,
-			"total_count":   len(reqIDs),
+			"id":              m.ID.String(),
+			"title":           m.Title,
+			"cohort_year":     m.CohortYear,
+			"score":           score,
+			"covered_count":   covered,
+			"can_cover_count": canCover,
+			"total_count":     len(reqIDs),
 		})
 	}
 
