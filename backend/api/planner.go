@@ -24,7 +24,6 @@ func RegisterPlannerRoutes(rg *gin.RouterGroup) {
 	rg.POST("/validate-semester/", validateSemester)
 	rg.POST("/validate-roadmap/", validateRoadmap)
 	rg.POST("/goal-path/", getGoalPath)
-	rg.GET("/test-engine2", testEngine2)
 }
 
 func generateRoadmap(c *gin.Context) {
@@ -194,52 +193,4 @@ func getGoalPath(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"roadmap": path})
-}
-
-func testEngine2(c *gin.Context) {
-	s := store.GetStore()
-	if s == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
-		return
-	}
-
-	allStudents, err := s.GetAllStudents()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	if len(allStudents) == 0 {
-		c.JSON(http.StatusOK, gin.H{"error": "No mock students found. Please run mock_data.py"})
-		return
-	}
-
-	var student interfaces.StudentData
-	for _, st := range allStudents {
-		student = st
-		break
-	}
-
-	planner, err := service.NewRoadmapPlanner(service.PlannerKindGreedy, s)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	roadmap, err := planner.GenerateRoadmap(student.PassedCourseIDs, *student.TargetMajorID, student.CurrentSemester, 12.0, student.Cohort)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	var majorIDStr string
-	if student.TargetMajorID != nil {
-		majorIDStr = student.TargetMajorID.String()
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"student_id":       student.ID.String(),
-		"target_major_id":  majorIDStr,
-		"current_semester": student.CurrentSemester,
-		"roadmap":          roadmap,
-	})
 }

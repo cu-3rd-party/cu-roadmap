@@ -448,9 +448,6 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
 
-  /api/v1/planenr/test-engine2:
-    description: отладочный эндпоинт, использует первого студента. это придумал федя жаков, пусть он и документирует. я это было перенес в го)
-
 components:
   securitySchemes:
     AdminCookie:
