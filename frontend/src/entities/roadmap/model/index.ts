@@ -1,3 +1,3 @@
-export { usePlannerStore } from "./usePlannerStore"
-export { type PlannedCourse } from "./types"
-export * from "./domain"
+export { usePlannerStore } from "./usePlannerStore";
+export { type PlannedCourse } from "./types";
+export * from "./domain";

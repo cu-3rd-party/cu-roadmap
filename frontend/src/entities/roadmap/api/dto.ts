@@ -1,7 +1,7 @@
 import { AdmissionYear, SemesterNumber } from "@/shared/constants";
 import { UUID } from "@/shared/model";
 
-type MessageLevel = "warning" | "error"
+export type MessageLevel = "warning" | "error";
 
 // Roadmap
 export interface RoadmapSemesterDto {
@@ -18,7 +18,7 @@ export interface GenerateRoadmapRequestDto {
   major_id: UUID;
   // semester to start counter from
   current_semester?: SemesterNumber;
-  // measured in credits, default 12.0 
+  // measured in credits, default 12.0
   max_load?: number;
   cohort: AdmissionYear;
 }
@@ -76,7 +76,7 @@ export interface ValidateRoadmapResponseDto {
   validation_results: ValidationResultDto[];
 }
 
-// POST /api/v1/planner/goal-path/ 
+// POST /api/v1/planner/goal-path/
 
 export interface GoalPathRequestDto {
   target_course_id: UUID;

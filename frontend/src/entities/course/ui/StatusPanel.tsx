@@ -1,16 +1,19 @@
 import { Lock } from "lucide-react";
 
 interface StatusPanelProps {
-  title: string;
-  description: string;
+  messages: string[];
 }
 
-export const StatusPanel = ({ title, description }: StatusPanelProps) => (
-  <div className="flex flex-col gap-0.5 rounded-xl bg-negative-pale p-3">
-    <div className="flex items-center gap-2 font-medium text-fg-negative text-base">
+export const StatusPanel = ({ messages }: StatusPanelProps) => (
+  <div className="flex flex-col gap-1 rounded-xl bg-negative-pale p-3">
+    <div className="flex items-center gap-3 text-base font-medium text-fg-negative">
       <Lock className="size-4 shrink-0" />
-      {title}
+      Есть конфликты
     </div>
-    <p className="pl-6 text-sm text-fg-secondary">{description}</p>
+    <ul className="list-disc space-y-0.5 pl-10 text-sm text-fg-secondary">
+      {messages.map((message, i) => (
+        <li key={i}>{message}</li>
+      ))}
+    </ul>
   </div>
 );

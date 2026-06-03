@@ -1,22 +1,30 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import type { SemesterValidation } from "./domain";
 import { PlannedCourse } from "./types";
-
 
 interface PlannerState {
   selections: Record<number, PlannedCourse[]>;
+  // latest backend validation, each entry keyed by SemesterValidation.semester.
+  // not persisted — recomputed on the next validation trigger.
+  validation: SemesterValidation[];
   addCourse: (semester: number, course: PlannedCourse) => void;
   removeCourse: (semester: number, courseId: string) => void;
+  clearSemester: (semester: number) => void;
   moveCourse: (from: number, to: number, courseId: string) => void;
   reorderCourses: (semester: number, activeId: string, overId: string) => void;
-  reset: () => void;
+  setValidation: (validation: SemesterValidation[]) => void;
+  // Clears selections. With `keepBeforeSemester`, selections in semesters before
+  // that number (i.e. already-completed ones) are preserved.
+  reset: (keepBeforeSemester?: number) => void;
 }
 
 export const usePlannerStore = create<PlannerState>()(
   persist(
     (set) => ({
       selections: {},
+      validation: [],
       addCourse: (semester, course) =>
         set((state) => {
           const current = state.selections[semester] ?? [];
@@ -27,6 +35,12 @@ export const usePlannerStore = create<PlannerState>()(
               [semester]: [...current, course],
             },
           };
+        }),
+      clearSemester: (semester) =>
+        set((state) => {
+          const next = { ...state.selections };
+          delete next[semester];
+          return { selections: next };
         }),
       removeCourse: (semester, courseId) =>
         set((state) => ({
@@ -69,11 +83,20 @@ export const usePlannerStore = create<PlannerState>()(
             selections: { ...state.selections, [semester]: next },
           };
         }),
-      reset: () => {
-        set(() => ({
-          selections: {}
-        }))
-      }
+      setValidation: (validation) => set({ validation }),
+      reset: (keepBeforeSemester) => {
+        set((state) => {
+          if (keepBeforeSemester == null)
+            return { selections: {}, validation: [] };
+          const kept: Record<number, PlannedCourse[]> = {};
+          for (const [semester, list] of Object.entries(state.selections)) {
+            if (Number(semester) < keepBeforeSemester) {
+              kept[Number(semester)] = list;
+            }
+          }
+          return { selections: kept, validation: [] };
+        });
+      },
     }),
     {
       name: "planner-selections",

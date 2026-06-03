@@ -4,17 +4,17 @@ import type { Major, MajorMatch, MajorRequirement } from "../model";
 const normalizeRequirement = (dto: MajorRequirementDto): MajorRequirement => {
   return {
     courseId: dto.course_id,
-    requirementType: dto.requirement_type
-  }
-} 
+    requirementType: dto.requirement_type,
+  };
+};
 
 export const normalizeMajor = (dto: MajorDto): Major => {
   return {
     id: dto.id,
     title: dto.title,
     school: dto.school,
-    requirements: dto.requirements.map((req) => normalizeRequirement(req))
-  }
+    requirements: dto.requirements.map((req) => normalizeRequirement(req)),
+  };
 };
 
 export const normalizeMajorMatch = (dto: MajorMatchDto): MajorMatch => {
@@ -23,6 +23,7 @@ export const normalizeMajorMatch = (dto: MajorMatchDto): MajorMatch => {
     title: dto.title,
     score: dto.score,
     coveredCount: dto.covered_count,
-    totalCount: dto.total_count
-  }
+    canCoverCount: dto.can_cover_count,
+    totalCount: dto.total_count,
+  };
 };

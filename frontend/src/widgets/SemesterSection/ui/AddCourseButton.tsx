@@ -20,14 +20,13 @@ export const AddCourseButton = ({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center justify-center gap-2 rounded-[16px] border border-border bg-background font-medium text-fg-primary transition-colors duration-(--std-duration)",
+        "flex items-center justify-center gap-2 rounded-[16px] border border-border bg-background font-medium text-fg-primary transition-[border-color] duration-(--std-duration)",
         "hover:border-border-hover hover:text-fg-hover cursor-pointer",
         variant === "full"
           ? "w-full px-4 py-4 text-base"
           : "h-full min-h-24 w-full p-4 text-sm",
       )}
     >
-      
       <Plus className={cn(variant === "full" ? "size-5" : "size-6")} />
       Курс
     </button>

@@ -16,7 +16,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   // Backend the dev server proxies /api/v1 to. Same-origin requests from the
   // browser hit localhost; Vite forwards them server-side, sidestepping CORS.
-  const apiProxyTarget = env.VITE_API_PROXY_TARGET || "https://roadmap.cu3rd.ru";
+  const apiProxyTarget =
+    env.VITE_API_PROXY_TARGET || "https://roadmap.cu3rd.ru";
 
   return {
     plugins: [

@@ -1,2 +1,2 @@
-export { availableCategoryOptions, filterAvailableCourses } from "./filter";
-export { useCourseSelectFiltersStore } from "./store";
+export { availableCategoryOptions, filterAvailableCourses } from "./filter"
+export { useCourseSelectFiltersStore } from "./store"

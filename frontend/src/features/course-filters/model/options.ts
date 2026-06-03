@@ -41,7 +41,7 @@ export const MAJOR_OPTIONS = ["ИИ", "Разработка", "Бизнес"] as
 
 // Major badge labels: maps the filter's RU major values to short display labels.
 export const MAJOR_LABELS: Record<string, string> = {
-  "ИИ": "AI",
-  "Разработка": "SE",
-  "Бизнес": "Business",
+  ИИ: "AI",
+  Разработка: "SE",
+  Бизнес: "Business",
 };

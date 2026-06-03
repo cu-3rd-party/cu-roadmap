@@ -18,9 +18,11 @@ export const useSettingsStore = create<SettingsState>()(
       hasSeenGreeting: false,
       admissionYear: null,
       hideCompletedSemesters: false,
-      completeGreeting: (admissionYear) => set({ hasSeenGreeting: true, admissionYear }),
+      completeGreeting: (admissionYear) =>
+        set({ hasSeenGreeting: true, admissionYear }),
       setAdmissionYear: (admissionYear) => set({ admissionYear }),
-      setHideCompletedSemesters: (hide) => set({ hideCompletedSemesters: hide }),
+      setHideCompletedSemesters: (hide) =>
+        set({ hideCompletedSemesters: hide }),
     }),
     {
       name: "settings",

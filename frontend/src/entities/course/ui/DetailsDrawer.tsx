@@ -1,5 +1,6 @@
 import {
   Badge,
+  RevealImage,
   Sheet,
   SheetContent,
   SheetDescription,
@@ -38,7 +39,7 @@ export const DetailsDrawer = ({
         <SheetDescription className="max-w-[60%] text-sm text-fg-primary">
           {course.title}
         </SheetDescription>
-        <img
+        <RevealImage
           src="/character1.png"
           alt="Персонаж 1"
           aria-hidden
@@ -47,9 +48,7 @@ export const DetailsDrawer = ({
       </SheetHeader>
 
       <div className="flex-1 space-y-6 overflow-y-auto rounded-t-2xl bg-background px-6 pt-5 pb-8">
-        <SyllabusCard
-          link={course.syllabus}
-        />
+        <SyllabusCard link={course.syllabus} />
 
         {course.description && (
           <DetailField label="Описание">
@@ -68,11 +67,15 @@ export const DetailsDrawer = ({
         </DetailField>
         <DetailField label="Специализация">
           <ul className="list-disc space-y-1 pl-5 text-fg-primary">
-            {course.specialisations.length > 0 ? course.specialisations.map((item) => (
-              <li key={item} className="pl-1">
-                {item}
-              </li>
-            )) : <li>Общеуниверситетская дисциплина</li>}
+            {course.specialisations.length > 0 ? (
+              course.specialisations.map((item) => (
+                <li key={item} className="pl-1">
+                  {item}
+                </li>
+              ))
+            ) : (
+              <li>Общеуниверситетская дисциплина</li>
+            )}
           </ul>
         </DetailField>
 
@@ -101,15 +104,15 @@ export const DetailsDrawer = ({
         </DetailField>
 
         <DetailField label="Пререквизиты">
-          <RequisiteList items={course.prerequisites} />
+          <RequisiteList type="pre" items={course.prerequisites} />
         </DetailField>
 
         <DetailField label="Постреквизиты">
-          <RequisiteList items={course.postrequisites} />
+          <RequisiteList type="post" items={course.postrequisites} />
         </DetailField>
 
         <DetailField label="Кореквизиты">
-          <RequisiteList items={course.corequisites} />
+          <RequisiteList type="co" items={course.corequisites} />
         </DetailField>
       </div>
     </SheetContent>

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { CourseCard, type Course } from "@/entities/course";
+import { CourseCard, CourseCardSkeleton, type Course } from "@/entities/course";
 import { usePlannerStore } from "@/entities/roadmap";
 import { CourseSearchFilter } from "@/features/course-filters";
 import type { SemesterNumber } from "@/shared/constants";
@@ -9,13 +9,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/shared/ui/kit/dialog";
+} from "@/shared/ui";
+import { RevealImage } from "@/shared/ui/reveal-image";
 
 import {
   availableCategoryOptions,
   filterAvailableCourses,
-} from "../model/filter";
-import { useCourseSelectFiltersStore } from "../model/store";
+  useCourseSelectFiltersStore
+} from "../model";
 
 interface CourseSelectModalProps {
   semester: number;
@@ -37,10 +38,14 @@ export const CourseSelectModal = ({
   const { selections, addCourse, removeCourse } = usePlannerStore();
   const { filters, toggleCategory, setSearch } = useCourseSelectFiltersStore();
 
-  const selectedIds = useMemo(
-    () => new Set((selections[semester] ?? []).map((c) => c.id)),
-    [selections, semester],
-  );
+  // Selection is tracked across ALL semesters
+  const semesterByCourseId = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const [sem, list] of Object.entries(selections)) {
+      for (const c of list) map.set(c.id, Number(sem));
+    }
+    return map;
+  }, [selections]);
 
   // Only courses offered in this semester are selectable from this modal.
   const semesterCourses = useMemo(
@@ -71,7 +76,7 @@ export const CourseSelectModal = ({
           <DialogTitle className="text-2xl font-bold text-fg-primary">
             Доступные курсы
           </DialogTitle>
-          <img
+          <RevealImage
             src="/character3.png"
             alt="Персонаж 3"
             aria-hidden
@@ -93,21 +98,24 @@ export const CourseSelectModal = ({
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-expert-blue-pale pl-4 pr-3 pb-3 scrollbar-gutter-stable">
           {isLoading ? (
-            <p className="px-1 py-4 text-sm text-fg-secondary">
-              Загрузка курсов…
-            </p>
+            <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
+              {Array.from({ length: 10 }).map((_, index) => (
+                <CourseCardSkeleton key={index} />
+              ))}
+            </div>
           ) : isError ? (
             <p className="px-1 py-4 text-sm text-fg-negative">
               Не удалось загрузить курсы. Попробуйте обновить страницу.
             </p>
           ) : visibleCourses.length === 0 ? (
-            <p className="px-1 py-4 text-sm text-fg-secondary">
+            <div className="flex w-full items-center justify-center rounded-2xl bg-background px-4 py-10 text-sm text-fg-secondary">
               Нет курсов, доступных в этом семестре.
-            </p>
+            </div>
           ) : (
             <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
               {visibleCourses.map((course) => {
-                const isSelected = selectedIds.has(course.id);
+                const selectedSemester = semesterByCourseId.get(course.id) as SemesterNumber;
+                const isSelected = selectedSemester !== undefined;
                 return (
                   <CourseCard
                     key={course.id}
@@ -116,9 +124,10 @@ export const CourseSelectModal = ({
                     category={course.category}
                     type={course.type}
                     selected={isSelected}
+                    selectedSemester={selectedSemester}
                     onSelect={() =>
-                      isSelected
-                        ? removeCourse(semester, course.id)
+                      selectedSemester !== undefined
+                        ? removeCourse(selectedSemester, course.id)
                         : addCourse(semester, {
                             id: course.id,
                             title: course.title,

@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 
-import { AVAILABLE_COURSES } from "@/features/course-select/model/courses";
+import { useCoursesQuery } from "@/entities/course";
+import { useSettingsStore } from "@/features/settings";
 import { SEMESTER_NUMBERS } from "@/shared/constants";
 import {
   Button,
@@ -17,6 +18,7 @@ import {
   DialogTitle,
   Select,
   SelectContent,
+  RevealImage,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -37,6 +39,9 @@ export const TrajectorySelectModal = ({
   open,
   onOpenChange,
 }: TrajectorySelectModalProps) => {
+  const { admissionYear } = useSettingsStore();
+  const { data: courses } = useCoursesQuery(admissionYear);
+
   const [courseQuery, setCourseQuery] = useState("");
   const [courseId, setCourseId] = useState("");
   const [courseOpen, setCourseOpen] = useState(false);
@@ -50,15 +55,15 @@ export const TrajectorySelectModal = ({
     tab !== "course" || (courseQuery.trim() !== "" && semester !== "");
 
   const savedCourseTitle =
-    AVAILABLE_COURSES.find((course) => course.id === courseId)?.title ?? "";
+    courses?.find((course) => course.id === courseId)?.title ?? "";
 
   const courseHints = useMemo(() => {
     const q = courseQuery.trim().toLowerCase();
-    if (!q) return [];
-    return AVAILABLE_COURSES.filter((course) =>
-      course.title.toLowerCase().includes(q),
-    ).slice(0, 5);
-  }, [courseQuery]);
+    if (!q || !courses) return [];
+    return courses
+      .filter((course) => course.title.toLowerCase().includes(q))
+      .slice(0, 5);
+  }, [courseQuery, courses]);
 
   // The course field always shows a committed option (or nothing). Typing over a
   // committed value wipes it so the user can search again; blurring without
@@ -98,7 +103,7 @@ export const TrajectorySelectModal = ({
           <DialogTitle className="text-2xl font-bold text-fg-primary">
             Подбор траектории
           </DialogTitle>
-          <img
+          <RevealImage
             src="/character1.png"
             alt="Персонаж"
             aria-hidden
@@ -113,21 +118,29 @@ export const TrajectorySelectModal = ({
                 <p>Выберите тип построения траектории:</p>
                 <ol className="mt-1 flex list-decimal flex-col gap-1 pl-5">
                   <li>
-                    <span className="font-medium text-fg-primary">Мейджор</span> - собрать траекторию для выбранного вами мейджора
+                    <span className="font-medium text-fg-primary">Мейджор</span>{" "}
+                    - собрать траекторию для выбранного вами мейджора
                   </li>
                   <li>
-                    <span className="font-medium text-fg-primary">Курс</span> - добавить все пререквизиты и кореквизиты в траекторию так, чтобы пройти курс в выбранном семестре
+                    <span className="font-medium text-fg-primary">Курс</span> -
+                    добавить все пререквизиты и кореквизиты в траекторию так,
+                    чтобы пройти курс в выбранном семестре
                   </li>
                 </ol>
               </div>
-              
+
               <TabsList className="self-center">
                 <TabsTrigger value="major">Мейджор</TabsTrigger>
                 <TabsTrigger value="course">Курс</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="major" className="flex flex-col gap-3 self-center">
-                <p className="text-sm text-fg-secondary self-center">Выберите мейджор</p>
+              <TabsContent
+                value="major"
+                className="flex flex-col gap-3 self-center"
+              >
+                <p className="text-sm text-fg-secondary self-center">
+                  Выберите мейджор
+                </p>
                 <Tabs defaultValue="business" className="gap-4">
                   <TabsList>
                     <TabsTrigger value="business">Business</TabsTrigger>
@@ -177,8 +190,12 @@ export const TrajectorySelectModal = ({
                                     selectCourse(course.id, course.title)
                                   }
                                 >
-                                  <span className="truncate">{course.title}</span>
-                                  <CommandCheck checked={courseId === course.id} />
+                                  <span className="truncate">
+                                    {course.title}
+                                  </span>
+                                  <CommandCheck
+                                    checked={courseId === course.id}
+                                  />
                                 </CommandItem>
                               ))}
                             </CommandGroup>

@@ -15,7 +15,7 @@ export const CoursesSection = ({
   courses,
   titleMap,
   majorTitleMap,
-  panelTitle = "Выбери 5 курсов из категории",
+  panelTitle,
 }: CourseCategorySectionProps) => {
   return (
     <Panel>
@@ -29,6 +29,7 @@ export const CoursesSection = ({
             <CourseCard
               key={course.id}
               title={course.title}
+              recommendedSemester={course.recommendedSemester}
               category={course.category}
               type={course.type}
               details={courseToDetails(course, { titleMap, majorTitleMap })}

@@ -1,5 +1,10 @@
 import { SemesterNumber } from "@/shared/constants";
-import type { UUID, CourseCategory, CourseType, MajorRequirementType } from "@/shared/model";
+import type {
+  UUID,
+  CourseCategory,
+  CourseType,
+  MajorRequirementType,
+} from "@/shared/model";
 
 // Frontend domain model for a course (camelCase, normalized from CourseDto)
 export interface Course {
@@ -8,7 +13,7 @@ export interface Course {
   description?: string | null;
   type: CourseType;
   category: CourseCategory;
-  handbookLink: string,
+  handbookLink: string;
   availableSemesters: SemesterNumber[];
   allowedCohorts?: number[];
   recommendedSemester?: SemesterNumber | null;
@@ -16,5 +21,5 @@ export interface Course {
   prerequisites?: UUID[];
   corequisites?: UUID[];
   postrequisites?: UUID[];
-  toMajor: Record<UUID, MajorRequirementType>
+  toMajor: Record<UUID, MajorRequirementType>;
 }

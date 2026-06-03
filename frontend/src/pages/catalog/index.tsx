@@ -5,21 +5,34 @@ import { buildCourseTitleMap, useCoursesQuery } from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
 import { CourseFilters } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
-import { Chip } from "@/shared/ui";
-import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
-import { CoursesSection } from "@/widgets/CoursesSection";
+import { Chip, CollapsiblePanel, Panel } from "@/shared/ui";
+import {
+  CoursesSection,
+  CoursesSectionSkeleton,
+} from "@/widgets/CoursesSection";
 
 import { buildCatalogCategories } from "./lib";
-import { categoryOptionsWithCounts, filterCatalog } from "./model/filter";
-import { useCatalogFiltersStore } from "./model/store";
+import {
+  categoryToDescription,
+  useCatalogFiltersStore,
+  categoryOptionsWithCounts,
+  filterCatalog,
+} from "./model";
 
 const CatalogPage = () => {
   const { admissionYear } = useSettingsStore();
   const { filters, toggleType, toggleMajor, toggleCategory, setSearch } =
     useCatalogFiltersStore();
 
-  const { data: courses, isLoading, isError } = useCoursesQuery(admissionYear);
-  const { data: majors } = useMajorsQuery(admissionYear);
+  const {
+    data: courses,
+    isLoading: coursesLoading,
+    isError,
+  } = useCoursesQuery(admissionYear);
+  const { data: majors, isLoading: majorsLoading } =
+    useMajorsQuery(admissionYear);
+
+  const filtersLoading = coursesLoading || majorsLoading;
 
   const categories = useMemo(
     () => buildCatalogCategories(courses ?? []),
@@ -74,6 +87,7 @@ const CatalogPage = () => {
             value={filters}
             majors={majorTitles}
             categories={categoryOptions}
+            loading={filtersLoading}
             onToggleType={toggleType}
             onToggleMajor={toggleMajor}
             onToggleCategory={toggleCategory}
@@ -82,10 +96,10 @@ const CatalogPage = () => {
         </CollapsiblePanel>
       </Panel>
 
-      {isLoading && (
-        <Panel>
-          <p className="px-1 text-sm text-fg-secondary">Загрузка курсов…</p>
-        </Panel>
+      {coursesLoading && (
+        <>
+          <CoursesSectionSkeleton cards={15} />
+        </>
       )}
 
       {isError && (
@@ -96,7 +110,7 @@ const CatalogPage = () => {
         </Panel>
       )}
 
-      {!isLoading &&
+      {!coursesLoading &&
         !isError &&
         visibleCategories.map((category) => (
           <CoursesSection
@@ -105,6 +119,7 @@ const CatalogPage = () => {
             courses={category.courses}
             titleMap={titleMap}
             majorTitleMap={majorTitleMap}
+            panelTitle={categoryToDescription[category.id]}
           />
         ))}
     </div>
