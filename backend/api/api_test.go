@@ -376,7 +376,7 @@ func TestIdentifyMajorWithCohortYear(t *testing.T) {
 	assert.Len(t, analysis, 1)
 	assert.Equal(t, "SE", analysis[0]["title"])
 	assert.Equal(t, float64(2025), analysis[0]["cohort_year"])
-	
+
 	// We passed 'Common' (c1).
 	// Total requirements for SE 2025: c1, c2, c3 (3)
 	// Covered: c1 (1)
