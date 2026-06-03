@@ -68,17 +68,16 @@ func (v *RoadmapValidator) ValidateSemester(
 		})
 	}
 
-	isOdd := currentSemNum%2 != 0
 	for _, c := range coursesInSem {
 		if len(c.AvailableSemesters) > 0 {
-			courseIsOdd := false
+			courseAvailable := false
 			for _, s := range c.AvailableSemesters {
-				if s%2 != 0 {
-					courseIsOdd = true
+				if s == currentSemNum {
+					courseAvailable = true
 					break
 				}
 			}
-			if isOdd != courseIsOdd {
+			if !courseAvailable {
 				messages = append(messages, schemas.ValidationMessage{
 					Level:    "error",
 					Message:  formatWrongSemester(c.Title, currentSemNum),

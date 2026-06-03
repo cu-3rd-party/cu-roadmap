@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -94,11 +95,17 @@ func TestValidateSemesterMissingPrerequisite(t *testing.T) {
 	result := validator.ValidateSemester(
 		[]interfaces.CourseData{*c2},
 		make(map[uuid.UUID]bool),
-		1,
+		3,
 		12.0,
 	)
 	assert.False(t, result.IsValid)
-	assert.Contains(t, result.Messages[0].Message, "пререквизит")
+	hasPrereqError := false
+	for _, m := range result.Messages {
+		if strings.Contains(m.Message, "пререквизит") {
+			hasPrereqError = true
+		}
+	}
+	assert.True(t, hasPrereqError)
 }
 
 func TestValidateSemesterPassedPrerequisite(t *testing.T) {
@@ -113,7 +120,7 @@ func TestValidateSemesterPassedPrerequisite(t *testing.T) {
 	result := validator.ValidateSemester(
 		[]interfaces.CourseData{*c2},
 		passed,
-		1,
+		3,
 		12.0,
 	)
 	assert.True(t, result.IsValid)

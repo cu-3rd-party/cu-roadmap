@@ -282,6 +282,30 @@ func restoreDB(c *gin.Context) {
 			helpers.ReplaceCourseDependencies(s, id, rc.Prerequisites, rc.Corequisites)
 		}
 	}
+	majorsFile, err := os.ReadFile("majors_backup.json")
+	if err == nil {
+		var majors []map[string]interface{}
+		json.Unmarshal(majorsFile, &majors)
+		for _, rm := range majors {
+			id, _ := uuid.Parse(rm["id"].(string))
+			cohortYear := 0
+			if cy, ok := rm["cohort_year"].(float64); ok {
+				cohortYear = int(cy)
+			}
+			s.CreateMajor(interfaces.MajorData{
+				ID: id, Title: rm["title"].(string), School: rm["school"].(string), CohortYear: cohortYear,
+			})
+			if reqs, ok := rm["requirements"].([]interface{}); ok {
+				for _, r := range reqs {
+					reqMap := r.(map[string]interface{})
+					cid, _ := uuid.Parse(reqMap["course_id"].(string))
+					s.CreateMajorRequirement(interfaces.MajorRequirementData{
+						ID: uuid.New(), MajorID: id, CourseID: cid, RequirementType: enums.RequirementType(reqMap["type"].(string)),
+					})
+				}
+			}
+		}
+	}
 	invalidateCachePrefixes("courses:", "majors:")
 	c.JSON(http.StatusOK, gin.H{"status": "restored"})
 }

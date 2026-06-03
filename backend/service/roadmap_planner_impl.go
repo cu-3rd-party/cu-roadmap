@@ -431,9 +431,8 @@ func offeredInSemester(c interfaces.CourseData, semester int) bool {
 	if len(c.AvailableSemesters) == 0 {
 		return true
 	}
-	semesterIsOdd := semester%2 != 0
 	for _, s := range c.AvailableSemesters {
-		if s%2 != 0 == semesterIsOdd {
+		if s == semester {
 			return true
 		}
 	}
