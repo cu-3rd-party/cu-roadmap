@@ -23,6 +23,7 @@ func CourseToResponse(course interfaces.CourseData) gin.H {
 		"workload":             course.Workload,
 		"prerequisites":        CourseUUIDsToStrings(course.Prerequisites),
 		"corequisites":         CourseUUIDsToStrings(course.Corequisites),
+		"postrequisites":       CourseUUIDsToStrings(course.Postrequisites),
 	}
 }
 
@@ -84,7 +85,9 @@ func ToCourseData(c *models.Course) interfaces.CourseData {
 		CsatMetric:          c.CsatMetric,
 	}
 	for _, dep := range c.CourseDependencies {
-		if dep.DependencyType == enums.DependencyTypePrerequisite {
+		if dep.DependencyType == enums.DependencyTypePrerequisite && dep.RequiredCourseID == c.ID {
+			cd.Postrequisites = append(cd.Postrequisites, dep.CourseID)
+		} else if dep.DependencyType == enums.DependencyTypePrerequisite && dep.CourseID == c.ID {
 			cd.Prerequisites = append(cd.Prerequisites, dep.RequiredCourseID)
 		} else if dep.DependencyType == enums.DependencyTypeCorequisite {
 			cd.Corequisites = append(cd.Corequisites, dep.RequiredCourseID)
