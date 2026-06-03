@@ -32,14 +32,8 @@ func (c *CreateCourseRequest) Validate() error {
 	if c.Description != nil && len(*c.Description) >= MaxDescriptionLength {
 		return errors.New("description too long")
 	}
-	if !HandbookLinkRegexp.MatchString(*c.HandbookLink) {
+	if c.HandbookLink != nil && !HandbookLinkRegexp.MatchString(*c.HandbookLink) {
 		return errors.New("handbook link invalid")
-	}
-	if c.AllowedCohorts == nil {
-		return errors.New("allowed cohorts is empty")
-	}
-	if c.AvailableSemesters == nil {
-		return errors.New("available semesters is empty")
 	}
 	if c.RecommendedSemester != nil && !slices.Contains(c.AvailableSemesters, *c.RecommendedSemester) {
 		return errors.New("recommended semester isn't present in available semesters")
@@ -68,14 +62,8 @@ func (c *UpdateCourseRequest) Validate() error {
 	if c.Description != nil && len(*c.Description) >= MaxDescriptionLength {
 		return errors.New("description too long")
 	}
-	if !HandbookLinkRegexp.MatchString(*c.HandbookLink) {
+	if c.HandbookLink != nil && !HandbookLinkRegexp.MatchString(*c.HandbookLink) {
 		return errors.New("handbook link invalid")
-	}
-	if c.AllowedCohorts == nil {
-		return errors.New("allowed cohorts is empty")
-	}
-	if c.AvailableSemesters == nil {
-		return errors.New("available semesters is empty")
 	}
 	if c.RecommendedSemester != nil && !slices.Contains(c.AvailableSemesters, *c.RecommendedSemester) {
 		return errors.New("recommended semester isn't present in available semesters")

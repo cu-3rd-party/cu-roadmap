@@ -24,8 +24,8 @@ func (p *PlannerRequest) Validate() error {
 	if p.MaxLoad <= 0 {
 		return errors.New("max_load must be greater than zero")
 	}
-	if p.Cohort <= 0 {
-		return errors.New("cohort must be greater than zero")
+	if p.Cohort < 0 {
+		return errors.New("cohort must be non-negative")
 	}
 
 	return nil
