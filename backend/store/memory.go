@@ -76,6 +76,7 @@ func (s *MemoryStore) GetAllCourses() (map[uuid.UUID]interfaces.CourseData, erro
 	for id, c := range s.courses {
 		c.Prerequisites = s.getPrereqsLocked(id)
 		c.Corequisites = s.getCoreqsLocked(id)
+		c.Postrequisites = s.getPostrequisitesLocked(id)
 		out[id] = c
 	}
 	return out, nil
@@ -88,6 +89,7 @@ func (s *MemoryStore) GetCourses(filter interfaces.CourseFilter) ([]interfaces.C
 	for id, c := range s.courses {
 		c.Prerequisites = s.getPrereqsLocked(id)
 		c.Corequisites = s.getCoreqsLocked(id)
+		c.Postrequisites = s.getPostrequisitesLocked(id)
 		courses = append(courses, c)
 	}
 	return interfaces.FilterCourses(courses, filter), nil
@@ -113,6 +115,16 @@ func (s *MemoryStore) getCoreqsLocked(courseID uuid.UUID) []uuid.UUID {
 	return coreqs
 }
 
+func (s *MemoryStore) getPostrequisitesLocked(courseID uuid.UUID) []uuid.UUID {
+	var postrequisites []uuid.UUID
+	for _, dep := range s.courseDependencies {
+		if dep.RequiredCourseID == courseID && dep.DependencyType == enums.DependencyTypePrerequisite {
+			postrequisites = append(postrequisites, dep.CourseID)
+		}
+	}
+	return postrequisites
+}
+
 func (s *MemoryStore) GetCourseByID(courseID uuid.UUID) (*interfaces.CourseData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -122,6 +134,7 @@ func (s *MemoryStore) GetCourseByID(courseID uuid.UUID) (*interfaces.CourseData,
 	}
 	c.Prerequisites = s.getPrereqsLocked(courseID)
 	c.Corequisites = s.getCoreqsLocked(courseID)
+	c.Postrequisites = s.getPostrequisitesLocked(courseID)
 	return &c, nil
 }
 

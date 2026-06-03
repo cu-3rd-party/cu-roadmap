@@ -60,6 +60,45 @@ func (s *MemoryStoreTestSuite) TestGetAllCourses() {
 	assert.Len(s.T(), courses, 2)
 }
 
+func (s *MemoryStoreTestSuite) TestGetCoursesIncludesPostrequisites() {
+	base := interfaces.CourseData{ID: uuid.New(), Title: "Base", AvailableSemesters: []int{1}, Workload: 4.0}
+	advanced := interfaces.CourseData{ID: uuid.New(), Title: "Advanced", AvailableSemesters: []int{2}, Workload: 4.0}
+	coreqOnly := interfaces.CourseData{ID: uuid.New(), Title: "Coreq Only", AvailableSemesters: []int{2}, Workload: 4.0}
+
+	_, _ = s.s.CreateCourse(base)
+	_, _ = s.s.CreateCourse(advanced)
+	_, _ = s.s.CreateCourse(coreqOnly)
+
+	_, err := s.s.CreateCourseDependency(interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         advanced.ID,
+		RequiredCourseID: base.ID,
+		DependencyType:   enums.DependencyTypePrerequisite,
+	})
+	assert.NoError(s.T(), err)
+
+	_, err = s.s.CreateCourseDependency(interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         coreqOnly.ID,
+		RequiredCourseID: base.ID,
+		DependencyType:   enums.DependencyTypeCorequisite,
+	})
+	assert.NoError(s.T(), err)
+
+	courses, err := s.s.GetCourses(interfaces.CourseFilter{})
+	assert.NoError(s.T(), err)
+
+	byID := make(map[uuid.UUID]interfaces.CourseData, len(courses))
+	for _, course := range courses {
+		byID[course.ID] = course
+	}
+
+	assert.ElementsMatch(s.T(), []uuid.UUID{advanced.ID}, byID[base.ID].Postrequisites)
+	assert.Empty(s.T(), byID[advanced.ID].Postrequisites)
+	assert.Empty(s.T(), byID[coreqOnly.ID].Postrequisites)
+	assert.ElementsMatch(s.T(), []uuid.UUID{base.ID}, byID[advanced.ID].Prerequisites)
+}
+
 func (s *MemoryStoreTestSuite) TestGetCourseByIDNotFound() {
 	result, err := s.s.GetCourseByID(uuid.New())
 	assert.NoError(s.T(), err)

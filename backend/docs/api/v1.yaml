@@ -724,6 +724,12 @@ components:
           items:
             type: string
             format: uuid
+        postrequisites:
+          type: array
+          description: uuid курсов, которые являются пререквизитами перед конкретным
+          items:
+            type: string
+            format: uuid
         to_major:
           type: object
           description: |
