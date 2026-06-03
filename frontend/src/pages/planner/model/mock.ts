@@ -16,7 +16,9 @@ export const PLANNER_MAJORS: MajorProgress[] = [
 
 const SEMESTER_DATE_RANGE = "Сентябрь 2026 - Январь 2027";
 
-export const SEMESTERS: SemesterSectionProps[] = Array.from(
-  { length: TOTAL_SEMESTERS },
-  (_, i) => ({ index: i + 1, dateRange: SEMESTER_DATE_RANGE }),
-);
+// Per-semester static metadata; runtime course data is injected by PlannerPage.
+export const SEMESTERS: Pick<SemesterSectionProps, "index" | "dateRange">[] =
+  Array.from({ length: TOTAL_SEMESTERS }, (_, i) => ({
+    index: i + 1,
+    dateRange: SEMESTER_DATE_RANGE,
+  }));

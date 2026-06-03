@@ -4,12 +4,13 @@ import type { CSSProperties } from "react";
 
 import { CourseCard } from "@/entities/course";
 import { cn } from "@/shared/lib";
+import { CourseCategory, CourseType } from "@/shared/model";
 
 interface SortableCourseCardProps {
   id: string;
   title: string;
-  courseType?: string;
-  major?: string;
+  category?: CourseCategory;
+  type?: CourseType;
   moveTargets: number[];
   onRemove: () => void;
   onMove: (toSemester: number) => void;

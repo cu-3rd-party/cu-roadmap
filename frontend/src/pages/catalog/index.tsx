@@ -1,27 +1,51 @@
 import { Compass } from "lucide-react";
 import { useMemo } from "react";
 
+import { buildCourseTitleMap, useCoursesQuery } from "@/entities/course";
+import { useMajorsQuery } from "@/entities/major";
 import { CourseFilters } from "@/features/course-filters";
-import { Chip } from "@/shared/ui/kit/chip";
+import { useSettingsStore } from "@/features/settings";
+import { Chip } from "@/shared/ui";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
 import { CoursesSection } from "@/widgets/CoursesSection";
 
+import { buildCatalogCategories } from "./lib";
 import { categoryOptionsWithCounts, filterCatalog } from "./model/filter";
-import { CATALOG_CATEGORIES } from "./model/mock";
 import { useCatalogFiltersStore } from "./model/store";
 
 const CatalogPage = () => {
-  const { filters, toggleYear, toggleMajor, toggleCategory, setSearch } =
+  const { admissionYear } = useSettingsStore();
+  const { filters, toggleType, toggleMajor, toggleCategory, setSearch } =
     useCatalogFiltersStore();
 
+  const { data: courses, isLoading, isError } = useCoursesQuery(admissionYear);
+  const { data: majors } = useMajorsQuery(admissionYear);
+
+  const categories = useMemo(
+    () => buildCatalogCategories(courses ?? []),
+    [courses],
+  );
+
   const categoryOptions = useMemo(
-    () => categoryOptionsWithCounts(CATALOG_CATEGORIES, filters),
-    [filters],
+    () => categoryOptionsWithCounts(categories, filters),
+    [categories, filters],
   );
 
   const visibleCategories = useMemo(
-    () => filterCatalog(CATALOG_CATEGORIES, filters),
-    [filters],
+    () => filterCatalog(categories, filters),
+    [categories, filters],
+  );
+
+  const majorTitles = useMemo(
+    () => majors?.map((major) => major.title) ?? [],
+    [majors],
+  );
+
+  const titleMap = useMemo(() => buildCourseTitleMap(courses ?? []), [courses]);
+
+  const majorTitleMap = useMemo(
+    () => new Map((majors ?? []).map((major) => [major.id, major.title])),
+    [majors],
   );
 
   return (
@@ -35,17 +59,22 @@ const CatalogPage = () => {
             <h1 className="text-2xl font-bold text-fg-primary">
               Каталог курсов
             </h1>
-            <p className="text-sm text-fg-secondary">
-              Выбери мейджор и исследуй все доступные курсы
-            </p>
+            <div className="text-sm text-fg-secondary flex flex-col gap-2">
+              <p>Исследуй все доступные тебе курсы!</p>
+              <p>
+                На карточки можно кликать, чтобы получить дополнительную
+                информацию
+              </p>
+            </div>
           </div>
         </div>
 
         <CollapsiblePanel title="Фильтры">
           <CourseFilters
             value={filters}
+            majors={majorTitles}
             categories={categoryOptions}
-            onToggleYear={toggleYear}
+            onToggleType={toggleType}
             onToggleMajor={toggleMajor}
             onToggleCategory={toggleCategory}
             onSearchChange={setSearch}
@@ -53,15 +82,31 @@ const CatalogPage = () => {
         </CollapsiblePanel>
       </Panel>
 
-      {visibleCategories.map((category) => (
-        <CoursesSection
-          key={category.id}
-          title={category.title}
-          selected={category.selected}
-          total={category.total}
-          courses={category.courses}
-        />
-      ))}
+      {isLoading && (
+        <Panel>
+          <p className="px-1 text-sm text-fg-secondary">Загрузка курсов…</p>
+        </Panel>
+      )}
+
+      {isError && (
+        <Panel>
+          <p className="px-1 text-sm text-fg-negative">
+            Не удалось загрузить курсы. Попробуйте обновить страницу.
+          </p>
+        </Panel>
+      )}
+
+      {!isLoading &&
+        !isError &&
+        visibleCategories.map((category) => (
+          <CoursesSection
+            key={category.id}
+            title={category.title}
+            courses={category.courses}
+            titleMap={titleMap}
+            majorTitleMap={majorTitleMap}
+          />
+        ))}
     </div>
   );
 };

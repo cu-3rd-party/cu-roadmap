@@ -2,17 +2,18 @@ import { ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "@/shared/lib";
-import { Badge } from "@/shared/ui/kit/badge";
-import { Button } from "@/shared/ui/kit/button";
+import { categorySlugToName, CourseCategory, CourseType, typeSlugToName } from "@/shared/model";
 import {
+  Badge,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/shared/ui/kit/dropdown-menu";
-import { Separator } from "@/shared/ui/kit/separator";
+  Separator
+} from "@/shared/ui/kit";
 
-import { MOCK_COURSE_DETAILS } from "../model";
+import { MOCK_COURSE_DETAILS, type CourseDetails } from "../model";
 
 import { DetailsDrawer } from "./DetailsDrawer";
 
@@ -27,12 +28,14 @@ interface CourseCardProps {
    - planned: "О курсе" + "Удалить" (used inside a semester block)
   **/
   variant?: CourseCardVariant;
-  // course-type badge label (orange), e.g. "Fundamentals", "Major Core"
-  courseType?: string;
+  // course-category badge label (orange), e.g. "Fundamentals", "Major Core"
+  category?: CourseCategory;
   // major badge label (blue), e.g. "SE", "Business", "AI"
-  major?: string;
+  type?: CourseType;
   // select variant only: renders a brand-colored border when true
   selected?: boolean;
+  // catalog variant only: real course data shown in the "О курсе" drawer on click
+  details?: CourseDetails;
   // planned variant only: semesters offered in the "move to" menu (already excludes current)
   moveTargets?: number[];
   onSelect?: () => void;
@@ -41,20 +44,21 @@ interface CourseCardProps {
 }
 
 const CourseBadges = ({
-  courseType,
-  major,
-}: Pick<CourseCardProps, "courseType" | "major">) => {
-  if (!courseType && !major) return null;
+  category,
+  type,
+  className,
+}: Pick<CourseCardProps, "category" | "type"> & { className?: string }) => {
+  if (!category && !type) return null;
   return (
-    <div className="flex flex-wrap gap-1">
-      {courseType && (
+    <div className={cn("flex flex-wrap gap-1", className)}>
+      {category && (
         <Badge variant="orange" size="3xs">
-          {courseType}
+          {categorySlugToName[category]}
         </Badge>
       )}
-      {major && (
+      {type && (
         <Badge variant="blue" size="3xs">
-          {major}
+          {typeSlugToName[type]}
         </Badge>
       )}
     </div>
@@ -64,9 +68,10 @@ const CourseBadges = ({
 export const CourseCard = ({
   title,
   variant = "catalog",
-  courseType,
-  major,
+  category,
+  type,
   selected = false,
+  details,
   moveTargets,
   onSelect,
   onRemove,
@@ -80,18 +85,47 @@ export const CourseCard = ({
         type="button"
         onClick={onSelect}
         aria-pressed={selected}
-        className={cn("flex flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
+        className={cn("flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
                       "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                       selected && "border-accent/80")}
       >
         <div
           title={title}
-          className="text-sm leading-snug font-medium text-fg-primary "
+          className="line-clamp-2 text-sm leading-snug font-medium text-fg-primary"
         >
           {title}
         </div>
-        <CourseBadges courseType={courseType} major={major} />
+        <CourseBadges category={category} type={type} className="mt-auto"/>
       </button>
+    );
+  }
+
+  if (variant === "catalog") {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setDetailsOpen(true)}
+          className={cn("flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
+                        "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none")}
+        >
+          <div
+            title={title}
+            className="line-clamp-2 text-sm leading-snug font-medium text-fg-primary"
+          >
+            {title}
+          </div>
+          <CourseBadges category={category} type={type} className="mt-auto"/>
+        </button>
+
+        {details && (
+          <DetailsDrawer
+            course={details}
+            open={detailsOpen}
+            onOpenChange={setDetailsOpen}
+          />
+        )}
+      </>
     );
   }
 
@@ -99,8 +133,8 @@ export const CourseCard = ({
     variant === "planned" && moveTargets && moveTargets.length > 0;
 
   return (
-    <div className="relative flex flex-col gap-3 rounded-xl bg-background p-4">
-      <div className="flex flex-col gap-2">
+    <div className="relative flex h-full flex-col gap-3 rounded-xl bg-background p-4">
+      <div className="flex flex-1 flex-col gap-2">
         <div
           title={title}
           className={cn(
@@ -110,7 +144,7 @@ export const CourseCard = ({
         >
           {title}
         </div>
-        <CourseBadges courseType={courseType} major={major} />
+        <CourseBadges category={category} type={type} className="mt-auto"/>
       </div>
 
       {showMoveMenu && (
@@ -133,21 +167,17 @@ export const CourseCard = ({
 
       <Separator />
 
-      <div className="mt-auto flex items-center justify-between gap-2">
-        <Button variant="tertiary" size="xs" onClick={() => setDetailsOpen(true)}>
+      <div className={`mt-auto flex items-center gap-2 ${variant === "planned" ? "justify-between" : "justify-center"}`}>
+        <Button variant={variant === "planned" ? "tertiary" : "outline"} size="xs" onClick={() => setDetailsOpen(true)}>
           <span className="text-base">О курсе</span>
         </Button>
-        {variant === "planned" ? (
+        {variant === "planned" && (
           <Button
             variant="destructive"
             size="xs"
             onClick={onRemove}
           >
             <span className="text-base">Удалить</span>
-          </Button>
-        ) : (
-          <Button variant="outline" size="xs">
-            <span className="text-base">Выбрать</span>
           </Button>
         )}
       </div>

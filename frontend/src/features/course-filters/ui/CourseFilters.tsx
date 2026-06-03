@@ -1,9 +1,9 @@
 import { Chip } from "@/shared/ui";
 
 import {
-  CATEGORY_FILTERS,
+  buildCategoryFilters,
+  buildTypeFilters,
   MAJOR_OPTIONS,
-  YEAR_OPTIONS,
   type CategoryFilterOption,
   type CourseFilterState,
 } from "../model";
@@ -11,46 +11,33 @@ import {
 import { CourseSearchFilter } from "./CourseSearchFilter";
 import { FilterCard } from "./FilterCard";
 
+const TYPE_OPTIONS = buildTypeFilters();
+const CATEGORY_OPTIONS = buildCategoryFilters();
+
 interface CourseFiltersProps {
   value: CourseFilterState;
-  onToggleYear: (year: string) => void;
+  onToggleType: (type: string) => void;
   onToggleMajor: (major: string) => void;
   onToggleCategory: (id: string) => void;
   onSearchChange: (search: string) => void;
-  years?: readonly string[];
+  types?: { id: string; label: string }[];
   majors?: readonly string[];
   categories?: CategoryFilterOption[];
 }
 
 export const CourseFilters = ({
   value,
-  onToggleYear,
+  onToggleType,
   onToggleMajor,
   onToggleCategory,
   onSearchChange,
-  years = YEAR_OPTIONS,
+  types = TYPE_OPTIONS,
   majors = MAJOR_OPTIONS,
-  categories = CATEGORY_FILTERS,
+  categories = CATEGORY_OPTIONS,
 }: CourseFiltersProps) => {
   return (
     <div className="flex flex-col gap-1">
       <div className="grid gap-1 sm:grid-cols-2">
-        <FilterCard label="Год поступления">
-          <div className="flex flex-wrap gap-2">
-            {years.map((year) => (
-              <Chip
-                variant="action"
-                key={year}
-                size="xs"
-                active={value.years.includes(year)}
-                onClick={() => onToggleYear(year)}
-              >
-                {year}
-              </Chip>
-            ))}
-          </div>
-        </FilterCard>
-
         <FilterCard label="Мейджор">
           <div className="flex flex-wrap gap-2">
             {majors.map((major) => (
@@ -62,6 +49,22 @@ export const CourseFilters = ({
                 onClick={() => onToggleMajor(major)}
               >
                 {major}
+              </Chip>
+            ))}
+          </div>
+        </FilterCard>
+
+        <FilterCard label="Тип курса">
+          <div className="flex flex-wrap gap-2">
+            {types.map((type) => (
+              <Chip
+                variant="action"
+                key={type.id}
+                size="xs"
+                active={value.types.includes(type.id)}
+                onClick={() => onToggleType(type.id)}
+              >
+                {type.label}
               </Chip>
             ))}
           </div>

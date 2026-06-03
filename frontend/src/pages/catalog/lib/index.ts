@@ -1,0 +1,1 @@
+export { buildCatalogCategories } from "./buildCatalogCategories"

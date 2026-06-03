@@ -9,7 +9,6 @@ export {
   generateGoalPath,
 } from "./api";
 export type {
-  RoadmapCourseDto,
   RoadmapSemesterDto,
   RoadmapDto,
   GenerateRoadmapRequestDto,
@@ -25,7 +24,6 @@ export type {
 } from "./api";
 export type {
   Roadmap,
-  RoadmapCourse,
   RoadmapSemester,
   ValidationMessage,
   SemesterValidation,
