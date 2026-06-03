@@ -448,6 +448,22 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
 
+  /api/v1/auth/logout:
+    description: завершает админскую сессию
+    delete:
+      description: удаляет текущий auth-token из серверного cache-store
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: выход выполнен успешно
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
 components:
   securitySchemes:
     AdminCookie:
@@ -457,6 +473,7 @@ components:
       description: |
         HttpOnly cookie, устанавливается после успешного `POST /api/v1/auth/login`.
         Токен — UUIDv4, живёт 1 час.
+        Для завершения сессии используется `POST /api/v1/auth/logout`.
         В production устанавливается с флагами `Secure; HttpOnly; SameSite=Strict`.
         В dev-режиме (gin debug) без `Secure`.
 

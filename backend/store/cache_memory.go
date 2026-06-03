@@ -18,6 +18,11 @@ type MemoryCacheStore struct {
 	buckets    map[string]memoryRateLimitBucket
 }
 
+func (s *MemoryCacheStore) DeleteAuthToken(token uuid.UUID) error {
+	delete(s.authTokens, token)
+	return nil
+}
+
 func (s *MemoryCacheStore) Ready() bool {
 	return true
 }

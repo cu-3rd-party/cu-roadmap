@@ -21,6 +21,10 @@ type RedisCacheStore struct {
 	redisURL string
 }
 
+func (s *RedisCacheStore) DeleteAuthToken(token uuid.UUID) error {
+	return s.client.Del(context.Background(), authTokenCacheKey(token)).Err()
+}
+
 func (s *RedisCacheStore) Ready() bool {
 	status := s.client.Ping(context.Background())
 	slog.Error("failed to ping redis with", "error", status.Err().Error())

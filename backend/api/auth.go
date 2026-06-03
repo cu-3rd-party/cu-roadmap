@@ -10,6 +10,7 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func RegisterAuthRoutes(rg *gin.RouterGroup) {
@@ -18,6 +19,7 @@ func RegisterAuthRoutes(rg *gin.RouterGroup) {
 	auth := rg.Group("/")
 	auth.Use(middleware.AuthMiddleware())
 	auth.GET("/check", check)
+	auth.DELETE("/logout", logout)
 }
 
 // check is a no-op endpoint that's under auth middleware so that user can check whether he's authorized or not
@@ -55,5 +57,35 @@ func login(c *gin.Context) {
 
 	c.SetCookie("auth-token", token.Token.String(), interfaces.AuthTokenLifetime, "/", "", !gin.IsDebugging(), true)
 	c.Status(http.StatusCreated)
+	return
+}
+
+func logout(c *gin.Context) {
+	cache := store.GetCacheStore()
+	if cache == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+
+	tokenStr, err := c.Cookie("auth-token")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	token, err := uuid.Parse(tokenStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = cache.DeleteAuthToken(token)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// удаляем куки
+	c.SetCookie("auth-token", "", 0, "/", "", !gin.IsDebugging(), true)
+	c.Status(http.StatusOK)
 	return
 }

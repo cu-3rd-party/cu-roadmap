@@ -117,26 +117,27 @@ cd frontend && pnpm test
 
 Основные эндпоинты:
 
-| Метод | Путь                              | Описание                        |
-|-------|-----------------------------------|---------------------------------|
-| GET   | `/api/v1/courses/`                | все курсы с to_major маппингом  |
-| GET   | `/api/v1/majors/`                 | все мажоры с требованиями       |
-| POST  | `/api/v1/majors/identify`         | идентификация мажора по курсам  |
-| POST  | `/api/v1/planner/generate`        | генерация roadmap               |
-| POST  | `/api/v1/planner/goal-path/`      | путь до целевого курса          |
-| POST  | `/api/v1/planner/validate-roadmap/` | валидация roadmap            |
-| GET   | `/api/v1/graph/data`              | данные графа зависимостей       |
-| POST  | `/api/v1/auth/login`              | вход по паролю (устанавливает cookie) |
-| GET   | `/api/v1/auth/check`              | проверка валидности cookie      |
+| Метод  | Путь                                | Описание                              |
+|--------|-------------------------------------|---------------------------------------|
+| GET    | `/api/v1/courses/`                  | все курсы с to_major маппингом        |
+| GET    | `/api/v1/majors/`                   | все мажоры с требованиями             |
+| POST   | `/api/v1/majors/identify`           | идентификация мажора по курсам        |
+| POST   | `/api/v1/planner/generate`          | генерация roadmap                     |
+| POST   | `/api/v1/planner/goal-path/`        | путь до целевого курса                |
+| POST   | `/api/v1/planner/validate-roadmap/` | валидация roadmap                     |
+| GET    | `/api/v1/graph/data`                | данные графа зависимостей             |
+| POST   | `/api/v1/auth/login`                | вход по паролю (устанавливает cookie) |
+| GET    | `/api/v1/auth/check`                | проверка валидности cookie            |
+| DELETE | `/api/v1/auth/logout`               | завершение сессии и logout            |
 
 Админ-эндпоинты (требуют cookie, полученную через `/auth/login`):
 
-| Метод | Путь                        | Описание            |
-|-------|-----------------------------|---------------------|
-| POST  | `/api/v1/courses/`          | создать курс        |
-| PUT   | `/api/v1/courses/:id`       | обновить курс       |
-| DELETE| `/api/v1/courses/:id`       | удалить курс        |
-| PUT   | `/api/v1/majors/:id`        | обновить мажор      |
+| Метод  | Путь                  | Описание       |
+|--------|-----------------------|----------------|
+| POST   | `/api/v1/courses/`    | создать курс   |
+| PUT    | `/api/v1/courses/:id` | обновить курс  |
+| DELETE | `/api/v1/courses/:id` | удалить курс   |
+| PUT    | `/api/v1/majors/:id`  | обновить мажор |
 
 ## Фичи
 

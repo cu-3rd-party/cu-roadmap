@@ -18,6 +18,10 @@ import (
 
 type authTokenErrorStore struct{}
 
+func (s *authTokenErrorStore) DeleteAuthToken(token uuid.UUID) error {
+	return nil
+}
+
 func (s *authTokenErrorStore) Ready() bool {
 	return true
 }
