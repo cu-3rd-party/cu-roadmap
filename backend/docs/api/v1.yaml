@@ -172,6 +172,40 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/courses/backup:
+    get:
+      description: делает бэкап текущих курсов и мейджоров в json файлы
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: бэкап успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/courses/restore:
+    post:
+      description: восстанавливает курсы и мейджоры из json файлов, стирая текущие данные
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: данные успешно восстановлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/v1/majors/:
     description: возвращает все мейджоры с требованиями
     get:
