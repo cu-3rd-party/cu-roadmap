@@ -74,7 +74,7 @@ export const CourseSelectModal = ({
       >
         <DialogHeader className="relative shrink-0 px-8 pt-7 pb-4 overflow-hidden">
           <DialogTitle className="text-2xl font-bold text-fg-primary">
-            Доступные курсы
+            Доступные курсы ({semester} семестр)
           </DialogTitle>
           <RevealImage
             src="/character3.png"

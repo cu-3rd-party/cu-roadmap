@@ -58,6 +58,7 @@ export const SemesterSection = ({
   const {
     selections,
     validation,
+    generatedIds,
     removeCourse,
     clearSemester,
     moveCourse,
@@ -196,7 +197,7 @@ export const SemesterSection = ({
               onDragCancel={handleDragCancel}
             >
               <SortableContext items={courseIds} strategy={rectSortingStrategy}>
-                <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-6">
+                <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-5">
                   {courses.map((course) => (
                     <SortableCourseCard
                       key={course.id}
@@ -206,6 +207,7 @@ export const SemesterSection = ({
                       type={course.type}
                       moveTargets={moveTargetsFor(course.id)}
                       conflict={conflictIds.has(course.id)}
+                      generated={generatedIds.has(course.id)}
                       onRemove={() => {
                         removeCourse(index, course.id);
                         runValidation();
@@ -234,6 +236,7 @@ export const SemesterSection = ({
                       type={activeCourse.type}
                       moveTargets={moveTargetsFor(activeCourse.id)}
                       conflict={conflictIds.has(activeCourse.id)}
+                      generated={generatedIds.has(activeCourse.id)}
                       details={detailsFor(activeCourse.id)}
                     />
                   </div>

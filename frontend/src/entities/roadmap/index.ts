@@ -5,6 +5,8 @@ export {
   validateRoadmap,
   generateGoalPath,
   useValidateRoadmapMutation,
+  useGenerateRoadmapMutation,
+  useGoalPathMutation,
   useValidatePlan,
 } from "./api";
 export type {
@@ -33,4 +35,6 @@ export {
   normalizeValidationRoadmap,
   isSemesterCompleted,
   buildValidateRoadmapRequest,
+  buildGenerateRoadmapRequest,
+  buildGoalPathRequest,
 } from "./lib";

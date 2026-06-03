@@ -3,5 +3,7 @@ export { validateSemester } from "./validateSemester";
 export { validateRoadmap } from "./validateRoadmap";
 export { generateGoalPath } from "./generateGoalPath";
 export { useValidateRoadmapMutation } from "./useValidateRoadmapMutation";
+export { useGenerateRoadmapMutation } from "./useGenerateRoadmapMutation";
+export { useGoalPathMutation } from "./useGoalPathMutation";
 export { useValidatePlan } from "./useValidatePlan";
 export * from "./dto";
