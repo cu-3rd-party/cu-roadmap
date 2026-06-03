@@ -6,7 +6,7 @@ export interface Course {
   id: UUID;
   title: string;
   description?: string | null;
-  courseType: CourseType;
+  type: CourseType;
   category: CourseCategory;
   handbookLink: string,
   availableSemesters: SemesterNumber[];
@@ -15,5 +15,6 @@ export interface Course {
   workload: number;
   prerequisites?: UUID[];
   corequisites?: UUID[];
+  postrequisites?: UUID[];
   toMajor: Record<UUID, MajorRequirementType>
 }

@@ -1,1 +1,1 @@
-export { buildCatalogCategories } from "./buildCatalogCategories";
+export { buildCatalogCategories } from "./buildCatalogCategories"

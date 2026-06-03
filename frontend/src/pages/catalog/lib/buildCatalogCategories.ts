@@ -13,7 +13,8 @@ const CATEGORY_ORDER: CourseCategory[] = [
   "soft",
 ];
 
-const sortKey = (title: string) => title.replace(/^[^а-яёА-ЯЁa-zA-Z]+/, "");
+const sortKey = (title: string) =>
+  title.replace(/^[^а-яёА-ЯЁa-zA-Z]+/, "");
 
 // Group normalized courses into the catalog category buckets (in display order)
 export const buildCatalogCategories = (courses: Course[]): CatalogCategory[] =>
@@ -22,5 +23,7 @@ export const buildCatalogCategories = (courses: Course[]): CatalogCategory[] =>
     title: categorySlugToName[id],
     courses: courses
       .filter((course) => course.category === id)
-      .sort((a, b) => sortKey(a.title).localeCompare(sortKey(b.title), "ru")),
+      .sort((a, b) =>
+        sortKey(a.title).localeCompare(sortKey(b.title), "ru"),
+      ),
   }));

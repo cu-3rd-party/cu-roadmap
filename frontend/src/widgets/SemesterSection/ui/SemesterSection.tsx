@@ -17,7 +17,7 @@ import {
 import { Check } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { CourseCard } from "@/entities/course";
+import { CourseCard, type Course } from "@/entities/course";
 import { usePlannerStore } from "@/entities/roadmap";
 import { CourseSelectModal } from "@/features/course-select";
 import { useSettingsStore } from "@/features/settings";
@@ -31,12 +31,24 @@ import { SortableCourseCard } from "./SortableCourseCard";
 export interface SemesterSectionProps {
   index: number;
   dateRange: string;
+  courses: Course[];
+  coursesLoading: boolean;
+  coursesError: boolean;
 }
 
-export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
+export const SemesterSection = ({
+  index,
+  dateRange,
+  courses: catalogCourses,
+  coursesLoading,
+  coursesError,
+}: SemesterSectionProps) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined);
+  const [activeHeight, setActiveHeight] = useState<number | undefined>(
+    undefined,
+  );
   const { selections, removeCourse, moveCourse, reorderCourses } =
     usePlannerStore();
   const { admissionYear, hideCompletedSemesters } = useSettingsStore();
@@ -66,6 +78,7 @@ export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
     setActiveWidth(event.active.rect.current.initial?.width);
+    setActiveHeight(event.active.rect.current.initial?.height);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -109,8 +122,8 @@ export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
                       key={course.id}
                       id={course.id}
                       title={course.title}
-                      courseType={course.courseType}
-                      major={course.major}
+                      category={course.category}
+                      type={course.type}
                       moveTargets={moveTargets}
                       onRemove={() => removeCourse(index, course.id)}
                       onMove={(to) => moveCourse(index, to, course.id)}
@@ -125,12 +138,12 @@ export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
 
               <DragOverlay>
                 {activeCourse ? (
-                  <div style={{ width: activeWidth }}>
+                  <div style={{ width: activeWidth, height: activeHeight }}>
                     <CourseCard
                       variant="planned"
                       title={activeCourse.title}
-                      courseType={activeCourse.courseType}
-                      major={activeCourse.major}
+                      category={activeCourse.category}
+                      type={activeCourse.type}
                       moveTargets={moveTargets}
                     />
                   </div>
@@ -145,6 +158,9 @@ export const SemesterSection = ({ index, dateRange }: SemesterSectionProps) => {
 
       <CourseSelectModal
         semester={index}
+        courses={catalogCourses}
+        isLoading={coursesLoading}
+        isError={coursesError}
         open={modalOpen}
         onOpenChange={setModalOpen}
       />

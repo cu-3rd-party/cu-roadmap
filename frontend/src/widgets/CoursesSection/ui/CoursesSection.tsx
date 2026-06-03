@@ -1,24 +1,20 @@
-import { CourseCard } from "@/entities/course";
-import { MAJOR_LABELS } from "@/features/course-filters";
+import { Course, CourseCard, courseToDetails } from "@/entities/course";
+import type { UUID } from "@/shared/model";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
-
-export interface CategoryCourse {
-  id: string;
-  title: string;
-  major: string;
-}
 
 interface CourseCategorySectionProps {
   title: string;
-  selected: number;
-  total: number;
-  courses: CategoryCourse[];
+  courses: Course[];
+  titleMap: Map<UUID, string>;
+  majorTitleMap: Map<UUID, string>;
   panelTitle?: string;
 }
 
 export const CoursesSection = ({
   title,
   courses,
+  titleMap,
+  majorTitleMap,
   panelTitle = "Выбери 5 курсов из категории",
 }: CourseCategorySectionProps) => {
   return (
@@ -33,8 +29,9 @@ export const CoursesSection = ({
             <CourseCard
               key={course.id}
               title={course.title}
-              courseType={title}
-              major={MAJOR_LABELS[course.major] ?? course.major}
+              category={course.category}
+              type={course.type}
+              details={courseToDetails(course, { titleMap, majorTitleMap })}
             />
           ))}
         </div>

@@ -1,12 +1,11 @@
+import type { Course } from "@/entities/course";
 import {
-  CATEGORY_FILTERS,
+  buildCategoryFilters,
   type CategoryFilterOption,
   type CourseFilterState,
 } from "@/features/course-filters";
 
-import type { AvailableCourse } from "./courses";
-
-const matchesSearch = (course: AvailableCourse, search: string) => {
+const matchesSearch = (course: Course, search: string) => {
   const query = search.trim().toLowerCase();
   if (query.length === 0) return true;
   return (
@@ -15,11 +14,11 @@ const matchesSearch = (course: AvailableCourse, search: string) => {
   );
 };
 
-/** Filter modal courses by search (title/description) and category chips. */
+// Filter modal courses by search (title/description) and category chips
 export const filterAvailableCourses = (
-  courses: AvailableCourse[],
+  courses: Course[],
   filters: CourseFilterState,
-): AvailableCourse[] =>
+): Course[] =>
   courses.filter((course) => {
     const categoryOk =
       filters.categories.length === 0 ||
@@ -28,15 +27,12 @@ export const filterAvailableCourses = (
     return categoryOk && matchesSearch(course, filters.search);
   });
 
-/**
- * Category chip options with a live count of courses matching the current
- * search (mirrors the catalog chips; ignores the category selection itself).
- */
+// Category chip options with a live count of courses matching the current search
 export const availableCategoryOptions = (
-  courses: AvailableCourse[],
+  courses: Course[],
   filters: CourseFilterState,
 ): CategoryFilterOption[] =>
-  CATEGORY_FILTERS.map((option) => ({
+  buildCategoryFilters().map((option) => ({
     ...option,
     count: courses.filter(
       (course) =>

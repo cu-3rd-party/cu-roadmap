@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 
-import { CourseCard } from "@/entities/course";
+import { CourseCard, type Course } from "@/entities/course";
 import { usePlannerStore } from "@/entities/roadmap";
-import { COURSE_TYPE_LABELS, CourseSearchFilter } from "@/features/course-filters";
+import { CourseSearchFilter } from "@/features/course-filters";
+import type { SemesterNumber } from "@/shared/constants";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,6 @@ import {
   DialogTitle,
 } from "@/shared/ui/kit/dialog";
 
-import { AVAILABLE_COURSES } from "../model/courses";
 import {
   availableCategoryOptions,
   filterAvailableCourses,
@@ -19,12 +19,18 @@ import { useCourseSelectFiltersStore } from "../model/store";
 
 interface CourseSelectModalProps {
   semester: number;
+  courses: Course[];
+  isLoading: boolean;
+  isError: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export const CourseSelectModal = ({
   semester,
+  courses,
+  isLoading,
+  isError,
   open,
   onOpenChange,
 }: CourseSelectModalProps) => {
@@ -36,14 +42,23 @@ export const CourseSelectModal = ({
     [selections, semester],
   );
 
+  // Only courses offered in this semester are selectable from this modal.
+  const semesterCourses = useMemo(
+    () =>
+      courses.filter((course) =>
+        course.availableSemesters.includes(semester as SemesterNumber),
+      ),
+    [courses, semester],
+  );
+
   const categoryOptions = useMemo(
-    () => availableCategoryOptions(AVAILABLE_COURSES, filters),
-    [filters],
+    () => availableCategoryOptions(semesterCourses, filters),
+    [semesterCourses, filters],
   );
 
   const visibleCourses = useMemo(
-    () => filterAvailableCourses(AVAILABLE_COURSES, filters),
-    [filters],
+    () => filterAvailableCourses(semesterCourses, filters),
+    [semesterCourses, filters],
   );
 
   return (
@@ -77,33 +92,45 @@ export const CourseSelectModal = ({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-expert-blue-pale pl-4 pr-3 pb-3 scrollbar-gutter-stable">
-          <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
-            {visibleCourses.map((course) => {
-              const isSelected = selectedIds.has(course.id);
-              const courseType =
-                COURSE_TYPE_LABELS[course.category] ?? course.category;
-              return (
-                <CourseCard
-                  key={course.id}
-                  title={course.title}
-                  variant="select"
-                  courseType={courseType}
-                  major={course.major}
-                  selected={isSelected}
-                  onSelect={() =>
-                    isSelected
-                      ? removeCourse(semester, course.id)
-                      : addCourse(semester, {
-                          id: course.id,
-                          title: course.title,
-                          courseType,
-                          major: course.major,
-                        })
-                  }
-                />
-              );
-            })}
-          </div>
+          {isLoading ? (
+            <p className="px-1 py-4 text-sm text-fg-secondary">
+              Загрузка курсов…
+            </p>
+          ) : isError ? (
+            <p className="px-1 py-4 text-sm text-fg-negative">
+              Не удалось загрузить курсы. Попробуйте обновить страницу.
+            </p>
+          ) : visibleCourses.length === 0 ? (
+            <p className="px-1 py-4 text-sm text-fg-secondary">
+              Нет курсов, доступных в этом семестре.
+            </p>
+          ) : (
+            <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
+              {visibleCourses.map((course) => {
+                const isSelected = selectedIds.has(course.id);
+                return (
+                  <CourseCard
+                    key={course.id}
+                    title={course.title}
+                    variant="select"
+                    category={course.category}
+                    type={course.type}
+                    selected={isSelected}
+                    onSelect={() =>
+                      isSelected
+                        ? removeCourse(semester, course.id)
+                        : addCourse(semester, {
+                            id: course.id,
+                            title: course.title,
+                            category: course.category,
+                            type: course.type,
+                          })
+                    }
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

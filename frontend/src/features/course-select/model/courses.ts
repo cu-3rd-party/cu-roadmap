@@ -1,6 +1,7 @@
-import type { PlannedCourse } from "@/entities/roadmap";
-
-export interface AvailableCourse extends PlannedCourse {
+// Mock catalog used by the trajectory-select feature's course search.
+export interface AvailableCourse {
+  id: string;
+  title: string;
   category: string;
   major: string;
   description?: string;

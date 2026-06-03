@@ -1,18 +1,17 @@
-import { Badge } from "@/shared/ui/kit/badge";
 import {
+  Badge,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/shared/ui/kit/sheet";
+} from "@/shared/ui";
 
 import { SEASON_BADGE_VARIANT, SEASON_LABELS } from "../lib";
 import type { CourseDetails } from "../model";
 
 import { DetailField } from "./DetailField";
 import { RequisiteList } from "./RequisiteList";
-import { StatusPanel } from "./StatusPanel";
 import { SyllabusCard } from "./SyllabusCard";
 
 interface DetailsDrawerProps {
@@ -36,7 +35,7 @@ export const DetailsDrawer = ({
         <SheetTitle className="text-xl font-bold text-fg-primary">
           О курсе
         </SheetTitle>
-        <SheetDescription className="text-sm text-fg-primary">
+        <SheetDescription className="max-w-[60%] text-sm text-fg-primary">
           {course.title}
         </SheetDescription>
         <img
@@ -48,16 +47,15 @@ export const DetailsDrawer = ({
       </SheetHeader>
 
       <div className="flex-1 space-y-6 overflow-y-auto rounded-t-2xl bg-background px-6 pt-5 pb-8">
-        {course.status && (
-          <StatusPanel
-            title={course.status.title}
-            description={course.status.description}
-          />
-        )}
-
         <SyllabusCard
           link={course.syllabus}
         />
+
+        {course.description && (
+          <DetailField label="Описание">
+            <p className="text-fg-primary">{course.description}</p>
+          </DetailField>
+        )}
 
         <DetailField label="Год поступления">
           <p className="text-fg-primary">{course.admissionYears}</p>
@@ -65,17 +63,16 @@ export const DetailsDrawer = ({
 
         <DetailField label="Тип курса">
           <Badge variant="orange" size="xs">
-            {course.type}
+            {course.category}
           </Badge>
         </DetailField>
-
         <DetailField label="Специализация">
           <ul className="list-disc space-y-1 pl-5 text-fg-primary">
-            {course.specialisations.map((item) => (
+            {course.specialisations.length > 0 ? course.specialisations.map((item) => (
               <li key={item} className="pl-1">
                 {item}
               </li>
-            ))}
+            )) : <li>Общеуниверситетская дисциплина</li>}
           </ul>
         </DetailField>
 
@@ -104,25 +101,15 @@ export const DetailsDrawer = ({
         </DetailField>
 
         <DetailField label="Пререквизиты">
-          <RequisiteList items={course.prerequisites} variant="prereq" />
+          <RequisiteList items={course.prerequisites} />
         </DetailField>
 
         <DetailField label="Постреквизиты">
-          <RequisiteList items={course.postrequisites} variant="link" />
+          <RequisiteList items={course.postrequisites} />
         </DetailField>
 
-        <DetailField
-          label="Кореквизиты, двухсторонняя связь"
-          hint="Когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A"
-        >
-          <RequisiteList items={course.corequisitesTwoSided} variant="link" />
-        </DetailField>
-
-        <DetailField
-          label="Кореквизиты, односторонняя связь"
-          hint="Когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A"
-        >
-          <RequisiteList items={course.corequisitesOneSided} variant="link" />
+        <DetailField label="Кореквизиты">
+          <RequisiteList items={course.corequisites} />
         </DetailField>
       </div>
     </SheetContent>

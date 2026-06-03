@@ -2,6 +2,12 @@ export type UUID = string;
 
 export type CourseType = "mandatory" | "elective" | "other";
 
+export const typeSlugToName: Record<CourseType, string> = {
+  mandatory: "Обязательный",
+  elective: "По выбору",
+  other: "Другое",
+}
+
 export type CourseCategory =
   | "fundamentals"
   | "ai"
@@ -10,6 +16,16 @@ export type CourseCategory =
   | "business"
   | "tech"
   | "design";
+
+export const categorySlugToName: Record<CourseCategory, string> = {
+  fundamentals: "Fundamentals",
+  ai: "AI",
+  business: "Business",
+  tech: "Tech",
+  design: "Design",
+  stem: "STEM",
+  soft: "Soft",
+}
 
 export type MajorRequirementType = 
   | "major_core"
@@ -20,6 +36,17 @@ export type MajorRequirementType =
   | "minor"
   | "soft"
   | "selected_topics"
+
+export const requirementSlugToName: Record<MajorRequirementType, string> = {
+  major_core: "Major Core",
+  major_choice: "Choice",
+  university: "University",
+  minor: "Minor",
+  soft: "Soft",
+  elective: "Elective",
+  flex: "Other",
+  selected_topics: "Other"
+}
 
 export type MajorSchool = 
   | "Tech"

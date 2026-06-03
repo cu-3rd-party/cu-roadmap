@@ -1,16 +1,19 @@
+import { Course } from "@/entities/course";
 import type {
   CategoryFilterOption,
   CourseFilterState,
 } from "@/features/course-filters";
 
-import type { CatalogCategory, CatalogCourse } from "./mock";
 
-// Card-level match: year + major + search.
-const matchesCourse = (course: CatalogCourse, filters: CourseFilterState) => {
-  const yearOk =
-    filters.years.length === 0 || filters.years.includes(course.year);
-  const majorOk =
-    filters.majors.length === 0 || filters.majors.includes(course.major);
+import type { CatalogCategory } from "./category";
+
+// Card-level match: type + major + search.
+const matchesCourse = (course: Course, filters: CourseFilterState) => {
+  const typeOk =
+    filters.types.length === 0 || filters.types.includes(course.type);
+
+  // TODO
+  const majorOk = true;
 
   const query = filters.search.trim().toLowerCase();
   const searchOk =
@@ -18,7 +21,7 @@ const matchesCourse = (course: CatalogCourse, filters: CourseFilterState) => {
     course.title.toLowerCase().includes(query) ||
     (course.description?.toLowerCase().includes(query) ?? false);
 
-  return yearOk && majorOk && searchOk;
+  return typeOk && majorOk && searchOk;
 };
 
 // Apply all filters to all catalogs, if catalog is not included in catalog filters or becomes empty after inside filtration - the whole block will not show up

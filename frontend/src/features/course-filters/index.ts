@@ -4,10 +4,9 @@ export {
   createCourseFiltersStore,
 } from "./model";
 export {
-  YEAR_OPTIONS,
+  buildCategoryFilters,
+  buildTypeFilters,
   MAJOR_OPTIONS,
-  CATEGORY_FILTERS,
-  COURSE_TYPE_LABELS,
   MAJOR_LABELS,
   EMPTY_FILTERS,
   type CategoryFilterOption,

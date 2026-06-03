@@ -1,42 +1,45 @@
+import {
+  categorySlugToName,
+  typeSlugToName,
+  type CourseCategory,
+  type CourseType,
+} from "@/shared/model";
+
 export interface CategoryFilterOption {
   id: string;
   label: string;
-  count: number;
+  count?: number;
 }
 
 export interface CourseFilterState {
-  years: string[];
+  types: string[];
   majors: string[];
   categories: string[];
   search: string;
 }
 
 export const EMPTY_FILTERS: CourseFilterState = {
-  years: [],
+  types: [],
   majors: [],
   categories: [],
   search: "",
 };
 
-export const YEAR_OPTIONS = ["2023", "2024", "2025", "2026"] as const;
+export const buildCategoryFilters = (): CategoryFilterOption[] =>
+  (Object.keys(categorySlugToName) as CourseCategory[]).map((id) => ({
+    id,
+    label: categorySlugToName[id],
+  }));
+
+export const buildTypeFilters = (): CategoryFilterOption[] =>
+  (Object.keys(typeSlugToName) as CourseType[]).map((id) => ({
+    id,
+    label: typeSlugToName[id],
+  }));
 
 export const MAJOR_OPTIONS = ["ИИ", "Разработка", "Бизнес"] as const;
 
-export const CATEGORY_FILTERS: CategoryFilterOption[] = [
-  { id: "fundamentals", label: "Fundamentals", count: 10 },
-  { id: "stem", label: "STEM", count: 4 },
-  { id: "soft", label: "Soft", count: 3 },
-  { id: "major-core", label: "Major Core", count: 6 },
-  { id: "choice", label: "Choice", count: 5 },
-  { id: "minor", label: "Minor", count: 3 },
-];
-
-/** Course-type badge labels, keyed by category id (mirrors CATEGORY_FILTERS). */
-export const COURSE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
-  CATEGORY_FILTERS.map((option) => [option.id, option.label]),
-);
-
-/** Major badge labels: maps the filter's RU major values to short display labels. */
+// Major badge labels: maps the filter's RU major values to short display labels.
 export const MAJOR_LABELS: Record<string, string> = {
   "ИИ": "AI",
   "Разработка": "SE",

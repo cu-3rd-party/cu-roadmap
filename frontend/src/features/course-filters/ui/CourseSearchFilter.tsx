@@ -3,7 +3,9 @@ import { useState } from "react";
 
 import { Chip, Counter, Input } from "@/shared/ui";
 
-import { CATEGORY_FILTERS, type CategoryFilterOption } from "../model";
+import { buildCategoryFilters, type CategoryFilterOption } from "../model";
+
+const CATEGORY_OPTIONS = buildCategoryFilters();
 
 interface CourseSearchFilterProps {
   categories?: CategoryFilterOption[];
@@ -14,7 +16,7 @@ interface CourseSearchFilterProps {
 }
 
 export const CourseSearchFilter = ({
-  categories = CATEGORY_FILTERS,
+  categories = CATEGORY_OPTIONS,
   search,
   onSearchChange,
   selectedCategories,
@@ -56,9 +58,11 @@ export const CourseSearchFilter = ({
             onClick={() => handleToggleCategory(category.id)}
           >
             {category.label}
-            <Counter variant="primary" size="xxs">
-              {category.count}
-            </Counter>
+            {category.count !== undefined && (
+              <Counter variant="primary" size="xxs">
+                {category.count}
+              </Counter>
+            )}
           </Chip>
         ))}
       </div>
