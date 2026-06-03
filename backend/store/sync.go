@@ -497,7 +497,10 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 	rawRec := getFirst(row, "Рекомендованный к прохождению семестр", "Семестр")
 	if match := RecommendedSemesterRegexp.FindString(rawRec); match != "" {
 		v := 0
-		fmt.Sscanf(match, "%d", &v)
+		_, err := fmt.Sscanf(match, "%d", &v)
+		if err != nil {
+			return interfaces.CourseData{}
+		}
 		recommendedSemester = &v
 	}
 
@@ -507,7 +510,10 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 	}
 	workload := 5.0
 	if match := WorkloadRegexp.FindString(rawWorkload); match != "" {
-		fmt.Sscanf(match, "%f", &workload)
+		_, err := fmt.Sscanf(match, "%f", &workload)
+		if err != nil {
+			return interfaces.CourseData{}
+		}
 	}
 
 	return interfaces.CourseData{

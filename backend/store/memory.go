@@ -328,7 +328,10 @@ func (s *MemoryStore) UpdateStudent(student interfaces.StudentData) (interfaces.
 }
 
 func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVPath string) error {
-	s.ClearAll()
+	err := s.ClearAll()
+	if err != nil {
+		return err
+	}
 
 	recommended := calculateRecommendedSemesters(coursesCSVPath, depsCSVPath)
 
@@ -378,7 +381,10 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 	}
 	defer mf.Close()
 	mreader := csv.NewReader(mf)
-	mreader.Read()
+	_, err = mreader.Read()
+	if err != nil {
+		return err
+	}
 	mrows, _ := mreader.ReadAll()
 	for _, row := range mrows {
 		uid := uuid.New()
@@ -398,7 +404,10 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 	}
 	defer df.Close()
 	dreader := csv.NewReader(df)
-	dreader.Read()
+	_, err = dreader.Read()
+	if err != nil {
+		return err
+	}
 	drows, _ := dreader.ReadAll()
 	for _, row := range drows {
 		cid, ok1 := csvIDToUUID[row[0]]
@@ -600,7 +609,10 @@ func calculateRecommendedSemesters(coursesPath, depsPath string) map[string]int 
 	if f, err := os.Open(coursesPath); err == nil {
 		defer f.Close()
 		r := csv.NewReader(f)
-		r.Read()
+		_, err = r.Read()
+		if err != nil {
+			return nil
+		}
 		rows, _ := r.ReadAll()
 		for _, row := range rows {
 			courses[row[0]] = courseInfo{Semesters: parseSemesters(row[3])}
@@ -609,7 +621,10 @@ func calculateRecommendedSemesters(coursesPath, depsPath string) map[string]int 
 	if f, err := os.Open(depsPath); err == nil {
 		defer f.Close()
 		r := csv.NewReader(f)
-		r.Read()
+		_, err = r.Read()
+		if err != nil {
+			return nil
+		}
 		rows, _ := r.ReadAll()
 		for _, row := range rows {
 			if row[2] == "prerequisite" {
