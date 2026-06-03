@@ -1,10 +1,13 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
@@ -22,6 +25,8 @@ func RegisterCoursesRoutes(rg *gin.RouterGroup) {
 	admin.POST("/", createCourse)
 	admin.PUT("/:id", updateCourse)
 	admin.DELETE("/:id", deleteCourse)
+	admin.POST("/restore", restoreDB)
+	admin.GET("/backup", backupDB)
 }
 
 func getCourses(c *gin.Context) {
@@ -193,4 +198,90 @@ func deleteCourse(c *gin.Context) {
 	}
 	invalidateCachePrefixes("courses:", "majors:")
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
+type BackupCourse struct {
+	ID                  string               `json:"id"`
+	Title               string               `json:"title"`
+	Description         *string              `json:"description"`
+	HandbookLink        *string              `json:"handbook_link"`
+	CourseType          enums.CourseType     `json:"course_type"`
+	Category            enums.CourseCategory `json:"category"`
+	AllowedCohorts      []int                `json:"allowed_cohorts"`
+	AvailableSemesters  []int                `json:"available_semesters"`
+	RecommendedSemester *int                 `json:"recommended_semester"`
+	Workload            float64              `json:"workload"`
+	Prerequisites       []string             `json:"prerequisites"`
+	Corequisites        []string             `json:"corequisites"`
+}
+
+func backupDB(c *gin.Context) {
+	s := store.GetStore()
+	courses, _ := s.GetCourses(interfaces.CourseFilter{})
+	var backupCourses []BackupCourse
+	for _, cd := range courses {
+		backupCourses = append(backupCourses, BackupCourse{
+			ID: cd.ID.String(),
+			Title: cd.Title,
+			Description: cd.Description,
+			HandbookLink: cd.HandbookLink,
+			CourseType: cd.CourseType,
+			Category: cd.Category,
+			AllowedCohorts: cd.AllowedCohorts,
+			AvailableSemesters: cd.AvailableSemesters,
+			RecommendedSemester: cd.RecommendedSemester,
+			Workload: cd.Workload,
+			Prerequisites: helpers.CourseUUIDsToStrings(cd.Prerequisites),
+			Corequisites: helpers.CourseUUIDsToStrings(cd.Corequisites),
+		})
+	}
+	file, _ := json.MarshalIndent(backupCourses, "", "  ")
+	os.WriteFile("courses_backup.json", file, 0644)
+
+	majors, _ := s.GetAllMajors()
+	var backupMajors []map[string]interface{}
+	for _, m := range majors {
+		reqs, _ := s.GetMajorRequirements(m.ID)
+		var reqsList []map[string]interface{}
+		for _, r := range reqs {
+			reqsList = append(reqsList, map[string]interface{}{
+				"course_id": r.CourseID.String(),
+				"type": string(r.RequirementType),
+			})
+		}
+		backupMajors = append(backupMajors, map[string]interface{}{
+			"id": m.ID.String(),
+			"title": m.Title,
+			"school": m.School,
+			"cohort_year": m.CohortYear,
+			"requirements": reqsList,
+		})
+	}
+	majorsFile, _ := json.MarshalIndent(backupMajors, "", "  ")
+	os.WriteFile("majors_backup.json", majorsFile, 0644)
+
+	c.JSON(http.StatusOK, gin.H{"status": "backed_up", "courses_count": len(backupCourses), "majors_count": len(backupMajors)})
+}
+
+func restoreDB(c *gin.Context) {
+	s := store.GetStore()
+	s.ClearAll()
+	coursesFile, err := os.ReadFile("courses_backup.json")
+	if err == nil {
+		var courses []BackupCourse
+		json.Unmarshal(coursesFile, &courses)
+		for _, rc := range courses {
+			id, _ := uuid.Parse(rc.ID)
+			s.CreateCourse(interfaces.CourseData{
+				ID: id, Title: rc.Title, Description: rc.Description,
+				HandbookLink: rc.HandbookLink, CourseType: rc.CourseType,
+				Category: rc.Category, AllowedCohorts: rc.AllowedCohorts,
+				AvailableSemesters: rc.AvailableSemesters,
+				RecommendedSemester: rc.RecommendedSemester, Workload: rc.Workload,
+			})
+			helpers.ReplaceCourseDependencies(s, id, rc.Prerequisites, rc.Corequisites)
+		}
+	}
+	invalidateCachePrefixes("courses:", "majors:")
+	c.JSON(http.StatusOK, gin.H{"status": "restored"})
 }

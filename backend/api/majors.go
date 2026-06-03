@@ -21,6 +21,7 @@ func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 
 	admin := rg.Group("/")
 	admin.Use(middleware.AuthMiddleware())
+	admin.POST("/", createMajor)
 	admin.PUT("/:id", updateMajor)
 }
 
@@ -290,4 +291,48 @@ func updateMajor(c *gin.Context) {
 	invalidateCachePrefixes("majors:", "courses:")
 
 	c.JSON(http.StatusOK, gin.H{"id": updated.ID.String()})
+}
+
+func createMajor(c *gin.Context) {
+	s := store.GetStore()
+	var req struct {
+		Title        string `json:"title" binding:"required"`
+		School       string `json:"school"`
+		Requirements []struct {
+			CourseID string `json:"course_id"`
+			Type     string `json:"type"`
+		} `json:"requirements"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	newMajor := interfaces.MajorData{
+		ID:         uuid.New(),
+		Title:      req.Title,
+		School:     req.School,
+		CohortYear: 2025, // default fallback
+	}
+
+	created, err := s.CreateMajor(newMajor)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create major"})
+		return
+	}
+
+	for _, r := range req.Requirements {
+		parsedCourseID, err := uuid.Parse(r.CourseID)
+		if err == nil {
+			s.CreateMajorRequirement(interfaces.MajorRequirementData{
+				ID:              uuid.New(),
+				MajorID:         created.ID,
+				CourseID:        parsedCourseID,
+				RequirementType: enums.RequirementType(r.Type),
+			})
+		}
+	}
+	invalidateCachePrefixes("majors:")
+
+	c.JSON(http.StatusOK, gin.H{"id": created.ID})
 }

@@ -114,7 +114,7 @@ func TestGetCoursesEmpty(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, "null", strings.TrimSpace(w.Body.String()))
+	assert.Equal(t, "[]", strings.TrimSpace(w.Body.String()))
 }
 
 func TestGetCoursesWithData(t *testing.T) {
@@ -194,7 +194,7 @@ func TestGetMajorsEmpty(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, "null", strings.TrimSpace(w.Body.String()))
+	assert.Equal(t, "[]", strings.TrimSpace(w.Body.String()))
 }
 
 func TestGetMajorsWithData(t *testing.T) {
@@ -279,8 +279,8 @@ func TestGetGraphDataEmpty(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	assert.Nil(t, resp["nodes"])
-	assert.Nil(t, resp["edges"])
+	assert.Empty(t, resp["nodes"])
+	assert.Empty(t, resp["edges"])
 }
 
 func TestGetGraphDataWithData(t *testing.T) {

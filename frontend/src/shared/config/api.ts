@@ -61,6 +61,8 @@ export const api = {
     updateCourse: (id: string, course: Partial<Course>) =>
       client.put<Course>(`/courses/${id}`, course),
     deleteCourse: (id: string) => client.delete(`/courses/${id}`),
+    createMajor: (major: Record<string, unknown>) =>
+      client.post("/majors/", major),
     updateMajor: (id: string, major: Record<string, unknown>) =>
       client.put(`/majors/${id}`, major),
   },

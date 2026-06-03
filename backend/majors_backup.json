@@ -1,0 +1,50 @@
+[
+  {
+    "cohort_year": 2025,
+    "id": "45ea2fcf-726f-4de3-94bc-b47cff1eebb5",
+    "requirements": [
+      {
+        "course_id": "e9a8ac46-0830-4b4c-83e3-2aaafd72076c",
+        "type": "major_core"
+      },
+      {
+        "course_id": "213ac949-2011-442f-a580-0a905ea73795",
+        "type": "major_core"
+      },
+      {
+        "course_id": "02127183-ab5f-4ed0-bcb2-5a2b22a44ffd",
+        "type": "major_choice"
+      },
+      {
+        "course_id": "caccafc9-c4e7-48df-9393-6e0a5900ae41",
+        "type": "major_choice"
+      }
+    ],
+    "school": "Tech",
+    "title": "Business"
+  },
+  {
+    "cohort_year": 2025,
+    "id": "633dc43e-b8b4-4807-adc1-ae6b46620eb5",
+    "requirements": [
+      {
+        "course_id": "26107364-4b8c-45c3-b269-152c7a6ea60c",
+        "type": "major_core"
+      },
+      {
+        "course_id": "c94aa6b6-6059-46c7-8d1c-1c7af1b870ea",
+        "type": "major_core"
+      },
+      {
+        "course_id": "110932df-ca33-49dd-be2c-a618158530fc",
+        "type": "minor"
+      },
+      {
+        "course_id": "f7dcc592-f4d0-498b-8a0b-b6b48a7ba7eb",
+        "type": "major_core"
+      }
+    ],
+    "school": "Tech",
+    "title": "AI"
+  }
+]

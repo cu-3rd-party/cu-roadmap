@@ -128,12 +128,17 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
 
   const handleSaveMajor = async (major: Major) => {
     try {
-      await api.admin.updateMajor(major.id, {
+      const payload = {
         title: major.title,
         school: major.school,
         cohort_year: major.cohort_year,
         requirements: major.requirements || [],
-      });
+      };
+      if (major.id) {
+        await api.admin.updateMajor(major.id, payload);
+      } else {
+        await api.admin.createMajor(payload);
+      }
       await fetchData();
       setEditingMajor(null);
     } catch (e: any) {
@@ -289,14 +294,13 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
             ? "Управление курсами"
             : "Управление направлениями"}
         </h1>
-        {activeTab === "courses" && (
+        {activeTab === "courses" ? (
           <button
             onClick={() =>
               setEditingCourse({
                 id: "",
                 title: "",
                 description: "",
-
                 workload: 3,
                 available_semesters: [],
                 allowed_cohorts: [],
@@ -310,6 +314,22 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
             style={{ backgroundColor: "var(--color-primary)" }}
           >
             <Plus size={18} /> Добавить курс
+          </button>
+        ) : (
+          <button
+            onClick={() =>
+              setEditingMajor({
+                id: "",
+                title: "",
+                school: "",
+                cohort_year: 2025,
+                requirements: [],
+              })
+            }
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium cursor-pointer"
+            style={{ backgroundColor: "var(--color-primary)" }}
+          >
+            <Plus size={18} /> Добавить направление
           </button>
         )}
       </div>

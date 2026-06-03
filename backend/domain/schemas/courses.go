@@ -12,7 +12,7 @@ const (
 	MaxDescriptionLength = 4000
 )
 
-var HandbookLinkRegexp = regexp.MustCompile("^https://note.cu.ru/space/5eb4b5a4-70b8-4312-89ab-5729678a81a2/article/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+var HandbookLinkRegexp = regexp.MustCompile("^https?://.*$")
 
 type CreateCourseRequest struct {
 	Title               string               `json:"title" binding:"required"`

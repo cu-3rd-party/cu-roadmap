@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,7 @@ import (
 )
 
 func main() {
+	_ = godotenv.Load()
 	initSettings()
 	initLogger()
 
