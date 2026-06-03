@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/api"
+	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 )
 
@@ -103,6 +104,7 @@ func main() {
 	router.Use(static.Serve("/static", static.LocalFile(staticDir, true)))
 
 	apiV1 := router.Group("/api/v1")
+	apiV1.Use(middleware.RateLimitMiddleware())
 	{
 		api.RegisterDocsRoutes(apiV1)
 		api.RegisterGraphRoutes(apiV1.Group("/graph"))

@@ -26,6 +26,9 @@ func (s *authTokenErrorStore) Set(key string, value []byte, ttlSeconds int64) er
 	return nil
 }
 func (s *authTokenErrorStore) DeleteByPrefix(prefix string) error { return nil }
+func (s *authTokenErrorStore) AllowRateLimit(key string, capacity int, refillPerSecond float64) (bool, float64, error) {
+	return true, 0, nil
+}
 
 func (s *authTokenErrorStore) CreateAuthToken() (*models.AuthToken, error) {
 	return nil, fmt.Errorf("token creation failed")

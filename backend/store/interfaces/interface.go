@@ -15,6 +15,7 @@ type CacheStoreBase interface {
 	Get(key string) ([]byte, bool, error)
 	Set(key string, value []byte, ttlSeconds int64) error
 	DeleteByPrefix(prefix string) error
+	AllowRateLimit(key string, capacity int, refillPerSecond float64) (bool, float64, error)
 }
 
 type StoreBase interface {

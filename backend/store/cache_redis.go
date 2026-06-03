@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -96,6 +98,33 @@ func (s *RedisCacheStore) DeleteByPrefix(prefix string) error {
 	return s.client.Del(ctx, keys...).Err()
 }
 
+func (s *RedisCacheStore) AllowRateLimit(key string, capacity int, refillPerSecond float64) (bool, float64, error) {
+	result, err := redisRateLimitScript.Run(
+		context.Background(),
+		s.client,
+		[]string{rateLimitBucketKey(key)},
+		capacity,
+		refillPerSecond,
+		time.Now().UnixMilli(),
+	).Result()
+	if err != nil {
+		return false, 0, err
+	}
+	values, ok := result.([]interface{})
+	if !ok || len(values) != 2 {
+		return false, 0, fmt.Errorf("unexpected rate limit result")
+	}
+	allowed, ok := values[0].(int64)
+	if !ok {
+		return false, 0, fmt.Errorf("unexpected rate limit flag")
+	}
+	retryAfter, err := toFloat64(values[1])
+	if err != nil {
+		return false, 0, err
+	}
+	return allowed == 1, retryAfter, nil
+}
+
 func authTokenCacheKey(token uuid.UUID) string {
 	return "auth-token:" + token.String()
 }
@@ -103,3 +132,53 @@ func authTokenCacheKey(token uuid.UUID) string {
 func cacheEntryKey(key string) string {
 	return "cache:" + strings.ReplaceAll(key, " ", "%20")
 }
+
+func rateLimitBucketKey(key string) string {
+	return "rate-limit-bucket:" + key
+}
+
+func toFloat64(value interface{}) (float64, error) {
+	switch v := value.(type) {
+	case float64:
+		return v, nil
+	case int64:
+		return float64(v), nil
+	case string:
+		return strconv.ParseFloat(v, 64)
+	default:
+		return 0, fmt.Errorf("unexpected float result type %T", value)
+	}
+}
+
+var redisRateLimitScript = redis.NewScript(`
+local key = KEYS[1]
+local capacity = tonumber(ARGV[1])
+local refill_per_second = tonumber(ARGV[2])
+local now_ms = tonumber(ARGV[3])
+
+local data = redis.call('HMGET', key, 'tokens', 'updated_ms')
+local tokens = tonumber(data[1])
+local updated_ms = tonumber(data[2])
+
+if tokens == nil then
+  tokens = capacity
+  updated_ms = now_ms
+end
+
+local elapsed = math.max(0, now_ms - updated_ms) / 1000
+tokens = math.min(capacity, tokens + elapsed * refill_per_second)
+
+local allowed = 0
+local retry_after = 0
+if tokens >= 1 then
+  tokens = tokens - 1
+  allowed = 1
+else
+  retry_after = (1 - tokens) / refill_per_second
+end
+
+redis.call('HSET', key, 'tokens', tokens, 'updated_ms', now_ms)
+redis.call('PEXPIRE', key, math.ceil((capacity / refill_per_second) * 2000))
+
+return {allowed, retry_after}
+`)

@@ -30,7 +30,16 @@ func initTestStore(t *testing.T) (interfaces.StoreBase, error) {
 	useMemoryCacheStore := testRedisURL == ""
 
 	if testDatabaseURL == "" {
-		return store.InitStore(true, "", "admin", useMemoryCacheStore, testRedisURL)
+		s, err := store.InitStore(true, "", "admin", useMemoryCacheStore, testRedisURL)
+		if err != nil {
+			return nil, err
+		}
+		if cache := store.GetCacheStore(); cache != nil {
+			if err := cache.ClearAll(); err != nil {
+				return nil, err
+			}
+		}
+		return s, nil
 	}
 
 	schema := fmt.Sprintf("test_%s", uuid.New().String()[:8])
@@ -62,6 +71,12 @@ func initTestStore(t *testing.T) (interfaces.StoreBase, error) {
 	if err != nil {
 		baseDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schema))
 		return nil, err
+	}
+	if cache := store.GetCacheStore(); cache != nil {
+		if err := cache.ClearAll(); err != nil {
+			baseDB.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schema))
+			return nil, err
+		}
 	}
 
 	return s, nil
