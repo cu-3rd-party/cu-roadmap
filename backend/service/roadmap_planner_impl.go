@@ -235,8 +235,8 @@ func selectDPSemester(ctx *roadmapPlanningContext, semester int) []uuid.UUID {
 
 	for i, bundle := range bundles {
 		weight := int(math.Round(bundle.load * scale))
-		for cap := capacity; cap >= weight; cap-- {
-			prev := dp[cap-weight]
+		for _cap := capacity; _cap >= weight; _cap-- {
+			prev := dp[_cap-weight]
 			if math.IsInf(prev.score, -1) {
 				continue
 			}
@@ -244,10 +244,10 @@ func selectDPSemester(ctx *roadmapPlanningContext, semester int) []uuid.UUID {
 				continue
 			}
 			candidate := prev.score + bundle.score
-			if candidate > dp[cap].score {
+			if candidate > dp[_cap].score {
 				nextPick := append([]int{}, prev.pick...)
 				nextPick = append(nextPick, i)
-				dp[cap] = state{score: candidate, pick: nextPick}
+				dp[_cap] = state{score: candidate, pick: nextPick}
 			}
 		}
 	}
