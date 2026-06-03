@@ -8,6 +8,7 @@ import (
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
 )
 
@@ -52,7 +53,7 @@ func login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("auth-token", token.Token.String(), int(token.Ttl), "/", "", !gin.IsDebugging(), true)
+	c.SetCookie("auth-token", token.Token.String(), interfaces.AuthTokenLifetime, "/", "", !gin.IsDebugging(), true)
 	c.Status(http.StatusCreated)
 	return
 }
