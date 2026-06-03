@@ -6,7 +6,7 @@ import { MessageLevel } from "../api";
 export interface RoadmapSemester {
   semester: number;
   totalLoad: number;
-  courses: UUID[];
+  courseIds: UUID[];
 }
 
 export interface Roadmap {

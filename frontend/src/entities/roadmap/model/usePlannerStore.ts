@@ -1,15 +1,32 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { SemesterNumber } from "@/shared/constants";
+
 import type { SemesterValidation } from "./domain";
 import { PlannedCourse } from "./types";
+
+
+// Returns a new set with `ids` removed, or the same reference when nothing
+const omit = (source: Set<string>, ids: Iterable<string>): Set<string> => {
+  let next: Set<string> | null = null;
+  for (const id of ids) {
+    if (!source.has(id)) continue;
+    next ??= new Set(source);
+    next.delete(id);
+  }
+  return next ?? source;
+};
 
 interface PlannerState {
   selections: Record<number, PlannedCourse[]>;
   // latest backend validation, each entry keyed by SemesterValidation.semester.
   // not persisted — recomputed on the next validation trigger.
   validation: SemesterValidation[];
+  // Course ids just added by the generate algorithm, shown with a blue highlight
+  generatedIds: Set<string>;
   addCourse: (semester: number, course: PlannedCourse) => void;
+  markGenerated: (ids: string[]) => void;
   removeCourse: (semester: number, courseId: string) => void;
   clearSemester: (semester: number) => void;
   moveCourse: (from: number, to: number, courseId: string) => void;
@@ -25,6 +42,7 @@ export const usePlannerStore = create<PlannerState>()(
     (set) => ({
       selections: {},
       validation: [],
+      generatedIds: new Set<string>(),
       addCourse: (semester, course) =>
         set((state) => {
           const current = state.selections[semester] ?? [];
@@ -36,11 +54,22 @@ export const usePlannerStore = create<PlannerState>()(
             },
           };
         }),
+      markGenerated: (ids) =>
+        set((state) => {
+          if (ids.length === 0) return state;
+          const next = new Set(state.generatedIds);
+          for (const id of ids) next.add(id);
+          return { generatedIds: next };
+        }),
       clearSemester: (semester) =>
         set((state) => {
           const next = { ...state.selections };
+          const cleared = (next[semester] ?? []).map((c) => c.id);
           delete next[semester];
-          return { selections: next };
+          return {
+            selections: next,
+            generatedIds: omit(state.generatedIds, cleared),
+          };
         }),
       removeCourse: (semester, courseId) =>
         set((state) => ({
@@ -50,6 +79,7 @@ export const usePlannerStore = create<PlannerState>()(
               (c) => c.id !== courseId,
             ),
           },
+          generatedIds: omit(state.generatedIds, [courseId]),
         })),
       moveCourse: (from, to, courseId) =>
         set((state) => {
@@ -67,6 +97,8 @@ export const usePlannerStore = create<PlannerState>()(
                 ? {}
                 : { [to]: [...toList, course] }),
             },
+            // a move across semesters clears the generated highlight
+            generatedIds: omit(state.generatedIds, [courseId]),
           };
         }),
       reorderCourses: (semester, activeId, overId) =>
@@ -81,20 +113,43 @@ export const usePlannerStore = create<PlannerState>()(
           next.splice(newIndex, 0, moved);
           return {
             selections: { ...state.selections, [semester]: next },
+            // reordering within a semester clears the dragged card's highlight
+            generatedIds: omit(state.generatedIds, [activeId]),
           };
         }),
-      setValidation: (validation) => set({ validation }),
+      setValidation: (validation) =>
+        set((state) => {
+          // a conflict on a generated card drops its highlight (red wins)
+          const conflicted: string[] = [];
+          for (const sem of validation) {
+            for (const msg of sem.messages) {
+              if (msg.courseId) conflicted.push(msg.courseId);
+            }
+          }
+          return {
+            validation,
+            generatedIds: omit(state.generatedIds, conflicted),
+          };
+        }),
       reset: (keepBeforeSemester) => {
         set((state) => {
           if (keepBeforeSemester == null)
-            return { selections: {}, validation: [] };
+            return {
+              selections: {},
+              validation: [],
+              generatedIds: new Set<string>(),
+            };
           const kept: Record<number, PlannedCourse[]> = {};
           for (const [semester, list] of Object.entries(state.selections)) {
             if (Number(semester) < keepBeforeSemester) {
               kept[Number(semester)] = list;
             }
           }
-          return { selections: kept, validation: [] };
+          return {
+            selections: kept,
+            validation: [],
+            generatedIds: new Set<string>(),
+          };
         });
       },
     }),

@@ -1,7 +1,6 @@
 import type { SharedOptions } from "msw";
 import { setupWorker } from "msw/browser";
 
-import { handlers } from "./handlers";
 
 // Handler for unmatched requests
 const onUnhandledRequest: SharedOptions["onUnhandledRequest"] = (
@@ -29,7 +28,7 @@ const onUnhandledRequest: SharedOptions["onUnhandledRequest"] = (
   print.warning();
 };
 
-export const worker = setupWorker(...handlers); // !IMPORTANT
+export const worker = setupWorker(); // !IMPORTANT
 
 export async function enableMocking() {
   if (import.meta.env.VITE_API !== "mock") return;

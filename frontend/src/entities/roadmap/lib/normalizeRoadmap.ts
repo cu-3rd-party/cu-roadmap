@@ -18,7 +18,7 @@ const normalizeRoadmapSemester = (dto: RoadmapSemesterDto): RoadmapSemester => {
   return {
     semester: dto.semester,
     totalLoad: dto.total_load,
-    courses: dto.courses,
+    courseIds: dto.course_ids,
   };
 };
 

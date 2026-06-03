@@ -16,7 +16,6 @@ export const buildGenerateRoadmapRequest = (
   scope: "completed" | "all",
 ): GenerateRoadmapRequestDto => {
   const passed_course_ids: UUID[] = [];
-  const selected_course_ids: { semester: number; course_ids: UUID[] }[] = [];
 
   const semesters = Object.keys(selections)
     .map(Number)
@@ -26,21 +25,13 @@ export const buildGenerateRoadmapRequest = (
     const courses = selections[semester] ?? [];
     if (courses.length === 0) continue;
 
-    if (isSemesterCompleted(semester, admissionYear)) {
+    if (scope === "all" || isSemesterCompleted(semester, admissionYear)) {
       passed_course_ids.push(...courses.map((c) => c.id));
-    } else if (scope === "all") {
-      selected_course_ids.push({
-        semester,
-        course_ids: courses.map((c) => c.id),
-      });
     }
   }
-
+  // TODO
   return {
     passed_course_ids,
-    ...(scope === "all"
-      ? { selected_course_ids, course_source: "selected" }
-      : { course_source: "passed" }),
     major_id: majorId,
     cohort: admissionYear,
     current_semester: admissionYearToSemester[admissionYear],

@@ -7,7 +7,7 @@ export type MessageLevel = "warning" | "error";
 export interface RoadmapSemesterDto {
   semester: number;
   total_load: number;
-  courses: UUID[];
+  course_ids: UUID[];
 }
 
 export type RoadmapDto = RoadmapSemesterDto[];
@@ -82,6 +82,8 @@ export interface GoalPathRequestDto {
   target_course_id: UUID;
   passed_course_ids: UUID[];
   current_semester?: SemesterNumber;
+  // target semester to take the course in; omitted means "any"
+  goal_semester?: SemesterNumber;
   max_load?: number;
 }
 

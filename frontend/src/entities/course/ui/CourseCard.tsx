@@ -52,6 +52,9 @@ interface CourseCardProps {
   moveTargets?: number[];
   // planned variant only: renders a negative ring when the course has a validation conflict
   conflict?: boolean;
+  // planned variant only: blue highlight for courses just added by the generate
+  // algorithm. A conflict (red) takes precedence over this.
+  generated?: boolean;
   onSelect?: () => void;
   onRemove?: () => void;
   onMove?: (toSemester: number) => void;
@@ -63,24 +66,31 @@ const CourseBadges = ({
   type,
   recommendedSemester,
   className,
-}: Pick<CourseCardProps, "variant" | "category" | "type" | "recommendedSemester"> & { className?: string }) => {
+}: Pick<
+  CourseCardProps,
+  "variant" | "category" | "type" | "recommendedSemester"
+> & { className?: string }) => {
   if (!category && !type) return null;
   return (
     <div className={cn("flex flex-wrap gap-1", className)}>
       {category && (
         <Badge variant="orange" size="3xs">
-          {variant == "planned" ? categorySlugToName[category] : categorySlugToShortName[category]}
+          {variant == "planned"
+            ? categorySlugToName[category]
+            : categorySlugToShortName[category]}
         </Badge>
       )}
       {type && (
         <Badge variant="blue" size="3xs">
-          {variant == "planned" ? typeSlugToName[type] : typeSlugToShortName[type]}
+          {variant == "planned"
+            ? typeSlugToName[type]
+            : typeSlugToShortName[type]}
         </Badge>
       )}
       {recommendedSemester && (
         <Badge variant="green" size="3xs">
           {"Рек. сем: " + recommendedSemester}
-        </Badge> 
+        </Badge>
       )}
     </div>
   );
@@ -97,6 +107,7 @@ export const CourseCard = ({
   details,
   moveTargets,
   conflict = false,
+  generated = false,
   onSelect,
   onRemove,
   onMove,
@@ -122,7 +133,7 @@ export const CourseCard = ({
           {title}
         </div>
         <CourseBadges
-        variant="select"
+          variant="select"
           category={category}
           type={type}
           recommendedSemester={recommendedSemester}
@@ -161,9 +172,9 @@ export const CourseCard = ({
           <CourseBadges
             variant="catalog"
             category={category}
-            type={type} 
-            recommendedSemester={recommendedSemester} 
-            className="mt-auto" 
+            type={type}
+            recommendedSemester={recommendedSemester}
+            className="mt-auto"
           />
         </button>
 
@@ -184,7 +195,8 @@ export const CourseCard = ({
   return (
     <div
       className={cn(
-        "relative border border-transparent flex h-full flex-col gap-3 rounded-xl bg-background p-4",
+        "relative border-2 border-transparent transition-colors animate-[border-pulse-in_300ms_ease] flex h-full flex-col gap-3 rounded-xl bg-background p-4",
+        generated && "border-expert-blue",
         conflict && "border-negative",
       )}
     >
@@ -198,10 +210,10 @@ export const CourseCard = ({
         >
           {title}
         </div>
-        <CourseBadges 
-          variant="planned" 
-          category={category} 
-          type={type} 
+        <CourseBadges
+          variant="planned"
+          category={category}
+          type={type}
           className="mt-auto"
         />
       </div>
