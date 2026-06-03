@@ -40,7 +40,7 @@ func generateRoadmap(c *gin.Context) {
 		return
 	}
 
-	planner, err := service.NewRoadmapPlanner(service.PlannerKindGreedy, s)
+	planner, err := service.NewRoadmapPlanner(service.PlannerKindDynamicProgramming, s)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
