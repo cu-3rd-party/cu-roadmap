@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -124,6 +125,12 @@ func identifyMajor(c *gin.Context) {
 		}
 	}
 
+	coursesByID, err := s.GetAllCourses()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Build prerequisite map: courseID -> list of required course IDs
 	deps, _ := s.GetCourseDependencies()
 	prereqMap := make(map[uuid.UUID][]uuid.UUID)
@@ -133,37 +140,51 @@ func identifyMajor(c *gin.Context) {
 		}
 	}
 
-	// DFS to compute longest prerequisite depth
-	memo := make(map[uuid.UUID]int)
-	var getDepth func(id uuid.UUID, visited map[uuid.UUID]bool) int
-	getDepth = func(id uuid.UUID, visited map[uuid.UUID]bool) int {
+	// DFS to compute the earliest semester a course can be completed in,
+	// accounting for prerequisite chains and semester availability.
+	earliestMemo := make(map[uuid.UUID]int)
+	var earliestCompletionSemester func(id uuid.UUID, visited map[uuid.UUID]bool) int
+	earliestCompletionSemester = func(id uuid.UUID, visited map[uuid.UUID]bool) int {
 		if passedUUIDs[id] {
 			return 0
 		}
-		if d, ok := memo[id]; ok {
-			return d
+		if sem, ok := earliestMemo[id]; ok {
+			return sem
 		}
 		if visited[id] {
-			return 999 // Cycle detected
+			return math.MaxInt32
 		}
+		course, ok := coursesByID[id]
+		if !ok {
+			return math.MaxInt32
+		}
+		if cohortYear != 0 && len(course.AllowedCohorts) > 0 && !cohortInSlice(cohortYear, course.AllowedCohorts) {
+			return math.MaxInt32
+		}
+
 		visited[id] = true
 
-		maxPrereqDepth := 0
+		readySemester := currentSemester
 		for _, pid := range prereqMap[id] {
-			pd := getDepth(pid, visited)
-			if pd > maxPrereqDepth {
-				maxPrereqDepth = pd
+			prereqSemester := earliestCompletionSemester(pid, visited)
+			if prereqSemester == math.MaxInt32 {
+				visited[id] = false
+				return math.MaxInt32
+			}
+			if prereqSemester+1 > readySemester {
+				readySemester = prereqSemester + 1
 			}
 		}
 
 		visited[id] = false
-		memo[id] = 1 + maxPrereqDepth
-		return memo[id]
-	}
+		for sem := readySemester; sem <= 8; sem++ {
+			if offeredInSemester(course, sem) {
+				earliestMemo[id] = sem
+				return sem
+			}
+		}
 
-	maxAllowedDepth := 8 - currentSemester + 1
-	if maxAllowedDepth < 0 {
-		maxAllowedDepth = 0
+		return math.MaxInt32
 	}
 
 	var analysis []gin.H
@@ -188,8 +209,8 @@ func identifyMajor(c *gin.Context) {
 			if passedUUIDs[id] {
 				covered++
 			} else {
-				depth := getDepth(id, make(map[uuid.UUID]bool))
-				if depth <= maxAllowedDepth {
+				earliestSemester := earliestCompletionSemester(id, make(map[uuid.UUID]bool))
+				if earliestSemester <= 8 {
 					canCover++
 				}
 			}
@@ -215,6 +236,42 @@ func identifyMajor(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, analysis)
+}
+
+func cohortInSlice(cohort int, cohorts []int) bool {
+	for _, c := range cohorts {
+		if c == cohort {
+			return true
+		}
+	}
+	return false
+}
+
+func offeredInSemester(c interfaces.CourseData, semester int) bool {
+	if len(c.AvailableSemesters) == 0 {
+		return true
+	}
+
+	allOdd := true
+	allEven := true
+	for _, s := range c.AvailableSemesters {
+		if s == semester {
+			return true
+		}
+		if s%2 == 0 {
+			allOdd = false
+		} else {
+			allEven = false
+		}
+	}
+
+	if allOdd {
+		return semester%2 != 0
+	}
+	if allEven {
+		return semester%2 == 0
+	}
+	return false
 }
 
 func parseOptionalCohortYear(c *gin.Context) (int, bool) {

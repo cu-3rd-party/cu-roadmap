@@ -1,4 +1,7 @@
-import { admissionYearToSemester, type AdmissionYear } from "@/shared/constants";
+import {
+  admissionYearToSemester,
+  type AdmissionYear,
+} from "@/shared/constants";
 
 import type { ValidateRoadmapRequestDto } from "../api";
 import type { PlannedCourse } from "../model";
@@ -25,5 +28,9 @@ export const buildValidateRoadmapRequest = (
   // TODO
   const max_load = 999;
 
-  return { roadmap, max_load, current_semester: admissionYearToSemester[admissionYear] };
+  return {
+    roadmap,
+    max_load,
+    current_semester: admissionYearToSemester[admissionYear],
+  };
 };
