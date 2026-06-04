@@ -1,4 +1,3 @@
-import { useState, type FormEvent, type ChangeEvent, useEffect } from "react";
 import {
   Plus,
   Edit,
@@ -9,9 +8,11 @@ import {
   ArrowLeft,
   Loader2,
 } from "lucide-react";
-import { Button } from "@/shared/ui/kit/button";
+import { useState, type FormEvent, type ChangeEvent, useEffect } from "react";
+
 import { api } from "@/shared/config";
 import type { Course } from "@/shared/config";
+import { Button } from "@/shared/ui/kit/button";
 
 interface Major {
   id: string;
@@ -21,7 +22,7 @@ interface Major {
   requirements?: { course_id: string; type: string }[];
 }
 
-export function AdminPage({ onBack }: { onBack: () => void }) {
+export function AdminPage({ onBack }: { onBack?: () => void }) {
   const [authState, setAuthState] = useState<
     "loading" | "login" | "authenticated"
   >("loading");
@@ -33,7 +34,6 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
   const [activeTab, setActiveTab] = useState<"courses" | "majors">("courses");
-  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -43,8 +43,7 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
         setAuthState("authenticated");
         fetchData();
       })
-      .catch(() => setAuthState("login"))
-      .finally(() => setDataLoading(false));
+      .catch(() => setAuthState("login"));
   }, []);
 
   const fetchData = async () => {
@@ -55,19 +54,20 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
       ]);
       setCourses(coursesRes.data);
       setMajors(majorsRes.data);
-    } catch (e: any) {
-      if (e.response?.status === 401) {
+    } catch (e: unknown) {
+      const err = e as { response?: { status: number }; message?: string };
+      if (err.response?.status === 401) {
         setAuthState("login");
         setError("Сессия истекла, войдите снова");
         return;
       }
-      setError(e.message);
+      setError(err.message ?? "Unknown error");
     }
   };
 
   useEffect(() => {
     if (authState === "authenticated") {
-      fetchData().finally(() => setDataLoading(false));
+      fetchData();
     }
   }, [authState]);
 
@@ -78,15 +78,15 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
     try {
       await api.login(password);
       setAuthState("authenticated");
-      setDataLoading(true);
       await fetchData();
-    } catch (e: any) {
-      if (e.response?.status === 401) {
+    } catch (e: unknown) {
+      const err = e as { response?: { status: number }; message?: string };
+      if (err.response?.status === 401) {
         setLoginError("Неверный пароль");
-      } else if (e.response?.status === 503) {
+      } else if (err.response?.status === 503) {
         setLoginError("Сервер недоступен");
       } else {
-        setLoginError(e.message);
+        setLoginError(err.message ?? "Unknown error");
       }
     }
     setLoginLoading(false);
@@ -101,13 +101,14 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
       }
       await fetchData();
       setEditingCourse(null);
-    } catch (e: any) {
-      if (e.response?.status === 401) {
+    } catch (e: unknown) {
+      const err = e as { response?: { status: number }; message?: string };
+      if (err.response?.status === 401) {
         setAuthState("login");
         setError("Сессия истекла, войдите снова");
         return;
       }
-      alert(e.message);
+      alert(err.message ?? "Unknown error");
     }
   };
 
@@ -116,13 +117,14 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
     try {
       await api.admin.deleteCourse(id);
       await fetchData();
-    } catch (e: any) {
-      if (e.response?.status === 401) {
+    } catch (e: unknown) {
+      const err = e as { response?: { status: number }; message?: string };
+      if (err.response?.status === 401) {
         setAuthState("login");
         setError("Сессия истекла, войдите снова");
         return;
       }
-      alert(e.message);
+      alert(err.message ?? "Unknown error");
     }
   };
 
@@ -141,13 +143,14 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
       }
       await fetchData();
       setEditingMajor(null);
-    } catch (e: any) {
-      if (e.response?.status === 401) {
+    } catch (e: unknown) {
+      const err = e as { response?: { status: number }; message?: string };
+      if (err.response?.status === 401) {
         setAuthState("login");
         setError("Сессия истекла, войдите снова");
         return;
       }
-      alert(e.message);
+      alert(err.message ?? "Unknown error");
     }
   };
 
@@ -1090,3 +1093,5 @@ function MajorEditor({
     </div>
   );
 }
+
+export default AdminPage;

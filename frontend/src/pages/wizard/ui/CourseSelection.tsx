@@ -1,8 +1,9 @@
-import React, { useState } from "react";
 import { Check, Search } from "lucide-react";
-import { CourseCard } from "./CourseCard";
+import React, { useState } from "react";
 
 import type { Course } from "@/shared/config";
+
+import { CourseCard } from "./CourseCard";
 
 interface CourseSelectionProps {
   courses: Course[];

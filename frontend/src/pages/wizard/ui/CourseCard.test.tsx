@@ -1,8 +1,10 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CourseCard } from "./CourseCard";
-import { renderWithProviders } from "@/test/render";
+
 import type { Course } from "@/shared/config";
+import { renderWithProviders } from "@/test/render";
+
+import { CourseCard } from "./CourseCard";
 
 const course: Course = {
   id: "course-1",

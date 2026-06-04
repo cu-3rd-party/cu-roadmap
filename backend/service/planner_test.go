@@ -370,7 +370,7 @@ func TestGenerateRoadmapWithPlannedSemesters(t *testing.T) {
 		assert.NoError(t, err)
 
 		rm := roadmap.([]map[string]interface{})
-		
+
 		// Find when c2 is scheduled
 		c2Sem := -1
 		c3Sem := -1

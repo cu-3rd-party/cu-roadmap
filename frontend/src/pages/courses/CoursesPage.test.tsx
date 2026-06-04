@@ -1,8 +1,10 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CoursesPage } from "./index";
+
 import { api } from "@/shared/config";
 import { renderWithProviders } from "@/test/render";
+
+import { CoursesPage } from "./index";
 
 vi.mock("@/shared/config", async () => {
   const actual =
@@ -32,7 +34,7 @@ describe("CoursesPage", () => {
           postrequisites: [],
         },
       ],
-    } as Awaited<ReturnType<typeof api.getCourses>>);
+    } as unknown as Awaited<ReturnType<typeof api.getCourses>>);
 
     renderWithProviders(
       <CoursesPage passedIds={[]} setPassedIds={setPassedIds} />,

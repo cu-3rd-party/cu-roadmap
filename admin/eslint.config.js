@@ -71,5 +71,12 @@ export default defineConfig({
       },
     ],
   },
-  ignores: ["node_modules/**", "dist/**", "eslint.config.js", "public/**"],
+  ignores: [
+    "node_modules/**",
+    "dist/**",
+    "eslint.config.js",
+    "public/**",
+    "postcss.config.js",
+    "*.config.js",
+  ],
 });

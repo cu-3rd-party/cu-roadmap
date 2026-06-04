@@ -1,5 +1,6 @@
-import type { SemesterData } from "./types";
 import { getCategoryColor } from "@/shared/lib";
+
+import type { SemesterData } from "./types";
 
 export type {
   Course,

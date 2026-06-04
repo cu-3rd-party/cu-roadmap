@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
+
 import { api } from "@/shared/config";
+
 import { AuthContext } from "./AuthContext";
 
 export function AuthProvider({ children }: { children: ReactNode }) {

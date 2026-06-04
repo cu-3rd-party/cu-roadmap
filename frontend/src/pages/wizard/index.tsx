@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
+import React, { useEffect, useState } from "react";
+
 import { api } from "@/shared/config";
-import type { Course, Major } from "@/shared/config";
-import { AISparkleBox } from "./ui/AISparkleBox";
+import type { Course, Major, RoadmapResponse } from "@/shared/config";
+
 import {
   CourseSelection,
   MajorSelect,
@@ -11,7 +12,7 @@ import {
   StepNavigation,
   RoadmapResult,
 } from "./ui";
-import type { RoadmapResponse } from "@/shared/config";
+import { AISparkleBox } from "./ui/AISparkleBox";
 
 function hydrateRoadmap(
   roadmap: RoadmapResponse["roadmap"],

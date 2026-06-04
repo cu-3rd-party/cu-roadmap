@@ -10,6 +10,6 @@ export const buildIdentifyMajorsRequest = (
 ): IdentifyMajorsRequestDto => {
   return {
     passed_course_ids: courseIds,
-    current_semester: admissionYearToSemester[admissionYear]
+    current_semester: admissionYearToSemester[admissionYear],
   };
 };

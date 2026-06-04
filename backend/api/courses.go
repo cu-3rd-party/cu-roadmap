@@ -221,22 +221,22 @@ func backupDB(c *gin.Context) {
 	var backupCourses []BackupCourse
 	for _, cd := range courses {
 		backupCourses = append(backupCourses, BackupCourse{
-			ID: cd.ID.String(),
-			Title: cd.Title,
-			Description: cd.Description,
-			HandbookLink: cd.HandbookLink,
-			CourseType: cd.CourseType,
-			Category: cd.Category,
-			AllowedCohorts: cd.AllowedCohorts,
-			AvailableSemesters: cd.AvailableSemesters,
+			ID:                  cd.ID.String(),
+			Title:               cd.Title,
+			Description:         cd.Description,
+			HandbookLink:        cd.HandbookLink,
+			CourseType:          cd.CourseType,
+			Category:            cd.Category,
+			AllowedCohorts:      cd.AllowedCohorts,
+			AvailableSemesters:  cd.AvailableSemesters,
 			RecommendedSemester: cd.RecommendedSemester,
-			Workload: cd.Workload,
-			Prerequisites: helpers.CourseUUIDsToStrings(cd.Prerequisites),
-			Corequisites: helpers.CourseUUIDsToStrings(cd.Corequisites),
+			Workload:            cd.Workload,
+			Prerequisites:       helpers.CourseUUIDsToStrings(cd.Prerequisites),
+			Corequisites:        helpers.CourseUUIDsToStrings(cd.Corequisites),
 		})
 	}
 	file, _ := json.MarshalIndent(backupCourses, "", "  ")
-	os.WriteFile("courses_backup.json", file, 0644)
+	os.WriteFile("courses_backup.json", file, 0o644)
 
 	majors, _ := s.GetAllMajors()
 	var backupMajors []map[string]interface{}
@@ -246,19 +246,19 @@ func backupDB(c *gin.Context) {
 		for _, r := range reqs {
 			reqsList = append(reqsList, map[string]interface{}{
 				"course_id": r.CourseID.String(),
-				"type": string(r.RequirementType),
+				"type":      string(r.RequirementType),
 			})
 		}
 		backupMajors = append(backupMajors, map[string]interface{}{
-			"id": m.ID.String(),
-			"title": m.Title,
-			"school": m.School,
-			"cohort_year": m.CohortYear,
+			"id":           m.ID.String(),
+			"title":        m.Title,
+			"school":       m.School,
+			"cohort_year":  m.CohortYear,
 			"requirements": reqsList,
 		})
 	}
 	majorsFile, _ := json.MarshalIndent(backupMajors, "", "  ")
-	os.WriteFile("majors_backup.json", majorsFile, 0644)
+	os.WriteFile("majors_backup.json", majorsFile, 0o644)
 
 	c.JSON(http.StatusOK, gin.H{"status": "backed_up", "courses_count": len(backupCourses), "majors_count": len(backupMajors)})
 }
@@ -276,7 +276,7 @@ func restoreDB(c *gin.Context) {
 				ID: id, Title: rc.Title, Description: rc.Description,
 				HandbookLink: rc.HandbookLink, CourseType: rc.CourseType,
 				Category: rc.Category, AllowedCohorts: rc.AllowedCohorts,
-				AvailableSemesters: rc.AvailableSemesters,
+				AvailableSemesters:  rc.AvailableSemesters,
 				RecommendedSemester: rc.RecommendedSemester, Workload: rc.Workload,
 			})
 			helpers.ReplaceCourseDependencies(s, id, rc.Prerequisites, rc.Corequisites)

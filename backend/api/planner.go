@@ -11,8 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
-
 func RegisterPlannerRoutes(rg *gin.RouterGroup) {
 	rg.POST("/generate", generateRoadmap)
 	rg.POST("/validate-semester/", validateSemester)

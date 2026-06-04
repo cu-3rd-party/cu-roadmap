@@ -1,5 +1,6 @@
-import React from "react";
 import { X, Lock, Unlock, ArrowRight, Info, AlertTriangle } from "lucide-react";
+import React from "react";
+
 import type { Course } from "../config/types";
 import { getCategoryColor } from "../lib";
 

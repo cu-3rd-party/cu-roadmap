@@ -117,7 +117,7 @@ func (s *PlannerService) FindPathToCourse(
 			if goalSemester != nil && c.ID == targetCourseID && currentSem < *goalSemester {
 				continue
 			}
-			
+
 			if len(c.AvailableSemesters) > 0 {
 				courseIsOdd := false
 				for _, s := range c.AvailableSemesters {

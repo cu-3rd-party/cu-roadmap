@@ -1,8 +1,10 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ManualPage } from "./index";
+
 import { api } from "@/shared/config";
 import { renderWithProviders } from "@/test/render";
+
+import { ManualPage } from "./index";
 
 vi.mock("@/shared/config", async () => {
   const actual =
@@ -31,7 +33,7 @@ describe("ManualPage", () => {
           workload: 4,
         },
       ],
-    } as Awaited<ReturnType<typeof api.getCourses>>);
+    } as unknown as Awaited<ReturnType<typeof api.getCourses>>);
     vi.mocked(api.validateRoadmap).mockResolvedValue({
       data: {
         validation_results: [
@@ -43,7 +45,7 @@ describe("ManualPage", () => {
           },
         ],
       },
-    } as Awaited<ReturnType<typeof api.validateRoadmap>>);
+    } as unknown as Awaited<ReturnType<typeof api.validateRoadmap>>);
 
     renderWithProviders(
       <ManualPage

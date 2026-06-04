@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { api, type Course, type ValidationResult } from "@/shared/config";
 import { Trash, Info } from "lucide-react";
+import React, { useEffect, useState } from "react";
+
+import { api, type Course, type ValidationResult } from "@/shared/config";
 import { CourseInfoModal } from "@/shared/ui";
 
 interface ManualPageProps {

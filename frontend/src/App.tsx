@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import {
   Book,
   Calculator,
@@ -10,18 +9,19 @@ import {
   Target,
   Wand2,
 } from "lucide-react";
-import { useTheme } from "@/app/providers";
-import { SidebarButton } from "@/shared/ui";
+import React, { useState } from "react";
 
-import { WizardPage } from "@/pages/wizard";
-import { CoursesPage } from "@/pages/courses";
-import { PlannerPage } from "@/pages/planner";
-import { GoalPage } from "@/pages/goal";
+import { useTheme } from "@/app/providers";
 import { CalculatorPage } from "@/pages/calculator";
-import { ManualPage } from "@/pages/manual";
+import { CoursesPage } from "@/pages/courses";
+import { GoalPage } from "@/pages/goal";
 import { GraphPage } from "@/pages/graph";
 import { MajorsPage } from "@/pages/majors";
+import { ManualPage } from "@/pages/manual";
+import PlannerPage from "@/pages/planner";
+import { WizardPage } from "@/pages/wizard";
 import type { RoadmapData } from "@/shared/config";
+import { SidebarButton } from "@/shared/ui";
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
@@ -37,9 +37,7 @@ export default function App() {
   ]);
   const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null);
   const [plannerLoading, setPlannerLoading] = useState(false);
-  const [triggerGenerate, _setTriggerGenerate] = useState(0);
-
-
+  const [_triggerGenerate, _setTriggerGenerate] = useState(0);
 
   return (
     <div className="flex flex-col h-screen">
@@ -222,20 +220,7 @@ export default function App() {
           {activeTab === "courses" && (
             <CoursesPage passedIds={passedIds} setPassedIds={setPassedIds} />
           )}
-          {activeTab === "planner" && (
-            <PlannerPage
-              passedIds={passedIds}
-              setPassedIds={setPassedIds}
-              roadmapCourseIds={manualRoadmap.flatMap(
-                (semester) => semester.course_ids,
-              )}
-              triggerGenerate={triggerGenerate}
-              setData={setRoadmapData}
-              data={roadmapData}
-              setLoading={setPlannerLoading}
-              loading={plannerLoading}
-            />
-          )}
+          {activeTab === "planner" && <PlannerPage />}
           {activeTab === "calculator" && (
             <CalculatorPage passedIds={passedIds} />
           )}

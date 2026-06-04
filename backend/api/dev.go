@@ -32,7 +32,7 @@ type RestoreCourse struct {
 func RestoreDB(c *gin.Context) {
 	s := store.GetStore()
 	s.ClearAll()
-	
+
 	coursesFile, err := os.ReadFile("courses_backup.json")
 	if err == nil {
 		var courses []RestoreCourse
@@ -44,16 +44,16 @@ func RestoreDB(c *gin.Context) {
 			for _, rc := range courses {
 				id, _ := uuid.Parse(rc.ID)
 				cd := interfaces.CourseData{
-					ID: id,
-					Title: rc.Title,
-					Description: rc.Description,
-					HandbookLink: rc.HandbookLink,
-					CourseType: rc.CourseType,
-					Category: rc.Category,
-					AllowedCohorts: rc.AllowedCohorts,
-					AvailableSemesters: rc.AvailableSemesters,
+					ID:                  id,
+					Title:               rc.Title,
+					Description:         rc.Description,
+					HandbookLink:        rc.HandbookLink,
+					CourseType:          rc.CourseType,
+					Category:            rc.Category,
+					AllowedCohorts:      rc.AllowedCohorts,
+					AvailableSemesters:  rc.AvailableSemesters,
 					RecommendedSemester: rc.RecommendedSemester,
-					Workload: rc.Workload,
+					Workload:            rc.Workload,
 				}
 				s.CreateCourse(cd)
 				helpers.ReplaceCourseDependencies(s, cd.ID, rc.Prerequisites, rc.Corequisites)
@@ -70,9 +70,9 @@ func RestoreDB(c *gin.Context) {
 		for _, m := range majors {
 			mid, _ := uuid.Parse(m["id"].(string))
 			s.CreateMajor(interfaces.MajorData{
-				ID: mid,
-				Title: m["title"].(string),
-				School: m["school"].(string),
+				ID:         mid,
+				Title:      m["title"].(string),
+				School:     m["school"].(string),
 				CohortYear: int(m["cohort_year"].(float64)),
 			})
 			if reqs, ok := m["requirements"].([]interface{}); ok {
@@ -80,9 +80,9 @@ func RestoreDB(c *gin.Context) {
 					rm := r.(map[string]interface{})
 					cid, _ := uuid.Parse(rm["course_id"].(string))
 					s.CreateMajorRequirement(interfaces.MajorRequirementData{
-						ID: uuid.New(),
-						MajorID: mid,
-						CourseID: cid,
+						ID:              uuid.New(),
+						MajorID:         mid,
+						CourseID:        cid,
 						RequirementType: enums.RequirementType(rm["type"].(string)),
 					})
 				}

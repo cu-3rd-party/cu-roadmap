@@ -37,7 +37,6 @@ import { Button, CollapsiblePanel, Panel } from "@/shared/ui";
 import { AddCourseButton } from "./AddCourseButton";
 import { SortableCourseCard } from "./SortableCourseCard";
 
-
 export interface SemesterSectionProps {
   index: number;
   dateRange: string;
@@ -171,7 +170,6 @@ export const SemesterSection = ({
             </span>
           )}
         </div>
-
       </div>
 
       {semesterMessages.length > 0 && (

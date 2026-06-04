@@ -1,8 +1,10 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CalculatorPage } from "./index";
+
 import { api } from "@/shared/config";
 import { renderWithProviders } from "@/test/render";
+
+import { CalculatorPage } from "./index";
 
 vi.mock("@/shared/config", async () => {
   const actual =

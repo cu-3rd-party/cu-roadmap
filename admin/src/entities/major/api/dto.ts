@@ -27,5 +27,5 @@ export interface MajorMatchDto {
 // Request body for POST /api/v1/majors/identify/ - UUIDs of passed courses
 export type IdentifyMajorsRequestDto = {
   passed_courses_ids: UUID[];
-  current_semester: SemesterNumber; 
-}
+  current_semester: SemesterNumber;
+};

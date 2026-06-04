@@ -1,6 +1,7 @@
+import { X } from "lucide-react";
 import React, { useEffect, useState, useRef } from "react";
 import { Network } from "vis-network";
-import { X } from "lucide-react";
+
 import { api } from "@/shared/config";
 import type { GraphNode } from "@/shared/config";
 

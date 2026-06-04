@@ -38,7 +38,9 @@ export const buildGenerateRoadmapRequest = (
 
   return {
     passed_course_ids,
-    ...(scope === "all" ? { selected_course_ids, course_source: "selected" } : { course_source: "passed" }),
+    ...(scope === "all"
+      ? { selected_course_ids, course_source: "selected" }
+      : { course_source: "passed" }),
     major_id: majorId,
     cohort: admissionYear,
     current_semester: admissionYearToSemester[admissionYear],

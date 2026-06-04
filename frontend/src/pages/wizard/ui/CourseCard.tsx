@@ -1,8 +1,10 @@
-import React, { useState } from "react";
-import { getCategoryColor } from "../config/category-colors";
 import { Check, Search } from "lucide-react";
-import { CourseInfoModal } from "@/shared/ui";
+import React, { useState } from "react";
+
 import type { Course } from "@/shared/config";
+import { CourseInfoModal } from "@/shared/ui";
+
+import { getCategoryColor } from "../config/category-colors";
 
 interface CourseCardProps {
   course: Course;

@@ -1,5 +1,5 @@
-import React from "react";
 import { BookOpen, GraduationCap, Map } from "lucide-react";
+import React from "react";
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -14,7 +14,7 @@ const steps = [
 export function StepIndicator({ currentStep }: StepIndicatorProps) {
   return (
     <div className="flex items-center justify-center gap-3 mb-8">
-      {steps.map(({ icon: Icon, label }, idx) => {
+      {steps.map(({ icon: Icon }, idx) => {
         const step = idx + 1;
         const isActive = currentStep >= step;
         return (

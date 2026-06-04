@@ -1,6 +1,7 @@
-import React from "react";
-import type { Course } from "@/shared/config";
 import { Info } from "lucide-react";
+import React from "react";
+
+import type { Course } from "@/shared/config";
 import { CourseInfoModal } from "@/shared/ui";
 
 interface SemesterCardProps {

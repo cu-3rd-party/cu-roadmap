@@ -1,7 +1,6 @@
 import type { SharedOptions } from "msw";
 import { setupWorker } from "msw/browser";
 
-
 // Handler for unmatched requests
 const onUnhandledRequest: SharedOptions["onUnhandledRequest"] = (
   req,

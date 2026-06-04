@@ -132,8 +132,15 @@ fi
 echo ""
 info "Formatting frontend with prettier"
 cd "$ROOT_DIR/frontend"
-pnpm format >/dev/null 2>&1
+pnpm format
 ok "frontend formatted"
+
+# ── admin frontend formatting (prettier) ────────────────────────────────
+echo ""
+info "Formatting admin frontend with prettier"
+cd "$ROOT_DIR/admin"
+pnpm format
+ok "admin frontend formatted"
 
 # ── stage everything ──────────────────────────────────────────────
 echo ""

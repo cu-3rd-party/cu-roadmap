@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import { api, type MajorResult } from "@/shared/config";
 
 interface CalculatorPageProps {

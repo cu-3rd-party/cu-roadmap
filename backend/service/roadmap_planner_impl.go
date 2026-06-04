@@ -5,8 +5,8 @@ import (
 	"math"
 	"sort"
 
-	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
@@ -14,12 +14,12 @@ import (
 type roadmapSelectionStrategy func(*roadmapPlanningContext, int) []uuid.UUID
 
 type roadmapPlanningContext struct {
-	store         interfaces.StoreBase
-	targetCourses map[uuid.UUID]interfaces.CourseData
-	prereqs       map[uuid.UUID][]uuid.UUID
-	coreqs        map[uuid.UUID][]uuid.UUID
-	unlocksCount  map[uuid.UUID]int
-	passedIDs     map[uuid.UUID]bool
+	store             interfaces.StoreBase
+	targetCourses     map[uuid.UUID]interfaces.CourseData
+	prereqs           map[uuid.UUID][]uuid.UUID
+	coreqs            map[uuid.UUID][]uuid.UUID
+	unlocksCount      map[uuid.UUID]int
+	passedIDs         map[uuid.UUID]bool
 	coursesTodo       map[uuid.UUID]interfaces.CourseData
 	coreCourseIDs     map[uuid.UUID]bool
 	reservedForFuture map[uuid.UUID]bool
@@ -100,12 +100,12 @@ func newRoadmapPlanningContext(
 	}
 
 	return &roadmapPlanningContext{
-		store:         store,
-		targetCourses: targetCourses,
-		prereqs:       prereqs,
-		coreqs:        coreqs,
-		unlocksCount:  unlocksCount,
-		passedIDs:     passedIDs,
+		store:             store,
+		targetCourses:     targetCourses,
+		prereqs:           prereqs,
+		coreqs:            coreqs,
+		unlocksCount:      unlocksCount,
+		passedIDs:         passedIDs,
 		coursesTodo:       coursesTodo,
 		coreCourseIDs:     coreCourseIDs,
 		reservedForFuture: make(map[uuid.UUID]bool),
@@ -167,7 +167,7 @@ func generateRoadmapWithStrategy(
 		ctx.maxLoad = math.Max(0, originalMaxLoad-semLoad)
 
 		selected := selectSemester(ctx, semester)
-		
+
 		ctx.maxLoad = originalMaxLoad
 
 		if len(selected) > 0 {

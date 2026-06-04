@@ -39,7 +39,7 @@ func TestCreateMajorAdmin(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/v1/majors/", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	addAuthCookie(t, req)
 
 	router.ServeHTTP(w, req)
@@ -47,7 +47,7 @@ func TestCreateMajorAdmin(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
-	
+
 	idStr, ok := resp["id"].(string)
 	assert.True(t, ok)
 	assert.NotEmpty(t, idStr)
@@ -60,11 +60,11 @@ func TestCreateMajorAdmin(t *testing.T) {
 	assert.Equal(t, 200, w2.Code)
 	var majors []map[string]interface{}
 	json.Unmarshal(w2.Body.Bytes(), &majors)
-	
+
 	assert.Len(t, majors, 1)
 	assert.Equal(t, "New Test Major", majors[0]["title"])
 	assert.Equal(t, "School of Testing", majors[0]["school"])
-	
+
 	reqs, ok := majors[0]["requirements"].([]interface{})
 	assert.True(t, ok)
 	assert.Len(t, reqs, 1)

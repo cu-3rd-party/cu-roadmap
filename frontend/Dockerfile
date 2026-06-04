@@ -1,16 +1,16 @@
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 
 WORKDIR /app
 
 # pnpm via corepack (pinned to match pnpm-lock.yaml lockfileVersion 9.0)
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
-RUN corepack enable && corepack prepare pnpm@9.14.2 --activate
+RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
 
 
 FROM base AS install
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 
 FROM base AS build
@@ -27,6 +27,7 @@ ENV NODE_ENV=production
 COPY --from=install /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 COPY index.html /app/
+COPY package.json /app/
 
 EXPOSE 5173
 

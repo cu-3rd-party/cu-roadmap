@@ -1,1 +1,1 @@
-export { buildPlannerStats, buildSemesters } from "./options"
+export { buildPlannerStats, buildSemesters } from "./options";

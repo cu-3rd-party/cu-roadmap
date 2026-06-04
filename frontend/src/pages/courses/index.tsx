@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+
 import { api, type Course } from "@/shared/config";
+
 import { CourseCard } from "../wizard/ui/CourseCard";
 
 interface CoursesPageProps {

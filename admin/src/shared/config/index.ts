@@ -1,6 +1,5 @@
 import type { SemesterData } from "./types";
 
-
 export type {
   Course,
   Major,
