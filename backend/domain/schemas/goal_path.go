@@ -11,6 +11,7 @@ type GoalPathRequest struct {
 	PassedCourseIDs []uuid.UUID `json:"passed_course_ids" binding:"required"`
 	CurrentSemester int         `json:"current_semester" default:"1"`
 	MaxLoad         float64     `json:"max_load" default:"12.0"`
+	GoalSemester    *int        `json:"goal_semester,omitempty"`
 }
 
 func (g *GoalPathRequest) Validate() error {

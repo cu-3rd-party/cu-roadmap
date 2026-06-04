@@ -174,7 +174,7 @@ func TestFindPathToCourse(t *testing.T) {
 	defer s.Close()
 
 	plannerSvc := NewPlannerService(s)
-	path, err := plannerSvc.FindPathToCourse(c2.ID, make(map[uuid.UUID]bool), 1, 12.0)
+	path, err := plannerSvc.FindPathToCourse(c2.ID, make(map[uuid.UUID]bool), 1, 12.0, nil)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(path))
 }

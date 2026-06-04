@@ -39,6 +39,7 @@ func (s *PlannerService) FindPathToCourse(
 	passedIDs map[uuid.UUID]bool,
 	currentSemester int,
 	maxLoad float64,
+	goalSemester *int,
 ) ([]map[string]interface{}, error) {
 	if err := s.loadDependencies(); err != nil {
 		return nil, err
@@ -113,6 +114,10 @@ func (s *PlannerService) FindPathToCourse(
 		isOdd := currentSem%2 != 0
 		var availableOffered []interfaces.CourseData
 		for _, c := range available {
+			if goalSemester != nil && c.ID == targetCourseID && currentSem < *goalSemester {
+				continue
+			}
+			
 			if len(c.AvailableSemesters) > 0 {
 				courseIsOdd := false
 				for _, s := range c.AvailableSemesters {

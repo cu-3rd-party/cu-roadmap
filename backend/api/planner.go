@@ -204,7 +204,7 @@ func getGoalPath(c *gin.Context) {
 		passedIDs[id] = true
 	}
 
-	path, err := planner.FindPathToCourse(req.TargetCourseID, passedIDs, req.CurrentSemester, req.MaxLoad)
+	path, err := planner.FindPathToCourse(req.TargetCourseID, passedIDs, req.CurrentSemester, req.MaxLoad, req.GoalSemester)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

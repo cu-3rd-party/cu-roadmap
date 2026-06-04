@@ -1155,6 +1155,10 @@ components:
         max_load:
           type: number
           default: 12.0
+        goal_semester:
+          type: integer
+          description: желаемый семестр для прохождения целевого курса
+          nullable: true
 
     GoalPathResponse:
       type: object
