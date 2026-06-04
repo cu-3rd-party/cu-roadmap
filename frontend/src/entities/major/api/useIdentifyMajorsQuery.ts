@@ -18,8 +18,11 @@ export const useIdentifyMajorsQuery = (
   useQuery({
     queryKey: identifyMajorsQueryKey(courseIds),
     queryFn: () =>
-      identifyMajors(buildIdentifyMajorsRequest(courseIds, year!), year!).then((dtos) =>
-        dtos.map(normalizeMajorMatch).sort((dto1, dto2) => dto1.title.localeCompare(dto2.title)),
+      identifyMajors(buildIdentifyMajorsRequest(courseIds, year!), year!).then(
+        (dtos) =>
+          dtos
+            .map(normalizeMajorMatch)
+            .sort((dto1, dto2) => dto1.title.localeCompare(dto2.title)),
       ),
     // Run even with no courses so the planner has initial major data on mount.
     enabled: year != null,

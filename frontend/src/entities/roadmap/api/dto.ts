@@ -13,8 +13,22 @@ export interface RoadmapSemesterDto {
 export type RoadmapDto = RoadmapSemesterDto[];
 // POST /api/v1/planner/generate/
 
+// A semester's worth of placed courses, segmented for the generate payload.
+export interface PlannedSemesterDto {
+  semester: number;
+  course_ids: UUID[];
+}
+
+// Whether the backend should generate from already-passed courses only, or also
+// treat the planned (selected) courses as a basis.
+export type CourseSource = "passed" | "selected";
+
 export interface GenerateRoadmapRequestDto {
+  // courses in completed semesters
   passed_course_ids: UUID[];
+  // remaining placed courses, segmented by semester
+  selected_course_ids: PlannedSemesterDto[];
+  course_source: CourseSource;
   major_id: UUID;
   // semester to start counter from
   current_semester?: SemesterNumber;

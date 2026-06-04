@@ -23,3 +23,7 @@ export const buildSemesters = (
     index: i + 1,
     dateRange: getSemesterDateRange(admissionYear, i + 1),
   }));
+
+// Delay for debounce
+export const beforeIdentifyMajorsDelay = 5000;
+export const beforeValidateRoadmapDelay = 5000;

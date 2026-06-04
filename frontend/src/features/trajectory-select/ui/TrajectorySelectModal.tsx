@@ -11,9 +11,12 @@ import {
   usePlannerStore,
 } from "@/entities/roadmap";
 import type { Roadmap } from "@/entities/roadmap";
+import { CourseSource } from "@/entities/roadmap/api";
 import { useSettingsStore } from "@/features/settings";
+import { getErrorMessage } from "@/shared/api";
 import { admissionYearToSemester, SEMESTER_NUMBERS } from "@/shared/constants";
 import type { SemesterNumber } from "@/shared/constants";
+import { cn } from "@/shared/lib";
 import {
   Button,
   Command,
@@ -62,11 +65,12 @@ export const TrajectorySelectModal = ({
   const [courseId, setCourseId] = useState("");
   const [courseOpen, setCourseOpen] = useState(false);
   const [courseCommitted, setCourseCommitted] = useState(true);
-  const [semester, setSemester] = useState("");
+  const [semester, setSemester] = useState("any");
   const [tab, setTab] = useState("major");
   const [majorId, setMajorId] = useState("");
+  const [error, setError] = useState<string | null>(null);
   // Which of the already-saved courses count as "passed" for the generate
-  const [scope, setScope] = useState<"completed" | "all">("completed");
+  const [scope, setScope] = useState<CourseSource>("passed");
 
   const canSubmit =
     tab === "major" ? majorId !== "" : courseId !== "" && semester !== "";
@@ -86,10 +90,21 @@ export const TrajectorySelectModal = ({
       .slice(0, 5);
   }, [courseQuery, courses]);
 
+  // Semesters offered for the chosen course, kept at/after the cohort's current
+  // semester. No course picked -> no options (only "Любой" is shown).
+  const semesterOptions = useMemo(() => {
+    const selected = courses?.find((course) => course.id === courseId);
+    if (!selected) return [];
+    return SEMESTER_NUMBERS.filter(
+      (s) => s >= minSemester && selected.availableSemesters.includes(s),
+    );
+  }, [courses, courseId, minSemester]);
+
   // The course field always shows a committed option (or nothing). Typing over a
   // committed value wipes it so the user can search again; blurring without
   // picking anything restores the last saved option.
   const handleCourseChange = (value: string) => {
+    setError(null);
     if (courseCommitted) {
       setCourseCommitted(false);
       setCourseQuery(getInsertedText(savedCourseTitle, value));
@@ -106,10 +121,13 @@ export const TrajectorySelectModal = ({
   };
 
   const selectCourse = (id: string, title: string) => {
+    setError(null);
     setCourseId(id);
     setCourseQuery(title);
     setCourseCommitted(true);
     setCourseOpen(false);
+    // Switching the course invalidates the previously picked semester.
+    setSemester("any");
   };
 
   const close = () => onOpenChange(false);
@@ -143,30 +161,53 @@ export const TrajectorySelectModal = ({
       return;
     }
     const selections = usePlannerStore.getState().selections;
+    setError(null);
 
-    if (tab === "major") {
-      if (!majorId) {
-        close();
-        return;
+    try {
+      if (tab === "major") {
+        if (!majorId) {
+          close();
+          return;
+        }
+        const result = await generateRoadmap(
+          buildGenerateRoadmapRequest(
+            selections,
+            admissionYear,
+            majorId,
+            scope,
+          ),
+        );
+        // Soft error from the backend: surface it and keep the modal open.
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        applyRoadmap(result);
+      } else {
+        if (!courseId || semester === "") {
+          close();
+          return;
+        }
+        const goalSemester =
+          semester === "any" ? undefined : (Number(semester) as SemesterNumber);
+        const result = await generateGoalPath(
+          buildGoalPathRequest(
+            selections,
+            admissionYear,
+            courseId,
+            goalSemester,
+          ),
+        );
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        applyRoadmap(result);
       }
-      const result = await generateRoadmap(
-        buildGenerateRoadmapRequest(selections, admissionYear, majorId, scope),
-      );
-      // TODO
-      if (result.error) return; // keep the modal open so the user can retry
-      applyRoadmap(result);
-    } else {
-      if (!courseId || semester === "") {
-        close();
-        return;
-      }
-      const goalSemester =
-        semester === "any" ? undefined : (Number(semester) as SemesterNumber);
-      const result = await generateGoalPath(
-        buildGoalPathRequest(selections, admissionYear, courseId, goalSemester),
-      );
-      if (result.error) return;
-      applyRoadmap(result);
+    } catch (e) {
+      // Keep the modal open and show why (backend error body / status / network).
+      setError(getErrorMessage(e));
+      return;
     }
 
     close();
@@ -176,7 +217,10 @@ export const TrajectorySelectModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="flex h-130 w-[calc(100%-2rem)] sm:max-w-4xl flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0"
+        className={cn(
+          "flex w-[calc(100%-2rem)] sm:max-w-4xl flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0",
+          error ? "h-140" : "h-130",
+        )}
       >
         <DialogHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">
           <DialogTitle className="text-2xl font-bold text-fg-primary">
@@ -192,7 +236,14 @@ export const TrajectorySelectModal = ({
 
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex h-full flex-col gap-4 rounded-2xl bg-background p-5">
-            <Tabs value={tab} onValueChange={setTab} className="gap-4">
+            <Tabs
+              value={tab}
+              onValueChange={(value) => {
+                setError(null);
+                setTab(value);
+              }}
+              className="gap-4"
+            >
               <div className="text-sm text-fg-secondary">
                 <p>Выберите тип построения траектории:</p>
                 <ol className="mt-1 flex list-decimal flex-col gap-1 pl-5">
@@ -222,7 +273,10 @@ export const TrajectorySelectModal = ({
                 </p>
                 <Tabs
                   value={majorId}
-                  onValueChange={setMajorId}
+                  onValueChange={(value) => {
+                    setError(null);
+                    setMajorId(value);
+                  }}
                   className="gap-4"
                 >
                   <TabsList className="grid grid-flow-col auto-cols-fr">
@@ -239,16 +293,15 @@ export const TrajectorySelectModal = ({
                 </p>
                 <Tabs
                   value={scope}
-                  onValueChange={(value) =>
-                    setScope(value as "completed" | "all")
-                  }
+                  onValueChange={(value) => {
+                    setError(null);
+                    setScope(value as CourseSource);
+                  }}
                   className="gap-4"
                 >
                   <TabsList className="grid grid-flow-col auto-cols-fr self-center">
-                    <TabsTrigger value="completed">
-                      Только пройденные
-                    </TabsTrigger>
-                    <TabsTrigger value="all">Все добавленные</TabsTrigger>
+                    <TabsTrigger value="passed">Только пройденные</TabsTrigger>
+                    <TabsTrigger value="selected">Все добавленные</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </TabsContent>
@@ -317,19 +370,23 @@ export const TrajectorySelectModal = ({
                   <p className="text-sm text-fg-secondary self-center">
                     Выберите семестр, в котором хотели бы пройти курс
                   </p>
-                  <Select value={semester} onValueChange={setSemester}>
+                  <Select
+                    value={semester}
+                    onValueChange={(value) => {
+                      setError(null);
+                      setSemester(value);
+                    }}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Любой</SelectItem>
-                      {SEMESTER_NUMBERS.filter((s) => s >= minSemester).map(
-                        (s) => (
-                          <SelectItem key={s} value={String(s)}>
-                            {s} семестр
-                          </SelectItem>
-                        ),
-                      )}
+                      {semesterOptions.map((s) => (
+                        <SelectItem key={s} value={String(s)}>
+                          {s} семестр
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -343,6 +400,10 @@ export const TrajectorySelectModal = ({
                   будут обведены так
                 </span>
               </p>
+
+              {error && (
+                <p className="text-sm text-fg-negative">Ошибка: {error}</p>
+              )}
 
               <div className="flex items-center justify-between">
                 <Button variant="tertiaryPadded" size="md" onClick={close}>
