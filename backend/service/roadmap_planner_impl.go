@@ -494,10 +494,27 @@ func offeredInSemester(c interfaces.CourseData, semester int) bool {
 	if len(c.AvailableSemesters) == 0 {
 		return true
 	}
+
+	allOdd := true
+	allEven := true
 	for _, s := range c.AvailableSemesters {
 		if s == semester {
 			return true
 		}
+		if s%2 == 0 {
+			allOdd = false
+		} else {
+			allEven = false
+		}
+	}
+
+	// Sheet sync stores seasonal availability as repeated odd/even semesters
+	// (for example, 1/3/5/7 for autumn, 2/4/6/8 for spring).
+	if allOdd {
+		return semester%2 != 0
+	}
+	if allEven {
+		return semester%2 == 0
 	}
 	return false
 }

@@ -9,7 +9,7 @@ RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
 
 
 FROM base AS install
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 
@@ -24,10 +24,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+COPY package.json pnpm-workspace.yaml ./
 COPY --from=install /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
-COPY index.html /app/
+# я знаю что там дохуя связанных друг с другом конфигов ебаных и мне лень их перечислять
+COPY . .
 
 EXPOSE 5173
 
-CMD ["pnpm", "exec", "vite", "preview", "--host", "0.0.0.0", "--port", "5173"]
+CMD ["node_modules/.bin/vite", "preview", "--host", "0.0.0.0", "--port", "5173"]

@@ -57,5 +57,8 @@ export default defineConfig(({ mode }) => {
     build: {
       target: "esnext",
     },
+    preview: {
+      allowedHosts: ["roadmap.cu3rd.ru"],
+    },
   };
 });
