@@ -71,12 +71,12 @@ export interface ValidateSemesterResponseDto {
 // POST /api/v1/planner/validate-roadmap/
 
 export interface ValidateRoadmapRequestDto {
-  passed_course_ids: UUID[];
   max_load?: number;
   roadmap: {
     semester: number;
     course_ids: UUID[];
   }[];
+  current_semester: SemesterNumber;
 }
 
 export interface ValidationResultDto {

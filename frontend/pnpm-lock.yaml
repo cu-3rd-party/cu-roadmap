@@ -59,9 +59,6 @@ importers:
       uuid:
         specifier: ^14.0.0
         version: 14.0.0
-      vis-network:
-        specifier: ^10.1.0
-        version: 10.1.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0)(keycharm@0.4.0)(uuid@14.0.0)(vis-data@8.0.4(uuid@14.0.0)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0)))(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0))
       workbox-window:
         specifier: ^7.3.0
         version: 7.4.1
@@ -696,10 +693,6 @@ packages:
     resolution: {integrity: sha512-+MKAJEOfaBe5SmV6t34p80MMKhjvUz0vRrvVJbPT0WElzaOJ/1xs+D+KDv+tD/NE5ujfrChEcshd4fLn0wpiqg==}
     peerDependencies:
       react: '>=16.8.0'
-
-  '@egjs/hammerjs@2.0.17':
-    resolution: {integrity: sha512-XQsZgjm2EcVUiZQf11UBJQfmZeEmOW8DpI1gsFeln6w0ae0ii4dMQEQ0kjl6DspdWX1aGY1/loyXnP0JS06e/A==}
-    engines: {node: '>=0.8.0'}
 
   '@emnapi/core@1.10.0':
     resolution: {integrity: sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw==}
@@ -2244,9 +2237,6 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
-  '@types/hammerjs@2.0.46':
-    resolution: {integrity: sha512-ynRvcq6wvqexJ9brDMS4BnBLzmr0e14d6ZJTEShTBWKymQiHwlAyGu0ZPEFI2Fh1U53F7tN9ufClWM5KvqkKOw==}
-
   '@types/istanbul-lib-coverage@2.0.6':
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
 
@@ -2757,10 +2747,6 @@ packages:
   common-tags@1.8.2:
     resolution: {integrity: sha512-gk/Z852D2Wtb//0I+kRFNKKE9dIIVirjoqPoA1wJU+XePVXZfGeBpk45+A1rKO4Q43prqWBNY/MiIeRLbPWUaA==}
     engines: {node: '>=4.0.0'}
-
-  component-emitter@2.0.0:
-    resolution: {integrity: sha512-4m5s3Me2xxlVKG9PkZpQqHQR7bgpnN7joDMJ4yvVkVXngjoITG76IaZmzmywSeRTeTpc6N6r3H3+KyUurV8OYw==}
-    engines: {node: '>=18'}
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
@@ -3555,9 +3541,6 @@ packages:
   jsx-ast-utils@3.3.5:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
-
-  keycharm@0.4.0:
-    resolution: {integrity: sha512-TyQTtsabOVv3MeOpR92sIKk/br9wxS+zGj4BG7CR8YbK4jM3tyIBaF0zhzeBUMx36/Q/iQLOKKOT+3jOQtemRQ==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -4494,29 +4477,6 @@ packages:
   uuid@14.0.0:
     resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
     hasBin: true
-
-  vis-data@8.0.4:
-    resolution: {integrity: sha512-TsN0sMHqIRpdfg6TNPtfdINpkgxtnQP6JNWCaiSwvou5seXqKiP5eERkaBg+Y56wyJ4FZTeOEs/dEmWEPrpltQ==}
-    peerDependencies:
-      uuid: ^3.4.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^13.0.0 || ^14.0.0
-      vis-util: '>=6.0.0'
-
-  vis-network@10.1.0:
-    resolution: {integrity: sha512-D7b5p/C6SwWv1BlH9EDdtP0Tje/PJzSBWKef9qy2DyTC14QB7KBcnAZxIyW2m7mFYyfoeR+k5GF747zDcIhaKA==}
-    peerDependencies:
-      '@egjs/hammerjs': ^2.0.0
-      component-emitter: ^1.3.0 || ^2.0.0
-      keycharm: ^0.2.0 || ^0.3.0 || ^0.4.0
-      uuid: ^3.4.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^13.0.0 || ^14.0.0
-      vis-data: '>=8.0.0'
-      vis-util: '>=6.0.0'
-
-  vis-util@6.0.0:
-    resolution: {integrity: sha512-qtpts3HRma0zPe4bO7t9A2uejkRNj8Z2Tb6do6lN85iPNWExFkUiVhdAq5uLGIUqBFduyYeqWJKv/jMkxX0R5g==}
-    engines: {node: '>=8'}
-    peerDependencies:
-      '@egjs/hammerjs': ^2.0.0
-      component-emitter: ^1.3.0 || ^2.0.0
 
   vite-plugin-pwa@1.3.0:
     resolution: {integrity: sha512-c5kMgN+ITrOtHXp8PAtk2uOIEea6XjP/unCGxOWWBzQ6qa65qj/awHg0wf+QF9E/2u9vh86LqxPwzEPNbM2r5A==}
@@ -5463,10 +5423,6 @@ snapshots:
     dependencies:
       react: 19.2.6
       tslib: 2.8.1
-
-  '@egjs/hammerjs@2.0.17':
-    dependencies:
-      '@types/hammerjs': 2.0.46
 
   '@emnapi/core@1.10.0':
     dependencies:
@@ -6910,8 +6866,6 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
-  '@types/hammerjs@2.0.46': {}
-
   '@types/istanbul-lib-coverage@2.0.6': {}
 
   '@types/istanbul-lib-report@3.0.3':
@@ -7475,8 +7429,6 @@ snapshots:
   commander@2.20.3: {}
 
   common-tags@1.8.2: {}
-
-  component-emitter@2.0.0: {}
 
   concat-map@0.0.1: {}
 
@@ -8404,8 +8356,6 @@ snapshots:
       array.prototype.flat: 1.3.3
       object.assign: 4.1.7
       object.values: 1.2.1
-
-  keycharm@0.4.0: {}
 
   keyv@4.5.4:
     dependencies:
@@ -9436,25 +9386,6 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   uuid@14.0.0: {}
-
-  vis-data@8.0.4(uuid@14.0.0)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0)):
-    dependencies:
-      uuid: 14.0.0
-      vis-util: 6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0)
-
-  vis-network@10.1.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0)(keycharm@0.4.0)(uuid@14.0.0)(vis-data@8.0.4(uuid@14.0.0)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0)))(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0)):
-    dependencies:
-      '@egjs/hammerjs': 2.0.17
-      component-emitter: 2.0.0
-      keycharm: 0.4.0
-      uuid: 14.0.0
-      vis-data: 8.0.4(uuid@14.0.0)(vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0))
-      vis-util: 6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0)
-
-  vis-util@6.0.0(@egjs/hammerjs@2.0.17)(component-emitter@2.0.0):
-    dependencies:
-      '@egjs/hammerjs': 2.0.17
-      component-emitter: 2.0.0
 
   vite-plugin-pwa@1.3.0(vite@7.3.3(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.1))(workbox-build@7.4.1(@types/babel__core@7.20.5))(workbox-window@7.4.1):
     dependencies:

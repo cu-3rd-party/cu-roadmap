@@ -25,5 +25,5 @@ export const buildSemesters = (
   }));
 
 // Delay for debounce
-export const beforeIdentifyMajorsDelay = 5000;
-export const beforeValidateRoadmapDelay = 5000;
+export const beforeIdentifyMajorsDelay = 2000;
+export const beforeValidateRoadmapDelay = 2000;

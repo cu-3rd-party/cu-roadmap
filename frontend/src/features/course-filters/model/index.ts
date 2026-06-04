@@ -2,8 +2,7 @@ export { createCourseFiltersStore } from "./createCourseFiltersStore";
 export {
   buildCategoryFilters,
   buildTypeFilters,
-  MAJOR_LABELS,
-  MAJOR_OPTIONS,
+  SEMESTER_OPTIONS,
   type CategoryFilterOption,
   type CourseFilterState,
 } from "./options";
