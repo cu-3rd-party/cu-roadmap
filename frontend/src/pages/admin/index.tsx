@@ -9,7 +9,7 @@ import {
   ArrowLeft,
   Loader2,
 } from "lucide-react";
-import { PrimaryButton } from "@/shared/ui";
+import { Button } from "@/shared/ui/kit/button";
 import { api } from "@/shared/config";
 import type { Course } from "@/shared/config";
 
@@ -206,7 +206,7 @@ export function AdminPage({ onBack }: { onBack: () => void }) {
             {(loginError || error) && (
               <div className="text-red-500 text-sm">{loginError || error}</div>
             )}
-            <PrimaryButton disabled={loginLoading}>Войти</PrimaryButton>
+            <Button disabled={loginLoading}>Войти</Button>
           </form>
         </div>
       </div>
