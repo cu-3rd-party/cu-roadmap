@@ -112,6 +112,49 @@ func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 }
 
 func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[string]string, sheetMapping map[string]SheetMajorMapping) (SyncResult, error) {
+	// Load existing data to preserve UUIDs across re-syncs.
+	existingCourseByNorm := make(map[string]uuid.UUID)
+	existingCourses, err := s.GetAllCourses()
+	if err != nil {
+		return SyncResult{}, fmt.Errorf("get existing courses: %w", err)
+	}
+	for id, c := range existingCourses {
+		existingCourseByNorm[NormalizeSheetTitle(c.Title)] = id
+	}
+
+	existingMajorByKey := make(map[string]uuid.UUID)
+	existingMajors, err := s.GetAllMajors()
+	if err != nil {
+		return SyncResult{}, fmt.Errorf("get existing majors: %w", err)
+	}
+	for id, m := range existingMajors {
+		key := m.Title
+		if m.CohortYear != 0 {
+			key = fmt.Sprintf("%s (%d)", m.Title, m.CohortYear)
+		}
+		existingMajorByKey[key] = id
+	}
+
+	existingReqs, err := s.GetAllMajorRequirements()
+	if err != nil {
+		return SyncResult{}, fmt.Errorf("get existing major requirements: %w", err)
+	}
+	existingReqByPair := make(map[string]uuid.UUID)
+	for _, r := range existingReqs {
+		key := r.MajorID.String() + "\x00" + r.CourseID.String()
+		existingReqByPair[key] = r.ID
+	}
+
+	existingDeps, err := s.GetCourseDependencies()
+	if err != nil {
+		return SyncResult{}, fmt.Errorf("get existing dependencies: %w", err)
+	}
+	existingDepByPair := make(map[string]uuid.UUID)
+	for _, d := range existingDeps {
+		key := d.CourseID.String() + "\x00" + d.RequiredCourseID.String() + "\x00" + string(d.DependencyType)
+		existingDepByPair[key] = d.ID
+	}
+
 	if err := s.ClearAll(); err != nil {
 		return SyncResult{}, fmt.Errorf("clear store: %w", err)
 	}
@@ -152,6 +195,9 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			reqType := requirementTypeFromSheetCourseType(getFirst(row, "Тип курса"))
 			if _, exists := courseMap[norm]; !exists {
 				course := MapSheetRowToCourse(row, mapping.Category)
+				if existingID, ok := existingCourseByNorm[norm]; ok {
+					course.ID = existingID
+				}
 				if _, err := s.CreateCourse(course); err != nil {
 					return SyncResult{}, fmt.Errorf("create course %s: %w", title, err)
 				}
@@ -166,6 +212,9 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 					majorKey = fmt.Sprintf("%s (%d)", major.Title, major.CohortYear)
 				}
 				if _, exists := majorsByTitle[majorKey]; !exists {
+					if existingID, ok := existingMajorByKey[majorKey]; ok {
+						major.ID = existingID
+					}
 					if _, err := s.CreateMajor(major); err != nil {
 						return SyncResult{}, fmt.Errorf("create major %s: %w", majorKey, err)
 					}
@@ -191,8 +240,13 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 					continue
 				}
 			}
+			depID := uuid.New()
+			depKey := entry.Course.ID.String() + "\x00" + target.ID.String() + "\x00" + string(enums.DependencyTypePrerequisite)
+			if existingID, ok := existingDepByPair[depKey]; ok {
+				depID = existingID
+			}
 			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
-				ID:               uuid.New(),
+				ID:               depID,
 				CourseID:         entry.Course.ID,
 				RequiredCourseID: target.ID,
 				DependencyType:   enums.DependencyTypePrerequisite,
@@ -217,8 +271,13 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 					continue
 				}
 			}
+			depID := uuid.New()
+			depKey := entry.Course.ID.String() + "\x00" + target.ID.String() + "\x00" + string(enums.DependencyTypeCorequisite)
+			if existingID, ok := existingDepByPair[depKey]; ok {
+				depID = existingID
+			}
 			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
-				ID:               uuid.New(),
+				ID:               depID,
 				CourseID:         entry.Course.ID,
 				RequiredCourseID: target.ID,
 				DependencyType:   enums.DependencyTypeCorequisite,
@@ -236,8 +295,13 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			if !exists {
 				continue
 			}
+			reqID := uuid.New()
+			reqKey := major.ID.String() + "\x00" + course.ID.String()
+			if existingID, ok := existingReqByPair[reqKey]; ok {
+				reqID = existingID
+			}
 			if _, err := s.CreateMajorRequirement(interfaces.MajorRequirementData{
-				ID:              uuid.New(),
+				ID:              reqID,
 				MajorID:         major.ID,
 				CourseID:        course.ID,
 				RequirementType: reqType,
