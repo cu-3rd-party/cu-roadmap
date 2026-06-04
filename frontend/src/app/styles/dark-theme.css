@@ -78,7 +78,7 @@
   --accent-pale-hover: oklch(0.3783 0.0059 258.35);
   --accent-pale-pressed: oklch(0.8538 0.0047 258.33);
 
-    /* background / surface */
+  /* background / surface */
   --backdrop: oklch(0.2273 0.0038 286.09);
   --background: oklch(0.1776 0 0);
   --background-alt: oklch(0.252 0 0);
@@ -209,8 +209,10 @@
 
   body {
     @apply bg-background text-fg-primary;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family:
+      "Inter",
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
-  
-
 }
