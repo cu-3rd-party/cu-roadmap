@@ -130,9 +130,9 @@ func (s *PlannerService) FindPathToCourse(
 
 		if len(availableOffered) == 0 {
 			roadmap = append(roadmap, map[string]interface{}{
-				"semester": currentSem,
-				"courses":  []interface{}{},
-				"status":   "Waiting for correct semester offering",
+				"semester":   currentSem,
+				"course_ids": []interface{}{},
+				"status":     "Waiting for correct semester offering",
 			})
 		} else {
 			var semCourses []interfaces.CourseData
@@ -143,19 +143,15 @@ func (s *PlannerService) FindPathToCourse(
 					semLoad += c.Workload
 				}
 			}
-			var semCoursesOut []map[string]interface{}
+			var semCoursesOut []string
 			for _, c := range semCourses {
 				currentPassed[c.ID] = true
 				delete(coursesTodo, c.ID)
-				semCoursesOut = append(semCoursesOut, map[string]interface{}{
-					"id":       c.ID.String(),
-					"title":    c.Title,
-					"workload": c.Workload,
-				})
+				semCoursesOut = append(semCoursesOut, c.ID.String())
 			}
 			roadmap = append(roadmap, map[string]interface{}{
 				"semester":   currentSem,
-				"courses":    semCoursesOut,
+				"course_ids": semCoursesOut,
 				"total_load": semLoad,
 			})
 		}

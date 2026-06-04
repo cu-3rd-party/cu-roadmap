@@ -942,19 +942,13 @@ components:
         status:
           type: string
           nullable: true
-        courses:
+        course_ids:
           type: array
-          description: используется в ответе goal-path
+          description: используется в ответе goal-path, содержит UUID курсов которые надо пройти
           items:
-            type: object
-            properties:
-              id:
-                type: string
-                format: uuid
-              title:
-                type: string
-              workload:
-                type: number
+            type: string
+            format: uuid
+            description: молимся что на фронте все курсы будут
 
     PlannerRoadmapSemester:
       type: object
