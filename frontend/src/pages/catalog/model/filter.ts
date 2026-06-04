@@ -11,8 +11,10 @@ const matchesCourse = (course: Course, filters: CourseFilterState) => {
   const typeOk =
     filters.types.length === 0 || filters.types.includes(course.type);
 
-  // TODO
-  const majorOk = true;
+  const semesterOk =
+    filters.semesters.length === 0 ||
+    (course.recommendedSemester != null &&
+      filters.semesters.includes(String(course.recommendedSemester)));
 
   const query = filters.search.trim().toLowerCase();
   const searchOk =
@@ -20,7 +22,7 @@ const matchesCourse = (course: Course, filters: CourseFilterState) => {
     course.title.toLowerCase().includes(query) ||
     (course.description?.toLowerCase().includes(query) ?? false);
 
-  return typeOk && majorOk && searchOk;
+  return typeOk && semesterOk && searchOk;
 };
 
 // Apply all filters to all catalogs, if catalog is not included in catalog filters or becomes empty after inside filtration - the whole block will not show up

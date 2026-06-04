@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/app/providers";
 import { SettingsModal } from "@/features/settings";
 import { isPathActive } from "@/shared/lib";
+<<<<<<< HEAD
 import { Button } from "@/shared/ui/kit/button";
 
 const NAV_ITEMS = [
@@ -12,6 +13,16 @@ const NAV_ITEMS = [
   {
     label: "Каталог курсов",
     active: true,
+=======
+import { Button } from "@/shared/ui";
+
+import { NavItem, themeToggleEnabled } from "../model";
+
+const NAV_ITEMS: NavItem[] = [
+  { label: "Планировщик", icon: <Map />, path: "/planner" },
+  {
+    label: "Каталог курсов",
+>>>>>>> feature/ui-rework
     icon: <Compass />,
     path: "/catalog",
   },
@@ -41,6 +52,7 @@ export const Navbar = () => {
       </nav>
 
       <div className="flex items-center gap-2">
+<<<<<<< HEAD
         <Button
           onClick={toggleTheme}
           variant="navInactive"
@@ -49,6 +61,18 @@ export const Navbar = () => {
           className="rounded-full"
           aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
         />
+=======
+        {themeToggleEnabled && (
+          <Button
+            onClick={toggleTheme}
+            variant="navInactive"
+            size="sm"
+            icon={theme === "dark" ? <Sun /> : <Moon />}
+            className="rounded-full"
+            aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+          />
+        )}
+>>>>>>> feature/ui-rework
 
         <Button
           onClick={() => setSettingsOpen(true)}

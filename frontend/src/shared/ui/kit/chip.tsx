@@ -7,7 +7,7 @@ import { cn } from "@/shared/lib/cn";
 const chipVariants = cva(
   [
     "group/chip inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full select-none",
-    "py-0.5 font-medium whitespace-nowrap transition-all",
+    "py-0.5 font-medium whitespace-nowrap transition-all duration-(--std-duration)",
     "has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&>svg]:pointer-events-none",
     "text-fg-primary [&>svg]:text-fg-tertiary",
   ].join(" "),

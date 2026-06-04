@@ -62,22 +62,28 @@ export const CourseSearchFilter = ({
         onChange={(event) => handleSearchChange(event.target.value)}
       />
       <div className="flex flex-wrap gap-2">
-        {categories.map((category) => (
-          <Chip
-            key={category.id}
-            variant="counter"
-            size="xs"
-            active={selected.includes(category.id)}
-            onClick={() => handleToggleCategory(category.id)}
-          >
-            {category.label}
-            {category.count !== undefined && (
-              <Counter variant="primary" size="xxs">
-                {category.count}
-              </Counter>
-            )}
-          </Chip>
-        ))}
+        {categories.map((category) => {
+          const isSelected = selected.includes(category.id);
+          return (
+            <Chip
+              key={category.id}
+              variant="counter"
+              size="xs"
+              active={isSelected}
+              onClick={() => handleToggleCategory(category.id)}
+            >
+              {category.label}
+              {category.count !== undefined && (
+                <Counter
+                  variant={isSelected ? "positive" : "primary"}
+                  size="xxs"
+                >
+                  {category.count}
+                </Counter>
+              )}
+            </Chip>
+          );
+        })}
       </div>
     </>
   );

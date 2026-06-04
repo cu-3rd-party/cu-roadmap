@@ -3,7 +3,7 @@ import { Chip } from "@/shared/ui";
 import {
   buildCategoryFilters,
   buildTypeFilters,
-  MAJOR_OPTIONS,
+  SEMESTER_OPTIONS,
   type CategoryFilterOption,
   type CourseFilterState,
 } from "../model";
@@ -18,11 +18,11 @@ const CATEGORY_OPTIONS = buildCategoryFilters();
 interface CourseFiltersProps {
   value: CourseFilterState;
   onToggleType: (type: string) => void;
-  onToggleMajor: (major: string) => void;
+  onToggleSemester: (semester: string) => void;
   onToggleCategory: (id: string) => void;
   onSearchChange: (search: string) => void;
   types?: { id: string; label: string }[];
-  majors?: readonly string[];
+  semesters?: readonly string[];
   categories?: CategoryFilterOption[];
   loading?: boolean;
 }
@@ -30,31 +30,31 @@ interface CourseFiltersProps {
 export const CourseFilters = ({
   value,
   onToggleType,
-  onToggleMajor,
+  onToggleSemester,
   onToggleCategory,
   onSearchChange,
   types = TYPE_OPTIONS,
-  majors = MAJOR_OPTIONS,
+  semesters = SEMESTER_OPTIONS,
   categories = CATEGORY_OPTIONS,
   loading = false,
 }: CourseFiltersProps) => {
   return (
     <div className="flex flex-col gap-1">
       <div className="grid gap-1 sm:grid-cols-2">
-        <FilterCard label="Мейджор">
+        <FilterCard label="Рекомендованный семестр">
           {loading ? (
-            <ChipSkeletonRow widths={[72, 104, 88, 64, 96]} />
+            <ChipSkeletonRow widths={[32, 32, 32, 32, 32, 32, 32, 32]} />
           ) : (
             <div className="flex flex-wrap gap-2">
-              {majors.map((major) => (
+              {semesters.map((semester) => (
                 <Chip
                   variant="action"
-                  key={major}
+                  key={semester}
                   size="xs"
-                  active={value.majors.includes(major)}
-                  onClick={() => onToggleMajor(major)}
+                  active={value.semesters.includes(semester)}
+                  onClick={() => onToggleSemester(semester)}
                 >
-                  {major}
+                  {semester}
                 </Chip>
               ))}
             </div>

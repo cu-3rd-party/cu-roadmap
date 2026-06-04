@@ -16,5 +16,8 @@ export {
   type CourseDetails,
   type RequisiteItem,
   type Season,
+<<<<<<< HEAD
   MOCK_COURSE_DETAILS,
+=======
+>>>>>>> feature/ui-rework
 } from "./model/details";

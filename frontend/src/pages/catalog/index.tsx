@@ -21,7 +21,7 @@ import {
 
 const CatalogPage = () => {
   const { admissionYear } = useSettingsStore();
-  const { filters, toggleType, toggleMajor, toggleCategory, setSearch } =
+  const { filters, toggleType, toggleSemester, toggleCategory, setSearch } =
     useCatalogFiltersStore();
 
   const {
@@ -29,10 +29,7 @@ const CatalogPage = () => {
     isLoading: coursesLoading,
     isError,
   } = useCoursesQuery(admissionYear);
-  const { data: majors, isLoading: majorsLoading } =
-    useMajorsQuery(admissionYear);
-
-  const filtersLoading = coursesLoading || majorsLoading;
+  const { data: majors } = useMajorsQuery(admissionYear);
 
   const categories = useMemo(
     () => buildCatalogCategories(courses ?? []),
@@ -47,11 +44,6 @@ const CatalogPage = () => {
   const visibleCategories = useMemo(
     () => filterCatalog(categories, filters),
     [categories, filters],
-  );
-
-  const majorTitles = useMemo(
-    () => majors?.map((major) => major.title) ?? [],
-    [majors],
   );
 
   const titleMap = useMemo(() => buildCourseTitleMap(courses ?? []), [courses]);
@@ -85,11 +77,10 @@ const CatalogPage = () => {
         <CollapsiblePanel title="Фильтры">
           <CourseFilters
             value={filters}
-            majors={majorTitles}
             categories={categoryOptions}
-            loading={filtersLoading}
+            loading={coursesLoading}
             onToggleType={toggleType}
-            onToggleMajor={toggleMajor}
+            onToggleSemester={toggleSemester}
             onToggleCategory={toggleCategory}
             onSearchChange={setSearch}
           />

@@ -1,1 +1,6 @@
-export { buildPlannerStats, buildSemesters } from "./options";
+export {
+  buildPlannerStats,
+  buildSemesters,
+  beforeIdentifyMajorsDelay,
+  beforeValidateRoadmapDelay,
+} from "./options";

@@ -8,15 +8,15 @@ import { buildIdentifyMajorsRequest } from "./buildIdentifyMajorsRequest";
 import { identifyMajors } from "./identifyMajors";
 
 // Order-independent key so reordering selections doesn't refetch.
-export const identifyMajorsQueryKey = (courseIds: string[]) =>
-  ["majors", "identify", [...courseIds].sort()] as const;
+export const identifyMajorsQueryKey = (courseIds: string[], year: AdmissionYear | null) =>
+  ["majors", "identify", [...courseIds].sort(), year] as const;
 
 export const useIdentifyMajorsQuery = (
   courseIds: string[],
   year: AdmissionYear | null,
 ) =>
   useQuery({
-    queryKey: identifyMajorsQueryKey(courseIds),
+    queryKey: identifyMajorsQueryKey(courseIds, year),
     queryFn: () =>
       identifyMajors(buildIdentifyMajorsRequest(courseIds, year!), year!).then(
         (dtos) =>

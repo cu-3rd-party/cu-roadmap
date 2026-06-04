@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCoursesQuery } from "@/entities/course";
@@ -6,45 +7,61 @@ import { useIdentifyMajorsQuery, useMajorsQuery } from "@/entities/major";
 import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
 import { useSettingsStore } from "@/features/settings";
 import { toPercent } from "@/shared/lib";
+=======
+import { useEffect, useMemo } from "react";
+
+import { useCoursesQuery } from "@/entities/course";
+import { useIdentifyMajorsQuery, useMajorsQuery } from "@/entities/major";
+import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
+import { useSettingsStore } from "@/features/settings";
+import { toPercent, useDebouncedValue } from "@/shared/lib";
+>>>>>>> feature/ui-rework
 import type { MajorProgress } from "@/widgets/PlannerSummary";
 import { PlannerSummary } from "@/widgets/PlannerSummary";
 import { SemesterSection } from "@/widgets/SemesterSection";
 
-import { buildPlannerStats, buildSemesters } from "./model";
+import {
+  beforeIdentifyMajorsDelay,
+  beforeValidateRoadmapDelay,
+  buildPlannerStats,
+  buildSemesters,
+} from "./model";
 
 const PlannerPage = () => {
   const { admissionYear } = useSettingsStore();
   const { selections, validation } = usePlannerStore();
   const { data: courses, isLoading, isError } = useCoursesQuery(admissionYear);
 
-  // Validate once on first load so a returning user immediately sees the conflicts
+  // Re-validate the whole plan whenever the selection settles. Debounced so
+  // rapid drag/drop edits collapse into one request; the initial value passes
+  // through immediately, so a returning user still sees conflicts on first load.
   const validate = useValidatePlan();
-  const validatedOnMount = useRef(false);
+  const debouncedSelections = useDebouncedValue(
+    selections,
+    beforeValidateRoadmapDelay,
+  );
   useEffect(() => {
-    if (validatedOnMount.current || admissionYear == null) return;
-    validatedOnMount.current = true;
+    if (admissionYear == null) return;
     validate(admissionYear);
-  }, [admissionYear, validate]);
+  }, [debouncedSelections, admissionYear, validate]);
 
   // Identify majors from every course placed in the planner.
   const selectedCourseIds = useMemo(
     () => Object.values(selections).flatMap((list) => list.map((c) => c.id)),
     [selections],
   );
-  const identifyQuery = useIdentifyMajorsQuery(
+
+  // Debounce the ids that drive the request: only fire once the selection has been stable
+  const debouncedCourseIds = useDebouncedValue(
     selectedCourseIds,
+    beforeIdentifyMajorsDelay,
+  );
+  // Because debounced course ids haven't updated in a meanwhile, query key won't change and query won't fire
+  const identifyQuery = useIdentifyMajorsQuery(
+    debouncedCourseIds,
     admissionYear,
   );
   const majorsQuery = useMajorsQuery(admissionYear);
-
-  // Remember the last result produced while courses were selected. When the
-  // planner is emptied we keep showing the same major cards (titles) with 0%
-  // instead of clearing them.
-  const noCourses = selectedCourseIds.length === 0;
-  const [lastMatches, setLastMatches] = useState<MajorMatch[]>([]);
-  useEffect(() => {
-    if (!noCourses && identifyQuery.data) setLastMatches(identifyQuery.data);
-  }, [noCourses, identifyQuery.data]);
 
   // First-load only: header + buttons stay live, the 6-cell grid shows
   // skeletons. keepPreviousData keeps isLoading false on later updates.
@@ -57,24 +74,14 @@ const PlannerPage = () => {
   );
 
   const plannerMajors: MajorProgress[] = useMemo(() => {
-    // With no courses, reuse the previous matches' titles (or the initial
-    // mount data if nothing has been selected yet) and zero out the progress.
-    const source = noCourses
-      ? lastMatches.length > 0
-        ? lastMatches
-        : (identifyQuery.data ?? [])
-      : (identifyQuery.data ?? []);
+    const source = identifyQuery.data ?? [];
 
     return source.map((match) => ({
       title: majorTitleById.get(match.id) ?? match.title,
-      earnedPct: noCourses
-        ? 0
-        : toPercent(match.coveredCount, match.totalCount),
-      availablePct: noCourses
-        ? 0
-        : toPercent(match.canCoverCount, match.totalCount),
+      earnedPct: toPercent(match.coveredCount, match.totalCount),
+      availablePct: toPercent(match.canCoverCount, match.totalCount),
     }));
-  }, [noCourses, lastMatches, identifyQuery.data, majorTitleById]);
+  }, [identifyQuery.data, majorTitleById]);
 
   // Conflicts are error/warning validation messages across all semesters.
   const conflictCount = useMemo(
