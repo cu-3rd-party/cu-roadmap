@@ -108,6 +108,9 @@ func validateRoadmap(c *gin.Context) {
 	if req.MaxLoad == 0 {
 		req.MaxLoad = 12.0
 	}
+	if req.CurrentSemester == 0 {
+		req.CurrentSemester = 1
+	}
 	err := req.Validate()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -132,11 +135,16 @@ func validateRoadmap(c *gin.Context) {
 		return
 	}
 
+	initialPassed := make(map[uuid.UUID]bool)
 	var roadmapData []map[string]interface{}
+
 	for _, sem := range req.Roadmap {
 		courseIDs := make([]string, len(sem.CourseIDs))
 		for i, cid := range sem.CourseIDs {
 			courseIDs[i] = cid.String()
+			if sem.Semester < req.CurrentSemester {
+				initialPassed[cid] = true
+			}
 		}
 		roadmapData = append(roadmapData, map[string]interface{}{
 			"semester":   sem.Semester,
@@ -144,24 +152,7 @@ func validateRoadmap(c *gin.Context) {
 		})
 	}
 
-	initialPassed := make(map[uuid.UUID]bool)
-	for _, id := range req.PassedCourseIDs {
-		initialPassed[id] = true
-	}
-
-	roadmapDataConverted := make([]map[string]interface{}, len(req.Roadmap))
-	for i, sem := range req.Roadmap {
-		courseIDs := make([]string, len(sem.CourseIDs))
-		for j, cid := range sem.CourseIDs {
-			courseIDs[j] = cid.String()
-		}
-		roadmapDataConverted[i] = map[string]interface{}{
-			"semester":   sem.Semester,
-			"course_ids": courseIDs,
-		}
-	}
-
-	results := validator.ValidateFullRoadmap(roadmapDataConverted, initialPassed, req.MaxLoad)
+	results := validator.ValidateFullRoadmap(roadmapData, initialPassed, req.MaxLoad)
 	c.JSON(http.StatusOK, gin.H{"validation_results": results})
 }
 

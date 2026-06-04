@@ -756,13 +756,13 @@ func TestValidateRoadmapNoMaxLoad(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/v1/planner/validate-roadmap/", strings.NewReader(`{
-  "passed_course_ids": [],
   "roadmap": [
     {
       "semester": 0,
       "course_ids": []
     }
-  ]
+  ],
+  "current_semester": 1
 }`))
 	router.ServeHTTP(w, req)
 

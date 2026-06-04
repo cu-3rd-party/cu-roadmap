@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -156,6 +158,73 @@ func TestValidateFullRoadmapMissingPrereq(t *testing.T) {
 	}
 
 	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	assert.False(t, results[0]["valid"].(bool))
+}
+
+func TestValidateFullRoadmapPrereqInSameSemester(t *testing.T) {
+	s, c1, c2, _ := newTestData()
+	defer s.Close()
+
+	allCourses, _ := s.GetAllCourses()
+	validator := NewRoadmapValidator(allCourses)
+	validator.LoadDependencies(s)
+
+	roadmap := []map[string]interface{}{
+		{"semester": 1, "course_ids": []string{c2.ID.String(), c1.ID.String()}},
+	}
+
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	assert.Len(t, results, 1)
+	assert.False(t, results[0]["valid"].(bool))
+}
+
+func TestValidateFullRoadmapPrereqAfterCourse(t *testing.T) {
+	s, c1, c2, _ := newTestData()
+	defer s.Close()
+
+	allCourses, _ := s.GetAllCourses()
+	validator := NewRoadmapValidator(allCourses)
+	validator.LoadDependencies(s)
+
+	roadmap := []map[string]interface{}{
+		{"semester": 1, "course_ids": []string{c2.ID.String()}},
+		{"semester": 2, "course_ids": []string{c1.ID.String()}},
+	}
+
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	assert.Len(t, results, 2)
+	assert.False(t, results[0]["valid"].(bool))
+}
+
+func TestValidateFullRoadmapCoreqsInDifferentSemesters(t *testing.T) {
+	s := store.NewMemoryStore()
+	s.Init("admin")
+	defer s.Close()
+
+	c1 := interfaces.CourseData{ID: uuid.New(), Title: "Python Basics", Workload: 4.0, AvailableSemesters: []int{1, 2}}
+	c4 := interfaces.CourseData{ID: uuid.New(), Title: "Coreq Course", Workload: 3.0, AvailableSemesters: []int{1, 2}}
+
+	s.CreateCourse(c1)
+	s.CreateCourse(c4)
+
+	s.CreateCourseDependency(interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         c4.ID,
+		RequiredCourseID: c1.ID,
+		DependencyType:   enums.DependencyTypeCorequisite,
+	})
+
+	allCourses, _ := s.GetAllCourses()
+	validator := NewRoadmapValidator(allCourses)
+	validator.LoadDependencies(s)
+
+	roadmap := []map[string]interface{}{
+		{"semester": 1, "course_ids": []string{c4.ID.String()}},
+		{"semester": 2, "course_ids": []string{c1.ID.String()}},
+	}
+
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	assert.Len(t, results, 2)
 	assert.False(t, results[0]["valid"].(bool))
 }
 
