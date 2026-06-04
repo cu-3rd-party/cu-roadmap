@@ -29,6 +29,7 @@ COPY --from=install /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 COPY index.html /app/
 COPY vite.config.ts ./
+COPY manifest.ts ./
 
 EXPOSE 5173
 
