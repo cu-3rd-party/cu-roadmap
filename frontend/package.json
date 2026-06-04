@@ -18,7 +18,7 @@
     "test": "vitest",
     "format:eslint": "pnpm lint:eslint --fix",
     "format:check": "prettier --check .",
-    "format:prettier": "prettier \"**/*.{json,js,ts,tsx}\" --write",
+    "format:prettier": "prettier \"**/*.{json,js,ts,tsx,html,yaml,css}\" --write",
     "format": "pnpm format:eslint && pnpm format:prettier",
     "lint:eslint": "eslint \"**/*.{js,ts,tsx}\"",
     "lint:prettier": "prettier \"**/*.{json,js,ts,tsx}\" --check --write",
