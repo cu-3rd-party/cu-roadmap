@@ -1,11 +1,7 @@
 import { Waypoints } from "lucide-react";
 import { useState } from "react";
 
-<<<<<<< HEAD
-import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
-=======
 import { usePlannerStore } from "@/entities/roadmap";
->>>>>>> feature/ui-rework
 import { useSettingsStore } from "@/features/settings";
 import { TrajectorySelectModal } from "@/features/trajectory-select";
 import { admissionYearToSemester } from "@/shared/constants";

@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-import { useEffect, useMemo, useRef, useState } from "react";
-
-import { useCoursesQuery } from "@/entities/course";
-import type { MajorMatch } from "@/entities/major";
-import { useIdentifyMajorsQuery, useMajorsQuery } from "@/entities/major";
-import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
-import { useSettingsStore } from "@/features/settings";
-import { toPercent } from "@/shared/lib";
-=======
 import { useEffect, useMemo } from "react";
 
 import { useCoursesQuery } from "@/entities/course";
@@ -15,7 +5,6 @@ import { useIdentifyMajorsQuery, useMajorsQuery } from "@/entities/major";
 import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
 import { useSettingsStore } from "@/features/settings";
 import { toPercent, useDebouncedValue } from "@/shared/lib";
->>>>>>> feature/ui-rework
 import type { MajorProgress } from "@/widgets/PlannerSummary";
 import { PlannerSummary } from "@/widgets/PlannerSummary";
 import { SemesterSection } from "@/widgets/SemesterSection";

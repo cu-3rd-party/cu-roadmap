@@ -25,15 +25,7 @@ import {
   type Course,
 } from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
-<<<<<<< HEAD
-import {
-  isSemesterCompleted,
-  usePlannerStore,
-  useValidatePlan,
-} from "@/entities/roadmap";
-=======
 import { isSemesterCompleted, usePlannerStore } from "@/entities/roadmap";
->>>>>>> feature/ui-rework
 import { CourseSelectModal } from "@/features/course-select";
 import { useSettingsStore } from "@/features/settings";
 import { Button, CollapsiblePanel, Panel } from "@/shared/ui";

@@ -131,10 +131,6 @@
   --fg-tertiary-hover: oklch(0.8538 0.0047 258.33);
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> feature/ui-rework
 @theme inline {
   --std-duration: 300ms;
   --radius-sm: calc(var(--radius) - 4px);
@@ -204,10 +200,6 @@
   --color-fg-tertiary-hover: var(--fg-tertiary-hover);
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> feature/ui-rework
 @layer base {
   * {
     @apply border-border;
@@ -215,16 +207,6 @@
 
   body {
     @apply bg-background text-fg-primary;
-<<<<<<< HEAD
-    font-family:
-      "Inter",
-      system-ui,
-      -apple-system,
-      sans-serif;
-  }
-}
-=======
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
->>>>>>> feature/ui-rework

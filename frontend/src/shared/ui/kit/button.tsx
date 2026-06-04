@@ -1,8 +1,4 @@
 import { cva, type VariantProps } from "class-variance-authority";
-<<<<<<< HEAD
-import { Loader2 } from "lucide-react";
-=======
->>>>>>> feature/ui-rework
 import { Slot } from "radix-ui";
 import * as React from "react";
 
