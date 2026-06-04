@@ -1,0 +1,1 @@
+export { getInsertedText } from "./getInsertedText";

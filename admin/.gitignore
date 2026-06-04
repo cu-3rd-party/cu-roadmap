@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.git
+.idea
+*.log
+log.md
+guide.md
+docs
+CLAUDE.md
+.claude

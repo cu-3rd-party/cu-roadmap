@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/app/providers";
 import { SidebarButton } from "@/shared/ui";
-import { AdminPage } from "@/pages/admin";
+
 import { WizardPage } from "@/pages/wizard";
 import { CoursesPage } from "@/pages/courses";
 import { PlannerPage } from "@/pages/planner";
@@ -23,13 +23,8 @@ import { GraphPage } from "@/pages/graph";
 import { MajorsPage } from "@/pages/majors";
 import type { RoadmapData } from "@/shared/config";
 
-function isAdminRoute() {
-  return window.location.pathname.startsWith("/admin");
-}
-
 export default function App() {
   const { theme, toggleTheme } = useTheme();
-  const [isAdmin, setIsAdmin] = useState(isAdminRoute);
   const [activeTab, setActiveTab] = useState("wizard");
   const [passedIds, setPassedIds] = useState<string[]>([]);
   const [manualRoadmap, setManualRoadmap] = useState<
@@ -44,22 +39,7 @@ export default function App() {
   const [plannerLoading, setPlannerLoading] = useState(false);
   const [triggerGenerate, _setTriggerGenerate] = useState(0);
 
-  useEffect(() => {
-    const onPopState = () => setIsAdmin(isAdminRoute());
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
 
-  if (isAdmin) {
-    return (
-      <AdminPage
-        onBack={() => {
-          window.history.pushState({}, "", "/");
-          setIsAdmin(false);
-        }}
-      />
-    );
-  }
 
   return (
     <div className="flex flex-col h-screen">

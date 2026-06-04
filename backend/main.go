@@ -93,7 +93,7 @@ func main() {
 	origins := make([]string, 0, 2)
 	origins = append(origins, "https://roadmap.cu3rd.ru")
 	if gin.IsDebugging() {
-		origins = append(origins, "http://localhost:5173")
+		origins = append(origins, "http://localhost:5173", "http://localhost:5174")
 	}
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     origins,
