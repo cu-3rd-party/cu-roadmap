@@ -1,238 +1,121 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { api, type RoadmapData, type Course } from "@/shared/config";
-import { SemesterCard } from "@/widgets/SemesterCard";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-interface PlannerPageProps {
-  passedIds: string[];
-  setPassedIds: React.Dispatch<React.SetStateAction<string[]>>;
-  roadmapCourseIds: string[];
-  triggerGenerate: number;
-  setData: React.Dispatch<React.SetStateAction<RoadmapData | null>>;
-  data: RoadmapData | null;
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  loading: boolean;
-}
+import { useCoursesQuery } from "@/entities/course";
+import type { MajorMatch } from "@/entities/major";
+import { useIdentifyMajorsQuery, useMajorsQuery } from "@/entities/major";
+import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
+import { useSettingsStore } from "@/features/settings";
+import { toPercent } from "@/shared/lib";
+import type { MajorProgress } from "@/widgets/PlannerSummary";
+import { PlannerSummary } from "@/widgets/PlannerSummary";
+import { SemesterSection } from "@/widgets/SemesterSection";
 
-type PlannerCourseSource = "passed" | "selected";
+import { buildPlannerStats, buildSemesters } from "./model";
 
-interface Major {
-  id: string;
-  title: string;
-}
+const PlannerPage = () => {
+  const { admissionYear } = useSettingsStore();
+  const { selections, validation } = usePlannerStore();
+  const { data: courses, isLoading, isError } = useCoursesQuery(admissionYear);
 
-export function PlannerPage({
-  passedIds,
-  setPassedIds,
-  roadmapCourseIds,
-  triggerGenerate,
-  setData,
-  data,
-  setLoading,
-  loading,
-}: PlannerPageProps) {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [majors, setMajors] = useState<Major[]>([]);
-  const [selectedMajor, setSelectedMajor] = useState("");
-  const [startSem, setStartSem] = useState(1);
-  const [courseSource, setCourseSource] =
-    useState<PlannerCourseSource>("passed");
-
+  // Validate once on first load so a returning user immediately sees the conflicts
+  const validate = useValidatePlan();
+  const validatedOnMount = useRef(false);
   useEffect(() => {
-    api.getCourses().then((res) => setCourses(res.data));
-    api.getMajors().then((res) => {
-      setMajors(res.data);
-      if (res.data.length > 0) setSelectedMajor(res.data[0].id);
-    });
-  }, []);
+    if (validatedOnMount.current || admissionYear == null) return;
+    validatedOnMount.current = true;
+    validate(admissionYear);
+  }, [admissionYear, validate]);
 
-  const generatePlan = useCallback(() => {
-    if (!selectedMajor) return;
-    setLoading(true);
-    api
-      .generateRoadmap({
-        passed_course_ids: passedIds,
-        selected_course_ids: roadmapCourseIds,
-        course_source: courseSource,
-        major_id: selectedMajor,
-        current_semester: startSem,
-        max_load: 12.0,
-      })
-      .then((res) => {
-        setData({
-          ...res.data,
-          roadmap: res.data.roadmap.map((semester) => ({
-            ...semester,
-            courses:
-              semester.courses?.length > 0
-                ? semester.courses
-                : (semester.course_ids || [])
-                    .map((id) => courses.find((course) => course.id === id))
-                    .filter((course): course is Course => Boolean(course)),
-          })),
-        });
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, [
-    selectedMajor,
-    passedIds,
-    roadmapCourseIds,
-    courseSource,
-    startSem,
-    setData,
-    setLoading,
-    courses,
-  ]);
+  // Identify majors from every course placed in the planner.
+  const selectedCourseIds = useMemo(
+    () => Object.values(selections).flatMap((list) => list.map((c) => c.id)),
+    [selections],
+  );
+  const identifyQuery = useIdentifyMajorsQuery(
+    selectedCourseIds,
+    admissionYear,
+  );
+  const majorsQuery = useMajorsQuery(admissionYear);
 
+  // Remember the last result produced while courses were selected. When the
+  // planner is emptied we keep showing the same major cards (titles) with 0%
+  // instead of clearing them.
+  const noCourses = selectedCourseIds.length === 0;
+  const [lastMatches, setLastMatches] = useState<MajorMatch[]>([]);
   useEffect(() => {
-    if (triggerGenerate > 0) generatePlan();
-  }, [triggerGenerate, generatePlan]);
+    if (!noCourses && identifyQuery.data) setLastMatches(identifyQuery.data);
+  }, [noCourses, identifyQuery.data]);
 
-  const fixPrereq = (courseTitle: string) => {
-    const target = courses.find((c) => courseTitle.includes(c.title));
-    if (target && !passedIds.includes(target.id)) {
-      setPassedIds((prev: string[]) => [...prev, target.id]);
-      setTimeout(generatePlan, 100);
-    }
-  };
+  // First-load only: header + buttons stay live, the 6-cell grid shows
+  // skeletons. keepPreviousData keeps isLoading false on later updates.
+  const summaryLoading = identifyQuery.isLoading || majorsQuery.isLoading;
+
+  // Resolve display titles from the real majors list, matched by id.
+  const majorTitleById = useMemo(
+    () => new Map((majorsQuery.data ?? []).map((m) => [m.id, m.title])),
+    [majorsQuery.data],
+  );
+
+  const plannerMajors: MajorProgress[] = useMemo(() => {
+    // With no courses, reuse the previous matches' titles (or the initial
+    // mount data if nothing has been selected yet) and zero out the progress.
+    const source = noCourses
+      ? lastMatches.length > 0
+        ? lastMatches
+        : (identifyQuery.data ?? [])
+      : (identifyQuery.data ?? []);
+
+    return source.map((match) => ({
+      title: majorTitleById.get(match.id) ?? match.title,
+      earnedPct: noCourses ? 0 : toPercent(match.coveredCount, match.totalCount),
+      availablePct: noCourses
+        ? 0
+        : toPercent(match.canCoverCount, match.totalCount),
+    }));
+  }, [noCourses, lastMatches, identifyQuery.data, majorTitleById]);
+
+  // Conflicts are error/warning validation messages across all semesters.
+  const conflictCount = useMemo(
+    () =>
+      validation.reduce(
+        (sum, sem) =>
+          sum +
+          sem.messages.length,
+        0,
+      ),
+    [validation],
+  );
+
+  const stats = useMemo(
+    () => buildPlannerStats(selectedCourseIds.length, conflictCount),
+    [selectedCourseIds.length, conflictCount],
+  );
+
+  const semesters = useMemo(
+    () => buildSemesters(admissionYear),
+    [admissionYear],
+  );
 
   return (
-    <div className="flex flex-col w-full">
-      <div
-        className="text-xs uppercase font-semibold tracking-wide mb-2"
-        style={{ color: "var(--color-text-muted)" }}
-      >
-        Траектория &gt; Планировщик
-      </div>
-      <h1
-        className="text-3xl font-extrabold mb-8 tracking-tight"
-        style={{ color: "var(--color-text-main)" }}
-      >
-        Построение траектории
-      </h1>
-      <p className="mb-5" style={{ color: "var(--color-text-muted)" }}>
-        Укажите мейджор и семестр, с которого вы хотите начать планирование.
-      </p>
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
+      <PlannerSummary
+        stats={stats}
+        majors={plannerMajors}
+        loading={summaryLoading}
+      />
 
-      <div
-        className="flex gap-6 items-end pb-6"
-        style={{ borderColor: "var(--color-border)", borderBottomWidth: 1 }}
-      >
-        <div className="flex flex-col gap-2 flex-1">
-          <label
-            className="text-xs font-bold uppercase"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            Целевое направление (Major)
-          </label>
-          <select
-            value={selectedMajor}
-            onChange={(e) => setSelectedMajor(e.target.value)}
-            className="w-full p-2.5 border rounded-lg text-base"
-            style={{
-              backgroundColor: "var(--color-bg-main)",
-              color: "var(--color-text-main)",
-              borderColor: "var(--color-border)",
-            }}
-          >
-            {majors.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.title}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-2 w-44">
-          <label
-            className="text-xs font-bold uppercase"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            Текущий семестр
-          </label>
-          <input
-            type="number"
-            value={startSem}
-            onChange={(e) => setStartSem(parseInt(e.target.value))}
-            min={1}
-            max={8}
-            className="w-full p-2.5 border rounded-lg text-base"
-            style={{
-              backgroundColor: "var(--color-bg-main)",
-              color: "var(--color-text-main)",
-              borderColor: "var(--color-border)",
-            }}
-          />
-        </div>
-        <div className="flex flex-col gap-2 w-72">
-          <label
-            className="text-xs font-bold uppercase"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            Учитывать курсы
-          </label>
-          <select
-            value={courseSource}
-            onChange={(e) =>
-              setCourseSource(e.target.value as PlannerCourseSource)
-            }
-            className="w-full p-2.5 border rounded-lg text-base"
-            style={{
-              backgroundColor: "var(--color-bg-main)",
-              color: "var(--color-text-main)",
-              borderColor: "var(--color-border)",
-            }}
-          >
-            <option value="passed">Только реально пройденные</option>
-            <option value="selected">Все курсы из траектории</option>
-          </select>
-        </div>
-        <button
-          className="text-white border-none px-5 py-2.5 rounded-lg font-bold text-sm cursor-pointer h-10"
-          style={{ backgroundColor: "var(--color-primary)" }}
-          onClick={generatePlan}
-          disabled={loading}
-        >
-          {loading ? "Строим..." : "Рассчитать"}
-        </button>
-      </div>
-
-      {data?.roadmap && (
-        <div className="flex flex-col gap-8 mt-10">
-          <div className="flex items-center gap-3">
-            <div
-              className="h-px flex-1 bg-border"
-              style={{ backgroundColor: "var(--color-border)" }}
-            ></div>
-            <div
-              className="px-4 py-1.5 rounded-full text-sm font-bold border"
-              style={{
-                borderColor: "var(--color-primary)",
-                color: "var(--color-primary)",
-              }}
-            >
-              План для:{" "}
-              {majors.find((m) => m.id === selectedMajor)?.title ||
-                selectedMajor}
-            </div>
-            <div
-              className="h-px flex-1 bg-border"
-              style={{ backgroundColor: "var(--color-border)" }}
-            ></div>
-          </div>
-          {data.roadmap.map((sem, idx: number) => (
-            <SemesterCard
-              key={idx}
-              semester={sem}
-              fixPrereq={fixPrereq}
-              allCourses={courses}
-              passedIds={passedIds}
-            />
-          ))}
-        </div>
-      )}
+      {semesters.map((semester) => (
+        <SemesterSection
+          key={semester.index}
+          index={semester.index}
+          dateRange={semester.dateRange}
+          courses={courses ?? []}
+          coursesLoading={isLoading}
+          coursesError={isError}
+        />
+      ))}
     </div>
   );
-}
+};
+
+export default PlannerPage;
