@@ -381,13 +381,37 @@ func TestIdentifyMajorWithCohortYear(t *testing.T) {
 	// Total requirements for SE 2025: c1, c2, c3 (3)
 	// Covered: c1 (1)
 	// Score: 1 / 3 = 0.333...
-	// Can Cover: c2 has no prerequisites (so all its prereqs are met) -> 1
-	//            c3 requires c1, and we passed c1 -> 1
-	// So Can Cover = 2
+	// Can Cover: c2 is not allowed for the 2025 cohort -> 0
+	//            c3 requires c1, and we passed c1, and it is offered in a future semester -> 1
+	// So Can Cover = 1
 	assert.InDelta(t, 0.333, analysis[0]["score"].(float64), 0.01)
 	assert.Equal(t, float64(1), analysis[0]["covered_count"])
-	assert.Equal(t, float64(2), analysis[0]["can_cover_count"])
+	assert.Equal(t, float64(1), analysis[0]["can_cover_count"])
 	assert.Equal(t, float64(3), analysis[0]["total_count"])
+}
+
+func TestIdentifyMajorCanCoverRespectsRemainingOfferings(t *testing.T) {
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		m1 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech", CohortYear: 2025}
+		s.CreateMajor(m1)
+
+		c1 := interfaces.CourseData{ID: uuid.New(), Title: "Capstone", AllowedCohorts: []int{2025}, AvailableSemesters: []int{7}, Workload: 3.0}
+		s.CreateCourse(c1)
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/majors/identify/2025", strings.NewReader(`{"passed_course_ids":[],"current_semester":8}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var analysis []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &analysis)
+	assert.Len(t, analysis, 1)
+	assert.Equal(t, float64(0), analysis[0]["covered_count"])
+	assert.Equal(t, float64(0), analysis[0]["can_cover_count"])
+	assert.Equal(t, float64(1), analysis[0]["total_count"])
 }
 
 func findCourseByTitle(courses []map[string]interface{}, title string) map[string]interface{} {

@@ -13,14 +13,14 @@ export interface CategoryFilterOption {
 
 export interface CourseFilterState {
   types: string[];
-  majors: string[];
+  semesters: string[];
   categories: string[];
   search: string;
 }
 
 export const EMPTY_FILTERS: CourseFilterState = {
   types: [],
-  majors: [],
+  semesters: [],
   categories: [],
   search: "",
 };
@@ -37,11 +37,13 @@ export const buildTypeFilters = (): CategoryFilterOption[] =>
     label: typeSlugToName[id],
   }));
 
-export const MAJOR_OPTIONS = ["ИИ", "Разработка", "Бизнес"] as const;
-
-// Major badge labels: maps the filter's RU major values to short display labels.
-export const MAJOR_LABELS: Record<string, string> = {
-  ИИ: "AI",
-  Разработка: "SE",
-  Бизнес: "Business",
-};
+export const SEMESTER_OPTIONS = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+] as const;

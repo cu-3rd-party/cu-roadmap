@@ -11,7 +11,7 @@ const toggle = (list: string[], value: string) =>
 interface CourseFiltersStore {
   filters: CourseFilterState;
   toggleType: (type: string) => void;
-  toggleMajor: (major: string) => void;
+  toggleSemester: (semester: string) => void;
   toggleCategory: (id: string) => void;
   setSearch: (search: string) => void;
   reset: () => void;
@@ -39,11 +39,11 @@ export const createCourseFiltersStore = ({
           types: toggle(state.filters.types, type),
         },
       })),
-    toggleMajor: (major) =>
+    toggleSemester: (semester) =>
       set((state) => ({
         filters: {
           ...state.filters,
-          majors: toggle(state.filters.majors, major),
+          semesters: toggle(state.filters.semesters, semester),
         },
       })),
     toggleCategory: (id) =>
@@ -70,7 +70,7 @@ export const createCourseFiltersStore = ({
       partialize: (state) => ({
         filters: {
           types: state.filters.types,
-          majors: state.filters.majors,
+          semesters: state.filters.semesters,
           categories: state.filters.categories,
           search: "",
         },

@@ -44,7 +44,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
-          rsync -avz --delete --progress docker-compose.yml backend frontend nginx metrics $SSH_USER@$SSH_HOST:${{ secrets.DEPLOY_PATH }}
+          rsync -avz --delete --progress docker-compose.yml backend frontend admin nginx metrics $SSH_USER@$SSH_HOST:${{ secrets.DEPLOY_PATH }}
 
       - name: Deploy to server
         env:

@@ -16,5 +16,4 @@ export {
   type CourseDetails,
   type RequisiteItem,
   type Season,
-  MOCK_COURSE_DETAILS,
 } from "./model/details";

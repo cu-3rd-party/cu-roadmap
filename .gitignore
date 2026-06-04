@@ -49,8 +49,5 @@ deploy.env
 *.sqlite
 *.db
 
-# Docker
-.dockerignore
-
 # bins
 .exe

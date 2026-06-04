@@ -25,11 +25,7 @@ import {
   type Course,
 } from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
-import {
-  isSemesterCompleted,
-  usePlannerStore,
-  useValidatePlan,
-} from "@/entities/roadmap";
+import { isSemesterCompleted, usePlannerStore } from "@/entities/roadmap";
 import { CourseSelectModal } from "@/features/course-select";
 import { useSettingsStore } from "@/features/settings";
 import { Button, CollapsiblePanel, Panel } from "@/shared/ui";
@@ -106,10 +102,6 @@ export const SemesterSection = ({
   const isCompleted =
     admissionYear != null && isSemesterCompleted(index, admissionYear);
 
-  // Re-validate the whole plan (stores result for the conflict panels/rings).
-  const validate = useValidatePlan();
-  const runValidation = () => validate(admissionYear);
-
   // This semester's conflict messages
   const semesterMessages = useMemo(
     () =>
@@ -146,7 +138,7 @@ export const SemesterSection = ({
   if (isCompleted && hideCompletedSemesters) return null;
 
   return (
-    <Panel className="relative border  border-positive-pale">
+    <Panel className="relative border">
       <div className="mb-4 flex items-center gap-2.5 px-1">
         <h2 className="text-lg font-bold text-fg-primary">{index} семестр</h2>
         <span className="text-sm text-fg-secondary">{dateRange}</span>
@@ -156,10 +148,7 @@ export const SemesterSection = ({
               variant="outline"
               size="sm"
               className="text-negative hover:text-fg-negative"
-              onClick={() => {
-                clearSemester(index);
-                runValidation();
-              }}
+              onClick={() => clearSemester(index)}
             >
               Сбросить курсы
             </Button>
@@ -206,14 +195,8 @@ export const SemesterSection = ({
                       moveTargets={moveTargetsFor(course.id)}
                       conflict={conflictIds.has(course.id)}
                       generated={generatedIds.has(course.id)}
-                      onRemove={() => {
-                        removeCourse(index, course.id);
-                        runValidation();
-                      }}
-                      onMove={(to) => {
-                        moveCourse(index, to, course.id);
-                        runValidation();
-                      }}
+                      onRemove={() => removeCourse(index, course.id)}
+                      onMove={(to) => moveCourse(index, to, course.id)}
                       details={detailsFor(course.id)}
                     />
                   ))}
@@ -253,10 +236,7 @@ export const SemesterSection = ({
         isLoading={coursesLoading}
         isError={coursesError}
         open={modalOpen}
-        onOpenChange={(open) => {
-          setModalOpen(open);
-          if (!open) runValidation();
-        }}
+        onOpenChange={setModalOpen}
       />
     </Panel>
   );

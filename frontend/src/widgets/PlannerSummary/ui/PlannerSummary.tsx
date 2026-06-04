@@ -1,7 +1,7 @@
 import { Waypoints } from "lucide-react";
 import { useState } from "react";
 
-import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
+import { usePlannerStore } from "@/entities/roadmap";
 import { useSettingsStore } from "@/features/settings";
 import { TrajectorySelectModal } from "@/features/trajectory-select";
 import { admissionYearToSemester } from "@/shared/constants";
@@ -27,7 +27,6 @@ export const PlannerSummary = ({
   loading,
 }: PlannerSummaryProps) => {
   const { reset } = usePlannerStore();
-  const validate = useValidatePlan();
   const { admissionYear, hideCompletedSemesters, setHideCompletedSemesters } =
     useSettingsStore();
   const [trajectoryOpen, setTrajectoryOpen] = useState(false);
@@ -39,10 +38,7 @@ export const PlannerSummary = ({
         ? admissionYearToSemester[admissionYear]
         : undefined,
     );
-    runValidation();
   };
-
-  const runValidation = () => validate(admissionYear);
 
   return (
     <Panel className="flex flex-col gap-4">
