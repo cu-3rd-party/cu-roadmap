@@ -8,8 +8,10 @@ import { buildIdentifyMajorsRequest } from "./buildIdentifyMajorsRequest";
 import { identifyMajors } from "./identifyMajors";
 
 // Order-independent key so reordering selections doesn't refetch.
-export const identifyMajorsQueryKey = (courseIds: string[], year: AdmissionYear | null) =>
-  ["majors", "identify", [...courseIds].sort(), year] as const;
+export const identifyMajorsQueryKey = (
+  courseIds: string[],
+  year: AdmissionYear | null,
+) => ["majors", "identify", [...courseIds].sort(), year] as const;
 
 export const useIdentifyMajorsQuery = (
   courseIds: string[],

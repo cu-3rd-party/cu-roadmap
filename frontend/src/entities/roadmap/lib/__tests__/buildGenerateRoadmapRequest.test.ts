@@ -21,7 +21,7 @@ describe("buildGenerateRoadmapRequest", () => {
       selections,
       2025,
       "major-1",
-      "completed",
+      "passed",
     );
 
     expect(result.passed_course_ids).toEqual(["c1", "c2"]);
@@ -40,14 +40,14 @@ describe("buildGenerateRoadmapRequest", () => {
       selections,
       2026,
       "major-1",
-      "all",
+      "selected",
     );
 
     expect(result.passed_course_ids).toEqual(["c1", "c2"]);
   });
 
   it("returns empty ids for empty selections", () => {
-    const result = buildGenerateRoadmapRequest({}, 2026, "major-1", "all");
+    const result = buildGenerateRoadmapRequest({}, 2026, "major-1", "selected");
 
     expect(result.passed_course_ids).toEqual([]);
   });
@@ -62,7 +62,7 @@ describe("buildGenerateRoadmapRequest", () => {
       selections,
       2025,
       "major-1",
-      "completed",
+      "passed",
     );
 
     expect(result.passed_course_ids).toEqual(["c2"]);
