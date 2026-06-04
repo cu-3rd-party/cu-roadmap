@@ -7,9 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type PlannedSemester struct {
+	Semester  int         `json:"semester"`
+	CourseIDs []uuid.UUID `json:"course_ids"`
+}
+
 type PlannerRequest struct {
 	PassedCourseIDs   []uuid.UUID        `json:"passed_course_ids" binding:"required"`
-	SelectedCourseIDs []uuid.UUID        `json:"selected_course_ids"`
+	SelectedCourseIDs []PlannedSemester  `json:"selected_course_ids"`
 	CourseSource      enums.CourseSource `json:"course_source"`
 	MajorID           uuid.UUID          `json:"major_id" binding:"required"`
 	CurrentSemester   int                `json:"current_semester" default:"1"`

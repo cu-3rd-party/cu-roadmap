@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
@@ -15,10 +16,11 @@ func NewDPPlanner(s interfaces.StoreBase) *DPPlanner {
 
 func (p *DPPlanner) GenerateRoadmap(
 	passedCourseIDs []uuid.UUID,
+	plannedSemesters []schemas.PlannedSemester,
 	majorID uuid.UUID,
 	currentSemester int,
 	maxLoad float64,
 	cohort int,
 ) (interface{}, error) {
-	return generateRoadmapWithStrategy(p.store, passedCourseIDs, majorID, currentSemester, maxLoad, cohort, selectDPSemester)
+	return generateRoadmapWithStrategy(p.store, passedCourseIDs, plannedSemesters, majorID, currentSemester, maxLoad, cohort, selectDPSemester)
 }

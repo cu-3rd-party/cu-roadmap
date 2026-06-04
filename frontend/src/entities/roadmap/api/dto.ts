@@ -15,6 +15,8 @@ export type RoadmapDto = RoadmapSemesterDto[];
 
 export interface GenerateRoadmapRequestDto {
   passed_course_ids: UUID[];
+  selected_course_ids?: { semester: number; course_ids: UUID[] }[];
+  course_source?: "passed" | "selected";
   major_id: UUID;
   // semester to start counter from
   current_semester?: SemesterNumber;

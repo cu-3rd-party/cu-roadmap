@@ -954,10 +954,17 @@ components:
             format: uuid
         selected_course_ids:
           type: array
-          description: UUID курсов, которые пользователь включил в свою траекторию
+          description: Курсы, которые пользователь жестко запланировал в конкретные будущие семестры
           items:
-            type: string
-            format: uuid
+            type: object
+            properties:
+              semester:
+                type: integer
+              course_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
         course_source:
           type: string
           description: какие курсы использовать как уже учтенные при генерации

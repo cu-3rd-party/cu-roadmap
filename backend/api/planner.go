@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 
-	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/service"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
@@ -12,13 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func getPlannerCourseIDs(req schemas.PlannerRequest) []uuid.UUID {
-	if req.CourseSource == enums.CourseSourceSelected && len(req.SelectedCourseIDs) > 0 {
-		return req.SelectedCourseIDs
-	}
 
-	return req.PassedCourseIDs
-}
 
 func RegisterPlannerRoutes(rg *gin.RouterGroup) {
 	rg.POST("/generate", generateRoadmap)
@@ -50,7 +43,7 @@ func generateRoadmap(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	roadmap, err := planner.GenerateRoadmap(getPlannerCourseIDs(req), req.MajorID, req.CurrentSemester, req.MaxLoad, req.Cohort)
+	roadmap, err := planner.GenerateRoadmap(req.PassedCourseIDs, req.SelectedCourseIDs, req.MajorID, req.CurrentSemester, req.MaxLoad, req.Cohort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

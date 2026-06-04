@@ -5,6 +5,7 @@ import (
 	"math"
 	"sort"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
@@ -19,9 +20,10 @@ type roadmapPlanningContext struct {
 	coreqs        map[uuid.UUID][]uuid.UUID
 	unlocksCount  map[uuid.UUID]int
 	passedIDs     map[uuid.UUID]bool
-	coursesTodo   map[uuid.UUID]interfaces.CourseData
-	coreCourseIDs map[uuid.UUID]bool
-	maxLoad       float64
+	coursesTodo       map[uuid.UUID]interfaces.CourseData
+	coreCourseIDs     map[uuid.UUID]bool
+	reservedForFuture map[uuid.UUID]bool
+	maxLoad           float64
 }
 
 type semesterBundle struct {
@@ -104,15 +106,17 @@ func newRoadmapPlanningContext(
 		coreqs:        coreqs,
 		unlocksCount:  unlocksCount,
 		passedIDs:     passedIDs,
-		coursesTodo:   coursesTodo,
-		coreCourseIDs: coreCourseIDs,
-		maxLoad:       maxLoad,
+		coursesTodo:       coursesTodo,
+		coreCourseIDs:     coreCourseIDs,
+		reservedForFuture: make(map[uuid.UUID]bool),
+		maxLoad:           maxLoad,
 	}, nil, nil
 }
 
 func generateRoadmapWithStrategy(
 	store interfaces.StoreBase,
 	passedCourseIDs []uuid.UUID,
+	plannedSemesters []schemas.PlannedSemester,
 	majorID uuid.UUID,
 	currentSemester int,
 	maxLoad float64,
@@ -124,24 +128,63 @@ func generateRoadmapWithStrategy(
 		return immediate, err
 	}
 
+	plannedBySem := make(map[int][]uuid.UUID)
+	allCourses, _ := store.GetAllCourses()
+	for _, ps := range plannedSemesters {
+		plannedBySem[ps.Semester] = append(plannedBySem[ps.Semester], ps.CourseIDs...)
+		for _, cid := range ps.CourseIDs {
+			if !ctx.passedIDs[cid] {
+				ctx.reservedForFuture[cid] = true
+				if _, ok := ctx.coursesTodo[cid]; !ok {
+					if c, exists := allCourses[cid]; exists {
+						ctx.coursesTodo[cid] = c
+					}
+				}
+			}
+		}
+	}
+
 	var roadmap []map[string]interface{}
-	for semester := currentSemester; len(ctx.coursesTodo) > 0 && semester <= 12; semester++ {
-		selected := selectSemester(ctx, semester)
-		if len(selected) == 0 {
-			continue
+	for semester := currentSemester; (len(ctx.coursesTodo) > 0 || len(plannedBySem) > 0) && semester <= 12; semester++ {
+		semLoad := 0.0
+		var courseIDs []string
+
+		var newlyPassed []uuid.UUID
+		if planned, ok := plannedBySem[semester]; ok {
+			for _, cid := range planned {
+				if course, exists := ctx.coursesTodo[cid]; exists {
+					courseIDs = append(courseIDs, cid.String())
+					semLoad += course.Workload
+					newlyPassed = append(newlyPassed, cid)
+					delete(ctx.coursesTodo, cid)
+					delete(ctx.reservedForFuture, cid)
+				}
+			}
+			delete(plannedBySem, semester)
 		}
 
-		courseIDs := make([]string, 0, len(selected))
-		semLoad := 0.0
-		for _, cid := range selected {
-			course, ok := ctx.coursesTodo[cid]
-			if !ok {
-				continue
+		originalMaxLoad := ctx.maxLoad
+		ctx.maxLoad = math.Max(0, originalMaxLoad-semLoad)
+
+		selected := selectSemester(ctx, semester)
+		
+		ctx.maxLoad = originalMaxLoad
+
+		if len(selected) > 0 {
+			for _, cid := range selected {
+				course, ok := ctx.coursesTodo[cid]
+				if !ok {
+					continue
+				}
+				courseIDs = append(courseIDs, cid.String())
+				semLoad += course.Workload
+				newlyPassed = append(newlyPassed, cid)
+				delete(ctx.coursesTodo, cid)
 			}
-			courseIDs = append(courseIDs, cid.String())
-			semLoad += course.Workload
+		}
+
+		for _, cid := range newlyPassed {
 			ctx.passedIDs[cid] = true
-			delete(ctx.coursesTodo, cid)
 		}
 
 		if len(courseIDs) == 0 {
@@ -168,6 +211,9 @@ func generateRoadmapWithStrategy(
 func availableCourseBundles(ctx *roadmapPlanningContext, semester int) []semesterBundle {
 	available := make([]interfaces.CourseData, 0, len(ctx.coursesTodo))
 	for cid, c := range ctx.coursesTodo {
+		if ctx.reservedForFuture[cid] {
+			continue
+		}
 		if !prereqsSatisfied(ctx, cid) || !offeredInSemester(c, semester) {
 			continue
 		}
@@ -395,6 +441,9 @@ func coreqsSchedulable(ctx *roadmapPlanningContext, cid uuid.UUID, semester int)
 	for _, reqID := range ctx.coreqs[cid] {
 		if ctx.passedIDs[reqID] {
 			continue
+		}
+		if ctx.reservedForFuture[reqID] {
+			return false
 		}
 		reqCourse, ok := ctx.coursesTodo[reqID]
 		if !ok || !prereqsSatisfied(ctx, reqID) || !offeredInSemester(reqCourse, semester) {

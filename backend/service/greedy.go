@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
@@ -15,12 +16,13 @@ func NewGreedyPlanner(s interfaces.StoreBase) *GreedyPlanner {
 
 func (p *GreedyPlanner) GenerateRoadmap(
 	passedCourseIDs []uuid.UUID,
+	plannedSemesters []schemas.PlannedSemester,
 	majorID uuid.UUID,
 	currentSemester int,
 	maxLoad float64,
 	cohort int,
 ) (interface{}, error) {
-	return generateRoadmapWithStrategy(p.store, passedCourseIDs, majorID, currentSemester, maxLoad, cohort, selectGreedySemester)
+	return generateRoadmapWithStrategy(p.store, passedCourseIDs, plannedSemesters, majorID, currentSemester, maxLoad, cohort, selectGreedySemester)
 }
 
 func cohortInSlice(cohort int, cohorts []int) bool {
