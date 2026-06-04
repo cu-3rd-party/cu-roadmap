@@ -8,6 +8,7 @@ services:
     depends_on:
       - backend
       - frontend
+      - admin
       - grafana
     restart: unless-stopped
 
@@ -63,6 +64,16 @@ services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./admin
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}

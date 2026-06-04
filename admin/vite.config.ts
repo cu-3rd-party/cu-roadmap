@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
     env.VITE_API_PROXY_TARGET || "https://roadmap.cu3rd.ru";
 
   return {
+    base: "/admin/",
     test: {
       globals: true,
       environment: "jsdom",
