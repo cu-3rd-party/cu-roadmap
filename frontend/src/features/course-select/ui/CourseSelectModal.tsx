@@ -4,18 +4,13 @@ import { CourseCard, CourseCardSkeleton, type Course } from "@/entities/course";
 import { usePlannerStore } from "@/entities/roadmap";
 import { CourseSearchFilter } from "@/features/course-filters";
 import type { SemesterNumber } from "@/shared/constants";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/shared/ui";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui";
 import { RevealImage } from "@/shared/ui/reveal-image";
 
 import {
   availableCategoryOptions,
   filterAvailableCourses,
-  useCourseSelectFiltersStore
+  useCourseSelectFiltersStore,
 } from "../model";
 
 interface CourseSelectModalProps {
@@ -114,7 +109,9 @@ export const CourseSelectModal = ({
           ) : (
             <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
               {visibleCourses.map((course) => {
-                const selectedSemester = semesterByCourseId.get(course.id) as SemesterNumber;
+                const selectedSemester = semesterByCourseId.get(
+                  course.id,
+                ) as SemesterNumber;
                 const isSelected = selectedSemester !== undefined;
                 return (
                   <CourseCard

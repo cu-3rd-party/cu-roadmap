@@ -67,7 +67,9 @@ const PlannerPage = () => {
 
     return source.map((match) => ({
       title: majorTitleById.get(match.id) ?? match.title,
-      earnedPct: noCourses ? 0 : toPercent(match.coveredCount, match.totalCount),
+      earnedPct: noCourses
+        ? 0
+        : toPercent(match.coveredCount, match.totalCount),
       availablePct: noCourses
         ? 0
         : toPercent(match.canCoverCount, match.totalCount),
@@ -76,13 +78,7 @@ const PlannerPage = () => {
 
   // Conflicts are error/warning validation messages across all semesters.
   const conflictCount = useMemo(
-    () =>
-      validation.reduce(
-        (sum, sem) =>
-          sum +
-          sem.messages.length,
-        0,
-      ),
+    () => validation.reduce((sum, sem) => sum + sem.messages.length, 0),
     [validation],
   );
 

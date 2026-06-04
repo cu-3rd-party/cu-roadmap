@@ -1,11 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { SemesterNumber } from "@/shared/constants";
-
 import type { SemesterValidation } from "./domain";
 import { PlannedCourse } from "./types";
-
 
 // Returns a new set with `ids` removed, or the same reference when nothing
 const omit = (source: Set<string>, ids: Iterable<string>): Set<string> => {

@@ -24,6 +24,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
 COPY --from=install /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 COPY index.html /app/

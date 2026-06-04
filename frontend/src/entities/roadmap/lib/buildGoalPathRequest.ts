@@ -14,7 +14,7 @@ export const buildGoalPathRequest = (
   selections: Record<number, PlannedCourse[]>,
   admissionYear: AdmissionYear,
   targetCourseId: UUID,
-  goalSemester?: SemesterNumber,
+  _goalSemester?: SemesterNumber,
 ): GoalPathRequestDto => {
   const passed_course_ids: UUID[] = [];
 
