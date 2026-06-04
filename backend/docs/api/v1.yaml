@@ -63,8 +63,28 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
     post:
-      # TODO: document this endpoint
-      description: Создать курс (метод для админ панельки).
+      description: создает курс
+      security:
+        - AdminCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseWriteRequest'
+      responses:
+        '201':
+          description: курс создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/courses/{cohort_year}:
     description: операции с курсами, отфильтрованными по году поступления
@@ -102,29 +122,6 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
-    post:
-      description: создает курс
-      security:
-        - AdminCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CourseWriteRequest'
-      responses:
-        '201':
-          description: курс создан
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IdResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/courses/{id}:
     parameters:
