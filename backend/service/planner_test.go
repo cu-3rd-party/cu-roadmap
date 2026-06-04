@@ -251,6 +251,75 @@ func TestGenerateRoadmapBaselineCompletesAllRequiredCourses(t *testing.T) {
 	})
 }
 
+func TestGenerateRoadmapRepeatsOddEvenAvailabilityBeyondSemesterEight(t *testing.T) {
+	s := store.NewMemoryStore()
+	s.Init("admin")
+	defer s.Close()
+
+	major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+	s.CreateMajor(major)
+
+	courseIDs := make([]uuid.UUID, 0, 7)
+	for i := 0; i < 6; i++ {
+		course := interfaces.CourseData{
+			ID:                 uuid.New(),
+			Title:              fmt.Sprintf("Prereq %d", i+1),
+			Description:        new("Generated"),
+			AvailableSemesters: []int{1, 2, 3, 4, 5, 6, 7, 8},
+			Workload:           3.0,
+		}
+		s.CreateCourse(course)
+		courseIDs = append(courseIDs, course.ID)
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         major.ID,
+			CourseID:        course.ID,
+			RequirementType: enums.RequirementTypeMajorCore,
+		})
+		if i > 0 {
+			s.CreateCourseDependency(interfaces.CourseDependencyData{
+				ID:               uuid.New(),
+				CourseID:         course.ID,
+				RequiredCourseID: courseIDs[i-1],
+				DependencyType:   enums.DependencyTypePrerequisite,
+			})
+		}
+	}
+
+	target := interfaces.CourseData{
+		ID:                 uuid.New(),
+		Title:              "Odd Only Final",
+		Description:        new("Generated"),
+		AvailableSemesters: []int{1, 3, 5, 7},
+		Workload:           3.0,
+	}
+	s.CreateCourse(target)
+	s.CreateMajorRequirement(interfaces.MajorRequirementData{
+		ID:              uuid.New(),
+		MajorID:         major.ID,
+		CourseID:        target.ID,
+		RequirementType: enums.RequirementTypeMajorCore,
+	})
+	s.CreateCourseDependency(interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         target.ID,
+		RequiredCourseID: courseIDs[len(courseIDs)-1],
+		DependencyType:   enums.DependencyTypePrerequisite,
+	})
+
+	runRoadmapPlannerTestsWithStore(t, s, func(t *testing.T, factory plannerFactory, planner RoadmapPlanner) {
+		roadmap, err := planner.GenerateRoadmap(nil, nil, major.ID, 3, 3.0, 0)
+		assert.NoError(t, err)
+
+		rm := roadmap.([]map[string]interface{})
+		assert.NotEmpty(t, rm)
+
+		last := rm[len(rm)-1]
+		assert.Equal(t, 9, last["semester"])
+		assert.Contains(t, last["course_ids"].([]string), target.ID.String())
+	})
+}
+
 func newSequentialPlannerData(courseCount int) (interfaces.StoreBase, uuid.UUID) {
 	s := store.NewMemoryStore()
 	s.Init("admin")
