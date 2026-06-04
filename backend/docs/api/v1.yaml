@@ -63,6 +63,8 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
     post:
+      # TODO: document this endpoint
+      description: Создать курс (метод для админ панельки).
 
   /api/v1/courses/{cohort_year}:
     description: операции с курсами, отфильтрованными по году поступления
@@ -80,7 +82,6 @@ paths:
           schema:
             type: integer
           description: год поступления (например, 2025) — значение по умолчанию
-          example: 2025
         - $ref: '#/components/parameters/CohortYears'
         - $ref: '#/components/parameters/CourseTitle'
         - $ref: '#/components/parameters/CourseTypes'
@@ -196,7 +197,6 @@ paths:
         schema:
           type: integer
         description: год поступления, для которого фильтруются требования мейджоров
-        example: 2025
     get:
       description: возвращает все мейджоры, отфильтрованные по году поступления
       responses:
@@ -278,7 +278,6 @@ paths:
           schema:
             type: integer
           description: год поступления, для которого фильтруются требования мейджоров
-          example: 2025
       requestBody:
         required: true
         content:
@@ -402,11 +401,10 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - password
               properties:
                 password:
                   type: string
+                  required: true
       responses:
         '201':
           description: успешный вход, токен установлен в HttpOnly cookie `auth-token`
@@ -488,7 +486,6 @@ components:
         фильтр по годам поступления (через запятую).
         курс включается, если у него пуст allowed_cohorts или есть совпадение.
         пример: `?cohort_year=2024,2025`
-      example: "2024,2025"
 
     CourseTitle:
       name: title
@@ -499,7 +496,6 @@ components:
       description: >
         фильтр по названию курса (регистронезависимое вхождение подстроки).
         пример: `?title=обр`
-      example: "обр"
 
     CourseTypes:
       name: course_type
