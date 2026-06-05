@@ -53,6 +53,7 @@ export const CourseFilters = ({
                   size="xs"
                   active={value.semesters.includes(semester)}
                   onClick={() => onToggleSemester(semester)}
+                  className="rounded-full size-8"
                 >
                   {semester}
                 </Chip>

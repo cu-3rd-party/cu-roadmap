@@ -10,7 +10,7 @@ export const StatusPanel = ({ messages }: StatusPanelProps) => (
       <Lock className="size-4 shrink-0" />
       Есть конфликты
     </div>
-    <ul className="list-disc space-y-0.5 pl-10 text-sm text-fg-secondary">
+    <ul className="list-disc space-y-0.5 pl-4 sm:pl-10 text-sm text-fg-secondary">
       {messages.map((message, i) => (
         <li key={i}>{message}</li>
       ))}

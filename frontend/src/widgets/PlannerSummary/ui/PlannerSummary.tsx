@@ -1,10 +1,11 @@
-import { Waypoints } from "lucide-react";
+import { RotateCcw, Sparkles, Waypoints } from "lucide-react";
 import { useState } from "react";
 
 import { usePlannerStore } from "@/entities/roadmap";
 import { useSettingsStore } from "@/features/settings";
 import { TrajectorySelectModal } from "@/features/trajectory-select";
 import { admissionYearToSemester } from "@/shared/constants";
+import { useMediaQuery } from "@/shared/lib";
 import { Button, Checkbox, Chip, Label, Panel } from "@/shared/ui";
 
 import { type MajorProgress, MajorProgressCard } from "./MajorProgressCard";
@@ -27,6 +28,7 @@ export const PlannerSummary = ({
   loading,
 }: PlannerSummaryProps) => {
   const { reset } = usePlannerStore();
+  const isMobile = useMediaQuery("md");
   const { admissionYear, hideCompletedSemesters, setHideCompletedSemesters } =
     useSettingsStore();
   const [trajectoryOpen, setTrajectoryOpen] = useState(false);
@@ -41,76 +43,86 @@ export const PlannerSummary = ({
   };
 
   return (
-    <Panel className="flex flex-col gap-4">
-      <div className="mb-4 flex items-start justify-between gap-4 px-1">
-        <div className="flex items-center gap-4">
-          <Chip variant="blue" size="sm">
-            <Waypoints />
-          </Chip>
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-bold text-fg-primary">
-              Планировщик траектории
-            </h1>
-            <p className="text-sm text-fg-secondary">
-              Расставь курсы по семестрам и собери свой план обучения.
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <Checkbox
-                id="hide-completed-semesters"
-                checked={hideCompletedSemesters}
-                onCheckedChange={(checked) =>
-                  setHideCompletedSemesters(checked === true)
-                }
-              />
-              <Label
-                htmlFor="hide-completed-semesters"
-                className="cursor-pointer text-sm font-normal text-fg-secondary"
-              >
-                Скрыть пройденные семестры
-              </Label>
-            </div>
+    <Panel className="flex flex-col gap-4 px-2 sm:px-4 lg:px-6">
+      <div className="mb-4 flex flex-col gap-3 px-1">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Chip variant="blue" size={isMobile ? "xs" : "sm"}>
+              <Waypoints />
+            </Chip>
+            <h1 className="text-2xl font-bold text-fg-primary">Планировщик</h1>
+          </div>
+
+          <div className="flex justify-center gap-4 lg:gap-6">
+            <Button
+              variant="outline"
+              size="sm"
+              className={isMobile ? "text-fg-expert-blue border-0" : undefined}
+              icon={isMobile ? <Sparkles /> : undefined}
+              onClick={() => setTrajectoryOpen(true)}
+            >
+              {isMobile ? undefined : "Подбор траектории"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`text-negative hover:text-fg-negative ${isMobile && "border-0"}`}
+              icon={isMobile ? <RotateCcw /> : undefined}
+              onClick={() => setResetOpen(true)}
+            >
+              {isMobile ? undefined : "Сбросить всё"}
+            </Button>
           </div>
         </div>
 
-        <div className="flex justify-center gap-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setTrajectoryOpen(true)}
+        <div className="flex flex-col gap-1">
+          <p className="text-sm text-fg-secondary">
+            Расставь курсы по семестрам и собери свой план обучения!
+          </p>
+          <p className="text-sm text-fg-secondary">
+            Карточки в одном семестре можно менять местами через перетягивание.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="hide-completed-semesters"
+            checked={hideCompletedSemesters}
+            onCheckedChange={(checked) =>
+              setHideCompletedSemesters(checked === true)
+            }
+          />
+          <Label
+            htmlFor="hide-completed-semesters"
+            className="cursor-pointer text-sm font-normal text-fg-secondary"
           >
-            Подбор траектории
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-negative hover:text-fg-negative"
-            onClick={() => setResetOpen(true)}
-          >
-            Сбросить всё
-          </Button>
+            Скрыть пройденные семестры
+          </Label>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-border [&>*:not(:nth-child(3n))]:border-r [&>*:nth-child(-n+3)]:border-b">
-        {loading ? (
-          <>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <SummaryStatCardSkeleton key={`stat-skeleton-${i}`} />
-            ))}
-            {Array.from({ length: 3 }).map((_, i) => (
-              <MajorProgressCardSkeleton key={`major-skeleton-${i}`} />
-            ))}
-          </>
-        ) : (
-          <>
-            {stats.map((stat) => (
-              <SummaryStatCard key={stat.label} {...stat} />
-            ))}
-            {majors.map((major) => (
-              <MajorProgressCard key={major.title} {...major} />
-            ))}
-          </>
-        )}
+      <div className="overflow-hidden rounded-xl border border-border">
+        {/* Summary stats — always a row of three */}
+        <div className="grid grid-cols-3 border-b [&>*:not(:nth-child(3n))]:border-r">
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <SummaryStatCardSkeleton key={`stat-skeleton-${i}`} />
+              ))
+            : stats.map((stat) => (
+                <SummaryStatCard key={stat.label} {...stat} />
+              ))}
+        </div>
+
+        {/* Major progress — column under sm, row of three at sm+ */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 [&>*:not(:last-child)]:border-b sm:[&>*:not(:last-child)]:border-b-0 sm:[&>*:not(:nth-child(3n))]:border-r">
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <MajorProgressCardSkeleton key={`major-skeleton-${i}`} />
+              ))
+            : majors.map((major) => (
+                <MajorProgressCard key={major.title} {...major} />
+              ))}
+        </div>
       </div>
 
       <TrajectorySelectModal

@@ -1,8 +1,8 @@
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, Info, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { SemesterNumber } from "@/shared/constants";
-import { cn } from "@/shared/lib";
+import { cn, useMediaQuery } from "@/shared/lib";
 import {
   categorySlugToName,
   categorySlugToShortName,
@@ -65,24 +65,25 @@ const CourseBadges = ({
   category,
   type,
   recommendedSemester,
+  isMobile,
   className,
 }: Pick<
   CourseCardProps,
   "variant" | "category" | "type" | "recommendedSemester"
-> & { className?: string }) => {
+> & { className?: string; isMobile: boolean }) => {
   if (!category && !type) return null;
   return (
     <div className={cn("flex flex-wrap gap-1", className)}>
       {category && (
         <Badge variant="orange" size="3xs">
-          {variant == "planned"
+          {variant == "planned" && !isMobile
             ? categorySlugToName[category]
             : categorySlugToShortName[category]}
         </Badge>
       )}
       {type && (
         <Badge variant="blue" size="3xs">
-          {variant == "planned"
+          {variant == "planned" && !isMobile
             ? typeSlugToName[type]
             : typeSlugToShortName[type]}
         </Badge>
@@ -113,6 +114,7 @@ export const CourseCard = ({
   onMove,
 }: CourseCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const isMobile = useMediaQuery("sm"); // max-width: 639.98px
 
   if (variant === "select") {
     return (
@@ -121,8 +123,8 @@ export const CourseCard = ({
         onClick={onSelect}
         aria-pressed={selected}
         className={cn(
-          "relative flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
-          "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+          "relative flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-2 px-2 sm:py-4 sm:px-3 text-left transition-colors duration-(--std-duration) ",
+          "cursor-pointer hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           selected && "border-accent/80",
         )}
       >
@@ -137,6 +139,7 @@ export const CourseCard = ({
           category={category}
           type={type}
           recommendedSemester={recommendedSemester}
+          isMobile={isMobile}
           className={cn("mt-auto", selectedSemester !== undefined && "pr-8")}
         />
         {selectedSemester !== undefined && (
@@ -174,6 +177,7 @@ export const CourseCard = ({
             category={category}
             type={type}
             recommendedSemester={recommendedSemester}
+            isMobile={isMobile}
             className="mt-auto"
           />
         </button>
@@ -195,7 +199,7 @@ export const CourseCard = ({
   return (
     <div
       className={cn(
-        "relative border-2 border-transparent transition-colors animate-[border-pulse-in_300ms_ease] flex h-full flex-col gap-3 rounded-xl bg-background p-4",
+        "relative border-2 border-transparent transition-colors animate-[border-pulse-in_300ms_ease] flex h-full flex-col gap-3 rounded-xl bg-background p-2 sm:p-4",
         generated && "border-expert-blue",
         conflict && "border-negative",
       )}
@@ -204,8 +208,8 @@ export const CourseCard = ({
         <div
           title={title}
           className={cn(
-            "line-clamp-2 min-h-[2lh] text-sm leading-snug font-medium text-fg-primary",
-            showMoveMenu && "pr-7",
+            "line-clamp-2 min-h-[2lh] text-xs sm:text-sm leading-snug font-medium text-fg-primary",
+            showMoveMenu && "pr-5 sm:pr-7",
           )}
         >
           {title}
@@ -214,6 +218,7 @@ export const CourseCard = ({
           variant="planned"
           category={category}
           type={type}
+          isMobile={isMobile}
           className="mt-auto"
         />
       </div>
@@ -239,18 +244,29 @@ export const CourseCard = ({
       <Separator />
 
       <div
-        className={`mt-auto flex items-center gap-2 ${variant === "planned" ? "justify-between" : "justify-center"}`}
+        className={cn(
+          "mt-auto flex items-center gap-2",
+          variant === "planned" ? "justify-between" : "justify-center",
+        )}
       >
         <Button
-          variant={variant === "planned" ? "tertiary" : "outline"}
+          variant={variant === "planned" ? "tertiaryPadded" : "outline"}
           size="xs"
+          className={isMobile ? "flex-1" : undefined}
+          icon={isMobile ? <Info size={20} /> : undefined}
           onClick={() => setDetailsOpen(true)}
         >
-          <span className="text-base">О курсе</span>
+          {isMobile ? undefined : <span className="text-base">О курсе</span>}
         </Button>
         {variant === "planned" && (
-          <Button variant="destructive" size="xs" onClick={onRemove}>
-            <span className="text-base">Удалить</span>
+          <Button
+            variant="destructive"
+            size="xs"
+            className={isMobile ? "flex-1" : undefined}
+            icon={isMobile ? <Trash2 size={20} /> : undefined}
+            onClick={onRemove}
+          >
+            {isMobile ? undefined : <span className="text-base">Удалить</span>}
           </Button>
         )}
       </div>

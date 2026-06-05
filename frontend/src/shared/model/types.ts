@@ -64,4 +64,11 @@ export const requirementSlugToName: Record<MajorRequirementType, string> = {
   selected_topics: "Other",
 };
 
+// TODO change in future
+export const majorToShortName: Record<string, string> = {
+  "Искусственный интеллект": "AI",
+  "Бизнес и аналитика": "Business",
+  Разработка: "SWE",
+};
+
 export type MajorSchool = "Tech" | "Business" | "Common";

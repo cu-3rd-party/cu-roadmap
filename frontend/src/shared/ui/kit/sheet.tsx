@@ -1,7 +1,12 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import { AnimatePresence, motion, type Transition } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  type PanInfo,
+  type Transition,
+} from "framer-motion";
 import { XIcon } from "lucide-react";
 import { Dialog as SheetPrimitive } from "radix-ui";
 import * as React from "react";
@@ -9,7 +14,15 @@ import * as React from "react";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/kit/button";
 
-const SheetOpenContext = React.createContext(false);
+interface SheetContextValue {
+  open: boolean;
+  requestClose: () => void;
+}
+
+const SheetContext = React.createContext<SheetContextValue>({
+  open: false,
+  requestClose: () => {},
+});
 
 function Sheet({
   open,
@@ -31,15 +44,20 @@ function Sheet({
     [isControlled, onOpenChange],
   );
 
+  const contextValue = React.useMemo<SheetContextValue>(
+    () => ({ open: resolvedOpen, requestClose: () => handleOpenChange(false) }),
+    [resolvedOpen, handleOpenChange],
+  );
+
   return (
-    <SheetOpenContext.Provider value={resolvedOpen}>
+    <SheetContext.Provider value={contextValue}>
       <SheetPrimitive.Root
         data-slot="sheet"
         open={resolvedOpen}
         onOpenChange={handleOpenChange}
         {...props}
       />
-    </SheetOpenContext.Provider>
+    </SheetContext.Provider>
   );
 }
 
@@ -93,18 +111,62 @@ const SHEET_TRANSITION: Transition = {
   ease: [0.16, 1, 0.3, 1],
 };
 
+// Swipe-to-dismiss tuning, per side: which axis to drag, the elastic give
+// (only in the dismiss direction so wrong-way drags resist), and whether a
+// drag release should close the sheet.
+const SWIPE_OFFSET = 120;
+const SWIPE_VELOCITY = 500;
+
+const SWIPE_CONFIG: Record<
+  Side,
+  {
+    axis: "x" | "y";
+    elastic: { top: number; bottom: number; left: number; right: number };
+    shouldClose: (info: PanInfo) => boolean;
+  }
+> = {
+  right: {
+    axis: "x",
+    elastic: { top: 0, bottom: 0, left: 0, right: 0.8 },
+    shouldClose: ({ offset, velocity }) =>
+      offset.x > SWIPE_OFFSET || velocity.x > SWIPE_VELOCITY,
+  },
+  left: {
+    axis: "x",
+    elastic: { top: 0, bottom: 0, left: 0.8, right: 0 },
+    shouldClose: ({ offset, velocity }) =>
+      offset.x < -SWIPE_OFFSET || velocity.x < -SWIPE_VELOCITY,
+  },
+  bottom: {
+    axis: "y",
+    elastic: { top: 0, bottom: 0.8, left: 0, right: 0 },
+    shouldClose: ({ offset, velocity }) =>
+      offset.y > SWIPE_OFFSET || velocity.y > SWIPE_VELOCITY,
+  },
+  top: {
+    axis: "y",
+    elastic: { top: 0.8, bottom: 0, left: 0, right: 0 },
+    shouldClose: ({ offset, velocity }) =>
+      offset.y < -SWIPE_OFFSET || velocity.y < -SWIPE_VELOCITY,
+  },
+};
+
 function SheetContent({
   className,
   children,
   side = "right",
   showCloseButton = true,
+  swipeToClose = false,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> &
   VariantProps<typeof sheetVariants> & {
     showCloseButton?: boolean;
+    swipeToClose?: boolean;
   }) {
-  const open = React.useContext(SheetOpenContext);
-  const offscreen = SHEET_OFFSCREEN[side ?? "right"];
+  const { open, requestClose } = React.useContext(SheetContext);
+  const resolvedSide = side ?? "right";
+  const offscreen = SHEET_OFFSCREEN[resolvedSide];
+  const swipe = SWIPE_CONFIG[resolvedSide];
 
   return (
     <AnimatePresence>
@@ -131,6 +193,15 @@ function SheetContent({
               animate={{ x: 0, y: 0 }}
               exit={offscreen}
               transition={SHEET_TRANSITION}
+              {...(swipeToClose && {
+                drag: swipe.axis,
+                dragConstraints: { top: 0, bottom: 0, left: 0, right: 0 },
+                dragElastic: swipe.elastic,
+                dragDirectionLock: true,
+                onDragEnd: (_e, info: PanInfo) => {
+                  if (swipe.shouldClose(info)) requestClose();
+                },
+              })}
             >
               {children}
               {showCloseButton && (

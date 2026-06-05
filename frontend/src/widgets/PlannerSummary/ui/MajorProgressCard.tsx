@@ -1,4 +1,6 @@
+import { useMediaQuery } from "@/shared/lib";
 import { cn } from "@/shared/lib/cn";
+import { majorToShortName } from "@/shared/model";
 import { AnimatedNumber } from "@/shared/ui/animated-number";
 import { SegmentedProgress } from "@/shared/ui/segmented-progress";
 
@@ -17,7 +19,7 @@ interface LegendRowProps {
 const LegendRow = ({ dotClassName, label, percent }: LegendRowProps) => (
   <div className="flex items-center gap-2 text-sm text-fg-secondary">
     <span className={cn("size-1.5 shrink-0 rounded-full", dotClassName)} />
-    <span>{label}</span>
+    <span className="text-xs sm:text-sm">{label}</span>
     <span className="ml-auto text-fg-primary text-sm">
       <AnimatedNumber value={percent} />%
     </span>
@@ -29,9 +31,12 @@ export const MajorProgressCard = ({
   earnedPct,
   availablePct,
 }: MajorProgress) => {
+  const isMobile = useMediaQuery("sm");
   return (
-    <div className="flex flex-col gap-3 p-5">
-      <span className="text-sm font-semibold text-fg-secondary">{title}</span>
+    <div className="flex flex-col gap-3 p-3 sm:p-5">
+      <span className="text-sm font-semibold text-fg-secondary">
+        {isMobile ? majorToShortName[title] : title}
+      </span>
 
       <SegmentedProgress
         animated

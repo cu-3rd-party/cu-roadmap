@@ -8,6 +8,7 @@ const CourseCardSkeleton = () => (
     <div className="mt-auto flex flex-wrap gap-1 pt-4">
       <Skeleton className="h-4 w-14 rounded-full" />
       <Skeleton className="h-4 w-10 rounded-full" />
+      <Skeleton className="h-4 w-10 rounded-full" />
     </div>
   </div>
 );
@@ -18,7 +19,7 @@ export const CoursesSectionSkeleton = ({ cards = 6 }: { cards?: number }) => (
       <Skeleton className="h-6 w-48" />
     </div>
 
-    <div className="grid gap-1 sm:grid-cols-4 lg:grid-cols-6">
+    <div className="grid gap-1 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
       {Array.from({ length: cards }).map((_, index) => (
         <CourseCardSkeleton key={index} />
       ))}

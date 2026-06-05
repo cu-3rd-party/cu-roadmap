@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { usePlannerStore } from "@/entities/roadmap";
 import { ADMISSION_YEARS, type AdmissionYear } from "@/shared/constants";
+import { useMediaQuery } from "@/shared/lib";
 import {
   Button,
   Dialog,
@@ -14,6 +15,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
 } from "@/shared/ui";
 
 import { useSettingsStore } from "../model";
@@ -27,6 +32,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const { admissionYear, setAdmissionYear } = useSettingsStore();
   const { reset } = usePlannerStore();
   const [selectedYear, setSelectedYear] = useState("");
+  const isMobile = useMediaQuery("sm");
 
   useEffect(() => {
     if (open) {
@@ -41,6 +47,56 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
     onOpenChange(false);
   };
 
+  const fields = (
+    <>
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-sm text-fg-primary">Год поступления</Label>
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="" />
+          </SelectTrigger>
+          <SelectContent>
+            {ADMISSION_YEARS.map((y) => (
+              <SelectItem key={y} value={String(y)}>
+                {y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button
+        size="md"
+        className="w-full"
+        variant="outline"
+        disabled={!selectedYear}
+        onClick={handleProceed}
+      >
+        Сохранить изменения
+      </Button>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          className="gap-0 overflow-hidden rounded-t-3xl bg-education-green-pale p-0"
+        >
+          <SheetHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">
+            <SheetTitle className="text-2xl font-bold text-fg-primary">
+              Настройки
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 rounded-t-2xl bg-background p-5">
+            {fields}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex w-[calc(100%-2rem)] max-w-md flex-col gap-0 overflow-hidden rounded-3xl bg-education-green-pale p-0">
@@ -49,35 +105,8 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
             Настройки
           </DialogTitle>
         </DialogHeader>
-
-        <div className="flex flex-col">
-          <div className="flex flex-col gap-4 rounded-2xl bg-background p-5">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm text-fg-primary">Год поступления</Label>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ADMISSION_YEARS.map((y) => (
-                    <SelectItem key={y} value={String(y)}>
-                      {y}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              size="md"
-              className="w-full"
-              variant="outline"
-              disabled={!selectedYear}
-              onClick={handleProceed}
-            >
-              Сохранить изменения
-            </Button>
-          </div>
+        <div className="flex flex-col gap-4 rounded-2xl bg-background p-5">
+          {fields}
         </div>
       </DialogContent>
     </Dialog>

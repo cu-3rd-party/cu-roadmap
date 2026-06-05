@@ -5,6 +5,7 @@ import { buildCourseTitleMap, useCoursesQuery } from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
 import { CourseFilters } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
+import { useMediaQuery } from "@/shared/lib";
 import { Chip, CollapsiblePanel, Panel } from "@/shared/ui";
 import {
   CoursesSection,
@@ -20,6 +21,7 @@ import {
 } from "./model";
 
 const CatalogPage = () => {
+  const isMobile = useMediaQuery("md");
   const { admissionYear } = useSettingsStore();
   const { filters, toggleType, toggleSemester, toggleCategory, setSearch } =
     useCatalogFiltersStore();
@@ -54,16 +56,17 @@ const CatalogPage = () => {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-1">
-      <Panel className="flex flex-col gap-4">
-        <div className="mb-4 flex items-center gap-4 px-1">
-          <Chip variant="blue" size="sm">
-            <Compass />
-          </Chip>
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
+      <Panel className="flex flex-col gap-4 px-2 sm:px-4 lg:px-6">
+        <div className="mb-4 flex flex-col gap-3 px-1">
+          <div className="flex w-full gap-4 h-10 items-center">
+            <Chip variant="blue" size={isMobile ? "xs" : "sm"}>
+              <Compass />
+            </Chip>
+            <h1 className="text-2xl font-bold text-fg-primary">Каталог</h1>
+          </div>
+
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-bold text-fg-primary">
-              Каталог курсов
-            </h1>
             <div className="text-sm text-fg-secondary flex flex-col gap-2">
               <p>Исследуй все доступные тебе курсы!</p>
               <p>

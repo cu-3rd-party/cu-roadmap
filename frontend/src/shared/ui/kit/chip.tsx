@@ -28,7 +28,7 @@ const chipVariants = cva(
       size: {
         "3xs": "h-5 px-1 text-xs [&>svg]:size-3!",
         xxs: "h-6 px-1.5 text-sm [&>svg]:size-4!",
-        xs: "h-8 px-2 text-sm [&>svg]:size-5!",
+        xs: "h-8 px-2 text-sm [&>svg]:size-4!",
         sm: "h-10 px-2.5 text-sm [&>svg]:size-5!",
       },
       active: {

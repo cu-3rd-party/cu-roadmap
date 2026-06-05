@@ -14,7 +14,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Check } from "lucide-react";
+import { Check, Trash } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import {
@@ -28,6 +28,7 @@ import { useMajorsQuery } from "@/entities/major";
 import { isSemesterCompleted, usePlannerStore } from "@/entities/roadmap";
 import { CourseSelectModal } from "@/features/course-select";
 import { useSettingsStore } from "@/features/settings";
+import { useMediaQuery } from "@/shared/lib";
 import { Button, CollapsiblePanel, Panel } from "@/shared/ui";
 
 import { AddCourseButton } from "./AddCourseButton";
@@ -48,6 +49,8 @@ export const SemesterSection = ({
   coursesLoading,
   coursesError,
 }: SemesterSectionProps) => {
+  const isMobile = useMediaQuery("sm");
+
   const [modalOpen, setModalOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const {
@@ -138,19 +141,22 @@ export const SemesterSection = ({
   if (isCompleted && hideCompletedSemesters) return null;
 
   return (
-    <Panel className="relative border">
+    <Panel className="relative px-2 sm:px-4 lg:px-6">
       <div className="mb-4 flex items-center gap-2.5 px-1">
-        <h2 className="text-lg font-bold text-fg-primary">{index} семестр</h2>
-        <span className="text-sm text-fg-secondary">{dateRange}</span>
+        <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 sm:items-center">
+          <h2 className="text-lg font-bold text-fg-primary">{index} семестр</h2>
+          <span className="text-sm text-fg-secondary">{dateRange}</span>
+        </div>
         <div className="ml-auto flex items-center gap-4">
           {courses.length > 0 && (
             <Button
               variant="outline"
               size="sm"
-              className="text-negative hover:text-fg-negative"
+              className={`text-negative hover:text-fg-negative ${isMobile && "border-0"}`}
+              icon={isMobile ? <Trash /> : undefined}
               onClick={() => clearSemester(index)}
             >
-              Сбросить курсы
+              {isMobile ? undefined : "Сбросить курсы"}
             </Button>
           )}
           {isCompleted && (
@@ -174,7 +180,7 @@ export const SemesterSection = ({
             : "Отметь уже пройденные в семестре курсы"
         }
       >
-        <div className="flex flex-col gap-1 p-1">
+        <div className="flex flex-col gap-1">
           {courses.length > 0 ? (
             <DndContext
               sensors={sensors}
@@ -184,7 +190,7 @@ export const SemesterSection = ({
               onDragCancel={handleDragCancel}
             >
               <SortableContext items={courseIds} strategy={rectSortingStrategy}>
-                <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-1 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {courses.map((course) => (
                     <SortableCourseCard
                       key={course.id}
