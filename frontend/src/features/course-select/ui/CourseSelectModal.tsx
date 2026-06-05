@@ -142,7 +142,8 @@ export const CourseSelectModal = ({
         <SheetContent
           side="bottom"
           aria-describedby={undefined}
-          className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden rounded-t-3xl bg-expert-blue-pale p-0"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="flex h-[90dvh] flex-col gap-0 overflow-hidden rounded-t-3xl bg-expert-blue-pale p-0"
         >
           <SheetHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">
             <SheetTitle className="text-2xl font-bold text-fg-primary">
