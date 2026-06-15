@@ -39,4 +39,3 @@ export const buildGoalPathRequest = (
     max_load: 30,
   };
 };
-

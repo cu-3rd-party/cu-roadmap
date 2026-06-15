@@ -549,8 +549,10 @@ func getFirst(row map[string]string, keys ...string) string {
 	return ""
 }
 
-var AllowedCohortsRegexp = regexp.MustCompile(`^(\d{4})\s*[-–]\s*(\d{4})$`)
-var YearRegexp = regexp.MustCompile(`\b(20\d{2})\b`)
+var (
+	AllowedCohortsRegexp = regexp.MustCompile(`^(\d{4})\s*[-–]\s*(\d{4})$`)
+	YearRegexp           = regexp.MustCompile(`\b(20\d{2})\b`)
+)
 
 func parseAllowedCohorts(raw string) []int {
 	if raw == "" {

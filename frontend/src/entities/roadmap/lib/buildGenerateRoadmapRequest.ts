@@ -45,4 +45,3 @@ export const buildGenerateRoadmapRequest = (
     max_load: 30,
   };
 };
-
