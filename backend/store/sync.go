@@ -183,18 +183,35 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 
 			norm := NormalizeSheetTitle(title)
 			cohorts := parseAllowedCohorts(getFirst(row, "Поток"))
-			var majors []interfaces.MajorData
 			if len(cohorts) == 0 {
-				majors = append(majors, interfaces.MajorData{ID: uuid.New(), Title: mapping.MajorTitle, School: mapping.School})
-			} else {
-				for _, c := range cohorts {
-					majors = append(majors, interfaces.MajorData{ID: uuid.New(), Title: mapping.MajorTitle, School: mapping.School, CohortYear: c})
+				if matches := YearRegexp.FindString(sheetName); matches != "" {
+					if year, err := strconv.Atoi(matches); err == nil {
+						cohorts = []int{year}
+					}
+				}
+			}
+
+			var majors []interfaces.MajorData
+			if mapping.Category != enums.CourseCategoryFundamentals {
+				if len(cohorts) == 0 {
+					majors = append(majors, interfaces.MajorData{ID: uuid.New(), Title: mapping.MajorTitle, School: mapping.School})
+				} else {
+					for _, c := range cohorts {
+						majors = append(majors, interfaces.MajorData{ID: uuid.New(), Title: mapping.MajorTitle, School: mapping.School, CohortYear: c})
+					}
 				}
 			}
 
 			reqType := requirementTypeFromSheetCourseType(getFirst(row, "Тип курса"))
 			if _, exists := courseMap[norm]; !exists {
 				course := MapSheetRowToCourse(row, mapping.Category)
+				if len(course.AllowedCohorts) == 0 {
+					if matches := YearRegexp.FindString(sheetName); matches != "" {
+						if year, err := strconv.Atoi(matches); err == nil {
+							course.AllowedCohorts = []int{year}
+						}
+					}
+				}
 				if existingID, ok := existingCourseByNorm[norm]; ok {
 					course.ID = existingID
 				}
@@ -204,6 +221,36 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				courseMap[norm] = course
 				courseToMajorReqs[norm] = make(map[string]enums.RequirementType)
 				allRows = append(allRows, rowEntry{Row: row, Course: course})
+			} else {
+				course := courseMap[norm]
+				rowCohorts := parseAllowedCohorts(getFirst(row, "Поток"))
+				if len(rowCohorts) == 0 {
+					if matches := YearRegexp.FindString(sheetName); matches != "" {
+						if year, err := strconv.Atoi(matches); err == nil {
+							rowCohorts = []int{year}
+						}
+					}
+				}
+				modified := false
+				for _, rc := range rowCohorts {
+					found := false
+					for _, ac := range course.AllowedCohorts {
+						if ac == rc {
+							found = true
+							break
+						}
+					}
+					if !found {
+						course.AllowedCohorts = append(course.AllowedCohorts, rc)
+						modified = true
+					}
+				}
+				if modified {
+					if _, err := s.UpdateCourse(course); err != nil {
+						return SyncResult{}, fmt.Errorf("update course %s: %w", title, err)
+					}
+					courseMap[norm] = course
+				}
 			}
 
 			for _, major := range majors {
@@ -231,7 +278,13 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 	}
 
 	for _, entry := range allRows {
-		for _, prereqTitle := range SplitSheetTitles(getFirst(entry.Row, "Пререквизиты")) {
+		for _, prereqTitle := range SplitSheetTitles(getFirst(
+			entry.Row,
+			"Пререквизиты",
+			"Пререквезиты",
+			"Пререквизиты ",
+			"Пререквезиты ",
+		)) {
 			norm := NormalizeSheetTitle(prereqTitle)
 			target, exists := courseMap[norm]
 			if !exists {
@@ -496,7 +549,10 @@ func getFirst(row map[string]string, keys ...string) string {
 	return ""
 }
 
-var AllowedCohortsRegexp = regexp.MustCompile(`^(\d{4})\s*[-–]\s*(\d{4})$`)
+var (
+	AllowedCohortsRegexp = regexp.MustCompile(`^(\d{4})\s*[-–]\s*(\d{4})$`)
+	YearRegexp           = regexp.MustCompile(`\b(20\d{2})\b`)
+)
 
 func parseAllowedCohorts(raw string) []int {
 	if raw == "" {
