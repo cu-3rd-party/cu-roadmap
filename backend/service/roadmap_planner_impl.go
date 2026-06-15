@@ -87,6 +87,53 @@ func newRoadmapPlanningContext(
 		}
 	}
 
+	// Recursively resolve prerequisite and corequisite dependencies
+	var resolveDependencies func(uuid.UUID, bool)
+	resolveDependencies = func(cid uuid.UUID, parentIsCore bool) {
+		for _, reqID := range prereqs[cid] {
+			if parentIsCore {
+				coreCourseIDs[reqID] = true
+			}
+			if _, exists := targetCourses[reqID]; !exists {
+				if c, ok := allCourses[reqID]; ok {
+					if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
+						continue
+					}
+					targetCourses[reqID] = c
+					resolveDependencies(reqID, parentIsCore)
+				}
+			} else if parentIsCore && !coreCourseIDs[reqID] {
+				coreCourseIDs[reqID] = true
+				resolveDependencies(reqID, true)
+			}
+		}
+		for _, reqID := range coreqs[cid] {
+			if parentIsCore {
+				coreCourseIDs[reqID] = true
+			}
+			if _, exists := targetCourses[reqID]; !exists {
+				if c, ok := allCourses[reqID]; ok {
+					if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
+						continue
+					}
+					targetCourses[reqID] = c
+					resolveDependencies(reqID, parentIsCore)
+				}
+			} else if parentIsCore && !coreCourseIDs[reqID] {
+				coreCourseIDs[reqID] = true
+				resolveDependencies(reqID, true)
+			}
+		}
+	}
+
+	initialCIDs := make([]uuid.UUID, 0, len(targetCourses))
+	for cid := range targetCourses {
+		initialCIDs = append(initialCIDs, cid)
+	}
+	for _, cid := range initialCIDs {
+		resolveDependencies(cid, coreCourseIDs[cid])
+	}
+
 	passedIDs := make(map[uuid.UUID]bool)
 	for _, id := range passedCourseIDs {
 		passedIDs[id] = true
