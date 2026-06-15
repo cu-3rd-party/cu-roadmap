@@ -42,6 +42,7 @@ export const buildGenerateRoadmapRequest = (
     major_id: majorId,
     cohort: admissionYear,
     current_semester: admissionYearToSemester[admissionYear],
-    max_load: 12,
+    max_load: 30,
   };
 };
+

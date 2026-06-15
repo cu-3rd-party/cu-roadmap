@@ -106,7 +106,7 @@ func validateRoadmap(c *gin.Context) {
 		return
 	}
 	if req.MaxLoad == 0 {
-		req.MaxLoad = 12.0
+		req.MaxLoad = 30.0
 	}
 	if req.CurrentSemester == 0 {
 		req.CurrentSemester = 1
@@ -171,7 +171,7 @@ func getGoalPath(c *gin.Context) {
 		req.CurrentSemester = 1
 	}
 	if req.MaxLoad == 0 {
-		req.MaxLoad = 12.0
+		req.MaxLoad = 30.0
 	}
 
 	s := store.GetStore()
