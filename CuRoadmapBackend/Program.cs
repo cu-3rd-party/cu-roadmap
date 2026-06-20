@@ -8,7 +8,13 @@ builder.Services.AddGrpc();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.MapGrpcService<GreeterService>();
-app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+app.MapGrpcService<SystemGrpcService>();
+app.MapGrpcService<DocumentationGrpcService>();
+app.MapGrpcService<GraphGrpcService>();
+app.MapGrpcService<CoursesGrpcService>();
+app.MapGrpcService<MajorsGrpcService>();
+app.MapGrpcService<PlannerGrpcService>();
+app.MapGrpcService<AuthGrpcService>();
+app.MapGet("/", () => "CuRoadmapBackend is running with debug gRPC stubs. Use a gRPC client to call the API services.");
 
 app.Run();
