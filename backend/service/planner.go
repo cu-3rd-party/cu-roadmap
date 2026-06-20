@@ -91,13 +91,7 @@ func (s *PlannerService) FindPathToCourse(
 	for len(coursesTodo) > 0 {
 		var available []interfaces.CourseData
 		for cid, c := range coursesTodo {
-			canTake := true
-			for _, dep := range s.depsByCourse[cid] {
-				if dep.DependencyType == enums.DependencyTypePrerequisite && !currentPassed[dep.RequiredCourseID] {
-					canTake = false
-					break
-				}
-			}
+			canTake := prereqsSatisfiedByDeps(s.depsByCourse[cid], currentPassed)
 			if canTake {
 				available = append(available, c)
 			}
@@ -168,4 +162,36 @@ func (s *PlannerService) FindPathToCourse(
 	}
 
 	return roadmap, nil
+}
+
+// prereqsSatisfiedByDeps checks whether all prerequisite groups are satisfied.
+// Group 0: each dep is mandatory (AND). Groups >= 1: any one alternative suffices (OR).
+func prereqsSatisfiedByDeps(deps []interfaces.CourseDependencyData, passedIDs map[uuid.UUID]bool) bool {
+	groups := make(map[int][]uuid.UUID)
+	for _, dep := range deps {
+		if dep.DependencyType == enums.DependencyTypePrerequisite {
+			groups[dep.AlternativeGroup] = append(groups[dep.AlternativeGroup], dep.RequiredCourseID)
+		}
+	}
+	for groupNum, altIDs := range groups {
+		if groupNum == 0 {
+			for _, reqID := range altIDs {
+				if !passedIDs[reqID] {
+					return false
+				}
+			}
+		} else {
+			anyPassed := false
+			for _, reqID := range altIDs {
+				if passedIDs[reqID] {
+					anyPassed = true
+					break
+				}
+			}
+			if !anyPassed {
+				return false
+			}
+		}
+	}
+	return true
 }

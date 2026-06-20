@@ -11,6 +11,7 @@ type CourseDependency struct {
 	CourseID         uuid.UUID            `gorm:"type:uuid;not null;index"`
 	RequiredCourseID uuid.UUID            `gorm:"type:uuid;not null;index"`
 	DependencyType   enums.DependencyType `gorm:"type:varchar(20);not null"`
+	AlternativeGroup int                  `gorm:"not null;default:0"`
 	Course           *Course              `gorm:"foreignKey:CourseID"`
 	RequiredCourse   *Course              `gorm:"foreignKey:RequiredCourseID"`
 }

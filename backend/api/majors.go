@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -131,12 +132,18 @@ func identifyMajor(c *gin.Context) {
 		return
 	}
 
-	// Build prerequisite map: courseID -> list of required course IDs
+	// Build dependencies map
 	deps, _ := s.GetCourseDependencies()
-	prereqMap := make(map[uuid.UUID][]uuid.UUID)
+	prereqGroups := make(map[uuid.UUID]map[int][]uuid.UUID)
+	coreqMap := make(map[uuid.UUID][]uuid.UUID)
 	for _, d := range deps {
 		if d.DependencyType == enums.DependencyTypePrerequisite {
-			prereqMap[d.CourseID] = append(prereqMap[d.CourseID], d.RequiredCourseID)
+			if prereqGroups[d.CourseID] == nil {
+				prereqGroups[d.CourseID] = make(map[int][]uuid.UUID)
+			}
+			prereqGroups[d.CourseID][d.AlternativeGroup] = append(prereqGroups[d.CourseID][d.AlternativeGroup], d.RequiredCourseID)
+		} else if d.DependencyType == enums.DependencyTypeCorequisite {
+			coreqMap[d.CourseID] = append(coreqMap[d.CourseID], d.RequiredCourseID)
 		}
 	}
 
@@ -165,25 +172,67 @@ func identifyMajor(c *gin.Context) {
 		visited[id] = true
 
 		readySemester := currentSemester
-		for _, pid := range prereqMap[id] {
-			prereqSemester := earliestCompletionSemester(pid, visited)
-			if prereqSemester == math.MaxInt32 {
-				visited[id] = false
-				return math.MaxInt32
+
+		for groupNum, group := range prereqGroups[id] {
+			if groupNum == 0 {
+				// AND logic: ALL must be satisfied
+				for _, pid := range group {
+					prereqSem := earliestCompletionSemester(pid, visited)
+					if prereqSem == math.MaxInt32 {
+						if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
+							pCourse := coursesByID[pid]
+							fmt.Printf("DEBUG: %s failed because pid %s (%s) returned MaxInt32\n", course.Title, pid, pCourse.Title)
+						}
+						visited[id] = false
+						return math.MaxInt32
+					}
+					if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
+						pCourse := coursesByID[pid]
+						fmt.Printf("DEBUG: %s prereq %s returned %d\n", course.Title, pCourse.Title, prereqSem)
+					}
+					if prereqSem+1 > readySemester {
+						readySemester = prereqSem + 1
+					}
+				}
+			} else {
+				// OR logic: AT LEAST ONE must be satisfied
+				minGroupReadySem := math.MaxInt32
+				for _, pid := range group {
+					prereqSem := earliestCompletionSemester(pid, visited)
+					if prereqSem != math.MaxInt32 {
+						if prereqSem+1 < minGroupReadySem {
+							minGroupReadySem = prereqSem + 1
+						}
+					}
+				}
+				if minGroupReadySem == math.MaxInt32 {
+					visited[id] = false
+					return math.MaxInt32
+				}
+				if minGroupReadySem > readySemester {
+					readySemester = minGroupReadySem
+				}
 			}
-			if prereqSemester+1 > readySemester {
-				readySemester = prereqSemester + 1
-			}
+		}
+
+		if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение в бизнесе" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Введение в искусственный интеллект" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
+			fmt.Printf("DEBUG: %s evaluated: readySemester=%d\n", course.Title, readySemester)
 		}
 
 		visited[id] = false
 		for sem := readySemester; sem <= 8; sem++ {
 			if offeredInSemester(course, sem) {
 				earliestMemo[id] = sem
+				if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение в бизнесе" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Введение в искусственный интеллект" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
+					fmt.Printf("DEBUG: %s returning sem=%d\n", course.Title, sem)
+				}
 				return sem
 			}
 		}
 
+		if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение в бизнесе" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Введение в искусственный интеллект" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
+			fmt.Printf("DEBUG: %s failed because no sem <= 8 worked. readySemester=%d\n", course.Title, readySemester)
+		}
 		return math.MaxInt32
 	}
 
@@ -212,6 +261,11 @@ func identifyMajor(c *gin.Context) {
 				earliestSemester := earliestCompletionSemester(id, make(map[uuid.UUID]bool))
 				if earliestSemester <= 8 {
 					canCover++
+				} else {
+					if m.Title == "Бизнес и аналитика" || m.Title == "Искусственный интеллект" {
+						cData, _ := coursesByID[id]
+						fmt.Printf("UNREACHABLE COURSE IN %s: %s (id: %s) earliest=%d\n", m.Title, cData.Title, id, earliestSemester)
+					}
 				}
 			}
 		}

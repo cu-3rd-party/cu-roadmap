@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
@@ -88,29 +89,70 @@ func (v *RoadmapValidator) ValidateSemester(
 	}
 
 	for _, c := range coursesInSem {
+		// Group dependencies by alternative group number
+		prereqGroupsByNum := make(map[int][]interfaces.CourseDependencyData)
+		var coreqDeps []interfaces.CourseDependencyData
 		for _, dep := range v.depsByCourse[c.ID] {
-			reqID := dep.RequiredCourseID
+			if dep.DependencyType == enums.DependencyTypePrerequisite {
+				prereqGroupsByNum[dep.AlternativeGroup] = append(prereqGroupsByNum[dep.AlternativeGroup], dep)
+			} else if dep.DependencyType == enums.DependencyTypeCorequisite {
+				coreqDeps = append(coreqDeps, dep)
+			}
+		}
+
+		// Validate prerequisite groups
+		for groupNum, deps := range prereqGroupsByNum {
+			if groupNum == 0 {
+				// Group 0: each dependency is mandatory (AND)
+				for _, dep := range deps {
+					reqTitle := "Неизвестный курс"
+					if rc, ok := v.AllCourses[dep.RequiredCourseID]; ok {
+						reqTitle = rc.Title
+					}
+					if !previouslyPassedIDs[dep.RequiredCourseID] {
+						messages = append(messages, schemas.ValidationMessage{
+							Level:    "error",
+							Message:  formatMissingPrereq(c.Title, reqTitle),
+							CourseID: &c.ID,
+						})
+					}
+				}
+			} else {
+				// Groups >= 1: any one alternative being passed is sufficient (OR)
+				anyPassed := false
+				var altTitles []string
+				for _, dep := range deps {
+					reqTitle := "Неизвестный курс"
+					if rc, ok := v.AllCourses[dep.RequiredCourseID]; ok {
+						reqTitle = rc.Title
+					}
+					altTitles = append(altTitles, reqTitle)
+					if previouslyPassedIDs[dep.RequiredCourseID] {
+						anyPassed = true
+					}
+				}
+				if !anyPassed {
+					messages = append(messages, schemas.ValidationMessage{
+						Level:    "error",
+						Message:  formatMissingPrereqAlternatives(c.Title, altTitles),
+						CourseID: &c.ID,
+					})
+				}
+			}
+		}
+
+		// Validate corequisites
+		for _, dep := range coreqDeps {
 			reqTitle := "Неизвестный курс"
-			if rc, ok := v.AllCourses[reqID]; ok {
+			if rc, ok := v.AllCourses[dep.RequiredCourseID]; ok {
 				reqTitle = rc.Title
 			}
-
-			if dep.DependencyType == enums.DependencyTypePrerequisite {
-				if !previouslyPassedIDs[reqID] {
-					messages = append(messages, schemas.ValidationMessage{
-						Level:    "error",
-						Message:  formatMissingPrereq(c.Title, reqTitle),
-						CourseID: &c.ID,
-					})
-				}
-			} else if dep.DependencyType == enums.DependencyTypeCorequisite {
-				if !inSemIDs[reqID] {
-					messages = append(messages, schemas.ValidationMessage{
-						Level:    "error",
-						Message:  formatMissingCoreq(c.Title, reqTitle),
-						CourseID: &c.ID,
-					})
-				}
+			if !inSemIDs[dep.RequiredCourseID] {
+				messages = append(messages, schemas.ValidationMessage{
+					Level:    "error",
+					Message:  formatMissingCoreq(c.Title, reqTitle),
+					CourseID: &c.ID,
+				})
 			}
 		}
 	}
@@ -191,6 +233,10 @@ func formatWrongSemester(title string, sem int) string {
 
 func formatMissingPrereq(courseTitle, reqTitle string) string {
 	return fmt.Sprintf("Для '%s' нужен пререквизит: %s", courseTitle, reqTitle)
+}
+
+func formatMissingPrereqAlternatives(courseTitle string, altTitles []string) string {
+	return fmt.Sprintf("Для '%s' нужен один из пререквизитов: %s", courseTitle, strings.Join(altTitles, " / "))
 }
 
 func formatMissingCoreq(courseTitle, reqTitle string) string {

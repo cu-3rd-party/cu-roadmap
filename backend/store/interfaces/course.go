@@ -16,6 +16,7 @@ type CourseData struct {
 	AvailableSemesters  []int
 	RecommendedSemester *int
 	Workload            float64
+	AnalogGroup         string
 	CsatMetric          *float64
 	Prerequisites       []uuid.UUID
 	Corequisites        []uuid.UUID
@@ -27,4 +28,5 @@ type CourseDependencyData struct {
 	CourseID         uuid.UUID
 	RequiredCourseID uuid.UUID
 	DependencyType   enums.DependencyType
+	AlternativeGroup int
 }

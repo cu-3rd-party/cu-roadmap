@@ -245,6 +245,7 @@ func (s *PostgresStore) GetCourseDependencies() ([]interfaces.CourseDependencyDa
 			CourseID:         d.CourseID,
 			RequiredCourseID: d.RequiredCourseID,
 			DependencyType:   d.DependencyType,
+			AlternativeGroup: d.AlternativeGroup,
 		}
 	}
 	return out, nil
@@ -368,6 +369,7 @@ func (s *PostgresStore) CreateCourseDependency(dep interfaces.CourseDependencyDa
 		CourseID:         dep.CourseID,
 		RequiredCourseID: dep.RequiredCourseID,
 		DependencyType:   dep.DependencyType,
+		AlternativeGroup: dep.AlternativeGroup,
 	}
 	if err := s.db.Create(&d).Error; err != nil {
 		return dep, err

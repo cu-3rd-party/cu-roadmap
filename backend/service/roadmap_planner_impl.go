@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
@@ -16,8 +17,8 @@ type roadmapSelectionStrategy func(*roadmapPlanningContext, int) []uuid.UUID
 type roadmapPlanningContext struct {
 	store             interfaces.StoreBase
 	targetCourses     map[uuid.UUID]interfaces.CourseData
-	prereqs           map[uuid.UUID][]uuid.UUID
-	coreqs            map[uuid.UUID][]uuid.UUID
+	prereqGroups      map[uuid.UUID]map[int][]uuid.UUID // courseID -> groupNum -> []alternativeCourseIDs
+	coreqs            map[uuid.UUID]map[int][]uuid.UUID
 	unlocksCount      map[uuid.UUID]int
 	passedIDs         map[uuid.UUID]bool
 	coursesTodo       map[uuid.UUID]interfaces.CourseData
@@ -35,6 +36,7 @@ type semesterBundle struct {
 func newRoadmapPlanningContext(
 	store interfaces.StoreBase,
 	passedCourseIDs []uuid.UUID,
+	plannedSemesters []schemas.PlannedSemester,
 	majorID uuid.UUID,
 	maxLoad float64,
 	cohort int,
@@ -52,15 +54,108 @@ func newRoadmapPlanningContext(
 		return nil, nil, err
 	}
 
+	for _, c := range allCourses {
+		upperGroup := strings.ToUpper(c.AnalogGroup)
+		if strings.Contains(upperGroup, "ОБЯЗ:") {
+			fmt.Printf("DEBUG INJECT: Injecting %s (group: %s)\n", c.Title, c.AnalogGroup)
+			requirements = append(requirements, interfaces.MajorRequirementData{
+				CourseID:        c.ID,
+				RequirementType: enums.RequirementTypeMajorCore,
+			})
+		}
+	}
+
+	// Collect fulfilled analog groups from passed and planned courses
+	passedIDs := make(map[uuid.UUID]bool)
+	for _, id := range passedCourseIDs {
+		passedIDs[id] = true
+	}
+
+	// Also collect planned course IDs
+	plannedIDs := make(map[uuid.UUID]bool)
+	for _, ps := range plannedSemesters {
+		for _, id := range ps.CourseIDs {
+			plannedIDs[id] = true
+		}
+	}
+
+	fulfilledAnalogGroups := make(map[string]bool)
+	// Mark groups from passed courses
+	for _, id := range passedCourseIDs {
+		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+			fulfilledAnalogGroups[c.AnalogGroup] = true
+		}
+	}
+	// Mark groups from planned courses
+	for _, ps := range plannedSemesters {
+		for _, id := range ps.CourseIDs {
+			if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+				fulfilledAnalogGroups[c.AnalogGroup] = true
+			}
+		}
+	}
+
+	// For requirements where analog group is fulfilled, mark other courses from the group as "virtually passed"
+	// This prevents the algorithm from trying to schedule them
+	virtuallyPassedIDs := make(map[uuid.UUID]bool)
+	for _, req := range requirements {
+		if c, ok := allCourses[req.CourseID]; ok && c.AnalogGroup != "" {
+			if fulfilledAnalogGroups[c.AnalogGroup] {
+				// Check if this specific course is the one that fulfilled the group
+				isTheFulfillingCourse := passedIDs[req.CourseID]
+				if !isTheFulfillingCourse {
+					for _, ps := range plannedSemesters {
+						for _, id := range ps.CourseIDs {
+							if id == req.CourseID {
+								isTheFulfillingCourse = true
+								break
+							}
+						}
+						if isTheFulfillingCourse {
+							break
+						}
+					}
+				}
+				// If this is not the course that fulfilled the group, mark it as virtually passed
+				if !isTheFulfillingCourse {
+					virtuallyPassedIDs[req.CourseID] = true
+					fmt.Printf("DEBUG: Marking %s as virtually passed (group %s already fulfilled)\n", c.Title, c.AnalogGroup)
+				}
+			} else {
+				// Group not fulfilled yet, mark it as fulfilled by this course so we don't add the others
+				fulfilledAnalogGroups[c.AnalogGroup] = true
+				fmt.Printf("DEBUG: %s is the first course from group %s (will be added to targetCourses)\n", c.Title, c.AnalogGroup)
+			}
+		}
+	}
+
+	// Merge virtually passed courses into passedIDs
+	for cid := range virtuallyPassedIDs {
+		passedIDs[cid] = true
+	}
+
 	targetCourses := make(map[uuid.UUID]interfaces.CourseData)
 	coreCourseIDs := make(map[uuid.UUID]bool)
 	for _, req := range requirements {
+		// Skip virtually passed courses - don't add them to targetCourses at all
+		if virtuallyPassedIDs[req.CourseID] {
+			if c, ok := allCourses[req.CourseID]; ok {
+				fmt.Printf("DEBUG: Skipping %s from targetCourses (virtually passed)\n", c.Title)
+			}
+			continue
+		}
+
 		if c, ok := allCourses[req.CourseID]; ok {
 			if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
 				continue
 			}
+
 			targetCourses[req.CourseID] = c
-			if req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity {
+			if c.AnalogGroup != "" {
+				fmt.Printf("DEBUG: Added %s to targetCourses (group %s)\n", c.Title, c.AnalogGroup)
+			}
+			// Don't mark virtually passed courses or already planned courses as core requirements
+			if !virtuallyPassedIDs[req.CourseID] && !plannedIDs[req.CourseID] && (req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity) {
 				coreCourseIDs[req.CourseID] = true
 			}
 		}
@@ -75,53 +170,278 @@ func newRoadmapPlanningContext(
 	}
 
 	unlocksCount := make(map[uuid.UUID]int)
-	prereqs := make(map[uuid.UUID][]uuid.UUID)
-	coreqs := make(map[uuid.UUID][]uuid.UUID)
+	prereqGroups := make(map[uuid.UUID]map[int][]uuid.UUID)
+	coreqs := make(map[uuid.UUID]map[int][]uuid.UUID)
+	mandatoryReqs := make(map[uuid.UUID]bool)
+
 	for _, dep := range allDeps {
 		switch dep.DependencyType {
 		case enums.DependencyTypePrerequisite:
-			prereqs[dep.CourseID] = append(prereqs[dep.CourseID], dep.RequiredCourseID)
+			if prereqGroups[dep.CourseID] == nil {
+				prereqGroups[dep.CourseID] = make(map[int][]uuid.UUID)
+			}
+			prereqGroups[dep.CourseID][dep.AlternativeGroup] = append(
+				prereqGroups[dep.CourseID][dep.AlternativeGroup], dep.RequiredCourseID,
+			)
+			if dep.AlternativeGroup == 0 {
+				mandatoryReqs[dep.RequiredCourseID] = true
+			}
 			unlocksCount[dep.RequiredCourseID]++
 		case enums.DependencyTypeCorequisite:
-			coreqs[dep.CourseID] = append(coreqs[dep.CourseID], dep.RequiredCourseID)
+			if coreqs[dep.CourseID] == nil {
+				coreqs[dep.CourseID] = make(map[int][]uuid.UUID)
+			}
+			coreqs[dep.CourseID][dep.AlternativeGroup] = append(
+				coreqs[dep.CourseID][dep.AlternativeGroup], dep.RequiredCourseID,
+			)
+			if dep.AlternativeGroup == 0 {
+				mandatoryReqs[dep.RequiredCourseID] = true
+			}
+		}
+	}
+
+	// Prune targetCourses for AnalogGroup duplicates BEFORE resolving dependencies
+	analogGroupKeepers := make(map[string]uuid.UUID)
+	for id := range passedIDs {
+		if !virtuallyPassedIDs[id] {
+			if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+				analogGroupKeepers[c.AnalogGroup] = id
+			}
+		}
+	}
+	for id := range plannedIDs {
+		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+			analogGroupKeepers[c.AnalogGroup] = id
+		}
+	}
+
+	for reqCourseID, reqCourse := range targetCourses {
+		if reqCourse.AnalogGroup != "" {
+			if existingID, exists := analogGroupKeepers[reqCourse.AnalogGroup]; exists {
+				// Duplicate found!
+				// If the existing one was explicitly passed/planned, we MUST keep it and drop the new one.
+				if (passedIDs[existingID] && !virtuallyPassedIDs[existingID]) || plannedIDs[existingID] {
+					fmt.Printf("DEBUG Prune: Keeping existing %s (passed/planned), dropping %s\n", allCourses[existingID].Title, reqCourse.Title)
+					delete(targetCourses, reqCourseID)
+					delete(coreCourseIDs, reqCourseID)
+				} else {
+					// Neither was passed/planned.
+					// Prefer the one that is globally mandatory. If tied, prefer the one with more unlocks (base course).
+					shouldReplace := false
+					if mandatoryReqs[reqCourseID] && !mandatoryReqs[existingID] {
+						shouldReplace = true
+					} else if mandatoryReqs[reqCourseID] == mandatoryReqs[existingID] {
+						if unlocksCount[reqCourseID] > unlocksCount[existingID] {
+							shouldReplace = true
+						} else if unlocksCount[reqCourseID] == unlocksCount[existingID] {
+							// If exactly tied, prefer '🔴' or avoid '⚫️' just in case.
+							if strings.Contains(reqCourse.Title, "🔴") && !strings.Contains(allCourses[existingID].Title, "🔴") {
+								shouldReplace = true
+							}
+						}
+					}
+
+					if shouldReplace {
+						fmt.Printf("DEBUG Prune: Replacing %s (unlocks %d) with %s (unlocks %d)\n", allCourses[existingID].Title, unlocksCount[existingID], reqCourse.Title, unlocksCount[reqCourseID])
+						delete(targetCourses, existingID)
+						delete(coreCourseIDs, existingID)
+						analogGroupKeepers[reqCourse.AnalogGroup] = reqCourseID
+					} else {
+						fmt.Printf("DEBUG Prune: Dropping %s (unlocks %d), keeping %s (unlocks %d)\n", reqCourse.Title, unlocksCount[reqCourseID], allCourses[existingID].Title, unlocksCount[existingID])
+						delete(targetCourses, reqCourseID)
+						delete(coreCourseIDs, reqCourseID)
+					}
+				}
+			} else {
+				fmt.Printf("DEBUG Prune: First seen for %s is %s\n", reqCourse.AnalogGroup, reqCourse.Title)
+				analogGroupKeepers[reqCourse.AnalogGroup] = reqCourseID
+			}
 		}
 	}
 
 	// Recursively resolve prerequisite and corequisite dependencies
+
 	var resolveDependencies func(uuid.UUID, bool)
 	resolveDependencies = func(cid uuid.UUID, parentIsCore bool) {
-		for _, reqID := range prereqs[cid] {
-			if parentIsCore {
-				coreCourseIDs[reqID] = true
-			}
-			if _, exists := targetCourses[reqID]; !exists {
-				if c, ok := allCourses[reqID]; ok {
-					if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
-						continue
+		for groupNum, altIDs := range prereqGroups[cid] {
+			if groupNum == 0 {
+				// All are mandatory
+				for _, reqID := range altIDs {
+					if parentIsCore {
+						coreCourseIDs[reqID] = true
 					}
-					targetCourses[reqID] = c
-					resolveDependencies(reqID, parentIsCore)
+					if _, exists := targetCourses[reqID]; !exists {
+						if c, ok := allCourses[reqID]; ok {
+							if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
+								continue
+							}
+							fmt.Printf("DEBUG Add: %s added %s (mandatory)\n", allCourses[cid].Title, c.Title)
+							targetCourses[reqID] = c
+							resolveDependencies(reqID, parentIsCore)
+						}
+					} else if parentIsCore && !coreCourseIDs[reqID] {
+						coreCourseIDs[reqID] = true
+						resolveDependencies(reqID, true)
+					}
 				}
-			} else if parentIsCore && !coreCourseIDs[reqID] {
-				coreCourseIDs[reqID] = true
-				resolveDependencies(reqID, true)
+			} else {
+				// Pick one alternative
+				var pickedReqID *uuid.UUID
+				for _, reqID := range altIDs {
+					if passedIDs[reqID] || plannedIDs[reqID] || virtuallyPassedIDs[reqID] {
+						pickedReqID = &reqID
+						break
+					}
+					if _, exists := targetCourses[reqID]; exists {
+						pickedReqID = &reqID
+						break
+					}
+				}
+				if pickedReqID == nil && len(altIDs) > 0 {
+					// Prefer alternatives that are mandatory for other courses
+					for _, reqID := range altIDs {
+						if mandatoryReqs[reqID] {
+							pickedReqID = &reqID
+							break
+						}
+					}
+					
+					// Avoid picking an alternative whose AnalogGroup is already fulfilled by another course in targetCourses
+					if pickedReqID == nil {
+						for _, reqID := range altIDs {
+							if c, ok := allCourses[reqID]; ok {
+								if c.AnalogGroup == "" {
+									pickedReqID = &reqID
+									break
+								}
+								groupFulfilled := false
+								for _, tc := range targetCourses {
+									if tc.AnalogGroup == c.AnalogGroup {
+										groupFulfilled = true
+										break
+									}
+								}
+								if !groupFulfilled {
+									pickedReqID = &reqID
+									break
+								}
+							}
+						}
+					}
+					if pickedReqID == nil {
+						pickedReqID = &altIDs[0]
+					}
+				}
+				if pickedReqID != nil {
+					reqID := *pickedReqID
+					if parentIsCore {
+						coreCourseIDs[reqID] = true
+					}
+					if _, exists := targetCourses[reqID]; !exists {
+						if c, ok := allCourses[reqID]; ok {
+							if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
+								continue
+							}
+							fmt.Printf("DEBUG Add: %s added %s (mandatory)\n", allCourses[cid].Title, c.Title)
+							targetCourses[reqID] = c
+							resolveDependencies(reqID, parentIsCore)
+						}
+					} else if parentIsCore && !coreCourseIDs[reqID] {
+						coreCourseIDs[reqID] = true
+						resolveDependencies(reqID, true)
+					}
+				}
 			}
 		}
-		for _, reqID := range coreqs[cid] {
-			if parentIsCore {
-				coreCourseIDs[reqID] = true
-			}
-			if _, exists := targetCourses[reqID]; !exists {
-				if c, ok := allCourses[reqID]; ok {
-					if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
-						continue
+
+		for groupNum, altIDs := range coreqs[cid] {
+			if groupNum == 0 {
+				// All are mandatory
+				for _, reqID := range altIDs {
+					if parentIsCore {
+						coreCourseIDs[reqID] = true
 					}
-					targetCourses[reqID] = c
-					resolveDependencies(reqID, parentIsCore)
+					if _, exists := targetCourses[reqID]; !exists {
+						if c, ok := allCourses[reqID]; ok {
+							if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
+								continue
+							}
+							fmt.Printf("DEBUG Add: %s added %s (mandatory)\n", allCourses[cid].Title, c.Title)
+							targetCourses[reqID] = c
+							resolveDependencies(reqID, parentIsCore)
+						}
+					} else if parentIsCore && !coreCourseIDs[reqID] {
+						coreCourseIDs[reqID] = true
+						resolveDependencies(reqID, true)
+					}
 				}
-			} else if parentIsCore && !coreCourseIDs[reqID] {
-				coreCourseIDs[reqID] = true
-				resolveDependencies(reqID, true)
+			} else {
+				// Pick one alternative
+				var pickedReqID *uuid.UUID
+				for _, reqID := range altIDs {
+					if passedIDs[reqID] || plannedIDs[reqID] || virtuallyPassedIDs[reqID] {
+						pickedReqID = &reqID
+						break
+					}
+					if _, exists := targetCourses[reqID]; exists {
+						pickedReqID = &reqID
+						break
+					}
+				}
+				if pickedReqID == nil && len(altIDs) > 0 {
+					// Prefer alternatives that are mandatory for other courses
+					for _, reqID := range altIDs {
+						if mandatoryReqs[reqID] {
+							pickedReqID = &reqID
+							break
+						}
+					}
+					
+					// Avoid picking an alternative whose AnalogGroup is already fulfilled by another course in targetCourses
+					if pickedReqID == nil {
+						for _, reqID := range altIDs {
+							if c, ok := allCourses[reqID]; ok {
+								if c.AnalogGroup == "" {
+									pickedReqID = &reqID
+									break
+								}
+								groupFulfilled := false
+								for _, tc := range targetCourses {
+									if tc.AnalogGroup == c.AnalogGroup {
+										groupFulfilled = true
+										break
+									}
+								}
+								if !groupFulfilled {
+									pickedReqID = &reqID
+									break
+								}
+							}
+						}
+					}
+					if pickedReqID == nil {
+						pickedReqID = &altIDs[0]
+					}
+				}
+				if pickedReqID != nil {
+					reqID := *pickedReqID
+					if parentIsCore {
+						coreCourseIDs[reqID] = true
+					}
+					if _, exists := targetCourses[reqID]; !exists {
+						if c, ok := allCourses[reqID]; ok {
+							if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
+								continue
+							}
+							fmt.Printf("DEBUG Add: %s added %s (mandatory)\n", allCourses[cid].Title, c.Title)
+							targetCourses[reqID] = c
+							resolveDependencies(reqID, parentIsCore)
+						}
+					} else if parentIsCore && !coreCourseIDs[reqID] {
+						coreCourseIDs[reqID] = true
+						resolveDependencies(reqID, true)
+					}
+				}
 			}
 		}
 	}
@@ -134,11 +454,6 @@ func newRoadmapPlanningContext(
 		resolveDependencies(cid, coreCourseIDs[cid])
 	}
 
-	passedIDs := make(map[uuid.UUID]bool)
-	for _, id := range passedCourseIDs {
-		passedIDs[id] = true
-	}
-
 	coursesTodo := make(map[uuid.UUID]interfaces.CourseData)
 	for cid, c := range targetCourses {
 		if !passedIDs[cid] {
@@ -149,7 +464,7 @@ func newRoadmapPlanningContext(
 	return &roadmapPlanningContext{
 		store:             store,
 		targetCourses:     targetCourses,
-		prereqs:           prereqs,
+		prereqGroups:      prereqGroups,
 		coreqs:            coreqs,
 		unlocksCount:      unlocksCount,
 		passedIDs:         passedIDs,
@@ -170,7 +485,7 @@ func generateRoadmapWithStrategy(
 	cohort int,
 	selectSemester roadmapSelectionStrategy,
 ) (interface{}, error) {
-	ctx, immediate, err := newRoadmapPlanningContext(store, passedCourseIDs, majorID, maxLoad, cohort)
+	ctx, immediate, err := newRoadmapPlanningContext(store, passedCourseIDs, plannedSemesters, majorID, maxLoad, cohort)
 	if err != nil || immediate != nil {
 		return immediate, err
 	}
@@ -278,7 +593,7 @@ func availableCourseBundles(ctx *roadmapPlanningContext, semester int) []semeste
 		}
 		key := bundleKey(bundle.courseIDs)
 		if _, exists := bundlesByKey[key]; !exists {
-			bundle.score = bundleScore(ctx, bundle.courseIDs)
+			bundle.score = bundleScore(ctx, bundle.courseIDs, semester)
 			bundlesByKey[key] = bundle
 		}
 	}
@@ -476,24 +791,49 @@ func selectLPRelaxationSemester(ctx *roadmapPlanningContext, semester int) []uui
 }
 
 func prereqsSatisfied(ctx *roadmapPlanningContext, cid uuid.UUID) bool {
-	for _, reqID := range ctx.prereqs[cid] {
-		if !ctx.passedIDs[reqID] {
-			return false
+	groups := ctx.prereqGroups[cid]
+	for groupNum, altIDs := range groups {
+		if groupNum == 0 {
+			// Group 0: each dependency is mandatory (AND)
+			for _, reqID := range altIDs {
+				if !ctx.passedIDs[reqID] {
+					return false
+				}
+			}
+		} else {
+			// Groups >= 1: any one alternative being passed is sufficient (OR)
+			anyPassed := false
+			for _, reqID := range altIDs {
+				if ctx.passedIDs[reqID] {
+					anyPassed = true
+					break
+				}
+			}
+			if !anyPassed {
+				return false
+			}
 		}
 	}
 	return true
 }
 
 func coreqsSchedulable(ctx *roadmapPlanningContext, cid uuid.UUID, semester int) bool {
-	for _, reqID := range ctx.coreqs[cid] {
-		if ctx.passedIDs[reqID] {
-			continue
+	for _, altIDs := range ctx.coreqs[cid] {
+		anySchedulable := false
+		for _, reqID := range altIDs {
+			if ctx.passedIDs[reqID] {
+				anySchedulable = true
+				break
+			}
+			if ctx.reservedForFuture[reqID] {
+				continue
+			}
+			if reqCourse, ok := ctx.coursesTodo[reqID]; ok && prereqsSatisfied(ctx, reqID) && offeredInSemester(reqCourse, semester) {
+				anySchedulable = true
+				break
+			}
 		}
-		if ctx.reservedForFuture[reqID] {
-			return false
-		}
-		reqCourse, ok := ctx.coursesTodo[reqID]
-		if !ok || !prereqsSatisfied(ctx, reqID) || !offeredInSemester(reqCourse, semester) {
+		if !anySchedulable {
 			return false
 		}
 	}
@@ -517,14 +857,24 @@ func buildBundle(ctx *roadmapPlanningContext, cid uuid.UUID, semester int) (seme
 		}
 		bundleSet[curr] = true
 		load += course.Workload
-		for _, reqID := range ctx.coreqs[curr] {
-			if ctx.passedIDs[reqID] {
-				continue
+		for _, altIDs := range ctx.coreqs[curr] {
+			pickedReqID := uuid.Nil
+			for _, reqID := range altIDs {
+				if ctx.passedIDs[reqID] {
+					pickedReqID = reqID
+					break
+				}
+				if _, ok := ctx.coursesTodo[reqID]; ok {
+					pickedReqID = reqID
+					break
+				}
 			}
-			if _, ok := ctx.coursesTodo[reqID]; !ok {
+			if pickedReqID == uuid.Nil {
 				return semesterBundle{}, false
 			}
-			queue = append(queue, reqID)
+			if !ctx.passedIDs[pickedReqID] {
+				queue = append(queue, pickedReqID)
+			}
 		}
 	}
 
@@ -566,7 +916,7 @@ func offeredInSemester(c interfaces.CourseData, semester int) bool {
 	return false
 }
 
-func bundleScore(ctx *roadmapPlanningContext, courseIDs []uuid.UUID) float64 {
+func bundleScore(ctx *roadmapPlanningContext, courseIDs []uuid.UUID, semester int) float64 {
 	score := 0.0
 	for _, cid := range courseIDs {
 		course := ctx.targetCourses[cid]
@@ -574,7 +924,20 @@ func bundleScore(ctx *roadmapPlanningContext, courseIDs []uuid.UUID) float64 {
 		if course.RecommendedSemester != nil {
 			recommendedBonus = 1.0 / float64(*course.RecommendedSemester+1)
 		}
-		score += 10 + float64(ctx.unlocksCount[cid])*3 + recommendedBonus - course.Workload*0.1
+		
+		obyazBonus := 0.0
+		if strings.Contains(strings.ToUpper(course.AnalogGroup), "ОБЯЗ:") {
+			if semester <= 4 {
+				obyazBonus = 1000.0 // heavily prioritize in first 4 semesters
+			} else {
+				obyazBonus = 500.0 // still try to take it ASAP if delayed
+			}
+		}
+		
+		score += 10 + float64(ctx.unlocksCount[cid])*3 + recommendedBonus - course.Workload*0.1 + obyazBonus
+		if obyazBonus > 0 {
+			fmt.Printf("DEBUG BUNDLE: Course %s got obyazBonus %.1f, total score %.1f\n", course.Title, obyazBonus, score)
+		}
 	}
 	return score
 }

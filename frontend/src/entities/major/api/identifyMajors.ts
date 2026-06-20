@@ -7,5 +7,5 @@ export const identifyMajors = async (
   body: IdentifyMajorsRequestDto,
   year: AdmissionYear,
 ): Promise<MajorMatchDto[]> =>
-  (await apiClient.post<MajorMatchDto[]>(`majors/identify/${year}/`, body))
+  (await apiClient.post<MajorMatchDto[]>(`majors/identify/${year}`, body))
     .data;
