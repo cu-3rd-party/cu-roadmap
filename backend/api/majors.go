@@ -55,7 +55,7 @@ func getMajors(c *gin.Context) {
 		if err != nil {
 			continue
 		}
-		var reqList []gin.H
+		reqList := []gin.H{}
 		for _, r := range reqs {
 			reqList = append(reqList, gin.H{
 				"course_id": r.CourseID.String(),
@@ -217,7 +217,7 @@ func identifyMajor(c *gin.Context) {
 		return math.MaxInt32
 	}
 
-	var analysis []gin.H
+	analysis := []gin.H{}
 	for _, m := range majors {
 		if cohortYear != 0 && m.CohortYear != cohortYear {
 			continue

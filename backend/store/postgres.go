@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
+	"sync"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
@@ -23,6 +24,7 @@ type PostgresStore struct {
 	databaseURL   string
 	adminPassword [32]byte
 	Synced        bool
+	syncMu        sync.Mutex
 }
 
 func (s *PostgresStore) Ready() bool {
@@ -434,6 +436,8 @@ func (s *PostgresStore) SeedAllData() error {
 }
 
 func (s *PostgresStore) SyncGoogleSheetsData() error {
+	s.syncMu.Lock()
+	defer s.syncMu.Unlock()
 	s.Synced = false
 	err := syncWithSheets(s)
 	s.Synced = err == nil

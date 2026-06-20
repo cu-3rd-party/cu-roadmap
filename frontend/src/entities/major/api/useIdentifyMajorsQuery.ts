@@ -22,7 +22,7 @@ export const useIdentifyMajorsQuery = (
     queryFn: () =>
       identifyMajors(buildIdentifyMajorsRequest(courseIds, year!), year!).then(
         (dtos) =>
-          dtos
+          (dtos ?? [])
             .map(normalizeMajorMatch)
             .sort((dto1, dto2) => dto1.title.localeCompare(dto2.title)),
       ),
