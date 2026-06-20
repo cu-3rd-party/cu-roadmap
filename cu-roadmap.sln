@@ -5,6 +5,40 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CuRoadmapBackend", "CuRoadmapBackend\CuRoadmapBackend.csproj", "{DEFD43F7-2E71-44A9-8E24-1AE6E2BA4EC0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BEEA1AB7-E97A-45D1-B743-B7D863F6B898}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{E32690BC-0C98-4DF0-9BFE-175BC60733E1}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\deploy.yml = .github\workflows\deploy.yml
+		.github\workflows\format&test.yml = .github\workflows\format&test.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{3EB83F51-2A1D-483F-8E9E-4406AC66EE7B}"
+	ProjectSection(SolutionItems) = preProject
+		docs\UI_FEEDBACK.md = docs\UI_FEEDBACK.md
+		docs\UI_GUIDELINES.md = docs\UI_GUIDELINES.md
+		docs\proto\README.md = docs\proto\README.md
+		docs\proto\cu_roadmap_api_v1.proto = docs\proto\cu_roadmap_api_v1.proto
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nginx", "nginx", "{245C0D94-B005-40C2-9057-B08BC588FFBA}"
+	ProjectSection(SolutionItems) = preProject
+		nginx\.dockerignore = nginx\.dockerignore
+		nginx\Dockerfile = nginx\Dockerfile
+		nginx\nginx.conf = nginx\nginx.conf
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{E8D70BF7-1983-45F3-960F-2BF0A0EBB35A}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\install-git-hooks.sh = scripts\install-git-hooks.sh
+		scripts\manage_docker.ps1 = scripts\manage_docker.ps1
+		scripts\manage_docker.sh = scripts\manage_docker.sh
+		scripts\quick-deploy.sh = scripts\quick-deploy.sh
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +52,11 @@ Global
 		{DEFD43F7-2E71-44A9-8E24-1AE6E2BA4EC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DEFD43F7-2E71-44A9-8E24-1AE6E2BA4EC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DEFD43F7-2E71-44A9-8E24-1AE6E2BA4EC0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E32690BC-0C98-4DF0-9BFE-175BC60733E1} = {BEEA1AB7-E97A-45D1-B743-B7D863F6B898}
+		{3EB83F51-2A1D-483F-8E9E-4406AC66EE7B} = {BEEA1AB7-E97A-45D1-B743-B7D863F6B898}
+		{245C0D94-B005-40C2-9057-B08BC588FFBA} = {BEEA1AB7-E97A-45D1-B743-B7D863F6B898}
+		{E8D70BF7-1983-45F3-960F-2BF0A0EBB35A} = {BEEA1AB7-E97A-45D1-B743-B7D863F6B898}
 	EndGlobalSection
 EndGlobal
