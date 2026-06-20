@@ -1,0 +1,536 @@
+syntax = "proto3";
+
+package cu.roadmap.api.v1;
+
+option go_package = "github.com/cu-3rd-party/cu-roadmap/docs/proto/cu_roadmap_api_v1;curoadmapapiv1";
+option java_multiple_files = true;
+option java_package = "ru.cu3rd.roadmap.api.v1";
+option csharp_namespace = "Cu.Roadmap.Api.V1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+// SystemService covers operational API endpoints.
+service SystemService {
+  // Mirrors GET /api/health.
+  rpc GetHealth(google.protobuf.Empty) returns (HealthResponse) {
+    option (google.api.http) = {
+      get: "/api/health"
+    };
+  }
+}
+
+// DocumentationService covers the API documentation endpoints.
+service DocumentationService {
+  // Mirrors GET /api/v1/docs.
+  rpc GetSwaggerUi(google.protobuf.Empty) returns (SwaggerUiResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/docs"
+    };
+  }
+
+  // Mirrors GET /api/v1/docs/openapi.yaml.
+  rpc GetOpenApiSpec(google.protobuf.Empty) returns (OpenApiSpecResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/docs/openapi.yaml"
+    };
+  }
+}
+
+// GraphService exposes the graph data consumed by the frontend graph view.
+service GraphService {
+  // Mirrors GET /api/v1/graph/data.
+  rpc GetGraphData(google.protobuf.Empty) returns (GraphDataResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/graph/data"
+    };
+  }
+}
+
+// CoursesService covers course catalog management and backup/restore flows.
+service CoursesService {
+  // Mirrors GET /api/v1/courses/.
+  rpc ListCourses(ListCoursesRequest) returns (ListCoursesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/courses/"
+    };
+  }
+
+  // Mirrors GET /api/v1/courses/{cohort_year}.
+  // Query filter semantics match ListCourses; repeated cohort_year values in the
+  // query override the path default in the HTTP implementation.
+  rpc ListCoursesByCohort(ListCoursesByCohortRequest) returns (ListCoursesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/courses/{cohort_year}"
+    };
+  }
+
+  // Mirrors POST /api/v1/courses/.
+  // Requires admin authentication.
+  rpc CreateCourse(CreateCourseRequest) returns (ResourceIdResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/courses/"
+      body: "*"
+    };
+  }
+
+  // Mirrors PUT /api/v1/courses/{id}.
+  // Requires admin authentication.
+  rpc UpdateCourse(UpdateCourseRequest) returns (ResourceIdResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/courses/{id}"
+      body: "*"
+    };
+  }
+
+  // Mirrors DELETE /api/v1/courses/{id}.
+  // Requires admin authentication.
+  rpc DeleteCourse(DeleteCourseRequest) returns (StatusResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/courses/{id}"
+    };
+  }
+
+  // Mirrors GET /api/v1/courses/backup.
+  // Requires admin authentication.
+  rpc BackupData(google.protobuf.Empty) returns (BackupDataResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/courses/backup"
+    };
+  }
+
+  // Mirrors POST /api/v1/courses/restore.
+  // Requires admin authentication.
+  rpc RestoreData(google.protobuf.Empty) returns (StatusResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/courses/restore"
+    };
+  }
+}
+
+// MajorsService covers major definitions and major-identification analysis.
+service MajorsService {
+  // Mirrors GET /api/v1/majors/.
+  rpc ListMajors(google.protobuf.Empty) returns (ListMajorsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/majors/"
+    };
+  }
+
+  // Mirrors GET /api/v1/majors/{cohort_year}.
+  rpc ListMajorsByCohort(ListMajorsByCohortRequest) returns (ListMajorsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/majors/{cohort_year}"
+    };
+  }
+
+  // Mirrors POST /api/v1/majors/identify.
+  // REST accepts either a raw array of UUIDs or an object. This proto uses the
+  // normalized object form only.
+  rpc IdentifyMajors(IdentifyMajorsRequest) returns (IdentifyMajorsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/majors/identify"
+      body: "*"
+    };
+  }
+
+  // Mirrors POST /api/v1/majors/identify/{cohort_year}.
+  rpc IdentifyMajorsByCohort(IdentifyMajorsByCohortRequest) returns (IdentifyMajorsResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/majors/identify/{cohort_year}"
+      body: "*"
+    };
+  }
+
+  // Mirrors POST /api/v1/majors/.
+  // Requires admin authentication.
+  rpc CreateMajor(CreateMajorRequest) returns (ResourceIdResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/majors/"
+      body: "*"
+    };
+  }
+
+  // Mirrors PUT /api/v1/majors/{id}.
+  // Requires admin authentication.
+  rpc UpdateMajor(UpdateMajorRequest) returns (ResourceIdResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/majors/{id}"
+      body: "*"
+    };
+  }
+}
+
+// PlannerService covers roadmap generation and validation flows.
+service PlannerService {
+  // Mirrors POST /api/v1/planner/generate.
+  rpc GenerateRoadmap(GenerateRoadmapRequest) returns (GenerateRoadmapResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/planner/generate"
+      body: "*"
+    };
+  }
+
+  // Mirrors POST /api/v1/planner/validate-semester/.
+  rpc ValidateSemester(ValidateSemesterRequest) returns (SemesterValidationResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/planner/validate-semester/"
+      body: "*"
+    };
+  }
+
+  // Mirrors POST /api/v1/planner/validate-roadmap/.
+  rpc ValidateRoadmap(ValidateRoadmapRequest) returns (RoadmapValidationResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/planner/validate-roadmap/"
+      body: "*"
+    };
+  }
+
+  // Mirrors POST /api/v1/planner/goal-path/.
+  rpc GetGoalPath(GetGoalPathRequest) returns (GetGoalPathResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/planner/goal-path/"
+      body: "*"
+    };
+  }
+}
+
+// AuthService covers the backend's cookie-based admin authentication flow.
+service AuthService {
+  // Mirrors POST /api/v1/auth/login.
+  // The HTTP implementation writes the session token to the auth-token cookie and
+  // returns an empty body. A native gRPC implementation should emit equivalent
+  // auth material via response metadata.
+  rpc Login(LoginRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/login"
+      body: "*"
+    };
+  }
+
+  // Mirrors GET /api/v1/auth/check.
+  // Requires admin authentication.
+  rpc Check(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get: "/api/v1/auth/check"
+    };
+  }
+
+  // Mirrors DELETE /api/v1/auth/logout.
+  // Requires admin authentication.
+  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/auth/logout"
+    };
+  }
+}
+
+enum CourseType {
+  COURSE_TYPE_UNSPECIFIED = 0;
+  COURSE_TYPE_MANDATORY = 1;
+  COURSE_TYPE_ELECTIVE = 2;
+  COURSE_TYPE_OTHER = 3;
+}
+
+enum CourseCategory {
+  COURSE_CATEGORY_UNSPECIFIED = 0;
+  COURSE_CATEGORY_FUNDAMENTALS = 1;
+  COURSE_CATEGORY_AI = 2;
+  COURSE_CATEGORY_STEM = 3;
+  COURSE_CATEGORY_SOFT = 4;
+  COURSE_CATEGORY_BUSINESS = 5;
+  COURSE_CATEGORY_TECH = 6;
+  COURSE_CATEGORY_DESIGN = 7;
+}
+
+enum RequirementType {
+  REQUIREMENT_TYPE_UNSPECIFIED = 0;
+  REQUIREMENT_TYPE_MAJOR_CORE = 1;
+  REQUIREMENT_TYPE_MAJOR_CHOICE = 2;
+  REQUIREMENT_TYPE_FLEX = 3;
+  REQUIREMENT_TYPE_UNIVERSITY = 4;
+  REQUIREMENT_TYPE_ELECTIVE = 5;
+  REQUIREMENT_TYPE_MINOR = 6;
+  REQUIREMENT_TYPE_SOFT = 7;
+  REQUIREMENT_TYPE_SELECTED_TOPICS = 8;
+}
+
+enum DependencyType {
+  DEPENDENCY_TYPE_UNSPECIFIED = 0;
+  DEPENDENCY_TYPE_PREREQUISITE = 1;
+  DEPENDENCY_TYPE_COREQUISITE = 2;
+}
+
+enum CourseSource {
+  COURSE_SOURCE_UNSPECIFIED = 0;
+  COURSE_SOURCE_SELECTED = 1;
+  COURSE_SOURCE_PASSED = 2;
+}
+
+enum ValidationLevel {
+  VALIDATION_LEVEL_UNSPECIFIED = 0;
+  VALIDATION_LEVEL_WARNING = 1;
+  VALIDATION_LEVEL_ERROR = 2;
+}
+
+message HealthResponse {
+  string status = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
+
+message SwaggerUiResponse {
+  string html = 1;
+}
+
+message OpenApiSpecResponse {
+  string yaml = 1;
+}
+
+message ResourceIdResponse {
+  string id = 1;
+}
+
+message StatusResponse {
+  string status = 1;
+}
+
+message BackupDataResponse {
+  string status = 1;
+  int32 courses_count = 2;
+  int32 majors_count = 3;
+}
+
+message Course {
+  string id = 1;
+  string title = 2;
+  optional string description = 3;
+  optional string handbook_link = 4;
+  CourseType course_type = 5;
+  CourseCategory category = 6;
+  repeated int32 available_semesters = 7;
+  repeated int32 allowed_cohorts = 8;
+  optional int32 recommended_semester = 9;
+  double workload = 10;
+  repeated string prerequisites = 11;
+  repeated string corequisites = 12;
+  repeated string postrequisites = 13;
+  map<string, RequirementType> to_major = 14;
+}
+
+message ListCoursesRequest {
+  repeated int32 cohort_year = 1;
+  optional string title = 2;
+  repeated CourseType course_type = 3;
+  repeated CourseCategory category = 4;
+  // Uses the REST syntax: <value, =value, or >value.
+  optional string workload = 5;
+}
+
+message ListCoursesByCohortRequest {
+  int32 cohort_year = 1;
+  // In REST this override is also named cohort_year in the query string. The
+  // proto uses a distinct field name to avoid colliding with the path field.
+  repeated int32 query_cohort_year = 2;
+  optional string title = 3;
+  repeated CourseType course_type = 4;
+  repeated CourseCategory category = 5;
+  // Uses the REST syntax: <value, =value, or >value.
+  optional string workload = 6;
+}
+
+message ListCoursesResponse {
+  repeated Course courses = 1;
+}
+
+message CreateCourseRequest {
+  string title = 1;
+  optional string description = 2;
+  optional string handbook_link = 3;
+  CourseType course_type = 4;
+  CourseCategory category = 5;
+  repeated int32 allowed_cohorts = 6;
+  repeated int32 available_semesters = 7;
+  optional int32 recommended_semester = 8;
+  double workload = 9;
+  repeated string prerequisites = 10;
+  repeated string corequisites = 11;
+}
+
+message UpdateCourseRequest {
+  string id = 1;
+  string title = 2;
+  optional string description = 3;
+  optional string handbook_link = 4;
+  CourseType course_type = 5;
+  CourseCategory category = 6;
+  repeated int32 allowed_cohorts = 7;
+  repeated int32 available_semesters = 8;
+  optional int32 recommended_semester = 9;
+  double workload = 10;
+  repeated string prerequisites = 11;
+  repeated string corequisites = 12;
+}
+
+message DeleteCourseRequest {
+  string id = 1;
+}
+
+message MajorRequirement {
+  string course_id = 1;
+  RequirementType type = 2;
+}
+
+message Major {
+  string id = 1;
+  string title = 2;
+  string school = 3;
+  int32 cohort_year = 4;
+  repeated MajorRequirement requirements = 5;
+}
+
+message ListMajorsByCohortRequest {
+  int32 cohort_year = 1;
+}
+
+message ListMajorsResponse {
+  repeated Major majors = 1;
+}
+
+message MajorMatchResult {
+  string id = 1;
+  string title = 2;
+  int32 cohort_year = 3;
+  double score = 4;
+  int32 covered_count = 5;
+  int32 can_cover_count = 6;
+  int32 total_count = 7;
+}
+
+message IdentifyMajorsRequest {
+  repeated string passed_course_ids = 1;
+  optional int32 current_semester = 2;
+}
+
+message IdentifyMajorsByCohortRequest {
+  int32 cohort_year = 1;
+  repeated string passed_course_ids = 2;
+  optional int32 current_semester = 3;
+}
+
+message IdentifyMajorsResponse {
+  repeated MajorMatchResult matches = 1;
+}
+
+message CreateMajorRequest {
+  string title = 1;
+  optional string school = 2;
+  repeated MajorRequirement requirements = 3;
+}
+
+message UpdateMajorRequest {
+  string id = 1;
+  string title = 2;
+  optional string school = 3;
+  repeated MajorRequirement requirements = 4;
+}
+
+message GraphNode {
+  string id = 1;
+  string label = 2;
+  CourseCategory group = 3;
+  optional string description = 4;
+  optional int32 recommended_semester = 5;
+}
+
+message GraphEdge {
+  string from = 1;
+  string to = 2;
+  DependencyType label = 3;
+}
+
+message GraphDataResponse {
+  repeated GraphNode nodes = 1;
+  repeated GraphEdge edges = 2;
+}
+
+message PlannedSemester {
+  int32 semester = 1;
+  repeated string course_ids = 2;
+}
+
+message GenerateRoadmapRequest {
+  repeated string passed_course_ids = 1;
+  repeated PlannedSemester selected_course_ids = 2;
+  CourseSource course_source = 3;
+  string major_id = 4;
+  optional int32 current_semester = 5;
+  optional double max_load = 6;
+  optional int32 cohort = 7;
+}
+
+message RoadmapSemester {
+  int32 semester = 1;
+  repeated string course_ids = 2;
+  optional double total_load = 3;
+  optional string status = 4;
+  optional string error = 5;
+}
+
+message GenerateRoadmapResponse {
+  string major_id = 1;
+  repeated RoadmapSemester roadmap = 2;
+}
+
+message ValidationMessage {
+  ValidationLevel level = 1;
+  string message = 2;
+  optional string course_id = 3;
+}
+
+message ValidateSemesterRequest {
+  int32 current_semester = 1;
+  repeated string course_ids = 2;
+  repeated string passed_course_ids = 3;
+  optional double max_load = 4;
+}
+
+message SemesterValidationResponse {
+  bool is_valid = 1;
+  repeated ValidationMessage messages = 2;
+  double total_load = 3;
+}
+
+message ValidateRoadmapRequest {
+  repeated PlannedSemester roadmap = 1;
+  optional double max_load = 2;
+  optional int32 current_semester = 3;
+}
+
+message RoadmapValidationResult {
+  int32 semester = 1;
+  bool valid = 2;
+  double total_load = 3;
+  repeated ValidationMessage messages = 4;
+}
+
+message RoadmapValidationResponse {
+  repeated RoadmapValidationResult validation_results = 1;
+}
+
+message GetGoalPathRequest {
+  string target_course_id = 1;
+  repeated string passed_course_ids = 2;
+  optional int32 current_semester = 3;
+  optional double max_load = 4;
+  optional int32 goal_semester = 5;
+}
+
+message GetGoalPathResponse {
+  repeated RoadmapSemester roadmap = 1;
+}
+
+message LoginRequest {
+  string password = 1;
+}
