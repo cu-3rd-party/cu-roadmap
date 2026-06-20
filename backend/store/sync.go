@@ -297,8 +297,6 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 
 	prereqGroupCounter := make(map[uuid.UUID]int) // per-course group counter
 
-
-
 	for _, entry := range allRows {
 		rawPrereqs := getFirst(
 			entry.Row,

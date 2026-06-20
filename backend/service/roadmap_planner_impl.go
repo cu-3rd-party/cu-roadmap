@@ -305,7 +305,7 @@ func newRoadmapPlanningContext(
 							break
 						}
 					}
-					
+
 					// Avoid picking an alternative whose AnalogGroup is already fulfilled by another course in targetCourses
 					if pickedReqID == nil {
 						for _, reqID := range altIDs {
@@ -396,7 +396,7 @@ func newRoadmapPlanningContext(
 							break
 						}
 					}
-					
+
 					// Avoid picking an alternative whose AnalogGroup is already fulfilled by another course in targetCourses
 					if pickedReqID == nil {
 						for _, reqID := range altIDs {
@@ -924,7 +924,7 @@ func bundleScore(ctx *roadmapPlanningContext, courseIDs []uuid.UUID, semester in
 		if course.RecommendedSemester != nil {
 			recommendedBonus = 1.0 / float64(*course.RecommendedSemester+1)
 		}
-		
+
 		obyazBonus := 0.0
 		if strings.Contains(strings.ToUpper(course.AnalogGroup), "ОБЯЗ:") {
 			if semester <= 4 {
@@ -933,7 +933,7 @@ func bundleScore(ctx *roadmapPlanningContext, courseIDs []uuid.UUID, semester in
 				obyazBonus = 500.0 // still try to take it ASAP if delayed
 			}
 		}
-		
+
 		score += 10 + float64(ctx.unlocksCount[cid])*3 + recommendedBonus - course.Workload*0.1 + obyazBonus
 		if obyazBonus > 0 {
 			fmt.Printf("DEBUG BUNDLE: Course %s got obyazBonus %.1f, total score %.1f\n", course.Title, obyazBonus, score)
