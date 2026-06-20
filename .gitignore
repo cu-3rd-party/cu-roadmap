@@ -51,3 +51,4 @@ deploy.env
 
 # bins
 .exe
+backend/out.log

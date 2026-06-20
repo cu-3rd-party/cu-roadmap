@@ -119,7 +119,13 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 		return SyncResult{}, fmt.Errorf("get existing courses: %w", err)
 	}
 	for id, c := range existingCourses {
-		existingCourseByNorm[NormalizeSheetTitle(c.Title)] = id
+		if len(c.AllowedCohorts) > 0 {
+			for _, year := range c.AllowedCohorts {
+				existingCourseByNorm[c.Title+"|"+strconv.Itoa(year)] = id
+			}
+		} else {
+			existingCourseByNorm[c.Title+"|0"] = id
+		}
 	}
 
 	existingMajorByKey := make(map[string]uuid.UUID)
@@ -163,8 +169,9 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 	courseMap := make(map[string]interfaces.CourseData)
 	courseToMajorReqs := make(map[string]map[string]enums.RequirementType)
 	type rowEntry struct {
-		Row    map[string]string
-		Course interfaces.CourseData
+		Row       map[string]string
+		Course    interfaces.CourseData
+		SheetYear int
 	}
 	var allRows []rowEntry
 
@@ -175,13 +182,22 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			continue
 		}
 
+		sheetYear := 0
+		if matches := YearRegexp.FindString(sheetName); matches != "" {
+			if year, err := strconv.Atoi(matches); err == nil {
+				sheetYear = year
+			}
+		}
+
 		for _, row := range rows {
 			title := strings.TrimSpace(getFirst(row, "Название курса"))
 			if title == "" {
 				continue
 			}
 
-			norm := NormalizeSheetTitle(title)
+			normTitle := title
+			norm := normTitle + "|" + strconv.Itoa(sheetYear)
+
 			cohorts := parseAllowedCohorts(getFirst(row, "Поток"))
 			if len(cohorts) == 0 {
 				if matches := YearRegexp.FindString(sheetName); matches != "" {
@@ -214,13 +230,15 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				}
 				if existingID, ok := existingCourseByNorm[norm]; ok {
 					course.ID = existingID
+					// Remove it so another cohort doesn't steal the same ID and cause merged dependencies
+					delete(existingCourseByNorm, norm)
 				}
 				if _, err := s.CreateCourse(course); err != nil {
 					return SyncResult{}, fmt.Errorf("create course %s: %w", title, err)
 				}
 				courseMap[norm] = course
 				courseToMajorReqs[norm] = make(map[string]enums.RequirementType)
-				allRows = append(allRows, rowEntry{Row: row, Course: course})
+				allRows = append(allRows, rowEntry{Row: row, Course: course, SheetYear: sheetYear})
 			} else {
 				course := courseMap[norm]
 				rowCohorts := parseAllowedCohorts(getFirst(row, "Поток"))
@@ -277,34 +295,61 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 		}
 	}
 
+	prereqGroupCounter := make(map[uuid.UUID]int) // per-course group counter
+
 	for _, entry := range allRows {
-		for _, prereqTitle := range SplitSheetTitles(getFirst(
+		rawPrereqs := getFirst(
 			entry.Row,
 			"Пререквизиты",
 			"Пререквезиты",
 			"Пререквизиты ",
 			"Пререквезиты ",
-		)) {
-			norm := NormalizeSheetTitle(prereqTitle)
-			target, exists := courseMap[norm]
-			if !exists {
-				target, exists = courseMap[prereqTitle]
+		)
+		for _, group := range SplitPrerequisiteGroups(rawPrereqs) {
+			var resolvedIDs []uuid.UUID
+			for _, prereqTitle := range group {
+				normTitle := prereqTitle
+				targetKey := normTitle + "|" + strconv.Itoa(entry.SheetYear)
+				target, exists := courseMap[targetKey]
 				if !exists {
-					continue
+					targetKeyZero := normTitle + "|0"
+					target, exists = courseMap[targetKeyZero]
+					if !exists {
+						target, exists = courseMap[prereqTitle+"|"+strconv.Itoa(entry.SheetYear)]
+						if !exists {
+							fmt.Printf("MISSING PREREQUISITE: course '%s' requires '%s', but it wasn't found\n", entry.Course.Title, prereqTitle)
+							continue
+						}
+					}
 				}
+				resolvedIDs = append(resolvedIDs, target.ID)
 			}
-			depID := uuid.New()
-			depKey := entry.Course.ID.String() + "\x00" + target.ID.String() + "\x00" + string(enums.DependencyTypePrerequisite)
-			if existingID, ok := existingDepByPair[depKey]; ok {
-				depID = existingID
+			if len(resolvedIDs) == 0 {
+				continue
 			}
-			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
-				ID:               depID,
-				CourseID:         entry.Course.ID,
-				RequiredCourseID: target.ID,
-				DependencyType:   enums.DependencyTypePrerequisite,
-			}); err != nil {
-				return SyncResult{}, fmt.Errorf("create prereq dependency: %w", err)
+
+			groupNum := 0
+			if len(resolvedIDs) > 1 {
+				// This is an OR-alternative group; assign a group number >= 1
+				prereqGroupCounter[entry.Course.ID]++
+				groupNum = prereqGroupCounter[entry.Course.ID]
+			}
+
+			for _, targetID := range resolvedIDs {
+				depID := uuid.New()
+				depKey := entry.Course.ID.String() + "\x00" + targetID.String() + "\x00" + string(enums.DependencyTypePrerequisite)
+				if existingID, ok := existingDepByPair[depKey]; ok {
+					depID = existingID
+				}
+				if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
+					ID:               depID,
+					CourseID:         entry.Course.ID,
+					RequiredCourseID: targetID,
+					DependencyType:   enums.DependencyTypePrerequisite,
+					AlternativeGroup: groupNum,
+				}); err != nil {
+					return SyncResult{}, fmt.Errorf("create prereq dependency: %w", err)
+				}
 			}
 		}
 
@@ -316,12 +361,17 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			"Кореквизиты (когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A)",
 			"Кореквизиты (когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A)",
 		)) {
-			norm := NormalizeSheetTitle(coreqTitle)
-			target, exists := courseMap[norm]
+			targetKey := coreqTitle + "|" + strconv.Itoa(entry.SheetYear)
+			target, exists := courseMap[targetKey]
 			if !exists {
-				target, exists = courseMap[coreqTitle]
+				targetKeyZero := coreqTitle + "|0"
+				target, exists = courseMap[targetKeyZero]
 				if !exists {
-					continue
+					target, exists = courseMap[coreqTitle]
+					if !exists {
+						fmt.Printf("MISSING COREQUISITE: course '%s' requires '%s', but it wasn't found\n", entry.Course.Title, coreqTitle)
+						continue
+					}
 				}
 			}
 			depID := uuid.New()
@@ -543,7 +593,7 @@ func SplitSheetTitles(raw string) []string {
 func getFirst(row map[string]string, keys ...string) string {
 	for _, k := range keys {
 		if v := strings.TrimSpace(row[k]); v != "" {
-			return NormalizeSheetTitle(v)
+			return v
 		}
 	}
 	return ""
@@ -636,7 +686,7 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		}
 	}
 
-	return interfaces.CourseData{
+	cd := interfaces.CourseData{
 		ID:                  uuid.New(),
 		Title:               strings.TrimSpace(getFirst(row, "Название курса")),
 		Description:         new(getFirst(row, "Контекст", "Контекст, чтобы правильно отобразить на траектории\nесли есть")),
@@ -647,5 +697,44 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		AvailableSemesters:  availableSemesters,
 		RecommendedSemester: recommendedSemester,
 		Workload:            workload,
+		AnalogGroup:         strings.TrimSpace(getFirst(row, "Группа аналогов(алгоритм не берет больше 1 курса из группы)", "Группа аналогов")),
 	}
+
+	return cd
+}
+
+// SplitPrerequisiteGroups splits a prerequisites string into groups of alternatives.
+func SplitPrerequisiteGroups(raw string) [][]string {
+	if raw == "" {
+		return nil
+	}
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "-" {
+		return nil
+	}
+	if strings.EqualFold(raw, "нет") {
+		return nil
+	}
+	var groups [][]string
+	for _, part := range strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == '\n' || r == ';'
+	}) {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		// Check for "/" alternatives within the group
+		alternatives := strings.Split(part, "/")
+		var group []string
+		for _, alt := range alternatives {
+			alt = strings.TrimSpace(alt)
+			if alt != "" {
+				group = append(group, alt)
+			}
+		}
+		if len(group) > 0 {
+			groups = append(groups, group)
+		}
+	}
+	return groups
 }

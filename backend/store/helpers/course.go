@@ -21,6 +21,7 @@ func CourseToResponse(course interfaces.CourseData) gin.H {
 		"allowed_cohorts":      course.AllowedCohorts,
 		"recommended_semester": course.RecommendedSemester,
 		"workload":             course.Workload,
+		"analog_group":         course.AnalogGroup,
 		"prerequisites":        CourseUUIDsToStrings(course.Prerequisites),
 		"corequisites":         CourseUUIDsToStrings(course.Corequisites),
 		"postrequisites":       CourseUUIDsToStrings(course.Postrequisites),
@@ -66,6 +67,7 @@ func ToCourseModel(course interfaces.CourseData) models.Course {
 		AvailableSemesters:  toInt64Slice(course.AvailableSemesters),
 		RecommendedSemester: course.RecommendedSemester,
 		Workload:            course.Workload,
+		AnalogGroup:         course.AnalogGroup,
 		CsatMetric:          course.CsatMetric,
 	}
 }
@@ -82,6 +84,7 @@ func ToCourseData(c *models.Course) interfaces.CourseData {
 		AvailableSemesters:  toIntSlice(c.AvailableSemesters),
 		RecommendedSemester: c.RecommendedSemester,
 		Workload:            c.Workload,
+		AnalogGroup:         c.AnalogGroup,
 		CsatMetric:          c.CsatMetric,
 	}
 	for _, dep := range c.CourseDependencies {

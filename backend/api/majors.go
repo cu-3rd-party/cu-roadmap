@@ -131,12 +131,18 @@ func identifyMajor(c *gin.Context) {
 		return
 	}
 
-	// Build prerequisite map: courseID -> list of required course IDs
+	// Build dependencies map
 	deps, _ := s.GetCourseDependencies()
-	prereqMap := make(map[uuid.UUID][]uuid.UUID)
+	prereqGroups := make(map[uuid.UUID]map[int][]uuid.UUID)
+	coreqMap := make(map[uuid.UUID][]uuid.UUID)
 	for _, d := range deps {
 		if d.DependencyType == enums.DependencyTypePrerequisite {
-			prereqMap[d.CourseID] = append(prereqMap[d.CourseID], d.RequiredCourseID)
+			if prereqGroups[d.CourseID] == nil {
+				prereqGroups[d.CourseID] = make(map[int][]uuid.UUID)
+			}
+			prereqGroups[d.CourseID][d.AlternativeGroup] = append(prereqGroups[d.CourseID][d.AlternativeGroup], d.RequiredCourseID)
+		} else if d.DependencyType == enums.DependencyTypeCorequisite {
+			coreqMap[d.CourseID] = append(coreqMap[d.CourseID], d.RequiredCourseID)
 		}
 	}
 
@@ -165,14 +171,38 @@ func identifyMajor(c *gin.Context) {
 		visited[id] = true
 
 		readySemester := currentSemester
-		for _, pid := range prereqMap[id] {
-			prereqSemester := earliestCompletionSemester(pid, visited)
-			if prereqSemester == math.MaxInt32 {
-				visited[id] = false
-				return math.MaxInt32
-			}
-			if prereqSemester+1 > readySemester {
-				readySemester = prereqSemester + 1
+
+		for groupNum, group := range prereqGroups[id] {
+			if groupNum == 0 {
+				// AND logic: ALL must be satisfied
+				for _, pid := range group {
+					prereqSem := earliestCompletionSemester(pid, visited)
+					if prereqSem == math.MaxInt32 {
+						visited[id] = false
+						return math.MaxInt32
+					}
+					if prereqSem+1 > readySemester {
+						readySemester = prereqSem + 1
+					}
+				}
+			} else {
+				// OR logic: AT LEAST ONE must be satisfied
+				minGroupReadySem := math.MaxInt32
+				for _, pid := range group {
+					prereqSem := earliestCompletionSemester(pid, visited)
+					if prereqSem != math.MaxInt32 {
+						if prereqSem+1 < minGroupReadySem {
+							minGroupReadySem = prereqSem + 1
+						}
+					}
+				}
+				if minGroupReadySem == math.MaxInt32 {
+					visited[id] = false
+					return math.MaxInt32
+				}
+				if minGroupReadySem > readySemester {
+					readySemester = minGroupReadySem
+				}
 			}
 		}
 

@@ -36,6 +36,6 @@ export const buildGoalPathRequest = (
     passed_course_ids,
     current_semester: admissionYearToSemester[admissionYear],
     goal_semester: goalSemester,
-    max_load: 30,
+    max_load: 60,
   };
 };
