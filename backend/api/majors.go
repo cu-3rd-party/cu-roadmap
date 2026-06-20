@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -179,16 +178,8 @@ func identifyMajor(c *gin.Context) {
 				for _, pid := range group {
 					prereqSem := earliestCompletionSemester(pid, visited)
 					if prereqSem == math.MaxInt32 {
-						if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
-							pCourse := coursesByID[pid]
-							fmt.Printf("DEBUG: %s failed because pid %s (%s) returned MaxInt32\n", course.Title, pid, pCourse.Title)
-						}
 						visited[id] = false
 						return math.MaxInt32
-					}
-					if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
-						pCourse := coursesByID[pid]
-						fmt.Printf("DEBUG: %s prereq %s returned %d\n", course.Title, pCourse.Title, prereqSem)
 					}
 					if prereqSem+1 > readySemester {
 						readySemester = prereqSem + 1
@@ -215,24 +206,14 @@ func identifyMajor(c *gin.Context) {
 			}
 		}
 
-		if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение в бизнесе" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Введение в искусственный интеллект" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
-			fmt.Printf("DEBUG: %s evaluated: readySemester=%d\n", course.Title, readySemester)
-		}
-
 		visited[id] = false
 		for sem := readySemester; sem <= 8; sem++ {
 			if offeredInSemester(course, sem) {
 				earliestMemo[id] = sem
-				if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение в бизнесе" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Введение в искусственный интеллект" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
-					fmt.Printf("DEBUG: %s returning sem=%d\n", course.Title, sem)
-				}
 				return sem
 			}
 		}
 
-		if course.Title == "ИИ для аналитиков" || course.Title == "Машинное обучение в бизнесе" || course.Title == "Машинное обучение (ML)" || course.Title == "Продуктовая аналитика" || course.Title == "Введение в искусственный интеллект" || course.Title == "Робототехника и физическое машинное обучение" || course.Title == "Теория управления" {
-			fmt.Printf("DEBUG: %s failed because no sem <= 8 worked. readySemester=%d\n", course.Title, readySemester)
-		}
 		return math.MaxInt32
 	}
 
@@ -261,11 +242,6 @@ func identifyMajor(c *gin.Context) {
 				earliestSemester := earliestCompletionSemester(id, make(map[uuid.UUID]bool))
 				if earliestSemester <= 8 {
 					canCover++
-				} else {
-					if m.Title == "Бизнес и аналитика" || m.Title == "Искусственный интеллект" {
-						cData, _ := coursesByID[id]
-						fmt.Printf("UNREACHABLE COURSE IN %s: %s (id: %s) earliest=%d\n", m.Title, cData.Title, id, earliestSemester)
-					}
 				}
 			}
 		}
