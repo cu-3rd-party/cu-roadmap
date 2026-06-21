@@ -217,7 +217,7 @@ func TestAnalogGroupDoesNotMarkVirtuallyPassedAsPassed(t *testing.T) {
 	// But C requires B, and B was not taken.
 	// The planner must schedule B, and then C.
 	semesters := roadmap.([]map[string]interface{})
-	
+
 	hasB := false
 	hasC := false
 	bSemester := -1
