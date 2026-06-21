@@ -120,22 +120,15 @@ func (s *PostgresStore) Close() error {
 }
 
 func (s *PostgresStore) ClearAll() error {
-	if err := s.db.Migrator().DropTable(
-		&models.Course{},
-		&models.CourseDependency{},
-		&models.MajorRequirement{},
-		&models.Student{},
-		&models.Major{},
-	); err != nil {
+	// ONLY clear dependencies and requirements so they can be rebuilt from the sheets.
+	// We MUST NOT drop courses, majors, or students to preserve user progress and foreign keys.
+	if err := s.db.Exec("DELETE FROM course_dependencies").Error; err != nil {
 		return err
 	}
-	return s.db.AutoMigrate(
-		&models.Course{},
-		&models.Major{},
-		&models.CourseDependency{},
-		&models.MajorRequirement{},
-		&models.Student{},
-	)
+	if err := s.db.Exec("DELETE FROM major_requirements").Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *PostgresStore) GetAllCourses() (map[uuid.UUID]interfaces.CourseData, error) {
@@ -254,7 +247,10 @@ func (s *PostgresStore) GetCourseDependencies() ([]interfaces.CourseDependencyDa
 }
 
 func (s *PostgresStore) CreateCourse(course interfaces.CourseData) (interfaces.CourseData, error) {
-	if err := s.db.Create(new(helpers.ToCourseModel(course))).Error; err != nil {
+	if err := s.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		UpdateAll: true,
+	}).Create(new(helpers.ToCourseModel(course))).Error; err != nil {
 		return course, err
 	}
 	return course, nil
@@ -298,7 +294,10 @@ func (s *PostgresStore) GetMajorByID(majorID uuid.UUID) (*interfaces.MajorData, 
 }
 
 func (s *PostgresStore) CreateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
-	if err := s.db.Create(new(helpers.ToMajorModel(major))).Error; err != nil {
+	if err := s.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		UpdateAll: true,
+	}).Create(new(helpers.ToMajorModel(major))).Error; err != nil {
 		return major, err
 	}
 	return major, nil
@@ -355,7 +354,10 @@ func (s *PostgresStore) CreateMajorRequirement(req interfaces.MajorRequirementDa
 		CourseID:        req.CourseID,
 		RequirementType: req.RequirementType,
 	}
-	if err := s.db.Create(&r).Error; err != nil {
+	if err := s.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		DoNothing: true,
+	}).Create(&r).Error; err != nil {
 		return req, err
 	}
 	return req, nil
@@ -373,7 +375,10 @@ func (s *PostgresStore) CreateCourseDependency(dep interfaces.CourseDependencyDa
 		DependencyType:   dep.DependencyType,
 		AlternativeGroup: dep.AlternativeGroup,
 	}
-	if err := s.db.Create(&d).Error; err != nil {
+	if err := s.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		DoNothing: true,
+	}).Create(&d).Error; err != nil {
 		return dep, err
 	}
 	return dep, nil

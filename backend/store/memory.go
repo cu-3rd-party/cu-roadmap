@@ -60,13 +60,8 @@ func (s *MemoryStore) Close() error { return nil }
 func (s *MemoryStore) ClearAll() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.courses = make(map[uuid.UUID]interfaces.CourseData)
-	s.majors = make(map[uuid.UUID]interfaces.MajorData)
 	s.majorRequirements = nil
 	s.courseDependencies = nil
-	s.students = make(map[uuid.UUID]interfaces.StudentData)
-	s.coursesByTitle = make(map[string]uuid.UUID)
-	s.majorsByTitle = make(map[string]uuid.UUID)
 	return nil
 }
 
