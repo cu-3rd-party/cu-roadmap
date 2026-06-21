@@ -95,67 +95,29 @@ func newRoadmapPlanningContext(
 		}
 	}
 
-	// For requirements where analog group is fulfilled, mark other courses from the group as "virtually passed"
-	// This prevents the algorithm from trying to schedule them
-	virtuallyPassedIDs := make(map[uuid.UUID]bool)
-	for _, req := range requirements {
-		if c, ok := allCourses[req.CourseID]; ok && c.AnalogGroup != "" {
-			if fulfilledAnalogGroups[c.AnalogGroup] {
-				// Check if this specific course is the one that fulfilled the group
-				isTheFulfillingCourse := passedIDs[req.CourseID]
-				if !isTheFulfillingCourse {
-					for _, ps := range plannedSemesters {
-						for _, id := range ps.CourseIDs {
-							if id == req.CourseID {
-								isTheFulfillingCourse = true
-								break
-							}
-						}
-						if isTheFulfillingCourse {
-							break
-						}
-					}
-				}
-				// If this is not the course that fulfilled the group, mark it as virtually passed
-				if !isTheFulfillingCourse {
-					virtuallyPassedIDs[req.CourseID] = true
-					fmt.Printf("DEBUG: Marking %s as virtually passed (group %s already fulfilled)\n", c.Title, c.AnalogGroup)
-				}
-			} else {
-				// Group not fulfilled yet, mark it as fulfilled by this course so we don't add the others
-				fulfilledAnalogGroups[c.AnalogGroup] = true
-				fmt.Printf("DEBUG: %s is the first course from group %s (will be added to targetCourses)\n", c.Title, c.AnalogGroup)
-			}
-		}
-	}
-
-	// Merge virtually passed courses into passedIDs
-	for cid := range virtuallyPassedIDs {
-		passedIDs[cid] = true
-	}
-
 	targetCourses := make(map[uuid.UUID]interfaces.CourseData)
 	coreCourseIDs := make(map[uuid.UUID]bool)
 	for _, req := range requirements {
-		// Skip virtually passed courses - don't add them to targetCourses at all
-		if virtuallyPassedIDs[req.CourseID] {
-			if c, ok := allCourses[req.CourseID]; ok {
-				fmt.Printf("DEBUG: Skipping %s from targetCourses (virtually passed)\n", c.Title)
-			}
-			continue
-		}
-
 		if c, ok := allCourses[req.CourseID]; ok {
 			if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
 				continue
+			}
+
+			// If the analog group is fulfilled by passed or planned courses,
+			// we skip other courses of this group from being added to targetCourses.
+			if c.AnalogGroup != "" && fulfilledAnalogGroups[c.AnalogGroup] {
+				isTheFulfillingCourse := passedIDs[req.CourseID] || plannedIDs[req.CourseID]
+				if !isTheFulfillingCourse {
+					fmt.Printf("DEBUG: Skipping %s (group %s already fulfilled)\n", c.Title, c.AnalogGroup)
+					continue
+				}
 			}
 
 			targetCourses[req.CourseID] = c
 			if c.AnalogGroup != "" {
 				fmt.Printf("DEBUG: Added %s to targetCourses (group %s)\n", c.Title, c.AnalogGroup)
 			}
-			// Don't mark virtually passed courses or already planned courses as core requirements
-			if !virtuallyPassedIDs[req.CourseID] && !plannedIDs[req.CourseID] && (req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity) {
+			if !plannedIDs[req.CourseID] && (req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity) {
 				coreCourseIDs[req.CourseID] = true
 			}
 		}
@@ -203,10 +165,8 @@ func newRoadmapPlanningContext(
 	// Prune targetCourses for AnalogGroup duplicates BEFORE resolving dependencies
 	analogGroupKeepers := make(map[string]uuid.UUID)
 	for id := range passedIDs {
-		if !virtuallyPassedIDs[id] {
-			if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
-				analogGroupKeepers[c.AnalogGroup] = id
-			}
+		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+			analogGroupKeepers[c.AnalogGroup] = id
 		}
 	}
 	for id := range plannedIDs {
@@ -220,7 +180,7 @@ func newRoadmapPlanningContext(
 			if existingID, exists := analogGroupKeepers[reqCourse.AnalogGroup]; exists {
 				// Duplicate found!
 				// If the existing one was explicitly passed/planned, we MUST keep it and drop the new one.
-				if (passedIDs[existingID] && !virtuallyPassedIDs[existingID]) || plannedIDs[existingID] {
+				if passedIDs[existingID] || plannedIDs[existingID] {
 					fmt.Printf("DEBUG Prune: Keeping existing %s (passed/planned), dropping %s\n", allCourses[existingID].Title, reqCourse.Title)
 					delete(targetCourses, reqCourseID)
 					delete(coreCourseIDs, reqCourseID)
@@ -288,7 +248,7 @@ func newRoadmapPlanningContext(
 				// Pick one alternative
 				var pickedReqID *uuid.UUID
 				for _, reqID := range altIDs {
-					if passedIDs[reqID] || plannedIDs[reqID] || virtuallyPassedIDs[reqID] {
+					if passedIDs[reqID] || plannedIDs[reqID] {
 						pickedReqID = &reqID
 						break
 					}
@@ -379,7 +339,7 @@ func newRoadmapPlanningContext(
 				// Pick one alternative
 				var pickedReqID *uuid.UUID
 				for _, reqID := range altIDs {
-					if passedIDs[reqID] || plannedIDs[reqID] || virtuallyPassedIDs[reqID] {
+					if passedIDs[reqID] || plannedIDs[reqID] {
 						pickedReqID = &reqID
 						break
 					}
