@@ -392,7 +392,11 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 
 	reqCount := 0
 	for normTitle, majorReqs := range courseToMajorReqs {
-		course := courseMap[normTitle]
+		course, ok := courseMap[normTitle]
+		if !ok {
+			slog.Warn("course mapping missing for major requirement", "title", normTitle)
+			continue
+		}
 		for majorTitle, reqType := range majorReqs {
 			major, exists := majorsByTitle[majorTitle]
 			if !exists {
