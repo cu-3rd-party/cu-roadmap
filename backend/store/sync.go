@@ -167,7 +167,11 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 
 	majorsByTitle := make(map[string]interfaces.MajorData)
 	courseMap := make(map[string]interfaces.CourseData)
-	courseToMajorReqs := make(map[string]map[string]enums.RequirementType)
+	type reqInfo struct {
+		reqType         enums.RequirementType
+		specializations []string
+	}
+	courseToMajorReqs := make(map[string]map[string]reqInfo)
 	type rowEntry struct {
 		Row       map[string]string
 		Course    interfaces.CourseData
@@ -190,7 +194,7 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 		}
 
 		for _, row := range rows {
-			title := strings.TrimSpace(getFirst(row, "Название курса"))
+			title := strings.Join(strings.Fields(getFirst(row, "Название курса")), " ")
 			if title == "" {
 				continue
 			}
@@ -219,6 +223,17 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			}
 
 			reqType := requirementTypeFromSheetCourseType(getFirst(row, "Тип курса"))
+			rawSpecs := getFirst(row, "Специализация", "Специализации")
+			var specs []string
+			if rawSpecs != "" && rawSpecs != "-" {
+				for _, sPart := range strings.Split(rawSpecs, ",") {
+					sPart = strings.TrimSpace(sPart)
+					if sPart != "" && !strings.EqualFold(sPart, "нет") {
+						specs = append(specs, sPart)
+					}
+				}
+			}
+
 			if _, exists := courseMap[norm]; !exists {
 				course := MapSheetRowToCourse(row, mapping.Category)
 				if len(course.AllowedCohorts) == 0 {
@@ -237,7 +252,7 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 					return SyncResult{}, fmt.Errorf("create course %s: %w", title, err)
 				}
 				courseMap[norm] = course
-				courseToMajorReqs[norm] = make(map[string]enums.RequirementType)
+				courseToMajorReqs[norm] = make(map[string]reqInfo)
 				allRows = append(allRows, rowEntry{Row: row, Course: course, SheetYear: sheetYear})
 			} else {
 				course := courseMap[norm]
@@ -287,9 +302,17 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				}
 
 				cur, ok := courseToMajorReqs[norm][majorKey]
-				if !ok || cur != enums.RequirementTypeMajorCore {
-					// major_core wins over others if the course appears multiple times.
-					courseToMajorReqs[norm][majorKey] = reqType
+				if !ok || cur.reqType != enums.RequirementTypeMajorCore {
+					var mergedSpecs []string
+					if ok {
+						mergedSpecs = mergeStringSlices(cur.specializations, specs)
+					} else {
+						mergedSpecs = specs
+					}
+					courseToMajorReqs[norm][majorKey] = reqInfo{
+						reqType:         reqType,
+						specializations: mergedSpecs,
+					}
 				}
 			}
 		}
@@ -353,14 +376,16 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			}
 		}
 
-		for _, coreqTitle := range SplitSheetTitles(getFirst(
+		coreqsStr := getFirst(
 			entry.Row,
 			"Кореквизиты",
 			"Кореквизиты ",
 			"Кореквизиты (двустороння связь, когда два курса должны читаться вместе)",
 			"Кореквизиты (когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A)",
 			"Кореквизиты (когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A)",
-		)) {
+		)
+
+		for _, coreqTitle := range SplitSheetTitles(coreqsStr) {
 			targetKey := coreqTitle + "|" + strconv.Itoa(entry.SheetYear)
 			target, exists := courseMap[targetKey]
 			if !exists {
@@ -391,17 +416,33 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 	}
 
 	reqCount := 0
+	createdSpecs := make(map[string]uuid.UUID)
 	for normTitle, majorReqs := range courseToMajorReqs {
 		course, ok := courseMap[normTitle]
 		if !ok {
 			slog.Warn("course mapping missing for major requirement", "title", normTitle)
 			continue
 		}
-		for majorTitle, reqType := range majorReqs {
+		for majorTitle, req := range majorReqs {
 			major, exists := majorsByTitle[majorTitle]
 			if !exists {
 				continue
 			}
+
+			for _, specTitle := range req.specializations {
+				specKey := major.ID.String() + "|" + specTitle
+				if _, ok := createdSpecs[specKey]; !ok {
+					newSpec, err := s.CreateSpecialization(interfaces.SpecializationData{
+						ID:      uuid.New(),
+						MajorID: major.ID,
+						Title:   specTitle,
+					})
+					if err == nil {
+						createdSpecs[specKey] = newSpec.ID
+					}
+				}
+			}
+
 			reqID := uuid.New()
 			reqKey := major.ID.String() + "\x00" + course.ID.String()
 			if existingID, ok := existingReqByPair[reqKey]; ok {
@@ -411,7 +452,8 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				ID:              reqID,
 				MajorID:         major.ID,
 				CourseID:        course.ID,
-				RequirementType: reqType,
+				RequirementType: req.reqType,
+				Specializations: req.specializations,
 			}); err != nil {
 				return SyncResult{}, fmt.Errorf("create major requirement: %w", err)
 			}
@@ -586,7 +628,7 @@ func SplitSheetTitles(raw string) []string {
 	for _, part := range strings.FieldsFunc(raw, func(r rune) bool {
 		return r == ',' || r == '\n' || r == ';'
 	}) {
-		part = strings.TrimSpace(part)
+		part = strings.Join(strings.Fields(part), " ")
 		if part != "" {
 			out = append(out, part)
 		}
@@ -741,4 +783,20 @@ func SplitPrerequisiteGroups(raw string) [][]string {
 		}
 	}
 	return groups
+}
+
+func mergeStringSlices(a, b []string) []string {
+	m := make(map[string]bool)
+	for _, s := range a {
+		m[s] = true
+	}
+	for _, s := range b {
+		m[s] = true
+	}
+	var out []string
+	for s := range m {
+		out = append(out, s)
+	}
+	sort.Strings(out)
+	return out
 }

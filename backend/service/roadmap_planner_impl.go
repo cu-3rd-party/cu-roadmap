@@ -38,6 +38,7 @@ func newRoadmapPlanningContext(
 	passedCourseIDs []uuid.UUID,
 	plannedSemesters []schemas.PlannedSemester,
 	majorID uuid.UUID,
+	specializationID *uuid.UUID,
 	maxLoad float64,
 	cohort int,
 ) (*roadmapPlanningContext, interface{}, error) {
@@ -52,6 +53,20 @@ func newRoadmapPlanningContext(
 	allCourses, err := store.GetAllCourses()
 	if err != nil {
 		return nil, nil, err
+	}
+
+	var specTitle *string
+	if specializationID != nil {
+		specs, err := store.GetSpecializationsByMajor(majorID)
+		if err == nil {
+			for _, s := range specs {
+				if s.ID == *specializationID {
+					t := s.Title
+					specTitle = &t
+					break
+				}
+			}
+		}
 	}
 
 	for _, c := range allCourses {
@@ -101,6 +116,19 @@ func newRoadmapPlanningContext(
 		if c, ok := allCourses[req.CourseID]; ok {
 			if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
 				continue
+			}
+
+			if req.RequirementType == enums.RequirementTypeMajorChoice && specTitle != nil {
+				belongs := false
+				for _, t := range req.Specializations {
+					if t == *specTitle {
+						belongs = true
+						break
+					}
+				}
+				if !belongs {
+					continue
+				}
 			}
 
 			// If the analog group is fulfilled by passed or planned courses,
@@ -440,12 +468,13 @@ func generateRoadmapWithStrategy(
 	passedCourseIDs []uuid.UUID,
 	plannedSemesters []schemas.PlannedSemester,
 	majorID uuid.UUID,
+	specializationID *uuid.UUID,
 	currentSemester int,
 	maxLoad float64,
 	cohort int,
 	selectSemester roadmapSelectionStrategy,
 ) (interface{}, error) {
-	ctx, immediate, err := newRoadmapPlanningContext(store, passedCourseIDs, plannedSemesters, majorID, maxLoad, cohort)
+	ctx, immediate, err := newRoadmapPlanningContext(store, passedCourseIDs, plannedSemesters, majorID, specializationID, maxLoad, cohort)
 	if err != nil || immediate != nil {
 		return immediate, err
 	}

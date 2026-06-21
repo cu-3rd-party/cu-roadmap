@@ -17,6 +17,7 @@ type PlannerRequest struct {
 	SelectedCourseIDs []PlannedSemester  `json:"selected_course_ids"`
 	CourseSource      enums.CourseSource `json:"course_source"`
 	MajorID           uuid.UUID          `json:"major_id" binding:"required"`
+	SpecializationID  *uuid.UUID         `json:"specialization_id"`
 	CurrentSemester   int                `json:"current_semester" default:"1"`
 	MaxLoad           float64            `json:"max_load" default:"60.0"`
 	Cohort            int                `json:"cohort"`

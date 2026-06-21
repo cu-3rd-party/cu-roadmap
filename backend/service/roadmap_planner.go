@@ -29,6 +29,7 @@ type RoadmapPlanner interface {
 		passedCourseIDs []uuid.UUID,
 		plannedSemesters []schemas.PlannedSemester,
 		majorID uuid.UUID,
+		specializationID *uuid.UUID,
 		currentSemester int,
 		maxLoad float64,
 		cohort int,

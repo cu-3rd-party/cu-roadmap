@@ -18,11 +18,12 @@ func (p *GreedyPlanner) GenerateRoadmap(
 	passedCourseIDs []uuid.UUID,
 	plannedSemesters []schemas.PlannedSemester,
 	majorID uuid.UUID,
+	specializationID *uuid.UUID,
 	currentSemester int,
 	maxLoad float64,
 	cohort int,
 ) (interface{}, error) {
-	return generateRoadmapWithStrategy(p.store, passedCourseIDs, plannedSemesters, majorID, currentSemester, maxLoad, cohort, selectGreedySemester)
+	return generateRoadmapWithStrategy(p.store, passedCourseIDs, plannedSemesters, majorID, specializationID, currentSemester, maxLoad, cohort, selectGreedySemester)
 }
 
 func cohortInSlice(cohort int, cohorts []int) bool {

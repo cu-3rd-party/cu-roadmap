@@ -17,4 +17,5 @@ type MajorRequirementData struct {
 	MajorID         uuid.UUID
 	CourseID        uuid.UUID
 	RequirementType enums.RequirementType
+	Specializations []string
 }

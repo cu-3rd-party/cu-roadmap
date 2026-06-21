@@ -75,7 +75,7 @@ func TestAnalogGroupOnlyOneRecommended(t *testing.T) {
 	planner, err := NewRoadmapPlanner(PlannerKindGreedy, s)
 	assert.NoError(t, err)
 
-	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, []schemas.PlannedSemester{}, major.ID, 1, 10.0, 0)
+	roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, []schemas.PlannedSemester{}, major.ID, nil, 1, 10.0, 0)
 	assert.NoError(t, err)
 
 	// Count how many courses from the analog group are in the roadmap
@@ -95,7 +95,7 @@ func TestAnalogGroupOnlyOneRecommended(t *testing.T) {
 
 	// Test 2: Student passed blue matan - should not recommend red or black
 	passedCourses := []uuid.UUID{blueMatan.ID}
-	roadmap2, err := planner.GenerateRoadmap(passedCourses, []schemas.PlannedSemester{}, major.ID, 1, 10.0, 0)
+	roadmap2, err := planner.GenerateRoadmap(passedCourses, []schemas.PlannedSemester{}, major.ID, nil, 1, 10.0, 0)
 	assert.NoError(t, err)
 
 	matanCount2 := 0
@@ -119,7 +119,7 @@ func TestAnalogGroupOnlyOneRecommended(t *testing.T) {
 			CourseIDs: []uuid.UUID{redMatan.ID},
 		},
 	}
-	roadmap3, err := planner.GenerateRoadmap([]uuid.UUID{}, plannedSemesters, major.ID, 2, 10.0, 0)
+	roadmap3, err := planner.GenerateRoadmap([]uuid.UUID{}, plannedSemesters, major.ID, nil, 2, 10.0, 0)
 	assert.NoError(t, err)
 
 	matanCount3 := 0
@@ -210,7 +210,7 @@ func TestAnalogGroupDoesNotMarkVirtuallyPassedAsPassed(t *testing.T) {
 
 	// Student passed Course A
 	passedCourses := []uuid.UUID{courseA.ID}
-	roadmap, err := planner.GenerateRoadmap(passedCourses, []schemas.PlannedSemester{}, major.ID, 1, 10.0, 0)
+	roadmap, err := planner.GenerateRoadmap(passedCourses, []schemas.PlannedSemester{}, major.ID, nil, 1, 10.0, 0)
 	assert.NoError(t, err)
 
 	// Since student passed A, the Group1 requirement is fulfilled.

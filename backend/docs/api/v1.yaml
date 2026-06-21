@@ -268,6 +268,27 @@ paths:
           $ref: '#/components/responses/InternalServerError'
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
+  /api/v1/majors/specializations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      description: возвращает список специализаций для конкретного мейджора
+      responses:
+        '200':
+          description: список специализаций (строки)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
   /api/v1/majors/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
@@ -654,8 +675,19 @@ components:
           type: string
           description: тип требования
           enum:
-            - core
-            - minor_recommended
+            - major_core
+            - major_choice
+            - flex
+            - university
+            - elective
+            - minor
+            - soft
+            - selected_topics
+        specializations:
+          type: array
+          description: список специализаций, для которых применяется это требование
+          items:
+            type: string
 
     Major:
       description: мейджор
@@ -688,8 +720,19 @@ components:
         type:
           type: string
           enum:
-            - core
-            - minor_recommended
+            - major_core
+            - major_choice
+            - flex
+            - university
+            - elective
+            - minor
+            - soft
+            - selected_topics
+        specializations:
+          type: array
+          description: список специализаций, для которых применяется это требование
+          items:
+            type: string
 
     MajorUpdateRequest:
       type: object
@@ -799,6 +842,11 @@ components:
           items:
             type: string
             format: uuid
+        to_major:
+          type: object
+          description: мапа из ID мейджора в тип требования к этому курсу (например major_core, major_choice, elective, soft и т.д.)
+          additionalProperties:
+            type: string
         postrequisites:
           type: array
           description: uuid курсов, которые являются пререквизитами перед конкретным
@@ -976,6 +1024,11 @@ components:
           type: string
           format: uuid
           description: UUID мейджора куда стремишься
+        specialization_id:
+          type: string
+          format: uuid
+          description: UUID специализации мейджора (если есть)
+          nullable: true
         current_semester:
           type: integer
           description: измеряется в кредитах, по дефолту 1

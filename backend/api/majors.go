@@ -17,6 +17,7 @@ import (
 func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 	rg.GET("/", getMajors)
 	rg.GET("/:cohort_year", getMajors)
+	rg.GET("/specializations/:id", getSpecializations)
 	rg.POST("/identify", identifyMajor)
 	rg.POST("/identify/:cohort_year", identifyMajor)
 
@@ -57,9 +58,14 @@ func getMajors(c *gin.Context) {
 		}
 		reqList := []gin.H{}
 		for _, r := range reqs {
+			specs := r.Specializations
+			if specs == nil {
+				specs = []string{}
+			}
 			reqList = append(reqList, gin.H{
-				"course_id": r.CourseID.String(),
-				"type":      string(r.RequirementType),
+				"course_id":       r.CourseID.String(),
+				"type":            string(r.RequirementType),
+				"specializations": specs,
 			})
 		}
 		res = append(res, gin.H{
@@ -71,6 +77,29 @@ func getMajors(c *gin.Context) {
 		})
 	}
 	writeCachedJSON(c, majorsCacheKey(c), res)
+}
+
+func getSpecializations(c *gin.Context) {
+	idStr := c.Param("id")
+	majorID, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid major id"})
+		return
+	}
+
+	s := store.GetStore()
+	if s == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+
+	specs, err := s.GetSpecializationsByMajor(majorID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, specs)
 }
 
 func identifyMajor(c *gin.Context) {

@@ -120,7 +120,7 @@ func TestGenerateRoadmapBasic(t *testing.T) {
 		_ = c3
 
 		planner := createPlannerForTest(t, factory.kind, s)
-		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, majorID, 1, 12.0, 0)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, majorID, nil, 1, 12.0, 0)
 		assert.NoError(t, err)
 		assert.IsType(t, []map[string]interface{}{}, roadmap)
 		assert.NotZero(t, len(roadmap.([]map[string]interface{})))
@@ -136,7 +136,7 @@ func TestGenerateRoadmapWithPassedCourses(t *testing.T) {
 		_ = c3
 
 		planner := createPlannerForTest(t, factory.kind, s)
-		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID}, nil, majorID, 3, 12.0, 0)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID}, nil, majorID, nil, 3, 12.0, 0)
 		assert.NoError(t, err)
 		assert.IsType(t, []map[string]interface{}{}, roadmap)
 	})
@@ -149,7 +149,7 @@ func TestGenerateRoadmapMajorNotFound(t *testing.T) {
 		defer s.Close()
 
 		planner := createPlannerForTest(t, factory.kind, s)
-		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, uuid.New(), 1, 12.0, 0)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, uuid.New(), nil, 1, 12.0, 0)
 		assert.NoError(t, err)
 		assert.IsType(t, map[string]interface{}{}, roadmap)
 		assert.Contains(t, roadmap.(map[string]interface{}), "error")
@@ -165,7 +165,7 @@ func TestGenerateRoadmapRespectsMaxLoad(t *testing.T) {
 		_ = c3
 
 		planner := createPlannerForTest(t, factory.kind, s)
-		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, majorID, 1, 5.0, 0)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, majorID, nil, 1, 5.0, 0)
 		assert.NoError(t, err)
 		rm := roadmap.([]map[string]interface{})
 		for _, sem := range rm {
@@ -182,7 +182,7 @@ func TestGenerateRoadmapEmptyMajor(t *testing.T) {
 		defer s.Close()
 
 		planner := createPlannerForTest(t, factory.kind, s)
-		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, uuid.New(), 1, 12.0, 0)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, uuid.New(), nil, 1, 12.0, 0)
 		assert.NoError(t, err)
 		assert.IsType(t, map[string]interface{}{}, roadmap)
 		assert.Contains(t, roadmap.(map[string]interface{}), "error")
@@ -196,7 +196,7 @@ func TestGenerateRoadmapAllPassed(t *testing.T) {
 
 		majorID := createMajorWithRequirements(s, c1.ID, c2.ID)
 		planner := createPlannerForTest(t, factory.kind, s)
-		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID, c2.ID}, nil, majorID, 1, 12.0, 0)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{c1.ID, c2.ID}, nil, majorID, nil, 1, 12.0, 0)
 		assert.NoError(t, err)
 		assert.IsType(t, []map[string]interface{}{}, roadmap)
 	})
@@ -208,7 +208,7 @@ func TestGenerateRoadmapOptimizationStrategiesDiverge(t *testing.T) {
 
 	results := make(map[PlannerKind][]string)
 	runRoadmapPlannerTestsWithStore(t, s, func(t *testing.T, factory plannerFactory, planner RoadmapPlanner) {
-		roadmap, err := planner.GenerateRoadmap(nil, nil, majorID, 1, 6.0, 0)
+		roadmap, err := planner.GenerateRoadmap(nil, nil, majorID, nil, 1, 6.0, 0)
 		assert.NoError(t, err)
 
 		rm := roadmap.([]map[string]interface{})
@@ -229,7 +229,7 @@ func TestGenerateRoadmapBaselineCompletesAllRequiredCourses(t *testing.T) {
 	defer s.Close()
 
 	runRoadmapPlannerTestsWithStore(t, s, func(t *testing.T, factory plannerFactory, planner RoadmapPlanner) {
-		roadmap, err := planner.GenerateRoadmap(nil, nil, majorID, 1, 6.0, 0)
+		roadmap, err := planner.GenerateRoadmap(nil, nil, majorID, nil, 1, 6.0, 0)
 		assert.NoError(t, err)
 
 		rm := roadmap.([]map[string]interface{})
@@ -308,7 +308,7 @@ func TestGenerateRoadmapRepeatsOddEvenAvailabilityBeyondSemesterEight(t *testing
 	})
 
 	runRoadmapPlannerTestsWithStore(t, s, func(t *testing.T, factory plannerFactory, planner RoadmapPlanner) {
-		roadmap, err := planner.GenerateRoadmap(nil, nil, major.ID, 3, 3.0, 0)
+		roadmap, err := planner.GenerateRoadmap(nil, nil, major.ID, nil, 3, 3.0, 0)
 		assert.NoError(t, err)
 
 		rm := roadmap.([]map[string]interface{})
@@ -435,7 +435,7 @@ func TestGenerateRoadmapWithPlannedSemesters(t *testing.T) {
 			{Semester: 5, CourseIDs: []uuid.UUID{c2.ID}},
 		}
 
-		roadmap, err := planner.GenerateRoadmap(nil, planned, majorID, 1, 12.0, 0)
+		roadmap, err := planner.GenerateRoadmap(nil, planned, majorID, nil, 1, 12.0, 0)
 		assert.NoError(t, err)
 
 		rm := roadmap.([]map[string]interface{})
@@ -472,7 +472,7 @@ func BenchmarkGenerateRoadmapImplementations(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, err := planner.GenerateRoadmap(nil, nil, majorID, 1, 6.0, 0)
+				_, err := planner.GenerateRoadmap(nil, nil, majorID, nil, 1, 6.0, 0)
 				if err != nil {
 					b.Fatal(err)
 				}

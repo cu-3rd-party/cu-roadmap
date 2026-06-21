@@ -19,6 +19,7 @@ type MemoryStore struct {
 	majors             map[uuid.UUID]interfaces.MajorData
 	majorRequirements  []interfaces.MajorRequirementData
 	courseDependencies []interfaces.CourseDependencyData
+	specializations    []interfaces.SpecializationData
 	students           map[uuid.UUID]interfaces.StudentData
 	coursesByTitle     map[string]uuid.UUID
 	majorsByTitle      map[string]uuid.UUID
@@ -62,6 +63,7 @@ func (s *MemoryStore) ClearAll() error {
 	defer s.mu.Unlock()
 	s.majorRequirements = nil
 	s.courseDependencies = nil
+	s.specializations = nil
 	return nil
 }
 
@@ -265,6 +267,38 @@ func (s *MemoryStore) DeleteMajorRequirements(majorID uuid.UUID) error {
 		}
 	}
 	s.majorRequirements = newReqs
+	return nil
+}
+
+func (s *MemoryStore) GetSpecializationsByMajor(majorID uuid.UUID) ([]interfaces.SpecializationData, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]interfaces.SpecializationData, 0)
+	for _, spec := range s.specializations {
+		if spec.MajorID == majorID {
+			out = append(out, spec)
+		}
+	}
+	return out, nil
+}
+
+func (s *MemoryStore) CreateSpecialization(spec interfaces.SpecializationData) (interfaces.SpecializationData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.specializations = append(s.specializations, spec)
+	return spec, nil
+}
+
+func (s *MemoryStore) DeleteSpecializations(majorID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var newSpecs []interfaces.SpecializationData
+	for _, spec := range s.specializations {
+		if spec.MajorID != majorID {
+			newSpecs = append(newSpecs, spec)
+		}
+	}
+	s.specializations = newSpecs
 	return nil
 }
 

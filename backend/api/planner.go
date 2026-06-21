@@ -41,7 +41,7 @@ func generateRoadmap(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	roadmap, err := planner.GenerateRoadmap(req.PassedCourseIDs, req.SelectedCourseIDs, req.MajorID, req.CurrentSemester, req.MaxLoad, req.Cohort)
+	roadmap, err := planner.GenerateRoadmap(req.PassedCourseIDs, req.SelectedCourseIDs, req.MajorID, req.SpecializationID, req.CurrentSemester, req.MaxLoad, req.Cohort)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
