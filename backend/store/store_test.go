@@ -211,14 +211,28 @@ func (s *MemoryStoreTestSuite) TestUpdateStudent() {
 func (s *MemoryStoreTestSuite) TestClearAll() {
 	course := interfaces.CourseData{ID: uuid.New(), Title: "To Be Cleared", AvailableSemesters: []int{1}, Workload: 3.0}
 	s.s.CreateCourse(course)
+	major := interfaces.MajorData{ID: uuid.New(), Title: "Test Major", School: "Tech"}
+	s.s.CreateMajor(major)
+	s.s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: course.ID})
+	s.s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: course.ID, RequiredCourseID: course.ID})
 
 	courses, _ := s.s.GetAllCourses()
 	assert.Len(s.T(), courses, 1)
+	reqs, _ := s.s.GetMajorRequirements(major.ID)
+	assert.Len(s.T(), reqs, 1)
+	deps, _ := s.s.GetCourseDependencies()
+	assert.Len(s.T(), deps, 1)
 
 	s.s.ClearAll()
 
 	courses, _ = s.s.GetAllCourses()
-	assert.Len(s.T(), courses, 0)
+	assert.Len(s.T(), courses, 1) // Courses should NOT be cleared
+
+	reqs, _ = s.s.GetMajorRequirements(major.ID)
+	assert.Len(s.T(), reqs, 0) // Requirements should be cleared
+
+	deps, _ = s.s.GetCourseDependencies()
+	assert.Len(s.T(), deps, 0) // Dependencies should be cleared
 }
 
 func TestMemoryStoreSuite(t *testing.T) {
