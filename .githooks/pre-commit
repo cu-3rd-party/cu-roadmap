@@ -44,7 +44,7 @@ autoinstall() {
 }
 
 list_staged_matches() {
-  printf '%s\n' "$STAGED_FILES" | rg "$1" || true
+  printf '%s\n' "$STAGED_FILES" | grep -E "$1" || true
 }
 
 ensure_pnpm_project_ready() {

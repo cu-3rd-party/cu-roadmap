@@ -119,7 +119,10 @@ export const PlannerSummary = ({
         <div className="grid grid-cols-3 border-b [&>*:not(:nth-child(3n))]:border-r">
           {loading
             ? plannerStatsLabels.map((label) => (
-                <SummaryStatCardSkeleton key={`stat-skeleton-${label}`} label={label}/>
+                <SummaryStatCardSkeleton
+                  key={`stat-skeleton-${label}`}
+                  label={label}
+                />
               ))
             : stats.map((stat) => (
                 <SummaryStatCard key={stat.label} {...stat} />
