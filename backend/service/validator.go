@@ -312,7 +312,7 @@ func (v *RoadmapValidator) ValidateFullRoadmap(
 				if rc, ok := v.AllCourses[reqID]; ok {
 					reqTitle = rc.Title
 				}
-				
+
 				msgs = append(msgs, map[string]interface{}{
 					"level":     "error",
 					"message":   fmt.Sprintf("На ваш мейджор это обязательный курс: %s", reqTitle),

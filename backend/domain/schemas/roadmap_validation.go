@@ -7,8 +7,8 @@ import (
 )
 
 type RoadmapValidationRequest struct {
-	Roadmap         []SemesterData `json:"roadmap" binding:"required"`
-	MaxLoad         float64        `json:"max_load" default:"60.0"`
+	Roadmap          []SemesterData `json:"roadmap" binding:"required"`
+	MaxLoad          float64        `json:"max_load" default:"60.0"`
 	CurrentSemester  int            `json:"current_semester"`
 	MajorID          *uuid.UUID     `json:"major_id,omitempty"`
 	SpecializationID *uuid.UUID     `json:"specialization_id,omitempty"`
