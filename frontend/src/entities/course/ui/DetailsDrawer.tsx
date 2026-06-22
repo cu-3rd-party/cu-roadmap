@@ -52,7 +52,11 @@ export const DetailsDrawer = ({
           />
         </SheetHeader>
 
-        <div className="flex-1 space-y-6 overflow-y-auto rounded-t-2xl bg-background px-6 pt-5 pb-8">
+        {/* touch-pan-y: this is a scroll container, so the browser would
+            otherwise claim horizontal flicks as panning and cancel the sheet's
+            swipe-to-close drag (drag="x"). Restricting it to vertical panning
+            leaves horizontal gestures for framer-motion. */}
+        <div className="flex-1 space-y-6 touch-pan-y overflow-y-auto rounded-t-2xl bg-background px-6 pt-5 pb-8">
           <SyllabusCard link={course.syllabus} />
 
           {course.description && (

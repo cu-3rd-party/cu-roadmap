@@ -1,4 +1,5 @@
 export {
+  plannerStatsLabels,
   buildPlannerStats,
   buildSemesters,
   beforeIdentifyMajorsDelay,

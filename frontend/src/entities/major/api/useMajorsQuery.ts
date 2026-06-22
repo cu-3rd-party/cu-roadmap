@@ -12,6 +12,18 @@ export const majorsQueryKey = (year: AdmissionYear) =>
 export const useMajorsQuery = (year: AdmissionYear | null) =>
   useQuery({
     queryKey: ["majors", year],
-    queryFn: () => getMajors(year!).then((dtos) => dtos.map(normalizeMajor)),
+    queryFn: () =>
+      getMajors(year!).then((dtos) =>
+        dtos.map(normalizeMajor).sort((a, b) => a.title.localeCompare(b.title)),
+      ),
     enabled: year != null,
+  });
+
+export const useAllMajorsQuery = () =>
+  useQuery({
+    queryKey: ["majors", "all"],
+    queryFn: () =>
+      getMajors().then((dtos) =>
+        dtos.map(normalizeMajor).sort((a, b) => a.title.localeCompare(b.title)),
+      ),
   });

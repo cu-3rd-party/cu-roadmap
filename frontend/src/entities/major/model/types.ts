@@ -10,6 +10,7 @@ export interface Major {
   id: UUID;
   title: string;
   school: string;
+  cohortYear: number;
   requirements: MajorRequirement[];
 }
 

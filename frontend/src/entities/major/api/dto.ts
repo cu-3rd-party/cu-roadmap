@@ -11,6 +11,7 @@ export interface MajorDto {
   id: UUID;
   title: string;
   school: MajorSchool;
+  cohort_year: number;
   requirements: MajorRequirementDto[];
 }
 

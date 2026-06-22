@@ -16,6 +16,12 @@ import {
   buildSemesters,
 } from "./model";
 
+const sameIds = (a: string[], b: string[]) => {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  return b.every((id) => set.has(id));
+};
+
 const PlannerPage = () => {
   const { admissionYear } = useSettingsStore();
   const { selections, validation } = usePlannerStore();
@@ -51,6 +57,12 @@ const PlannerPage = () => {
     admissionYear,
   );
   const majorsQuery = useMajorsQuery(admissionYear);
+
+  // Show the spinner from the moment the plan changes — while the debounce is
+  // still pending the request hasn't fired yet (isFetching is false), so also
+  // flag the gap where the live selection hasn't caught up to the debounced one.
+  const identifying =
+    !sameIds(selectedCourseIds, debouncedCourseIds) || identifyQuery.isFetching;
 
   // First-load only: header + buttons stay live, the 6-cell grid shows
   // skeletons. keepPreviousData keeps isLoading false on later updates.
@@ -94,6 +106,7 @@ const PlannerPage = () => {
         stats={stats}
         majors={plannerMajors}
         loading={summaryLoading}
+        identifying={identifying}
       />
 
       {semesters.map((semester) => (
@@ -104,6 +117,7 @@ const PlannerPage = () => {
           courses={courses ?? []}
           coursesLoading={isLoading}
           coursesError={isError}
+          identifying={identifying}
         />
       ))}
     </div>

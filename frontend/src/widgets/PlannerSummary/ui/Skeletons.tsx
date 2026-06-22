@@ -1,10 +1,11 @@
 import { Skeleton } from "@/shared/ui";
 
-// Mirrors SummaryStatCard: label line + larger value block.
-export const SummaryStatCardSkeleton = () => (
+export const SummaryStatCardSkeleton = ({ label }: { label: string }) => (
   <div className="flex flex-col gap-2 px-6 py-4.5">
-    <Skeleton className="h-4 w-24" />
-    <Skeleton className="h-7 w-16" />
+    <span className="text-center sm:text-start text-xs sm:text-sm text-fg-secondary font-semibold">
+      {label}
+    </span>
+    <Skeleton className="h-8 w-10" />
   </div>
 );
 

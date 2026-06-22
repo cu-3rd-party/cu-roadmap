@@ -1,5 +1,9 @@
 export { getMajors } from "./getMajors";
-export { useMajorsQuery, majorsQueryKey } from "./useMajorsQuery";
+export {
+  useMajorsQuery,
+  useAllMajorsQuery,
+  majorsQueryKey,
+} from "./useMajorsQuery";
 export { identifyMajors } from "./identifyMajors";
 export {
   useIdentifyMajorsQuery,

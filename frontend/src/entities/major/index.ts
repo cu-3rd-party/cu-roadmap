@@ -1,6 +1,7 @@
 export {
   getMajors,
   useMajorsQuery,
+  useAllMajorsQuery,
   majorsQueryKey,
   identifyMajors,
   useIdentifyMajorsQuery,

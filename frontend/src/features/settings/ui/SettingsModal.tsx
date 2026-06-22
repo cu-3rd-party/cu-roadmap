@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { useAllMajorsQuery } from "@/entities/major";
 import { usePlannerStore } from "@/entities/roadmap";
 import { ADMISSION_YEARS, type AdmissionYear } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
@@ -30,20 +31,33 @@ interface SettingsModalProps {
 
 export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const { admissionYear, setAdmissionYear } = useSettingsStore();
-  const { reset } = usePlannerStore();
+  const { reset, majorId, setMajorId } = usePlannerStore();
   const [selectedYear, setSelectedYear] = useState("");
+  const [selectedMajorId, setSelectedMajorId] = useState("");
   const isMobile = useMediaQuery("sm");
+
+  const { data: majors } = useAllMajorsQuery();
+  const yearMajors =
+    majors?.filter((m) => m.cohortYear === Number(selectedYear)) ?? [];
 
   useEffect(() => {
     if (open) {
       setSelectedYear(admissionYear ? String(admissionYear) : "");
+      setSelectedMajorId(majorId ?? "");
     }
-  }, [open, admissionYear]);
+  }, [open, admissionYear, majorId]);
+
+  const handleYearChange = (value: string) => {
+    setSelectedYear(value);
+    setSelectedMajorId("");
+  };
 
   const handleProceed = () => {
-    if (!selectedYear) return;
+    if (!selectedYear || !selectedMajorId) return;
+    const yearChanged = Number(selectedYear) !== admissionYear;
     setAdmissionYear(Number(selectedYear) as AdmissionYear);
-    reset();
+    if (yearChanged) reset();
+    setMajorId(selectedMajorId);
     onOpenChange(false);
   };
 
@@ -51,7 +65,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
     <>
       <div className="flex flex-col gap-1.5">
         <Label className="text-sm text-fg-primary">Год поступления</Label>
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
+        <Select value={selectedYear} onValueChange={handleYearChange}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="" />
           </SelectTrigger>
@@ -65,11 +79,27 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
         </Select>
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-sm text-fg-primary">Мейджор</Label>
+        <Select value={selectedMajorId} onValueChange={setSelectedMajorId}>
+          <SelectTrigger className="w-full" disabled={!selectedYear}>
+            <SelectValue placeholder="" />
+          </SelectTrigger>
+          <SelectContent>
+            {yearMajors.map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <Button
         size="md"
         className="w-full"
         variant="outline"
-        disabled={!selectedYear}
+        disabled={!selectedYear || !selectedMajorId}
         onClick={handleProceed}
       >
         Сохранить изменения
@@ -99,7 +129,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex w-[calc(100%-2rem)] max-w-md flex-col gap-0 overflow-hidden rounded-3xl bg-education-green-pale p-0">
+      <DialogContent className="flex w-[calc(100%-2rem)] min-w-xl flex-col gap-0 overflow-hidden rounded-3xl bg-education-green-pale p-0">
         <DialogHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">
           <DialogTitle className="text-2xl font-bold text-fg-primary">
             Настройки

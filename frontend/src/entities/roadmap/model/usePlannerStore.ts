@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import type { UUID } from "@/shared/model";
+
 import type { SemesterValidation } from "./domain";
 import { PlannedCourse } from "./types";
 
@@ -22,6 +24,9 @@ interface PlannerState {
   validation: SemesterValidation[];
   // Course ids just added by the generate algorithm, shown with a blue highlight
   generatedIds: Set<string>;
+  // Major chosen by the user during onboarding (greeting modal)
+  majorId: UUID | null;
+  setMajorId: (majorId: UUID | null) => void;
   addCourse: (semester: number, course: PlannedCourse) => void;
   markGenerated: (ids: string[]) => void;
   removeCourse: (semester: number, courseId: string) => void;
@@ -40,6 +45,8 @@ export const usePlannerStore = create<PlannerState>()(
       selections: {},
       validation: [],
       generatedIds: new Set<string>(),
+      majorId: null,
+      setMajorId: (majorId) => set({ majorId }),
       addCourse: (semester, course) =>
         set((state) => {
           const current = state.selections[semester] ?? [];
@@ -135,6 +142,7 @@ export const usePlannerStore = create<PlannerState>()(
               selections: {},
               validation: [],
               generatedIds: new Set<string>(),
+              majorId: null,
             };
           const kept: Record<number, PlannedCourse[]> = {};
           for (const [semester, list] of Object.entries(state.selections)) {
@@ -153,7 +161,10 @@ export const usePlannerStore = create<PlannerState>()(
     {
       name: "planner-selections",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ selections: state.selections }),
+      partialize: (state) => ({
+        selections: state.selections,
+        majorId: state.majorId,
+      }),
     },
   ),
 );

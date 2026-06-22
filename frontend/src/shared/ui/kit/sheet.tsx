@@ -174,7 +174,10 @@ function SheetContent({
         <SheetPortal forceMount>
           <SheetPrimitive.Overlay data-slot="sheet-overlay" asChild forceMount>
             <motion.div
-              className="fixed inset-0 z-50 bg-black/50"
+              // transform-gpu keeps the overlay on its own GPU layer even after
+              // the opacity fade ends, so the heavy page behind it is rasterized
+              // once instead of being repainted on every frame of the panel slide.
+              className="fixed inset-0 z-50 transform-gpu bg-black/50"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -188,6 +191,11 @@ function SheetContent({
             {...props}
           >
             <motion.div
+              // Keep the sliding panel on its own GPU layer so the slide only
+              // composites this layer instead of repainting the panel (and the
+              // page behind the translucent overlay) every frame. The single
+              // biggest factor for smoothness on low-end mobile.
+              style={{ willChange: "transform", backfaceVisibility: "hidden" }}
               className={cn(sheetVariants({ side }), className)}
               initial={offscreen}
               animate={{ x: 0, y: 0 }}

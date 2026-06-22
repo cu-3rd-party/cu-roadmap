@@ -1,4 +1,5 @@
 import { Course } from "@/entities/course";
+import { sortKey } from "@/shared/lib";
 import { CourseCategory, categorySlugToName } from "@/shared/model";
 
 import { CatalogCategory } from "../model";
@@ -12,8 +13,6 @@ const CATEGORY_ORDER: CourseCategory[] = [
   "stem",
   "soft",
 ];
-
-const sortKey = (title: string) => title.replace(/^[^а-яёА-ЯЁa-zA-Z]+/, "");
 
 // Group normalized courses into the catalog category buckets (in display order)
 export const buildCatalogCategories = (courses: Course[]): CatalogCategory[] =>

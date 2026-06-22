@@ -1,9 +1,10 @@
-import { RotateCcw, Sparkles, Waypoints } from "lucide-react";
+import { Loader2, RotateCcw, Sparkles, Waypoints } from "lucide-react";
 import { useState } from "react";
 
 import { usePlannerStore } from "@/entities/roadmap";
 import { useSettingsStore } from "@/features/settings";
 import { TrajectorySelectModal } from "@/features/trajectory-select";
+import { plannerStatsLabels } from "@/pages/planner/model";
 import { admissionYearToSemester } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
 import { Button, Checkbox, Chip, Label, Panel } from "@/shared/ui";
@@ -20,12 +21,14 @@ interface PlannerSummaryProps {
   stats: SummaryStat[];
   majors: MajorProgress[];
   loading?: boolean;
+  identifying?: boolean;
 }
 
 export const PlannerSummary = ({
   stats,
   majors,
   loading,
+  identifying,
 }: PlannerSummaryProps) => {
   const { reset } = usePlannerStore();
   const isMobile = useMediaQuery("md");
@@ -50,7 +53,17 @@ export const PlannerSummary = ({
             <Chip variant="blue" size={isMobile ? "xs" : "sm"}>
               <Waypoints />
             </Chip>
-            <h1 className="text-2xl font-bold text-fg-primary">Планировщик</h1>
+            <div className="flex gap-2 items-center">
+              <h1 className="text-2xl font-bold text-fg-primary">
+                Планировщик
+              </h1>
+              {identifying && (
+                <Loader2
+                  className="size-4 animate-spin text-fg-secondary mt-0.5"
+                  aria-label="Загрузка…"
+                />
+              )}
+            </div>
           </div>
 
           <div className="flex justify-center gap-4 lg:gap-6">
@@ -105,8 +118,8 @@ export const PlannerSummary = ({
         {/* Summary stats — always a row of three */}
         <div className="grid grid-cols-3 border-b [&>*:not(:nth-child(3n))]:border-r">
           {loading
-            ? Array.from({ length: 3 }).map((_, i) => (
-                <SummaryStatCardSkeleton key={`stat-skeleton-${i}`} />
+            ? plannerStatsLabels.map((label) => (
+                <SummaryStatCardSkeleton key={`stat-skeleton-${label}`} label={label}/>
               ))
             : stats.map((stat) => (
                 <SummaryStatCard key={stat.label} {...stat} />

@@ -1,6 +1,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import type {
+  CSSProperties,
+  MouseEvent as ReactMouseEvent,
+  TouchEvent as ReactTouchEvent,
+} from "react";
 
 import { CourseCard, type CourseDetails } from "@/entities/course";
 import { cn } from "@/shared/lib";
@@ -39,17 +43,21 @@ export const SortableCourseCard = ({
 
   // The course details drawer is portaled to <body> but is a React child of
   // this draggable, so React events from inside it bubble here. Don't start a
-  // drag when the pointerdown originates in the drawer -  but let the event keep
+  // drag when the gesture originates in the drawer -  but let the event keep
   // propagating so the drawer's own handlers still work.
-  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (
-      (e.target as HTMLElement).closest(
-        '[data-slot="sheet-content"], [data-slot="sheet-overlay"]',
-      )
-    ) {
-      return;
-    }
-    listeners?.onPointerDown?.(e);
+  const startsInDrawer = (e: ReactMouseEvent | ReactTouchEvent) =>
+    (e.target as HTMLElement).closest(
+      '[data-slot="sheet-content"], [data-slot="sheet-overlay"]',
+    );
+
+  const handleMouseDown = (e: ReactMouseEvent<HTMLDivElement>) => {
+    if (startsInDrawer(e)) return;
+    listeners?.onMouseDown?.(e);
+  };
+
+  const handleTouchStart = (e: ReactTouchEvent<HTMLDivElement>) => {
+    if (startsInDrawer(e)) return;
+    listeners?.onTouchStart?.(e);
   };
 
   return (
@@ -58,9 +66,10 @@ export const SortableCourseCard = ({
       style={style}
       {...attributes}
       {...listeners}
-      onPointerDown={handlePointerDown}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
       className={cn(
-        "touch-none rounded-xl select-none",
+        "rounded-xl select-none",
         isDragging ? "cursor-grabbing opacity-40" : "cursor-grab",
       )}
     >

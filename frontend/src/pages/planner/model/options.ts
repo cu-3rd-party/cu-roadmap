@@ -5,6 +5,8 @@ import type { SemesterSectionProps } from "@/widgets/SemesterSection";
 
 import { getSemesterDateRange } from "../lib";
 
+export const plannerStatsLabels = ["Курсов выбрано", "Конфликты", "Средняя нагрузка"]
+
 export const buildPlannerStats = (
   selectedCount: number,
   conflicts: number,

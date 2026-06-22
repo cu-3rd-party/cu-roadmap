@@ -5,7 +5,8 @@ import {
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -14,7 +15,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Check, Trash } from "lucide-react";
+import { Check, Loader2, Trash } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import {
@@ -40,6 +41,7 @@ export interface SemesterSectionProps {
   courses: Course[];
   coursesLoading: boolean;
   coursesError: boolean;
+  identifying?: boolean;
 }
 
 export const SemesterSection = ({
@@ -48,6 +50,7 @@ export const SemesterSection = ({
   courses: catalogCourses,
   coursesLoading,
   coursesError,
+  identifying,
 }: SemesterSectionProps) => {
   const isMobile = useMediaQuery("sm");
 
@@ -92,8 +95,14 @@ export const SemesterSection = ({
   const moveTargetsFor = (id: string) =>
     (courseById.get(id)?.availableSemesters ?? []).filter((n) => n !== index);
 
+  // Desktop (mouse) starts dragging instantly on an 8px move. Touch requires a
+  // short press-and-hold so a quick swipe scrolls the page instead of hijacking
+  // it into a drag (the delay is aborted if the finger moves past the tolerance).
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -141,11 +150,21 @@ export const SemesterSection = ({
   if (isCompleted && hideCompletedSemesters) return null;
 
   return (
-    <Panel className="relative px-2 sm:px-4 lg:px-6">
+    <Panel className="relative px-2 sm:px-4 lg:p-6">
       <div className="mb-4 flex items-center gap-2.5 px-1">
         <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 sm:items-center">
-          <h2 className="text-lg font-bold text-fg-primary">{index} семестр</h2>
-          <span className="text-sm text-fg-secondary">{dateRange}</span>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-fg-primary">
+              {index} семестр
+            </h2>
+            {identifying && (
+              <Loader2
+                className="size-4 animate-spin text-fg-secondary"
+                aria-label="Загрузка…"
+              />
+            )}
+          </div>
+          <span className="text-sm mt-0.5 text-fg-secondary">{dateRange}</span>
         </div>
         <div className="ml-auto flex items-center gap-4">
           {courses.length > 0 && (

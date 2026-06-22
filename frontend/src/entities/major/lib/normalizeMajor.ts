@@ -13,6 +13,7 @@ export const normalizeMajor = (dto: MajorDto): Major => {
     id: dto.id,
     title: dto.title,
     school: dto.school,
+    cohortYear: dto.cohort_year,
     requirements:
       dto.requirements?.map((req) => normalizeRequirement(req)) ?? [],
   };

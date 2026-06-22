@@ -9,6 +9,7 @@ describe("normalizeMajor", () => {
       id: "1",
       title: "Software Engineering",
       school: "Tech",
+      cohort_year: 2025,
       requirements: [
         { course_id: "c1", requirement_type: "major_core" },
         { course_id: "c2", requirement_type: "flex" },
@@ -21,6 +22,7 @@ describe("normalizeMajor", () => {
       id: "1",
       title: "Software Engineering",
       school: "Tech",
+      cohortYear: 2025,
       requirements: [
         { courseId: "c1", requirementType: "major_core" },
         { courseId: "c2", requirementType: "flex" },
@@ -33,6 +35,7 @@ describe("normalizeMajor", () => {
       id: "2",
       title: "AI",
       school: "Tech",
+      cohort_year: 2025,
       requirements: undefined as never,
     };
 

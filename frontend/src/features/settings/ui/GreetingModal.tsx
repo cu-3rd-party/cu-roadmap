@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { useAllMajorsQuery } from "@/entities/major";
+import { usePlannerStore } from "@/entities/roadmap";
 import { ADMISSION_YEARS } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
 import {
@@ -26,12 +28,24 @@ import { useSettingsStore } from "../model";
 
 export const GreetingModal = () => {
   const { hasSeenGreeting, completeGreeting } = useSettingsStore();
+  const { setMajorId: persistMajorId } = usePlannerStore();
   const [admissionYear, setAdmissionYear] = useState("");
+  const [majorId, setMajorId] = useState("");
   const isMobile = useMediaQuery("sm");
 
+  const { data: majors } = useAllMajorsQuery();
+  const yearMajors =
+    majors?.filter((m) => m.cohortYear === Number(admissionYear)) ?? [];
+
+  const handleYearChange = (value: string) => {
+    setAdmissionYear(value);
+    setMajorId("");
+  };
+
   const handleProceed = () => {
-    if (!admissionYear) return;
+    if (!admissionYear || !majorId) return;
     completeGreeting(Number(admissionYear) as (typeof ADMISSION_YEARS)[number]);
+    persistMajorId(majorId);
   };
 
   const description = (
@@ -41,8 +55,8 @@ export const GreetingModal = () => {
         траекторию учебы.
       </p>
       <p>
-        Для начала выбери год своего поступления в ЦУ (позже его можно будет
-        изменить в настройках):
+        Для начала выбери год своего поступления в ЦУ и мейджор (обе опции позже
+        можно будет изменить в настройках):
       </p>
     </>
   );
@@ -50,7 +64,8 @@ export const GreetingModal = () => {
   const fields = (
     <>
       <div className="flex flex-col gap-1.5">
-        <Select value={admissionYear} onValueChange={setAdmissionYear}>
+        <span className="text-sm text-fg-primary">Год поступления</span>
+        <Select value={admissionYear} onValueChange={handleYearChange}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="" />
           </SelectTrigger>
@@ -64,11 +79,27 @@ export const GreetingModal = () => {
         </Select>
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm text-fg-primary">Мейджор</span>
+        <Select value={majorId} onValueChange={setMajorId}>
+          <SelectTrigger className="w-full" disabled={!admissionYear}>
+            <SelectValue placeholder="" />
+          </SelectTrigger>
+          <SelectContent>
+            {yearMajors.map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <Button
         size="md"
         className="w-full"
         variant="outline"
-        disabled={!admissionYear}
+        disabled={!admissionYear || !majorId}
         onClick={handleProceed}
       >
         Продолжить
@@ -115,7 +146,7 @@ export const GreetingModal = () => {
         showCloseButton={false}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
-        className="flex w-[calc(100%-2rem)] max-w-md flex-col gap-0 overflow-hidden rounded-3xl bg-education-green-pale p-0"
+        className="flex w-[calc(100%-2rem)] min-w-xl flex-col gap-0 overflow-hidden rounded-3xl bg-education-green-pale p-0"
       >
         <DialogHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">
           <DialogTitle className="text-2xl font-bold text-fg-primary">
