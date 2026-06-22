@@ -50,5 +50,5 @@ deploy.env
 *.db
 
 # bins
-.exe
+*.exe
 backend/out.log
