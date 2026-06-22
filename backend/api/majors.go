@@ -20,6 +20,8 @@ func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 	rg.GET("/specializations/:id", getSpecializations)
 	rg.POST("/identify", identifyMajor)
 	rg.POST("/identify/:cohort_year", identifyMajor)
+	rg.POST("/identify-specializations", identifySpecializations)
+	rg.POST("/identify-specializations/:cohort_year", identifySpecializations)
 
 	admin := rg.Group("/")
 	admin.Use(middleware.AuthMiddleware())

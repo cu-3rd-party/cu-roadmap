@@ -375,6 +375,63 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
 
+  /api/v1/majors/identify-specializations:
+    description: анализирует куда соответствуешь (с детализацией до специализаций)
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentifyMajorRequest'
+      responses:
+        '200':
+          description: все ок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpecializationMatchResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+  /api/v1/majors/identify-specializations/{cohort_year}:
+    description: анализирует куда соответствуешь для конкретного года поступления (с детализацией до специализаций)
+    post:
+      parameters:
+        - name: cohort_year
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: год поступления, для которого фильтруются требования мейджоров
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IdentifyMajorRequest'
+      responses:
+        '200':
+          description: все ок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SpecializationMatchResult'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
   /api/v1/planner/generate:
     description: возвращает роадмапу (для конкретного мейджора)
     post:
@@ -758,6 +815,33 @@ components:
         title:
           type: string
           description: название мейджора
+        score:
+          type: number
+          description: литералли covered_count/total_count
+        covered_count:
+          type: integer
+        can_cover_count:
+          type: integer
+        total_count:
+          type: integer
+
+    SpecializationMatchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: айди специализации (или мейджора, если специализаций нет)
+        major_id:
+          type: string
+          format: uuid
+          description: айди мейджора
+        title:
+          type: string
+          description: название специализации (например, Бизнес и аналитика - Системный анализ)
+        cohort_year:
+          type: integer
+          description: год поступления
         score:
           type: number
           description: литералли covered_count/total_count
@@ -1157,6 +1241,14 @@ components:
         max_load:
           type: number
           default: 12.0
+        major_id:
+          type: string
+          format: uuid
+          nullable: true
+        specialization_id:
+          type: string
+          format: uuid
+          nullable: true
         current_semester:
           type: integer
           default: 1

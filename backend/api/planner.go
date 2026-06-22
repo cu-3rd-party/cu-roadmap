@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
 	"github.com/cu-3rd-party/cu-roadmap/backend/service"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
@@ -152,7 +153,17 @@ func validateRoadmap(c *gin.Context) {
 		})
 	}
 
-	results := validator.ValidateFullRoadmap(roadmapData, initialPassed, req.MaxLoad)
+	requiredCourseIDs := make(map[uuid.UUID]bool)
+	if req.MajorID != nil {
+		reqs, _ := s.GetMajorRequirements(*req.MajorID)
+		for _, r := range reqs {
+			if len(r.Specializations) == 0 && r.RequirementType == enums.RequirementTypeMajorCore {
+				requiredCourseIDs[r.CourseID] = true
+			}
+		}
+	}
+
+	results := validator.ValidateFullRoadmap(roadmapData, initialPassed, req.MaxLoad, requiredCourseIDs)
 	c.JSON(http.StatusOK, gin.H{"validation_results": results})
 }
 

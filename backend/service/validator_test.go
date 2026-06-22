@@ -145,7 +145,7 @@ func TestValidateFullRoadmapValid(t *testing.T) {
 		{"semester": 3, "course_ids": []string{c2.ID.String()}},
 	}
 
-	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0, nil)
 	assert.Len(t, results, 2)
 }
 
@@ -161,7 +161,7 @@ func TestValidateFullRoadmapMissingPrereq(t *testing.T) {
 		{"semester": 1, "course_ids": []string{c2.ID.String()}},
 	}
 
-	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0, nil)
 	assert.False(t, results[0]["valid"].(bool))
 }
 
@@ -177,7 +177,7 @@ func TestValidateFullRoadmapPrereqInSameSemester(t *testing.T) {
 		{"semester": 1, "course_ids": []string{c2.ID.String(), c1.ID.String()}},
 	}
 
-	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0, nil)
 	assert.Len(t, results, 1)
 	assert.False(t, results[0]["valid"].(bool))
 }
@@ -195,7 +195,7 @@ func TestValidateFullRoadmapPrereqAfterCourse(t *testing.T) {
 		{"semester": 2, "course_ids": []string{c1.ID.String()}},
 	}
 
-	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0, nil)
 	assert.Len(t, results, 2)
 	assert.False(t, results[0]["valid"].(bool))
 }
@@ -227,7 +227,7 @@ func TestValidateFullRoadmapCoreqsInDifferentSemesters(t *testing.T) {
 		{"semester": 2, "course_ids": []string{c1.ID.String()}},
 	}
 
-	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0)
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0, nil)
 	assert.Len(t, results, 2)
 	assert.False(t, results[0]["valid"].(bool))
 }

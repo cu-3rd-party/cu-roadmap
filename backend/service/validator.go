@@ -255,6 +255,7 @@ func (v *RoadmapValidator) ValidateFullRoadmap(
 	roadmapData []map[string]interface{},
 	initialPassedIDs map[uuid.UUID]bool,
 	maxLoad float64,
+	requiredCourseIDs map[uuid.UUID]bool,
 ) []map[string]interface{} {
 	var results []map[string]interface{}
 	currentPassed := make(map[uuid.UUID]bool)
@@ -297,6 +298,31 @@ func (v *RoadmapValidator) ValidateFullRoadmap(
 		for _, c := range courses {
 			currentPassed[c.ID] = true
 		}
+	}
+
+	if len(results) > 0 && len(requiredCourseIDs) > 0 {
+		lastSem := results[len(results)-1]
+		msgs := lastSem["messages"].([]map[string]interface{})
+		isValid := lastSem["valid"].(bool)
+
+		for reqID := range requiredCourseIDs {
+			if !currentPassed[reqID] {
+				isValid = false
+				reqTitle := "Неизвестный курс"
+				if rc, ok := v.AllCourses[reqID]; ok {
+					reqTitle = rc.Title
+				}
+				
+				msgs = append(msgs, map[string]interface{}{
+					"level":     "error",
+					"message":   fmt.Sprintf("На ваш мейджор это обязательный курс: %s", reqTitle),
+					"course_id": reqID.String(),
+				})
+			}
+		}
+
+		lastSem["messages"] = msgs
+		lastSem["valid"] = isValid
 	}
 
 	return results
