@@ -121,8 +121,6 @@ func (s *PostgresStore) Close() error {
 }
 
 func (s *PostgresStore) ClearAll() error {
-	// ONLY clear dependencies and requirements so they can be rebuilt from the sheets.
-	// We MUST NOT drop courses, majors, or students to preserve user progress and foreign keys.
 	if err := s.db.Exec("DELETE FROM course_dependencies").Error; err != nil {
 		return err
 	}
@@ -130,6 +128,18 @@ func (s *PostgresStore) ClearAll() error {
 		return err
 	}
 	if err := s.db.Exec("DELETE FROM major_requirements").Error; err != nil {
+		return err
+	}
+	if err := s.db.Exec("DELETE FROM student_passed_courses").Error; err != nil {
+		return err
+	}
+	if err := s.db.Exec("UPDATE students SET target_major_id = NULL").Error; err != nil {
+		return err
+	}
+	if err := s.db.Exec("DELETE FROM courses").Error; err != nil {
+		return err
+	}
+	if err := s.db.Exec("DELETE FROM majors").Error; err != nil {
 		return err
 	}
 	return nil

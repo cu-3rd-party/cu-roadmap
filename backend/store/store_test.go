@@ -226,7 +226,7 @@ func (s *MemoryStoreTestSuite) TestClearAll() {
 	s.s.ClearAll()
 
 	courses, _ = s.s.GetAllCourses()
-	assert.Len(s.T(), courses, 1) // Courses should NOT be cleared
+	assert.Len(s.T(), courses, 0) // Courses SHOULD be cleared
 
 	reqs, _ = s.s.GetMajorRequirements(major.ID)
 	assert.Len(s.T(), reqs, 0) // Requirements should be cleared

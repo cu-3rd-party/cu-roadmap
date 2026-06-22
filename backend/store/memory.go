@@ -64,6 +64,15 @@ func (s *MemoryStore) ClearAll() error {
 	s.majorRequirements = nil
 	s.courseDependencies = nil
 	s.specializations = nil
+	s.courses = make(map[uuid.UUID]interfaces.CourseData)
+	s.majors = make(map[uuid.UUID]interfaces.MajorData)
+	s.coursesByTitle = make(map[string]uuid.UUID)
+	s.majorsByTitle = make(map[string]uuid.UUID)
+	for id, student := range s.students {
+		student.TargetMajorID = nil
+		student.PassedCourseIDs = nil
+		s.students[id] = student
+	}
 	return nil
 }
 

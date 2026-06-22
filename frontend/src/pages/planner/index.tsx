@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 
 import { useCoursesQuery } from "@/entities/course";
-import { useIdentifyMajorsQuery, useMajorsQuery } from "@/entities/major";
+import { useIdentifyMajorsQuery, useIdentifySpecializationsQuery, useMajorsQuery } from "@/entities/major";
 import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
 import { useSettingsStore } from "@/features/settings";
 import { toPercent, useDebouncedValue } from "@/shared/lib";
@@ -17,7 +17,7 @@ import {
 } from "./model";
 
 const PlannerPage = () => {
-  const { admissionYear } = useSettingsStore();
+  const { admissionYear, majorId: settingsMajorId } = useSettingsStore();
   const { selections, validation } = usePlannerStore();
   const { data: courses, isLoading, isError } = useCoursesQuery(admissionYear);
 
@@ -29,10 +29,6 @@ const PlannerPage = () => {
     selections,
     beforeValidateRoadmapDelay,
   );
-  useEffect(() => {
-    if (admissionYear == null) return;
-    validate(admissionYear);
-  }, [debouncedSelections, admissionYear, validate]);
 
   // Identify majors from every course placed in the planner.
   const selectedCourseIds = useMemo(
@@ -50,11 +46,27 @@ const PlannerPage = () => {
     debouncedCourseIds,
     admissionYear,
   );
+  const identifySpecializationsQuery = useIdentifySpecializationsQuery(
+    debouncedCourseIds,
+    admissionYear,
+  );
+
+  const selectedSpecMatch = useMemo(() => {
+    return identifySpecializationsQuery.data?.find(m => m.id === settingsMajorId);
+  }, [identifySpecializationsQuery.data, settingsMajorId]);
+
+  useEffect(() => {
+    if (admissionYear == null) return;
+    const actualMajorId = selectedSpecMatch ? selectedSpecMatch.major_id : settingsMajorId;
+    const actualSpecId = selectedSpecMatch && selectedSpecMatch.id !== selectedSpecMatch.major_id ? selectedSpecMatch.id : undefined;
+    validate(admissionYear, actualMajorId, actualSpecId);
+  }, [debouncedSelections, admissionYear, validate, selectedSpecMatch, settingsMajorId]);
+
   const majorsQuery = useMajorsQuery(admissionYear);
 
   // First-load only: header + buttons stay live, the 6-cell grid shows
   // skeletons. keepPreviousData keeps isLoading false on later updates.
-  const summaryLoading = identifyQuery.isLoading || majorsQuery.isLoading;
+  const summaryLoading = identifyQuery.isLoading || majorsQuery.isLoading || identifySpecializationsQuery.isLoading;
 
   // Resolve display titles from the real majors list, matched by id.
   const majorTitleById = useMemo(
@@ -63,14 +75,19 @@ const PlannerPage = () => {
   );
 
   const plannerMajors: MajorProgress[] = useMemo(() => {
-    const source = identifyQuery.data ?? [];
+    let source;
+    if (settingsMajorId) {
+      source = (identifySpecializationsQuery.data ?? []).filter((s) => s.majorId === settingsMajorId);
+    } else {
+      source = identifyQuery.data ?? [];
+    }
 
     return source.map((match) => ({
       title: majorTitleById.get(match.id) ?? match.title,
       earnedPct: toPercent(match.coveredCount, match.totalCount),
       availablePct: toPercent(match.canCoverCount, match.totalCount),
     }));
-  }, [identifyQuery.data, majorTitleById]);
+  }, [identifyQuery.data, identifySpecializationsQuery.data, majorTitleById, settingsMajorId]);
 
   // Conflicts are error/warning validation messages across all semesters.
   const conflictCount = useMemo(
