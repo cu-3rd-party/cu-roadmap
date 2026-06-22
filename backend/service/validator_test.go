@@ -23,6 +23,7 @@ func createCourse(id *uuid.UUID, title string, workload float64, sems []int) int
 		Title:              title,
 		AvailableSemesters: sems,
 		Workload:           workload,
+		Category:           enums.CourseCategorySTEM,
 	}
 }
 
@@ -119,8 +120,11 @@ func TestValidateSemesterPassedPrerequisite(t *testing.T) {
 	validator.LoadDependencies(s)
 
 	passed := map[uuid.UUID]bool{c1.ID: true}
+
+	cSoft := interfaces.CourseData{ID: uuid.New(), Title: "Soft", Category: enums.CourseCategorySoft, Workload: 2.0}
+
 	result := validator.ValidateSemester(
-		[]interfaces.CourseData{*c2},
+		[]interfaces.CourseData{*c2, cSoft},
 		passed,
 		3,
 		12.0,

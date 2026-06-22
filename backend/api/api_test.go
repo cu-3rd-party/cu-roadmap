@@ -499,8 +499,8 @@ func TestPlannerGenerateBadRequest(t *testing.T) {
 
 func TestPlannerValidateSemester(t *testing.T) {
 	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
-		c1 := interfaces.CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 4.0}
-		c2 := interfaces.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{2}, Workload: 5.0}
+		c1 := interfaces.CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 4.0, Category: enums.CourseCategorySTEM}
+		c2 := interfaces.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{2}, Workload: 5.0, Category: enums.CourseCategorySTEM}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
 		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite})
@@ -524,7 +524,7 @@ func TestPlannerValidateSemester(t *testing.T) {
 
 func TestPlannerValidateSemesterWorkloadExceeded(t *testing.T) {
 	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
-		c1 := interfaces.CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 6.0}
+		c1 := interfaces.CourseData{ID: uuid.New(), Title: "A", AvailableSemesters: []int{1}, Workload: 6.0, Category: enums.CourseCategorySTEM}
 		c2 := interfaces.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{1}, Workload: 7.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)

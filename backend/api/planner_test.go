@@ -126,10 +126,12 @@ func TestValidateRoadmapCoreqsInDifferentSemesters(t *testing.T) {
 
 func TestValidateRoadmapWithCurrentSemester(t *testing.T) {
 	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
-		c1 := interfaces.CourseData{ID: uuid.New(), Title: "Python Basics", AvailableSemesters: []int{1, 2}, Workload: 4.0}
-		c2 := interfaces.CourseData{ID: uuid.New(), Title: "Advanced Python", AvailableSemesters: []int{3, 4}, Workload: 5.0}
+		c1 := interfaces.CourseData{ID: uuid.New(), Title: "Python Basics", AvailableSemesters: []int{1, 2}, Workload: 4.0, Category: enums.CourseCategorySTEM}
+		c2 := interfaces.CourseData{ID: uuid.New(), Title: "Advanced Python", AvailableSemesters: []int{3, 4}, Workload: 5.0, Category: enums.CourseCategorySTEM}
+		c3 := interfaces.CourseData{ID: uuid.New(), Title: "Soft Skills", AvailableSemesters: []int{3, 4}, Workload: 2.0, Category: enums.CourseCategorySoft}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
+		s.CreateCourse(c3)
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID,
 			DependencyType: enums.DependencyTypePrerequisite,
@@ -139,12 +141,13 @@ func TestValidateRoadmapWithCurrentSemester(t *testing.T) {
 	courses := getCoursesList(router, t)
 	c1 := findCourseByTitle(courses, "Python Basics")
 	c2 := findCourseByTitle(courses, "Advanced Python")
+	c3 := findCourseByTitle(courses, "Soft Skills")
 
 	// current_semester=3 means semester 1 is in the past → c1 treated as passed
 	body := `{
 		"roadmap": [
 			{"semester": 1, "course_ids": ["` + c1["id"].(string) + `"]},
-			{"semester": 3, "course_ids": ["` + c2["id"].(string) + `"]}
+			{"semester": 3, "course_ids": ["` + c2["id"].(string) + `", "` + c3["id"].(string) + `"]}
 		],
 		"max_load": 12.0,
 		"current_semester": 3

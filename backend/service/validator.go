@@ -88,6 +88,85 @@ func (v *RoadmapValidator) ValidateSemester(
 		}
 	}
 
+	hasSTEM := false
+	hasScienceStudio := false
+	hasBusinessStudio := false
+
+	// Check previously passed courses for studios
+	for id := range previouslyPassedIDs {
+		if rc, ok := v.AllCourses[id]; ok {
+			lowerGroup := strings.ToLower(rc.AnalogGroup)
+			if strings.Contains(lowerGroup, "научн") {
+				hasScienceStudio = true
+			}
+			if strings.Contains(lowerGroup, "бизнес") {
+				hasBusinessStudio = true
+			}
+		}
+	}
+
+	var hasSoft bool
+	for _, c := range coursesInSem {
+		if c.Category == enums.CourseCategorySTEM {
+			hasSTEM = true
+		}
+		if c.Category == enums.CourseCategorySoft {
+			hasSoft = true
+		}
+		lowerGroup := strings.ToLower(c.AnalogGroup)
+		if strings.Contains(lowerGroup, "научн") {
+			hasScienceStudio = true
+		}
+		if strings.Contains(lowerGroup, "бизнес") {
+			hasBusinessStudio = true
+		}
+	}
+
+	if !hasSTEM && len(coursesInSem) > 0 {
+		messages = append(messages, schemas.ValidationMessage{
+			Level:   "error",
+			Message: "Необходимо выбрать хотя бы один STEM-курс каждый семестр",
+		})
+	}
+
+	if !hasSoft && currentSemNum > 1 && len(coursesInSem) > 0 {
+		messages = append(messages, schemas.ValidationMessage{
+			Level:   "error",
+			Message: "Необходимо выбрать хотя бы один Soft-курс каждый семестр, начиная со второго",
+		})
+	}
+
+	if currentSemNum == 4 {
+		if !hasScienceStudio {
+			messages = append(messages, schemas.ValidationMessage{
+				Level:   "error",
+				Message: "За первые 4 семестра необходимо пройти хотя бы одну научную студию",
+			})
+		}
+		if !hasBusinessStudio {
+			messages = append(messages, schemas.ValidationMessage{
+				Level:   "error",
+				Message: "За первые 4 семестра необходимо пройти хотя бы одну бизнес-студию",
+			})
+		}
+	} else if currentSemNum > 4 {
+		// Strictly, if they didn't pass it in the first 4 semesters, it's a violation.
+		// Since we don't have exact semester timestamps for previouslyPassedIDs in ValidateSemester,
+		// if they are in sem > 4 and still don't have it, it's definitely a violation.
+		if !hasScienceStudio {
+			messages = append(messages, schemas.ValidationMessage{
+				Level:   "error",
+				Message: "Необходимо было пройти хотя бы одну научную студию за первые 4 семестра",
+			})
+		}
+		if !hasBusinessStudio {
+			messages = append(messages, schemas.ValidationMessage{
+				Level:   "error",
+				Message: "Необходимо было пройти хотя бы одну бизнес-студию за первые 4 семестра",
+			})
+		}
+	}
+
 	for _, c := range coursesInSem {
 		// Group dependencies by alternative group number
 		prereqGroupsByNum := make(map[int][]interfaces.CourseDependencyData)

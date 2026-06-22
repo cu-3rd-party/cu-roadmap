@@ -119,7 +119,13 @@ export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
   // Merge a generated/goal-path roadmap into the plan (addCourse dedups per
   // semester) and mark the added courses for the blue highlight.
   const applyRoadmap = (result: Roadmap) => {
+    const selections = usePlannerStore.getState().selections;
+    const existingIds = new Set(
+      Object.values(selections).flatMap((list) => list.map((c) => c.id)),
+    );
+    const newGeneratedIds: string[] = [];
     const byId = new Map((courses ?? []).map((course) => [course.id, course]));
+
     for (const { semester: sem, courseIds } of result.semesters) {
       for (const id of courseIds) {
         const course = byId.get(id);
@@ -134,9 +140,12 @@ export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
               }
             : { id, title: id },
         );
+        if (!existingIds.has(id)) {
+          newGeneratedIds.push(id);
+        }
       }
     }
-    markGenerated(result.semesters.flatMap((s) => s.courseIds));
+    markGenerated(newGeneratedIds);
   };
 
   const handleSubmit = async () => {

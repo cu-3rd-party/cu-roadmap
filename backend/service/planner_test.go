@@ -51,9 +51,9 @@ func newTestData() (interfaces.StoreBase, *interfaces.CourseData, *interfaces.Co
 	s := store.NewMemoryStore()
 	s.Init("admin")
 
-	c1 := interfaces.CourseData{ID: uuid.New(), Title: "Python Basics", Description: new("Intro"), AvailableSemesters: []int{1, 2}, RecommendedSemester: new(1), Workload: 4.0}
-	c2 := interfaces.CourseData{ID: uuid.New(), Title: "Advanced Python", Description: new("Advanced"), AvailableSemesters: []int{3, 4}, RecommendedSemester: new(3), Workload: 5.0}
-	c3 := interfaces.CourseData{ID: uuid.New(), Title: "Algorithms", Description: new("Algos"), AvailableSemesters: []int{1, 3}, RecommendedSemester: new(2), Workload: 6.0}
+	c1 := interfaces.CourseData{ID: uuid.New(), Title: "Python Basics", Description: new("Intro"), AvailableSemesters: []int{1, 2}, RecommendedSemester: new(1), Workload: 4.0, Category: enums.CourseCategorySTEM}
+	c2 := interfaces.CourseData{ID: uuid.New(), Title: "Advanced Python", Description: new("Advanced"), AvailableSemesters: []int{3, 4}, RecommendedSemester: new(3), Workload: 5.0, Category: enums.CourseCategorySTEM}
+	c3 := interfaces.CourseData{ID: uuid.New(), Title: "Algorithms", Description: new("Algos"), AvailableSemesters: []int{1, 3}, RecommendedSemester: new(2), Workload: 6.0, Category: enums.CourseCategorySTEM}
 
 	s.CreateCourse(c1)
 	s.CreateCourse(c2)

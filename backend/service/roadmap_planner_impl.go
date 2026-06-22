@@ -71,6 +71,9 @@ func newRoadmapPlanningContext(
 
 	for _, c := range allCourses {
 		upperGroup := strings.ToUpper(c.AnalogGroup)
+		if strings.Contains(upperGroup, "ОБЯЗ&ВРУЧНУЮ:") {
+			continue // Mandatory but must be manually picked, skip auto-injection
+		}
 		if strings.Contains(upperGroup, "ОБЯЗ:") {
 			fmt.Printf("DEBUG INJECT: Injecting %s (group: %s)\n", c.Title, c.AnalogGroup)
 			requirements = append(requirements, interfaces.MajorRequirementData{

@@ -145,7 +145,7 @@ func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
 	assert.NoError(t, err)
 	assert.Equal(t, 4, result.Courses)
-	assert.Equal(t, 4, result.Majors)
+	assert.Equal(t, 1, result.Majors)
 
 	deps, _ := s.GetCourseDependencies()
 	assert.Len(t, deps, 1)

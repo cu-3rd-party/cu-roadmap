@@ -98,6 +98,8 @@ func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 		{[]string{"разработка", "software", "программирован", "программист", "swe", "engineering", "development", "web", "mobile", "backend", "frontend"}, SheetMajorMapping{"Разработка", "Tech", enums.CourseCategoryTech}},
 		{[]string{"дизайн", "design", "ux", "ui", "график"}, SheetMajorMapping{"Дизайн", "Design", enums.CourseCategoryDesign}},
 		{[]string{"общ", "common", "general", "fundamental", "базов", "основ"}, SheetMajorMapping{"Общие", "Common", enums.CourseCategoryFundamentals}},
+		{[]string{"stem", "стем"}, SheetMajorMapping{"STEM", "STEM", enums.CourseCategorySTEM}},
+		{[]string{"soft", "софт"}, SheetMajorMapping{"Soft", "Soft", enums.CourseCategorySoft}},
 	}
 
 	for _, entry := range keywordMap {
@@ -212,7 +214,7 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			}
 
 			var majors []interfaces.MajorData
-			if mapping.Category != enums.CourseCategoryFundamentals {
+			if mapping.Category != enums.CourseCategoryFundamentals && mapping.Category != enums.CourseCategorySTEM && mapping.Category != enums.CourseCategorySoft {
 				if len(cohorts) == 0 {
 					majors = append(majors, interfaces.MajorData{ID: uuid.New(), Title: mapping.MajorTitle, School: mapping.School})
 				} else {
@@ -657,8 +659,10 @@ func parseAllowedCohorts(raw string) []int {
 	raw = strings.TrimSpace(raw)
 	raw = strings.Trim(raw, "\"")
 	raw = strings.ReplaceAll(raw, "/", ",")
+
 	seen := make(map[int]bool)
 	var result []int
+
 	for _, part := range strings.Split(raw, ",") {
 		part = strings.TrimSpace(part)
 		if part == "" {
@@ -672,13 +676,19 @@ func parseAllowedCohorts(raw string) []int {
 					result = append(result, start)
 				}
 			}
-		} else if year, err := strconv.Atoi(part); err == nil {
-			if !seen[year] {
-				seen[year] = true
-				result = append(result, year)
+		} else {
+			matches := YearRegexp.FindAllString(part, -1)
+			for _, m := range matches {
+				if year, err := strconv.Atoi(m); err == nil {
+					if !seen[year] {
+						seen[year] = true
+						result = append(result, year)
+					}
+				}
 			}
 		}
 	}
+
 	sort.Ints(result)
 	return result
 }
