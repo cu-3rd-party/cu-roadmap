@@ -101,9 +101,15 @@ func getCourses(c *gin.Context) {
 		}
 	}
 
+	allDeps, err := s.GetCourseDependencies()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	res := []gin.H{}
 	for _, course := range courses {
-		item := helpers.CourseToResponse(course)
+		item := helpers.CourseToResponse(course, allDeps)
 		if m, ok := courseToMajor[course.ID]; ok {
 			toMajor := make(gin.H)
 			for majorID, reqType := range m {

@@ -1004,10 +1004,24 @@ components:
           description: группа аналогичных курсов
         prerequisites:
           type: array
-          description: uuid курсов, которые являются пререквизитами перед конкретным
+          description: >-
+            список групп пререквизитов курса. Каждая группа представлена как
+            объект {group_id, course_ids}. Идентификаторы групп назначаются
+            последовательно по порядку появления группы в ответе.
           items:
-            type: string
-            format: uuid
+            type: object
+            required:
+              - group_id
+              - course_ids
+            properties:
+              group_id:
+                type: integer
+                description: id группы пререквизитов
+              course_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
         corequisites:
           type: array
           description: uuid курсов, которые являются кореквизитами для конкретного
@@ -1092,9 +1106,24 @@ components:
           type: number
         prerequisites:
           type: array
+          description: >-
+            список групп пререквизитов курса. Каждая группа представлена как
+            объект {group_id, course_ids}. Идентификаторы групп назначаются
+            последовательно по порядку появления группы в ответе.
           items:
-            type: string
-            format: uuid
+            type: object
+            required:
+              - group_id
+              - course_ids
+            properties:
+              group_id:
+                type: integer
+                description: id группы пререквизитов
+              course_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
         corequisites:
           type: array
           items:
