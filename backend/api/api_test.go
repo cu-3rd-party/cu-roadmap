@@ -208,21 +208,21 @@ func TestGetCoursesReturnsPrerequisiteGroups(t *testing.T) {
 			CourseID:         advancedID,
 			RequiredCourseID: baseID,
 			DependencyType:   enums.DependencyTypePrerequisite,
-			AlternativeGroup: 0,
+			AlternativeGroup: 42,
 		})
 		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         advancedID,
 			RequiredCourseID: alternativeID,
 			DependencyType:   enums.DependencyTypePrerequisite,
-			AlternativeGroup: 1,
+			AlternativeGroup: 99,
 		})
 		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         advancedID,
 			RequiredCourseID: alternativeID2,
 			DependencyType:   enums.DependencyTypePrerequisite,
-			AlternativeGroup: 1,
+			AlternativeGroup: 99,
 		})
 	})
 
@@ -256,8 +256,9 @@ func TestGetCoursesReturnsPrerequisiteGroups(t *testing.T) {
 		groups[groupID] = courseIDs
 	}
 
-	assert.ElementsMatch(t, []string{baseID.String()}, groups[0])
-	assert.ElementsMatch(t, []string{alternativeID.String(), alternativeID2.String()}, groups[1])
+	assert.Equal(t, []string{baseID.String()}, groups[0])
+	assert.Equal(t, []string{alternativeID.String(), alternativeID2.String()}, groups[1])
+	assert.Equal(t, 2, len(groups))
 }
 
 func TestGetCoursesReturnsSpecializations(t *testing.T) {
