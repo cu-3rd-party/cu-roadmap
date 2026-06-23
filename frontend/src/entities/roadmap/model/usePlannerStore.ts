@@ -25,8 +25,6 @@ interface PlannerState {
   // Course ids just added by the generate algorithm, shown with a blue highlight
   generatedIds: Set<string>;
   // Major chosen by the user during onboarding (greeting modal)
-  majorId: UUID | null;
-  setMajorId: (majorId: UUID | null) => void;
   addCourse: (semester: number, course: PlannedCourse) => void;
   markGenerated: (ids: string[]) => void;
   removeCourse: (semester: number, courseId: string) => void;
@@ -45,8 +43,6 @@ export const usePlannerStore = create<PlannerState>()(
       selections: {},
       validation: [],
       generatedIds: new Set<string>(),
-      majorId: null,
-      setMajorId: (majorId) => set({ majorId }),
       addCourse: (semester, course) =>
         set((state) => {
           const current = state.selections[semester] ?? [];
@@ -123,7 +119,7 @@ export const usePlannerStore = create<PlannerState>()(
         }),
       setValidation: (validation) =>
         set((state) => {
-          // a conflict on a generated card drops its highlight (red wins)
+          // a conflict on a generated card drops its highlight
           const conflicted: string[] = [];
           for (const sem of validation) {
             for (const msg of sem.messages) {
@@ -163,7 +159,6 @@ export const usePlannerStore = create<PlannerState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         selections: state.selections,
-        majorId: state.majorId,
       }),
     },
   ),

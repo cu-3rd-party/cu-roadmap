@@ -25,8 +25,8 @@ import {
   StatusPanel,
   type Course,
 } from "@/entities/course";
-import { useMajorsQuery } from "@/entities/major";
 import { isSemesterCompleted, usePlannerStore } from "@/entities/roadmap";
+import { useSpecializationsQuery } from "@/entities/specialization";
 import { CourseSelectModal } from "@/features/course-select";
 import { useSettingsStore } from "@/features/settings";
 import { useMediaQuery } from "@/shared/lib";
@@ -37,7 +37,6 @@ import { SortableCourseCard } from "./SortableCourseCard";
 
 export interface SemesterSectionProps {
   index: number;
-  dateRange: string;
   courses: Course[];
   coursesLoading: boolean;
   coursesError: boolean;
@@ -46,7 +45,6 @@ export interface SemesterSectionProps {
 
 export const SemesterSection = ({
   index,
-  dateRange,
   courses: catalogCourses,
   coursesLoading,
   coursesError,
@@ -65,8 +63,8 @@ export const SemesterSection = ({
     moveCourse,
     reorderCourses,
   } = usePlannerStore();
-  const { admissionYear, hideCompletedSemesters } = useSettingsStore();
-  const { data: majors } = useMajorsQuery(admissionYear);
+  const { admissionYear, majorId, hideCompletedSemesters } = useSettingsStore();
+  const { data: specializations } = useSpecializationsQuery(majorId);
   const courses = selections[index] ?? [];
 
   const titleMap = useMemo(
@@ -74,9 +72,9 @@ export const SemesterSection = ({
     [catalogCourses],
   );
 
-  const majorTitleMap = useMemo(
-    () => new Map((majors ?? []).map((major) => [major.id, major.title])),
-    [majors],
+  const specializationTitleMap = useMemo(
+    () => new Map((specializations ?? []).map((s) => [s.id, s.title])),
+    [specializations],
   );
 
   const courseById = useMemo(
@@ -87,7 +85,7 @@ export const SemesterSection = ({
   const detailsFor = (id: string) => {
     const course = courseById.get(id);
     return course
-      ? courseToDetails(course, { titleMap, majorTitleMap })
+      ? courseToDetails(course, { titleMap, specializationTitleMap })
       : undefined;
   };
 
@@ -150,7 +148,7 @@ export const SemesterSection = ({
   if (isCompleted && hideCompletedSemesters) return null;
 
   return (
-    <Panel className="relative px-2 sm:px-4 lg:p-6">
+    <Panel className="relative px-2 sm:px-4 lg:p-6 lg:pt-4">
       <div className="mb-4 flex items-center gap-2.5 px-1">
         <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 sm:items-center">
           <div className="flex items-center gap-2">
@@ -164,7 +162,6 @@ export const SemesterSection = ({
               />
             )}
           </div>
-          <span className="text-sm mt-0.5 text-fg-secondary">{dateRange}</span>
         </div>
         <div className="ml-auto flex items-center gap-4">
           {courses.length > 0 && (

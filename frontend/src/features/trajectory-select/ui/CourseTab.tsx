@@ -44,9 +44,7 @@ export const CourseTab = ({
 }: CourseTabProps) => (
   <TabsContent value="course" className="flex flex-col gap-4">
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs sm:text-sm text-fg-secondary self-center">
-        Найдите свой курс
-      </p>
+      <p className="text-xs sm:text-sm text-fg-secondary self-center">Курс</p>
       <Command
         shouldFilter={false}
         className="relative overflow-visible bg-transparent"
@@ -98,7 +96,7 @@ export const CourseTab = ({
 
     <div className="flex flex-col gap-1.5">
       <p className="text-xs sm:text-sm text-fg-secondary self-center">
-        Выберите семестр, в котором хотели бы пройти курс
+        Желаемый для прохождения семестр
       </p>
       <Select value={semester} onValueChange={onSemesterChange}>
         <SelectTrigger className="w-full">

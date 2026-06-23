@@ -10,6 +10,7 @@ interface AnimatedNumberProps {
 export const AnimatedNumber = ({
   value,
   duration = 0.5,
+  ...props
 }: AnimatedNumberProps) => {
   const mv = useMotionValue(value);
   const rounded = useTransform(mv, (v) => Math.round(v));
@@ -19,5 +20,5 @@ export const AnimatedNumber = ({
     return () => controls.stop();
   }, [value, duration, mv]);
 
-  return <motion.span>{rounded}</motion.span>;
+  return <motion.span {...props}>{rounded}</motion.span>;
 };

@@ -13,6 +13,7 @@ export * from "./popover";
 export * from "./select";
 export * from "./separator";
 export * from "./sheet";
+export * from "./slider";
 export * from "./skeleton";
 export * from "./tabs";
 export * from "./tooltip";

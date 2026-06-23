@@ -2,7 +2,7 @@ import { Compass } from "lucide-react";
 import { useMemo } from "react";
 
 import { buildCourseTitleMap, useCoursesQuery } from "@/entities/course";
-import { useMajorsQuery } from "@/entities/major";
+import { useSpecializationsQuery } from "@/entities/specialization";
 import { CourseFilters } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
 import { useMediaQuery } from "@/shared/lib";
@@ -22,7 +22,7 @@ import {
 
 const CatalogPage = () => {
   const isMobile = useMediaQuery("md");
-  const { admissionYear } = useSettingsStore();
+  const { admissionYear, majorId } = useSettingsStore();
   const { filters, toggleType, toggleSemester, toggleCategory, setSearch } =
     useCatalogFiltersStore();
 
@@ -30,8 +30,8 @@ const CatalogPage = () => {
     data: courses,
     isLoading: coursesLoading,
     isError,
-  } = useCoursesQuery(admissionYear);
-  const { data: majors } = useMajorsQuery(admissionYear);
+  } = useCoursesQuery(admissionYear, majorId);
+  const { data: specializations } = useSpecializationsQuery(majorId);
 
   const categories = useMemo(
     () => buildCatalogCategories(courses ?? []),
@@ -50,9 +50,9 @@ const CatalogPage = () => {
 
   const titleMap = useMemo(() => buildCourseTitleMap(courses ?? []), [courses]);
 
-  const majorTitleMap = useMemo(
-    () => new Map((majors ?? []).map((major) => [major.id, major.title])),
-    [majors],
+  const specializationTitleMap = useMemo(
+    () => new Map((specializations ?? []).map((s) => [s.id, s.title])),
+    [specializations],
   );
 
   return (
@@ -112,7 +112,7 @@ const CatalogPage = () => {
             title={category.title}
             courses={category.courses}
             titleMap={titleMap}
-            majorTitleMap={majorTitleMap}
+            specializationTitleMap={specializationTitleMap}
             panelTitle={categoryToDescription[category.id]}
           />
         ))}

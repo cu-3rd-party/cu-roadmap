@@ -1,9 +1,6 @@
-import type { AdmissionYear } from "@/shared/constants";
 import { TOTAL_SEMESTERS } from "@/shared/constants";
 import type { SummaryStat } from "@/widgets/PlannerSummary";
 import type { SemesterSectionProps } from "@/widgets/SemesterSection";
-
-import { getSemesterDateRange } from "../lib";
 
 export const plannerStatsLabels = [
   "Курсов выбрано",
@@ -22,12 +19,9 @@ export const buildPlannerStats = (
 
 // Per-semester static metadata; runtime course data is injected by PlannerPage.
 // Date ranges are derived from the admission year.
-export const buildSemesters = (
-  admissionYear: AdmissionYear | null,
-): Pick<SemesterSectionProps, "index" | "dateRange">[] =>
+export const buildSemesters = (): Pick<SemesterSectionProps, "index">[] =>
   Array.from({ length: TOTAL_SEMESTERS }, (_, i) => ({
     index: i + 1,
-    dateRange: getSemesterDateRange(admissionYear, i + 1),
   }));
 
 // Delay for debounce

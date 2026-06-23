@@ -1,6 +1,8 @@
+import { AnimatedNumber } from "@/shared/ui";
+
 export interface SummaryStat {
   label: string;
-  value: number | string;
+  value: number;
   total?: number | string;
 }
 
@@ -11,7 +13,10 @@ export const SummaryStatCard = ({ label, value, total }: SummaryStat) => {
         {label}
       </span>
       <div className="flex justify-center sm:justify-start items-baseline gap-1">
-        <span className="text-2xl font-bold text-fg-primary">{value}</span>
+        <AnimatedNumber
+          className="text-2xl font-bold text-fg-primary"
+          value={value}
+        />
         {total !== undefined && (
           <span className="text-sm text-fg-tertiary">/ {total}</span>
         )}

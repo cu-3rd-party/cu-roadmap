@@ -27,8 +27,11 @@ import {
 import { useSettingsStore } from "../model";
 
 export const GreetingModal = () => {
-  const { hasSeenGreeting, completeGreeting } = useSettingsStore();
-  const { setMajorId: persistMajorId } = usePlannerStore();
+  const {
+    hasSeenGreeting,
+    completeGreeting,
+    setMajorId: persistMajorId,
+  } = useSettingsStore();
   const [admissionYear, setAdmissionYear] = useState("");
   const [majorId, setMajorId] = useState("");
   const isMobile = useMediaQuery("sm");

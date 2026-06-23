@@ -9,8 +9,8 @@ export const SummaryStatCardSkeleton = ({ label }: { label: string }) => (
   </div>
 );
 
-// Mirrors MajorProgressCard: title + progress bar + two legend rows.
-export const MajorProgressCardSkeleton = () => (
+// Mirrors SpecializationCard: title + progress bar + two legend rows.
+export const SpecializationProgressCardSkeleton = () => (
   <div className="flex flex-col gap-3 p-5">
     <Skeleton className="h-4 w-28" />
     <Skeleton className="h-3 w-full rounded-xs" />

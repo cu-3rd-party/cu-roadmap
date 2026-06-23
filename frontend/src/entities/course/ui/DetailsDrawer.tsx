@@ -52,10 +52,7 @@ export const DetailsDrawer = ({
           />
         </SheetHeader>
 
-        {/* touch-pan-y: this is a scroll container, so the browser would
-            otherwise claim horizontal flicks as panning and cancel the sheet's
-            swipe-to-close drag (drag="x"). Restricting it to vertical panning
-            leaves horizontal gestures for framer-motion. */}
+        {/* touch-pan-y for framer-motion. */}
         <div className="flex-1 space-y-6 touch-pan-y overflow-y-auto rounded-t-2xl bg-background px-6 pt-5 pb-8">
           <SyllabusCard link={course.syllabus} />
 
@@ -74,10 +71,10 @@ export const DetailsDrawer = ({
               {course.category}
             </Badge>
           </DetailField>
-          <DetailField label="Специализация">
+          <DetailField label="Специализации">
             <ul className="list-disc space-y-1 pl-5 text-fg-primary">
-              {course.specialisations.length > 0 ? (
-                course.specialisations.map((item) => (
+              {course.specializations.length > 0 ? (
+                course.specializations.map((item) => (
                   <li key={item} className="pl-1">
                     {item}
                   </li>

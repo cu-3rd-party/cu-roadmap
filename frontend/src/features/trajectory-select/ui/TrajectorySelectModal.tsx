@@ -18,7 +18,7 @@ import {
 import { useTrajectorySelect } from "../model";
 
 import { CourseTab } from "./CourseTab";
-import { MajorTab } from "./MajorTab";
+import { SpecializationTab } from "./SpecializationTab";
 
 interface TrajectorySelectModalProps {
   open: boolean;
@@ -38,9 +38,11 @@ export const TrajectorySelectModal = ({
     onSubmit,
     close,
 
-    majors,
-    majorId,
-    onMajorChange,
+    specializations,
+    specializationId,
+    onSpecializationChange,
+    maxLoad,
+    onMaxLoadChange,
     scope,
     onScopeChange,
 
@@ -65,8 +67,8 @@ export const TrajectorySelectModal = ({
           <p>Выберите тип построения траектории:</p>
           <ol className="mt-1 flex list-decimal flex-col gap-1 pl-5">
             <li>
-              <span className="font-medium text-fg-primary">Мейджор</span> -
-              алгоритм соберет траекторию для выбранного вами мейджора
+              <span className="font-medium text-fg-primary">Специализация</span>{" "}
+              - алгоритм соберет траекторию для выбранной вами специализации
             </li>
             <li>
               <span className="font-medium text-fg-primary">Курс</span> -
@@ -77,14 +79,16 @@ export const TrajectorySelectModal = ({
         </div>
 
         <TabsList className="grid grid-flow-col auto-cols-fr self-center">
-          <TabsTrigger value="major">Мейджор</TabsTrigger>
+          <TabsTrigger value="major">Специализация</TabsTrigger>
           <TabsTrigger value="course">Курс</TabsTrigger>
         </TabsList>
 
-        <MajorTab
-          majors={majors}
-          majorId={majorId}
-          onMajorChange={onMajorChange}
+        <SpecializationTab
+          specializations={specializations}
+          specializationId={specializationId}
+          onSpecializationChange={onSpecializationChange}
+          maxLoad={maxLoad}
+          onMaxLoadChange={onMaxLoadChange}
           scope={scope}
           onScopeChange={onScopeChange}
         />
@@ -165,7 +169,6 @@ export const TrajectorySelectModal = ({
         aria-describedby={undefined}
         className={cn(
           "flex w-[calc(100%-2rem)] sm:max-w-5xl flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0",
-          error ? "h-140" : "h-130",
         )}
       >
         <DialogHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">

@@ -1,5 +1,6 @@
 import { Loader2, RotateCcw, Sparkles, Waypoints } from "lucide-react";
 import { useState } from "react";
+import type { CSSProperties } from "react";
 
 import { usePlannerStore } from "@/entities/roadmap";
 import { useSettingsStore } from "@/features/settings";
@@ -9,24 +10,27 @@ import { admissionYearToSemester } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
 import { Button, Checkbox, Chip, Label, Panel } from "@/shared/ui";
 
-import { type MajorProgress, MajorProgressCard } from "./MajorProgressCard";
 import { ResetConfirmModal } from "./ResetConfirmModal";
 import {
-  MajorProgressCardSkeleton,
+  SpecializationProgressCardSkeleton,
   SummaryStatCardSkeleton,
 } from "./Skeletons";
+import {
+  type SpecializationProgress,
+  SpecializationProgressCard,
+} from "./SpecializationProgressCard";
 import { type SummaryStat, SummaryStatCard } from "./SummaryStatCard";
 
 interface PlannerSummaryProps {
   stats: SummaryStat[];
-  majors: MajorProgress[];
+  specializations: SpecializationProgress[];
   loading?: boolean;
   identifying?: boolean;
 }
 
 export const PlannerSummary = ({
   stats,
-  majors,
+  specializations,
   loading,
   identifying,
 }: PlannerSummaryProps) => {
@@ -115,7 +119,6 @@ export const PlannerSummary = ({
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border">
-        {/* Summary stats — always a row of three */}
         <div className="grid grid-cols-3 border-b [&>*:not(:nth-child(3n))]:border-r">
           {loading
             ? plannerStatsLabels.map((label) => (
@@ -129,14 +132,22 @@ export const PlannerSummary = ({
               ))}
         </div>
 
-        {/* Major progress — column under sm, row of three at sm+ */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 [&>*:not(:last-child)]:border-b sm:[&>*:not(:last-child)]:border-b-0 sm:[&>*:not(:nth-child(3n))]:border-r">
+        <div
+          className="grid grid-cols-1 sm:grid-cols-[repeat(var(--spec-cols),minmax(0,1fr))] [&>*:not(:last-child)]:border-b sm:[&>*:not(:last-child)]:border-b-0 sm:[&>*:not(:last-child)]:border-r"
+          style={
+            {
+              "--spec-cols": loading ? 4 : Math.max(specializations.length, 1),
+            } as CSSProperties
+          }
+        >
           {loading
-            ? Array.from({ length: 3 }).map((_, i) => (
-                <MajorProgressCardSkeleton key={`major-skeleton-${i}`} />
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <SpecializationProgressCardSkeleton
+                  key={`spec-skeleton-${i}`}
+                />
               ))
-            : majors.map((major) => (
-                <MajorProgressCard key={major.title} {...major} />
+            : specializations.map((spec) => (
+                <SpecializationProgressCard key={spec.title} {...spec} />
               ))}
         </div>
       </div>

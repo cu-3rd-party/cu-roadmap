@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useCoursesQuery } from "@/entities/course";
-import { useMajorsQuery } from "@/entities/major";
 import {
   buildGenerateRoadmapRequest,
   buildGoalPathRequest,
@@ -11,6 +10,7 @@ import {
 } from "@/entities/roadmap";
 import type { Roadmap } from "@/entities/roadmap";
 import type { CourseSource } from "@/entities/roadmap/api";
+import { useSpecializationsQuery } from "@/entities/specialization";
 import { useSettingsStore } from "@/features/settings";
 import { getErrorMessage } from "@/shared/api";
 import { admissionYearToSemester } from "@/shared/constants";
@@ -22,10 +22,12 @@ import { getCourseHints, getInsertedText, getSemesterOptions } from "../lib";
 // course goal), the course search combobox, submission, and soft/hard errors.
 // The modal shell and its tab components are pure consumers of this hook.
 export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
-  const { admissionYear } = useSettingsStore();
-  const { data: courses } = useCoursesQuery(admissionYear);
-  const { data: majors } = useMajorsQuery(admissionYear);
+  const { admissionYear, majorId } = useSettingsStore();
+  const { data: courses } = useCoursesQuery(admissionYear, majorId);
+  // The major itself is chosen in Settings; here we only pick a specialization
+  // of that major.
   const { addCourse, markGenerated } = usePlannerStore();
+  const { data: specializations } = useSpecializationsQuery(majorId);
   const { mutateAsync: generateRoadmap, isPending } =
     useGenerateRoadmapMutation();
   const { mutateAsync: generateGoalPath, isPending: goalPending } =
@@ -37,13 +39,27 @@ export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
   const [courseCommitted, setCourseCommitted] = useState(true);
   const [semester, setSemester] = useState("any");
   const [tab, setTab] = useState("major");
-  const [majorId, setMajorId] = useState("");
+  const [specializationId, setSpecializationId] = useState("");
   const [error, setError] = useState<string | null>(null);
   // Which of the already-saved courses count as "passed" for the generate
   const [scope, setScope] = useState<CourseSource>("passed");
+  // Max number of courses per semester the generator may place.
+  const [maxLoad, setMaxLoad] = useState(10);
 
+  // "Нет" ("") is always a valid choice and the default. Only clear a stale
+  // specialization id that no longer belongs to the current major (e.g. after
+  // the major is switched in Settings) — never force a default selection.
+  useEffect(() => {
+    const ids = specializations?.map((s) => s.id) ?? [];
+    if (specializationId !== "" && !ids.includes(specializationId)) {
+      setSpecializationId("");
+    }
+  }, [specializations, specializationId]);
+
+  // The major comes from Settings; submitting only needs that to be set (a
+  // blank specialization — the "Нет" tab — is allowed).
   const canSubmit =
-    tab === "major" ? majorId !== "" : courseId !== "" && semester !== "";
+    tab === "major" ? majorId != null : courseId !== "" && semester !== "";
 
   // Course tab: only target semesters at or after the cohort's current semester.
   const minSemester =
@@ -99,14 +115,18 @@ export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
     setTab(value);
   };
 
-  const handleMajorChange = (value: string) => {
+  const handleSpecializationChange = (value: string) => {
     setError(null);
-    setMajorId(value);
+    setSpecializationId(value);
   };
 
   const handleScopeChange = (value: string) => {
     setError(null);
     setScope(value as CourseSource);
+  };
+
+  const handleMaxLoadChange = (value: number) => {
+    setMaxLoad(value);
   };
 
   const handleSemesterChange = (value: string) => {
@@ -167,7 +187,9 @@ export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
             selections,
             admissionYear,
             majorId,
+            specializationId,
             scope,
+            maxLoad,
           ),
         );
         // Soft error from the backend: surface it and keep the modal open.
@@ -215,10 +237,12 @@ export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
     onTabChange: handleTabChange,
     onSubmit: handleSubmit,
     close,
-    // major tab
-    majors,
-    majorId,
-    onMajorChange: handleMajorChange,
+    // specialization tab
+    specializations,
+    specializationId,
+    onSpecializationChange: handleSpecializationChange,
+    maxLoad,
+    onMaxLoadChange: handleMaxLoadChange,
     scope,
     onScopeChange: handleScopeChange,
     // course tab

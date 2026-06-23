@@ -22,4 +22,7 @@ export interface Course {
   corequisites?: UUID[];
   postrequisites?: UUID[];
   toMajor: Record<UUID, MajorRequirementType>;
+  specializations?: UUID[];
+  // Requirement type for the major selected in settings; populated by useCoursesQuery's select
+  majorRequirement?: MajorRequirementType | null;
 }

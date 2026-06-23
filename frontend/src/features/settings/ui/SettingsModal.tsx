@@ -30,8 +30,9 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
-  const { admissionYear, setAdmissionYear } = useSettingsStore();
-  const { reset, majorId, setMajorId } = usePlannerStore();
+  const { admissionYear, setAdmissionYear, majorId, setMajorId } =
+    useSettingsStore();
+  const { reset } = usePlannerStore();
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedMajorId, setSelectedMajorId] = useState("");
   const isMobile = useMediaQuery("sm");
