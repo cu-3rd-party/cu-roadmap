@@ -47,16 +47,30 @@ func buildPrerequisiteGroups(course interfaces.CourseData, deps []interfaces.Cou
 	}
 
 	if len(grouped) == 0 && len(course.Prerequisites) > 0 {
-		return CourseUUIDsToStrings(course.Prerequisites)
+		res := make([]gin.H, 0, len(course.Prerequisites))
+		for _, prereq := range course.Prerequisites {
+			res = append(res, gin.H{"group_id": 0, "course_ids": []string{prereq.String()}})
+		}
+		return res
 	}
 
 	if len(groupOrder) == 1 && groupOrder[0] == 0 {
-		return CourseUUIDsToStrings(grouped[0])
+		res := make([]gin.H, 0, len(grouped[0]))
+		for _, prereq := range grouped[0] {
+			res = append(res, gin.H{"group_id": 0, "course_ids": []string{prereq.String()}})
+		}
+		return res
 	}
 
 	sort.Ints(groupOrder)
 	res := make([]gin.H, 0, len(groupOrder))
 	for _, groupID := range groupOrder {
+		if groupID == 0 {
+			for _, prereq := range grouped[groupID] {
+				res = append(res, gin.H{"group_id": 0, "course_ids": []string{prereq.String()}})
+			}
+			continue
+		}
 		res = append(res, gin.H{"group_id": groupID, "course_ids": CourseUUIDsToStrings(grouped[groupID])})
 	}
 	return res

@@ -182,7 +182,13 @@ func TestGetCoursesReturnsPostrequisites(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, []interface{}{advancedID.String()}, byID[baseID.String()]["postrequisites"])
-	assert.ElementsMatch(t, []interface{}{baseID.String()}, byID[advancedID.String()]["prerequisites"])
+	prereqGroupsRaw, ok := byID[advancedID.String()]["prerequisites"].([]interface{})
+	assert.True(t, ok)
+	assert.Len(t, prereqGroupsRaw, 1)
+	group := prereqGroupsRaw[0].(map[string]interface{})
+	assert.Equal(t, float64(0), group["group_id"])
+	courseIDsRaw := group["course_ids"].([]interface{})
+	assert.ElementsMatch(t, []interface{}{baseID.String()}, courseIDsRaw)
 	assert.Empty(t, byID[advancedID.String()]["postrequisites"])
 }
 

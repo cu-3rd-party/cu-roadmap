@@ -1005,27 +1005,24 @@ components:
         prerequisites:
           type: array
           description: >-
-            список пререквизитов курса. Может быть обычным списком UUID для
-            обязательных пререквизитов либо списком групп вида
-            {group_id, course_ids}, где group_id=0 означает обязательную группу,
-            а положительные значения — альтернативные группы "один из".
+            список групп пререквизитов курса. Каждая группа представлена как
+            объект {group_id, course_ids}. Для обязательных пререквизитов
+            используется group_id=0, а для альтернативных групп "один из" —
+            положительные значения.
           items:
-            oneOf:
-              - type: string
-                format: uuid
-              - type: object
-                required:
-                  - group_id
-                  - course_ids
-                properties:
-                  group_id:
-                    type: integer
-                    description: id группы альтернативных пререквизитов
-                  course_ids:
-                    type: array
-                    items:
-                      type: string
-                      format: uuid
+            type: object
+            required:
+              - group_id
+              - course_ids
+            properties:
+              group_id:
+                type: integer
+                description: id группы пререквизитов
+              course_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
         corequisites:
           type: array
           description: uuid курсов, которые являются кореквизитами для конкретного
@@ -1111,27 +1108,24 @@ components:
         prerequisites:
           type: array
           description: >-
-            список пререквизитов курса. Может быть обычным списком UUID для
-            обязательных пререквизитов либо списком групп вида
-            {group_id, course_ids}, где group_id=0 означает обязательную группу,
-            а положительные значения — альтернативные группы "один из".
+            список групп пререквизитов курса. Каждая группа представлена как
+            объект {group_id, course_ids}. Для обязательных пререквизитов
+            используется group_id=0, а для альтернативных групп "один из" —
+            положительные значения.
           items:
-            oneOf:
-              - type: string
-                format: uuid
-              - type: object
-                required:
-                  - group_id
-                  - course_ids
-                properties:
-                  group_id:
-                    type: integer
-                    description: id группы альтернативных пререквизитов
-                  course_ids:
-                    type: array
-                    items:
-                      type: string
-                      format: uuid
+            type: object
+            required:
+              - group_id
+              - course_ids
+            properties:
+              group_id:
+                type: integer
+                description: id группы пререквизитов
+              course_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
         corequisites:
           type: array
           items:
