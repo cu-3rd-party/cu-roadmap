@@ -1004,10 +1004,28 @@ components:
           description: группа аналогичных курсов
         prerequisites:
           type: array
-          description: uuid курсов, которые являются пререквизитами перед конкретным
+          description: >-
+            список пререквизитов курса. Может быть обычным списком UUID для
+            обязательных пререквизитов либо списком групп вида
+            {group_id, course_ids}, где group_id=0 означает обязательную группу,
+            а положительные значения — альтернативные группы "один из".
           items:
-            type: string
-            format: uuid
+            oneOf:
+              - type: string
+                format: uuid
+              - type: object
+                required:
+                  - group_id
+                  - course_ids
+                properties:
+                  group_id:
+                    type: integer
+                    description: id группы альтернативных пререквизитов
+                  course_ids:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
         corequisites:
           type: array
           description: uuid курсов, которые являются кореквизитами для конкретного
@@ -1092,9 +1110,28 @@ components:
           type: number
         prerequisites:
           type: array
+          description: >-
+            список пререквизитов курса. Может быть обычным списком UUID для
+            обязательных пререквизитов либо списком групп вида
+            {group_id, course_ids}, где group_id=0 означает обязательную группу,
+            а положительные значения — альтернативные группы "один из".
           items:
-            type: string
-            format: uuid
+            oneOf:
+              - type: string
+                format: uuid
+              - type: object
+                required:
+                  - group_id
+                  - course_ids
+                properties:
+                  group_id:
+                    type: integer
+                    description: id группы альтернативных пререквизитов
+                  course_ids:
+                    type: array
+                    items:
+                      type: string
+                      format: uuid
         corequisites:
           type: array
           items:
