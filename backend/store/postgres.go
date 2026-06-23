@@ -339,6 +339,7 @@ func (s *PostgresStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.Ma
 			MajorID:         r.MajorID,
 			CourseID:        r.CourseID,
 			RequirementType: r.RequirementType,
+			Specializations: []string(r.Specializations),
 		}
 	}
 	return out, nil
@@ -356,6 +357,7 @@ func (s *PostgresStore) GetAllMajorRequirements() ([]interfaces.MajorRequirement
 			MajorID:         r.MajorID,
 			CourseID:        r.CourseID,
 			RequirementType: r.RequirementType,
+			Specializations: []string(r.Specializations),
 		}
 	}
 	return out, nil
@@ -367,6 +369,7 @@ func (s *PostgresStore) CreateMajorRequirement(req interfaces.MajorRequirementDa
 		MajorID:         req.MajorID,
 		CourseID:        req.CourseID,
 		RequirementType: req.RequirementType,
+		Specializations: pq.StringArray(req.Specializations),
 	}
 	if err := s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
