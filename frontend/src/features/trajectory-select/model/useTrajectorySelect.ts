@@ -22,11 +22,11 @@ import { getCourseHints, getInsertedText, getSemesterOptions } from "../lib";
 // course goal), the course search combobox, submission, and soft/hard errors.
 // The modal shell and its tab components are pure consumers of this hook.
 export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
-  const { admissionYear } = useSettingsStore();
+  const { admissionYear, majorId } = useSettingsStore();
   const { data: courses } = useCoursesQuery(admissionYear);
   // The major itself is chosen in Settings; here we only pick a specialization
   // of that major.
-  const { addCourse, markGenerated, majorId } = usePlannerStore();
+  const { addCourse, markGenerated } = usePlannerStore();
   const { data: specializations } = useSpecializationsQuery(majorId);
   const { mutateAsync: generateRoadmap, isPending } =
     useGenerateRoadmapMutation();

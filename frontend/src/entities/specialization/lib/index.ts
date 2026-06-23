@@ -1,1 +1,4 @@
-export { normalizeSpecialization } from "./normalizeSpecialization";
+export {
+  normalizeSpecialization,
+  normalizeSpecializationMatch,
+} from "./normalizeSpecialization";

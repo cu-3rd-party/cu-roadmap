@@ -3,4 +3,13 @@ export {
   useSpecializationsQuery,
   specializationsQueryKey,
 } from "./useSpecializationsQuery";
-export type { SpecializationDto } from "./dto";
+export { identifySpecializations } from "./identifySpecializations";
+export {
+  useIdentifySpecializationsQuery,
+  identifySpecializationsQueryKey,
+} from "./useIdentifySpecializationsQuery";
+export type {
+  SpecializationDto,
+  SpecializationMatchDto,
+  IdentifySpecializationsRequestDto,
+} from "./dto";

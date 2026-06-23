@@ -1,10 +1,8 @@
-import { useMediaQuery } from "@/shared/lib";
 import { cn } from "@/shared/lib/cn";
-import { majorToShortName } from "@/shared/model";
 import { AnimatedNumber } from "@/shared/ui/animated-number";
 import { SegmentedProgress } from "@/shared/ui/segmented-progress";
 
-export interface MajorProgress {
+export interface SpecializationProgress {
   title: string;
   earnedPct: number;
   availablePct: number;
@@ -26,16 +24,15 @@ const LegendRow = ({ dotClassName, label, percent }: LegendRowProps) => (
   </div>
 );
 
-export const MajorProgressCard = ({
+export const SpecializationProgressCard = ({
   title,
   earnedPct,
   availablePct,
-}: MajorProgress) => {
-  const isMobile = useMediaQuery("sm");
+}: SpecializationProgress) => {
   return (
     <div className="flex flex-col gap-3 p-3 sm:p-5">
-      <span className="text-sm font-semibold text-fg-secondary">
-        {isMobile ? majorToShortName[title] : title}
+      <span className="line-clamp-1 text-sm font-semibold text-fg-secondary">
+        {title}
       </span>
 
       <SegmentedProgress

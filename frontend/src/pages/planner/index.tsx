@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from "react";
 
 import { useCoursesQuery } from "@/entities/course";
-import { useIdentifyMajorsQuery, useMajorsQuery } from "@/entities/major";
 import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
+import { useIdentifySpecializationsQuery } from "@/entities/specialization";
 import { useSettingsStore } from "@/features/settings";
 import { toPercent, useDebouncedValue } from "@/shared/lib";
-import type { MajorProgress } from "@/widgets/PlannerSummary";
+import type { SpecializationProgress } from "@/widgets/PlannerSummary";
 import { PlannerSummary } from "@/widgets/PlannerSummary";
 import { SemesterSection } from "@/widgets/SemesterSection";
 
@@ -23,7 +23,7 @@ const sameIds = (a: string[], b: string[]) => {
 };
 
 const PlannerPage = () => {
-  const { admissionYear } = useSettingsStore();
+  const { admissionYear, majorId } = useSettingsStore();
   const { selections, validation } = usePlannerStore();
   const { data: courses, isLoading, isError } = useCoursesQuery(admissionYear);
 
@@ -40,7 +40,7 @@ const PlannerPage = () => {
     validate(admissionYear);
   }, [debouncedSelections, admissionYear, validate]);
 
-  // Identify majors from every course placed in the planner.
+  // Identify specializations from every course placed in the planner.
   const selectedCourseIds = useMemo(
     () => Object.values(selections).flatMap((list) => list.map((c) => c.id)),
     [selections],
@@ -52,11 +52,10 @@ const PlannerPage = () => {
     beforeIdentifyMajorsDelay,
   );
   // Because debounced course ids haven't updated in a meanwhile, query key won't change and query won't fire
-  const identifyQuery = useIdentifyMajorsQuery(
+  const identifyQuery = useIdentifySpecializationsQuery(
     debouncedCourseIds,
     admissionYear,
   );
-  const majorsQuery = useMajorsQuery(admissionYear);
 
   // Show the spinner from the moment the plan changes — while the debounce is
   // still pending the request hasn't fired yet (isFetching is false), so also
@@ -64,25 +63,22 @@ const PlannerPage = () => {
   const identifying =
     !sameIds(selectedCourseIds, debouncedCourseIds) || identifyQuery.isFetching;
 
-  // First-load only: header + buttons stay live, the 6-cell grid shows
-  // skeletons. keepPreviousData keeps isLoading false on later updates.
-  const summaryLoading = identifyQuery.isLoading || majorsQuery.isLoading;
+  // First-load only: header + buttons stay live, the grid shows skeletons.
+  // keepPreviousData keeps isLoading false on later updates.
+  const summaryLoading = identifyQuery.isLoading;
 
-  // Resolve display titles from the real majors list, matched by id.
-  const majorTitleById = useMemo(
-    () => new Map((majorsQuery.data ?? []).map((m) => [m.id, m.title])),
-    [majorsQuery.data],
-  );
-
-  const plannerMajors: MajorProgress[] = useMemo(() => {
+  // Only show specializations of the major chosen in Settings.
+  const plannerSpecializations: SpecializationProgress[] = useMemo(() => {
     const source = identifyQuery.data ?? [];
 
-    return source.map((match) => ({
-      title: majorTitleById.get(match.id) ?? match.title,
-      earnedPct: toPercent(match.coveredCount, match.totalCount),
-      availablePct: toPercent(match.canCoverCount, match.totalCount),
-    }));
-  }, [identifyQuery.data, majorTitleById]);
+    return source
+      .filter((match) => majorId != null && match.majorId === majorId)
+      .map((match) => ({
+        title: match.title,
+        earnedPct: toPercent(match.coveredCount, match.totalCount),
+        availablePct: toPercent(match.canCoverCount, match.totalCount),
+      }));
+  }, [identifyQuery.data, majorId]);
 
   // Conflicts are error/warning validation messages across all semesters.
   const conflictCount = useMemo(
@@ -101,7 +97,7 @@ const PlannerPage = () => {
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
       <PlannerSummary
         stats={stats}
-        majors={plannerMajors}
+        specializations={plannerSpecializations}
         loading={summaryLoading}
         identifying={identifying}
       />
