@@ -1,7 +1,7 @@
 import { animate, motion, useMotionValue, useTransform } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, type ComponentProps } from "react";
 
-interface AnimatedNumberProps {
+interface AnimatedNumberProps extends ComponentProps<typeof motion.span> {
   value: number;
   duration?: number;
 }
