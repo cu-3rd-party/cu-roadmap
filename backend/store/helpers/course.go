@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"sort"
+
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -9,7 +11,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func CourseToResponse(course interfaces.CourseData) gin.H {
+func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDependencyData) gin.H {
 	return gin.H{
 		"id":                   course.ID.String(),
 		"title":                course.Title,
@@ -22,10 +24,42 @@ func CourseToResponse(course interfaces.CourseData) gin.H {
 		"recommended_semester": course.RecommendedSemester,
 		"workload":             course.Workload,
 		"analog_group":         course.AnalogGroup,
-		"prerequisites":        CourseUUIDsToStrings(course.Prerequisites),
+		"prerequisites":        buildPrerequisiteGroups(course, deps),
 		"corequisites":         CourseUUIDsToStrings(course.Corequisites),
 		"postrequisites":       CourseUUIDsToStrings(course.Postrequisites),
 	}
+}
+
+func buildPrerequisiteGroups(course interfaces.CourseData, deps []interfaces.CourseDependencyData) interface{} {
+	grouped := make(map[int][]uuid.UUID)
+	groupOrder := make([]int, 0)
+	seenGroups := make(map[int]bool)
+
+	for _, dep := range deps {
+		if dep.DependencyType != enums.DependencyTypePrerequisite || dep.CourseID != course.ID {
+			continue
+		}
+		if !seenGroups[dep.AlternativeGroup] {
+			seenGroups[dep.AlternativeGroup] = true
+			groupOrder = append(groupOrder, dep.AlternativeGroup)
+		}
+		grouped[dep.AlternativeGroup] = append(grouped[dep.AlternativeGroup], dep.RequiredCourseID)
+	}
+
+	if len(grouped) == 0 && len(course.Prerequisites) > 0 {
+		return CourseUUIDsToStrings(course.Prerequisites)
+	}
+
+	if len(groupOrder) == 1 && groupOrder[0] == 0 {
+		return CourseUUIDsToStrings(grouped[0])
+	}
+
+	sort.Ints(groupOrder)
+	res := make([]gin.H, 0, len(groupOrder))
+	for _, groupID := range groupOrder {
+		res = append(res, gin.H{"group_id": groupID, "course_ids": CourseUUIDsToStrings(grouped[groupID])})
+	}
+	return res
 }
 
 func CourseUUIDsToStrings(ids []uuid.UUID) []string {

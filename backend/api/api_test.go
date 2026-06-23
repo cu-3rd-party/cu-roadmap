@@ -186,6 +186,74 @@ func TestGetCoursesReturnsPostrequisites(t *testing.T) {
 	assert.Empty(t, byID[advancedID.String()]["postrequisites"])
 }
 
+func TestGetCoursesReturnsPrerequisiteGroups(t *testing.T) {
+	baseID := uuid.New()
+	alternativeID := uuid.New()
+	alternativeID2 := uuid.New()
+	advancedID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: baseID, Title: "Base", AvailableSemesters: []int{1}, Workload: 3.0})
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: alternativeID, Title: "Alt 1", AvailableSemesters: []int{1}, Workload: 3.0})
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: alternativeID2, Title: "Alt 2", AvailableSemesters: []int{1}, Workload: 3.0})
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: advancedID, Title: "Advanced", AvailableSemesters: []int{2}, Workload: 4.0})
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         advancedID,
+			RequiredCourseID: baseID,
+			DependencyType:   enums.DependencyTypePrerequisite,
+			AlternativeGroup: 0,
+		})
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         advancedID,
+			RequiredCourseID: alternativeID,
+			DependencyType:   enums.DependencyTypePrerequisite,
+			AlternativeGroup: 1,
+		})
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         advancedID,
+			RequiredCourseID: alternativeID2,
+			DependencyType:   enums.DependencyTypePrerequisite,
+			AlternativeGroup: 1,
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	var courses []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &courses)
+
+	byID := make(map[string]map[string]interface{}, len(courses))
+	for _, course := range courses {
+		byID[course["id"].(string)] = course
+	}
+
+	prereqGroupsRaw, ok := byID[advancedID.String()]["prerequisites"].([]interface{})
+	assert.True(t, ok)
+	assert.Len(t, prereqGroupsRaw, 2)
+
+	groups := make(map[int][]string)
+	for _, rawGroup := range prereqGroupsRaw {
+		group := rawGroup.(map[string]interface{})
+		groupID := int(group["group_id"].(float64))
+		courseIDsRaw := group["course_ids"].([]interface{})
+		courseIDs := make([]string, 0, len(courseIDsRaw))
+		for _, rawCourseID := range courseIDsRaw {
+			courseIDs = append(courseIDs, rawCourseID.(string))
+		}
+		groups[groupID] = courseIDs
+	}
+
+	assert.ElementsMatch(t, []string{baseID.String()}, groups[0])
+	assert.ElementsMatch(t, []string{alternativeID.String(), alternativeID2.String()}, groups[1])
+}
+
 func TestGetCoursesReturnsSpecializations(t *testing.T) {
 	majorID := uuid.New()
 	specID := uuid.New()
