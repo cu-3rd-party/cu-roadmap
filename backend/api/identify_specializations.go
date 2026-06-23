@@ -21,10 +21,12 @@ func identifySpecializations(c *gin.Context) {
 	var passedIDs []string
 	currentSemester := 1
 
+	var majorIDFilter *uuid.UUID
 	if err := json.Unmarshal(rawMessage, &passedIDs); err != nil {
 		var req struct {
 			PassedCourseIDs []string `json:"passed_course_ids"`
 			CurrentSemester int      `json:"current_semester"`
+			MajorID         string   `json:"major_id"`
 		}
 		if err2 := json.Unmarshal(rawMessage, &req); err2 != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
@@ -33,6 +35,14 @@ func identifySpecializations(c *gin.Context) {
 		passedIDs = req.PassedCourseIDs
 		if req.CurrentSemester > 0 {
 			currentSemester = req.CurrentSemester
+		}
+		if req.MajorID != "" {
+			parsedMajorID, err := uuid.Parse(req.MajorID)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid major_id"})
+				return
+			}
+			majorIDFilter = &parsedMajorID
 		}
 	}
 
@@ -145,6 +155,9 @@ func identifySpecializations(c *gin.Context) {
 
 	analysis := []gin.H{}
 	for _, m := range majors {
+		if majorIDFilter != nil && m.ID != *majorIDFilter {
+			continue
+		}
 		if cohortYear != 0 && m.CohortYear != cohortYear {
 			continue
 		}
@@ -234,7 +247,7 @@ func identifySpecializations(c *gin.Context) {
 			analysis = append(analysis, gin.H{
 				"id":              spec.ID.String(),
 				"major_id":        m.ID.String(),
-				"title":           m.Title + ": " + spec.Title,
+				"title":           spec.Title,
 				"cohort_year":     m.CohortYear,
 				"score":           score,
 				"covered_count":   covered,

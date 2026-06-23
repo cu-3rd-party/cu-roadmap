@@ -71,13 +71,13 @@ func getCourses(c *gin.Context) {
 		courseToMajor[req.CourseID][req.MajorID] = string(req.RequirementType)
 	}
 
-	courseToSpecialisations := make(map[uuid.UUID]map[uuid.UUID]struct{})
-	specialisationsByMajor := make(map[uuid.UUID]map[string]uuid.UUID)
+	courseToSpecializations := make(map[uuid.UUID]map[uuid.UUID]struct{})
+	specializationsByMajor := make(map[uuid.UUID]map[string]uuid.UUID)
 	for _, req := range allReqs {
 		if len(req.Specializations) == 0 {
 			continue
 		}
-		majorSpecs, ok := specialisationsByMajor[req.MajorID]
+		majorSpecs, ok := specializationsByMajor[req.MajorID]
 		if !ok {
 			specs, err := s.GetSpecializationsByMajor(req.MajorID)
 			if err != nil {
@@ -88,15 +88,15 @@ func getCourses(c *gin.Context) {
 			for _, sp := range specs {
 				majorSpecs[sp.Title] = sp.ID
 			}
-			specialisationsByMajor[req.MajorID] = majorSpecs
+			specializationsByMajor[req.MajorID] = majorSpecs
 		}
 
 		for _, specTitle := range req.Specializations {
 			if specID, ok := majorSpecs[specTitle]; ok {
-				if courseToSpecialisations[req.CourseID] == nil {
-					courseToSpecialisations[req.CourseID] = make(map[uuid.UUID]struct{})
+				if courseToSpecializations[req.CourseID] == nil {
+					courseToSpecializations[req.CourseID] = make(map[uuid.UUID]struct{})
 				}
-				courseToSpecialisations[req.CourseID][specID] = struct{}{}
+				courseToSpecializations[req.CourseID][specID] = struct{}{}
 			}
 		}
 	}
@@ -114,13 +114,13 @@ func getCourses(c *gin.Context) {
 			item["to_major"] = gin.H{}
 		}
 
-		specialisationIDs := make([]string, 0)
-		if ids, ok := courseToSpecialisations[course.ID]; ok {
+		specializationIDs := make([]string, 0)
+		if ids, ok := courseToSpecializations[course.ID]; ok {
 			for specID := range ids {
-				specialisationIDs = append(specialisationIDs, specID.String())
+				specializationIDs = append(specializationIDs, specID.String())
 			}
 		}
-		item["specializations"] = specialisationIDs
+		item["specializations"] = specializationIDs
 		res = append(res, item)
 	}
 	writeCachedJSON(c, coursesCacheKey(c), res)

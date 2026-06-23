@@ -391,7 +391,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailableError'
 
   /api/v1/majors/identify-specializations:
-    description: анализирует куда соответствуешь (с детализацией до специализаций)
+    description: анализирует куда соответствуешь (с детализацией до специализаций). Если в запросе передан major_id, анализ ограничивается только этим мейджором; иначе рассматриваются все мейджоры для указанного cohort_year
     post:
       requestBody:
         required: true
@@ -399,6 +399,20 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/IdentifyMajorRequest'
+            examples:
+              without_major_filter:
+                summary: без фильтра по мейджору
+                value:
+                  passed_course_ids:
+                    - 6aad3927-b012-458c-a0ec-3ad142fa8ae2
+                  current_semester: 1
+              with_major_filter:
+                summary: только для конкретного мейджора
+                value:
+                  passed_course_ids:
+                    - 6aad3927-b012-458c-a0ec-3ad142fa8ae2
+                  current_semester: 1
+                  major_id: 3c71b6fd-bf6e-4b02-b624-8c8bfb8344db
       responses:
         '200':
           description: все ок
@@ -408,6 +422,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SpecializationMatchResult'
+              examples:
+                default:
+                  summary: пример ответа
+                  value:
+                    - id: fb207075-ec2b-42c1-8ac4-9a2e89e0b986
+                      major_id: 3c71b6fd-bf6e-4b02-b624-8c8bfb8344db
+                      title: Системная разработка
+                      cohort_year: 2025
+                      score: 0
+                      covered_count: 0
+                      can_cover_count: 16
+                      total_count: 16
         '400':
           $ref: '#/components/responses/BadRequestError'
         '500':
@@ -416,7 +442,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailableError'
 
   /api/v1/majors/identify-specializations/{cohort_year}:
-    description: анализирует куда соответствуешь для конкретного года поступления (с детализацией до специализаций)
+    description: анализирует куда соответствуешь для конкретного года поступления (с детализацией до специализаций). Если в запросе передан major_id, анализ ограничивается только этим мейджором; иначе рассматриваются все мейджоры для указанного cohort_year
     post:
       parameters:
         - name: cohort_year
@@ -431,6 +457,20 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/IdentifyMajorRequest'
+            examples:
+              without_major_filter:
+                summary: без фильтра по мейджору
+                value:
+                  passed_course_ids:
+                    - 6aad3927-b012-458c-a0ec-3ad142fa8ae2
+                  current_semester: 1
+              with_major_filter:
+                summary: только для конкретного мейджора
+                value:
+                  passed_course_ids:
+                    - 6aad3927-b012-458c-a0ec-3ad142fa8ae2
+                  current_semester: 1
+                  major_id: 3c71b6fd-bf6e-4b02-b624-8c8bfb8344db
       responses:
         '200':
           description: все ок
@@ -440,6 +480,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SpecializationMatchResult'
+              examples:
+                default:
+                  summary: пример ответа
+                  value:
+                    - id: fb207075-ec2b-42c1-8ac4-9a2e89e0b986
+                      major_id: 3c71b6fd-bf6e-4b02-b624-8c8bfb8344db
+                      title: Системная разработка
+                      cohort_year: 2025
+                      score: 0
+                      covered_count: 0
+                      can_cover_count: 16
+                      total_count: 16
         '400':
           $ref: '#/components/responses/BadRequestError'
         '500':
@@ -875,7 +927,7 @@ components:
           type: integer
 
     IdentifyMajorRequest:
-      description: запрос может быть или массивом UUID пройденных курсов, или объектом с текущим семестром
+      description: запрос может быть или массивом UUID пройденных курсов, или объектом с текущим семестром и необязательным фильтром по мейджору
       anyOf:
         - type: array
           items:
@@ -892,6 +944,10 @@ components:
             current_semester:
               type: integer
               description: текущий семестр студента (по умолчанию 1)
+            major_id:
+              type: string
+              format: uuid
+              description: необязательный UUID мейджора; если указан, анализ выполняется только для него, иначе — для всех мейджоров подходящего cohort_year
 
     Course:
       type: object
