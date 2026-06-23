@@ -66,9 +66,43 @@ func (s *PlannerService) FindPathToCourse(
 			continue
 		}
 		neededIDs[currID] = true
+		// Group dependencies by alternative group and select representatives for OR-groups
+		groups := make(map[int][]uuid.UUID)
 		for _, dep := range s.depsByCourse[currID] {
 			if dep.DependencyType == enums.DependencyTypePrerequisite {
-				toCheck = append(toCheck, dep.RequiredCourseID)
+				groups[dep.AlternativeGroup] = append(groups[dep.AlternativeGroup], dep.RequiredCourseID)
+			}
+		}
+		for groupNum, altIDs := range groups {
+			if groupNum == 0 {
+				// mandatory (AND): add all alternatives
+				for _, reqID := range altIDs {
+					toCheck = append(toCheck, reqID)
+				}
+			} else {
+				// OR-group: pick a single representative
+				var picked uuid.UUID
+				for _, reqID := range altIDs {
+					if passedIDs[reqID] {
+						picked = reqID
+						break
+					}
+				}
+				if picked == uuid.Nil {
+					// prefer an alternative already selected/needed
+					for _, reqID := range altIDs {
+						if neededIDs[reqID] {
+							picked = reqID
+							break
+						}
+					}
+				}
+				if picked == uuid.Nil && len(altIDs) > 0 {
+					picked = altIDs[0]
+				}
+				if picked != uuid.Nil {
+					toCheck = append(toCheck, picked)
+				}
 			}
 		}
 	}
