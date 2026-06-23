@@ -119,7 +119,7 @@ cd frontend && pnpm test
 
 | Метод  | Путь                                | Описание                              |
 |--------|-------------------------------------|---------------------------------------|
-| GET    | `/api/v1/courses/`                  | все курсы с to_major маппингом        |
+| GET    | `/api/v1/courses/`                  | все курсы с to_major и specialisations |
 | GET    | `/api/v1/majors/`                   | все мажоры с требованиями             |
 | POST   | `/api/v1/majors/identify`           | идентификация мажора по курсам        |
 | POST   | `/api/v1/planner/generate`          | генерация roadmap                     |

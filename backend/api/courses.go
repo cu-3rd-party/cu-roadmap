@@ -71,6 +71,36 @@ func getCourses(c *gin.Context) {
 		courseToMajor[req.CourseID][req.MajorID] = string(req.RequirementType)
 	}
 
+	courseToSpecialisations := make(map[uuid.UUID]map[uuid.UUID]struct{})
+	specialisationsByMajor := make(map[uuid.UUID]map[string]uuid.UUID)
+	for _, req := range allReqs {
+		if len(req.Specializations) == 0 {
+			continue
+		}
+		majorSpecs, ok := specialisationsByMajor[req.MajorID]
+		if !ok {
+			specs, err := s.GetSpecializationsByMajor(req.MajorID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			majorSpecs = make(map[string]uuid.UUID)
+			for _, sp := range specs {
+				majorSpecs[sp.Title] = sp.ID
+			}
+			specialisationsByMajor[req.MajorID] = majorSpecs
+		}
+
+		for _, specTitle := range req.Specializations {
+			if specID, ok := majorSpecs[specTitle]; ok {
+				if courseToSpecialisations[req.CourseID] == nil {
+					courseToSpecialisations[req.CourseID] = make(map[uuid.UUID]struct{})
+				}
+				courseToSpecialisations[req.CourseID][specID] = struct{}{}
+			}
+		}
+	}
+
 	res := []gin.H{}
 	for _, course := range courses {
 		item := helpers.CourseToResponse(course)
@@ -83,6 +113,14 @@ func getCourses(c *gin.Context) {
 		} else {
 			item["to_major"] = gin.H{}
 		}
+
+		specialisationIDs := make([]string, 0)
+		if ids, ok := courseToSpecialisations[course.ID]; ok {
+			for specID := range ids {
+				specialisationIDs = append(specialisationIDs, specID.String())
+			}
+		}
+		item["specialisations"] = specialisationIDs
 		res = append(res, item)
 	}
 	writeCachedJSON(c, coursesCacheKey(c), res)

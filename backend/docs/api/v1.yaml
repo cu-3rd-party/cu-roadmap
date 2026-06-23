@@ -926,14 +926,15 @@ components:
           items:
             type: string
             format: uuid
-        to_major:
-          type: object
-          description: мапа из ID мейджора в тип требования к этому курсу (например major_core, major_choice, elective, soft и т.д.)
-          additionalProperties:
-            type: string
         postrequisites:
           type: array
           description: uuid курсов, которые являются пререквизитами перед конкретным
+          items:
+            type: string
+            format: uuid
+        specialisations:
+          type: array
+          description: uuid специализаций, к которым относится курс
           items:
             type: string
             format: uuid
@@ -948,6 +949,11 @@ components:
               - major_core
               - major_choice
               - flex
+              - university
+              - elective
+              - minor
+              - soft
+              - selected_topics
               - university
               - elective
               - minor
