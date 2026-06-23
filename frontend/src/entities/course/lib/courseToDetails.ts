@@ -1,5 +1,9 @@
 import type { SemesterNumber } from "@/shared/constants";
-import { categorySlugToName, type UUID } from "@/shared/model";
+import {
+  categorySlugToName,
+  requirementSlugToName,
+  type UUID,
+} from "@/shared/model";
 
 import type { CourseDetails, RequisiteItem, Season } from "../model/details";
 import type { Course } from "../model/types";
@@ -34,21 +38,23 @@ const resolveRequisites = (
 
 interface CourseToDetailsLookups {
   titleMap: Map<UUID, string>;
-  majorTitleMap: Map<UUID, string>;
+  specializationTitleMap: Map<UUID, string>;
 }
 
 // Map a normalized Course into the CourseDetails shape the drawer renders
 export const courseToDetails = (
   course: Course,
-  { titleMap, majorTitleMap }: CourseToDetailsLookups,
+  { titleMap, specializationTitleMap }: CourseToDetailsLookups,
 ): CourseDetails => ({
   title: course.title,
   description: course.description,
   syllabus: course.handbookLink,
   admissionYears: formatAdmissionYears(course.allowedCohorts),
-  category: categorySlugToName[course.category],
-  specialisations: Object.keys(course.toMajor ?? {})
-    .map((majorId) => majorTitleMap.get(majorId))
+  category: course.majorRequirement
+    ? `${categorySlugToName[course.category]} ${requirementSlugToName[course.majorRequirement]}`
+    : categorySlugToName[course.category],
+  specializations: (course.specializations ?? [])
+    .map((id) => specializationTitleMap.get(id))
     .filter((title): title is string => Boolean(title)),
   seasons: semestersToSeasons(course.availableSemesters),
   recommendedSemester: course.recommendedSemester

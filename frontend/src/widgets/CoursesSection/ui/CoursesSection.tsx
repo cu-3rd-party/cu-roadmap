@@ -6,7 +6,7 @@ interface CourseCategorySectionProps {
   title: string;
   courses: Course[];
   titleMap: Map<UUID, string>;
-  majorTitleMap: Map<UUID, string>;
+  specializationTitleMap: Map<UUID, string>;
   panelTitle?: string;
 }
 
@@ -14,7 +14,7 @@ export const CoursesSection = ({
   title,
   courses,
   titleMap,
-  majorTitleMap,
+  specializationTitleMap,
   panelTitle,
 }: CourseCategorySectionProps) => {
   return (
@@ -32,7 +32,10 @@ export const CoursesSection = ({
               recommendedSemester={course.recommendedSemester}
               category={course.category}
               type={course.type}
-              details={courseToDetails(course, { titleMap, majorTitleMap })}
+              details={courseToDetails(course, {
+                titleMap,
+                specializationTitleMap,
+              })}
             />
           ))}
         </div>

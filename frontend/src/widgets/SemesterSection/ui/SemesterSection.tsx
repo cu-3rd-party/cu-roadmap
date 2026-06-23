@@ -25,8 +25,8 @@ import {
   StatusPanel,
   type Course,
 } from "@/entities/course";
-import { useMajorsQuery } from "@/entities/major";
 import { isSemesterCompleted, usePlannerStore } from "@/entities/roadmap";
+import { useSpecializationsQuery } from "@/entities/specialization";
 import { CourseSelectModal } from "@/features/course-select";
 import { useSettingsStore } from "@/features/settings";
 import { useMediaQuery } from "@/shared/lib";
@@ -63,8 +63,8 @@ export const SemesterSection = ({
     moveCourse,
     reorderCourses,
   } = usePlannerStore();
-  const { admissionYear, hideCompletedSemesters } = useSettingsStore();
-  const { data: majors } = useMajorsQuery(admissionYear);
+  const { admissionYear, majorId, hideCompletedSemesters } = useSettingsStore();
+  const { data: specializations } = useSpecializationsQuery(majorId);
   const courses = selections[index] ?? [];
 
   const titleMap = useMemo(
@@ -72,9 +72,9 @@ export const SemesterSection = ({
     [catalogCourses],
   );
 
-  const majorTitleMap = useMemo(
-    () => new Map((majors ?? []).map((major) => [major.id, major.title])),
-    [majors],
+  const specializationTitleMap = useMemo(
+    () => new Map((specializations ?? []).map((s) => [s.id, s.title])),
+    [specializations],
   );
 
   const courseById = useMemo(
@@ -85,7 +85,7 @@ export const SemesterSection = ({
   const detailsFor = (id: string) => {
     const course = courseById.get(id);
     return course
-      ? courseToDetails(course, { titleMap, majorTitleMap })
+      ? courseToDetails(course, { titleMap, specializationTitleMap })
       : undefined;
   };
 

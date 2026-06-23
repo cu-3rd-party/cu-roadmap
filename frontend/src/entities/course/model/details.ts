@@ -13,7 +13,7 @@ export interface CourseDetails {
   syllabus: string;
   admissionYears: string;
   category: string;
-  specialisations: string[];
+  specializations: string[];
   seasons: Season[];
   recommendedSemester: string;
   prerequisites: RequisiteItem[];

@@ -25,7 +25,11 @@ const sameIds = (a: string[], b: string[]) => {
 const PlannerPage = () => {
   const { admissionYear, majorId } = useSettingsStore();
   const { selections, validation } = usePlannerStore();
-  const { data: courses, isLoading, isError } = useCoursesQuery(admissionYear);
+  const {
+    data: courses,
+    isLoading,
+    isError,
+  } = useCoursesQuery(admissionYear, majorId);
 
   // Re-validate the whole plan whenever the selection settles. Debounced so
   // rapid drag/drop edits collapse into one request; the initial value passes

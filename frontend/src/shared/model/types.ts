@@ -54,7 +54,7 @@ export type MajorRequirementType =
   | "selected_topics";
 
 export const requirementSlugToName: Record<MajorRequirementType, string> = {
-  major_core: "Major Core",
+  major_core: "Core",
   major_choice: "Choice",
   university: "University",
   minor: "Minor",

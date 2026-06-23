@@ -23,7 +23,7 @@ import { getCourseHints, getInsertedText, getSemesterOptions } from "../lib";
 // The modal shell and its tab components are pure consumers of this hook.
 export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
   const { admissionYear, majorId } = useSettingsStore();
-  const { data: courses } = useCoursesQuery(admissionYear);
+  const { data: courses } = useCoursesQuery(admissionYear, majorId);
   // The major itself is chosen in Settings; here we only pick a specialization
   // of that major.
   const { addCourse, markGenerated } = usePlannerStore();
