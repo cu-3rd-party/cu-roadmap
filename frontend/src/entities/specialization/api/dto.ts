@@ -19,9 +19,10 @@ export interface SpecializationMatchDto {
   total_count: number;
 }
 
-// Request body for POST majors/identify-specializations/{year}
-// (identical to the identify-majors request).
+// Request body for POST majors/identify-specializations/{year}.
+// major_id scopes the matches to a single major server-side.
 export interface IdentifySpecializationsRequestDto {
   passed_course_ids: UUID[];
   current_semester: SemesterNumber;
+  major_id: UUID;
 }

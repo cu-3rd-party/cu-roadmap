@@ -59,6 +59,7 @@ const PlannerPage = () => {
   const identifyQuery = useIdentifySpecializationsQuery(
     debouncedCourseIds,
     admissionYear,
+    majorId,
   );
 
   // Show the spinner from the moment the plan changes — while the debounce is
@@ -71,18 +72,17 @@ const PlannerPage = () => {
   // keepPreviousData keeps isLoading false on later updates.
   const summaryLoading = identifyQuery.isLoading;
 
-  // Only show specializations of the major chosen in Settings.
-  const plannerSpecializations: SpecializationProgress[] = useMemo(() => {
-    const source = identifyQuery.data ?? [];
-
-    return source
-      .filter((match) => majorId != null && match.majorId === majorId)
-      .map((match) => ({
+  // The request is already scoped to the major chosen in Settings, so the
+  // response only contains that major's specializations.
+  const plannerSpecializations: SpecializationProgress[] = useMemo(
+    () =>
+      (identifyQuery.data ?? []).map((match) => ({
         title: match.title,
         earnedPct: toPercent(match.coveredCount, match.totalCount),
         availablePct: toPercent(match.canCoverCount, match.totalCount),
-      }));
-  }, [identifyQuery.data, majorId]);
+      })),
+    [identifyQuery.data],
+  );
 
   // Conflicts are error/warning validation messages across all semesters.
   const conflictCount = useMemo(
