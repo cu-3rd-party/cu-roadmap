@@ -64,7 +64,7 @@ func initTestStore(t *testing.T) (interfaces.StoreBase, error) {
 		return nil, fmt.Errorf("parse database URL: %w", err)
 	}
 	q := u.Query()
-	q.Set("search_path", schema)
+	q.Set("options", "-c search_path="+schema)
 	u.RawQuery = q.Encode()
 
 	s, err := store.InitStore(false, u.String(), "admin", useMemoryCacheStore, testRedisURL)

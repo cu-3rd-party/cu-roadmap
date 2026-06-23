@@ -17,10 +17,16 @@ paths:
       responses:
         '200':
           description: все хорошо
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
         '503':
           description: я еще не успел бд инициализировать, или я сейчас синхронизируюсь с гугл щитами
-        '502':
-          description: я не доступен, подожди дай встану
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
 
   /api/v1/graph/data:
     description: возвращает информацию, которая используется для графа
@@ -275,13 +281,22 @@ paths:
       description: возвращает список специализаций для конкретного мейджора
       responses:
         '200':
-          description: список специализаций (строки)
+          description: список специализаций
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: string
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    major_id:
+                      type: string
+                      format: uuid
+                    title:
+                      type: string
         '400':
           $ref: '#/components/responses/BadRequestError'
         '500':
@@ -595,7 +610,7 @@ components:
       description: |
         HttpOnly cookie, устанавливается после успешного `POST /api/v1/auth/login`.
         Токен — UUIDv4, живёт 1 час.
-        Для завершения сессии используется `POST /api/v1/auth/logout`.
+        Для завершения сессии используется `DELETE /api/v1/auth/logout`.
         В production устанавливается с флагами `Secure; HttpOnly; SameSite=Strict`.
         В dev-режиме (gin debug) без `Secure`.
 
@@ -720,6 +735,15 @@ components:
         status:
           type: string
 
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
     MajorRequirement:
       description: что надо для получения
       type: object
@@ -760,6 +784,9 @@ components:
         school:
           type: string
           description: название школы
+        cohort_year:
+          type: integer
+          description: год поступления, к которому относится мейджор
         requirements:
           type: array
           items:
@@ -785,11 +812,6 @@ components:
             - minor
             - soft
             - selected_topics
-        specializations:
-          type: array
-          description: список специализаций, для которых применяется это требование
-          items:
-            type: string
 
     MajorUpdateRequest:
       type: object
@@ -853,17 +875,23 @@ components:
           type: integer
 
     IdentifyMajorRequest:
-      type: object
-      properties:
-        passed_course_ids:
-          type: array
-          description: UUID реально пройденных курсов
+      description: запрос может быть или массивом UUID пройденных курсов, или объектом с текущим семестром
+      anyOf:
+        - type: array
           items:
             type: string
             format: uuid
-        current_semester:
-          type: integer
-          description: текущий семестр студента (по умолчанию 1)
+        - type: object
+          properties:
+            passed_course_ids:
+              type: array
+              description: UUID реально пройденных курсов
+              items:
+                type: string
+                format: uuid
+            current_semester:
+              type: integer
+              description: текущий семестр студента (по умолчанию 1)
 
     Course:
       type: object
@@ -914,6 +942,10 @@ components:
           nullable: true
         workload:
           type: number
+        analog_group:
+          type: string
+          nullable: true
+          description: группа аналогичных курсов
         prerequisites:
           type: array
           description: uuid курсов, которые являются пререквизитами перед конкретным
@@ -949,11 +981,6 @@ components:
               - major_core
               - major_choice
               - flex
-              - university
-              - elective
-              - minor
-              - soft
-              - selected_topics
               - university
               - elective
               - minor
