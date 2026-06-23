@@ -30,6 +30,8 @@ export interface GenerateRoadmapRequestDto {
   selected_course_ids: PlannedSemesterDto[];
   course_source: CourseSource;
   major_id: UUID;
+  // selected specialization of the major; omitted when none is chosen
+  specialization_id?: UUID;
   // semester to start counter from
   current_semester?: SemesterNumber;
   // measured in credits, default 12.0

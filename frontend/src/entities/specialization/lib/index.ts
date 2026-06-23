@@ -1,0 +1,1 @@
+export { normalizeSpecialization } from "./normalizeSpecialization";

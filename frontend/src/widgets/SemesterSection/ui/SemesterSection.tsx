@@ -37,7 +37,6 @@ import { SortableCourseCard } from "./SortableCourseCard";
 
 export interface SemesterSectionProps {
   index: number;
-  dateRange: string;
   courses: Course[];
   coursesLoading: boolean;
   coursesError: boolean;
@@ -46,7 +45,6 @@ export interface SemesterSectionProps {
 
 export const SemesterSection = ({
   index,
-  dateRange,
   courses: catalogCourses,
   coursesLoading,
   coursesError,
@@ -150,7 +148,7 @@ export const SemesterSection = ({
   if (isCompleted && hideCompletedSemesters) return null;
 
   return (
-    <Panel className="relative px-2 sm:px-4 lg:p-6">
+    <Panel className="relative px-2 sm:px-4 lg:p-6 lg:pt-4">
       <div className="mb-4 flex items-center gap-2.5 px-1">
         <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 sm:items-center">
           <div className="flex items-center gap-2">
@@ -164,7 +162,6 @@ export const SemesterSection = ({
               />
             )}
           </div>
-          <span className="text-sm mt-0.5 text-fg-secondary">{dateRange}</span>
         </div>
         <div className="ml-auto flex items-center gap-4">
           {courses.length > 0 && (

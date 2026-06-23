@@ -11,7 +11,9 @@ export const buildGenerateRoadmapRequest = (
   selections: Record<number, PlannedCourse[]>,
   admissionYear: AdmissionYear,
   majorId: UUID,
+  specializationId: UUID,
   scope: CourseSource,
+  maxLoad: number,
 ): GenerateRoadmapRequestDto => {
   const passed_course_ids: UUID[] = [];
   const selected_course_ids: GenerateRoadmapRequestDto["selected_course_ids"] =
@@ -40,8 +42,9 @@ export const buildGenerateRoadmapRequest = (
     selected_course_ids,
     course_source: scope,
     major_id: majorId,
+    specialization_id: specializationId || undefined,
     cohort: admissionYear,
     current_semester: admissionYearToSemester[admissionYear],
-    max_load: 60,
+    max_load: maxLoad,
   };
 };

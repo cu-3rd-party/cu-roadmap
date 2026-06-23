@@ -95,10 +95,7 @@ const PlannerPage = () => {
     [selectedCourseIds.length, conflictCount],
   );
 
-  const semesters = useMemo(
-    () => buildSemesters(admissionYear),
-    [admissionYear],
-  );
+  const semesters = useMemo(() => buildSemesters(), [admissionYear]);
 
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
@@ -113,7 +110,6 @@ const PlannerPage = () => {
         <SemesterSection
           key={semester.index}
           index={semester.index}
-          dateRange={semester.dateRange}
           courses={courses ?? []}
           coursesLoading={isLoading}
           coursesError={isError}
