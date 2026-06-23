@@ -120,7 +120,7 @@ func getCourses(c *gin.Context) {
 				specialisationIDs = append(specialisationIDs, specID.String())
 			}
 		}
-		item["specialisations"] = specialisationIDs
+		item["specializations"] = specialisationIDs
 		res = append(res, item)
 	}
 	writeCachedJSON(c, coursesCacheKey(c), res)

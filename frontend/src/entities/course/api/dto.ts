@@ -23,5 +23,5 @@ export interface CourseDto {
   corequisites?: UUID[];
   postrequisites?: UUID[];
   to_major: Record<UUID, MajorRequirementType>;
-  specialisations?: UUID[];
+  specializations?: UUID[];
 }

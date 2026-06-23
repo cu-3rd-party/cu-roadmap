@@ -214,9 +214,9 @@ func TestGetCoursesReturnsSpecialisations(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &courses)
 
 	assert.Len(t, courses, 1)
-	specialisations, ok := courses[0]["specialisations"].([]interface{})
+	specializations, ok := courses[0]["specializations"].([]interface{})
 	assert.True(t, ok)
-	assert.ElementsMatch(t, []interface{}{specID.String()}, specialisations)
+	assert.ElementsMatch(t, []interface{}{specID.String()}, specializations)
 }
 
 func TestGetMajorsEmpty(t *testing.T) {

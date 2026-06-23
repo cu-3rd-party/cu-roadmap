@@ -964,7 +964,7 @@ components:
           items:
             type: string
             format: uuid
-        specialisations:
+        specializations:
           type: array
           description: uuid специализаций, к которым относится курс
           items:
