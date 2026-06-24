@@ -612,6 +612,12 @@ func TestSyncFromSheetDataEmptyCourseTitleSkipped(t *testing.T) {
 	assert.Len(t, courses, 1)
 }
 
+func TestGuessSheetMappingUsesSWEForDevelopment(t *testing.T) {
+	mapping, ok := guessSheetMapping("Разработка")
+	assert.True(t, ok)
+	assert.Equal(t, enums.CourseCategorySWE, mapping.Category)
+}
+
 func TestGuessSheetMapping(t *testing.T) {
 	tests := []struct {
 		input  string

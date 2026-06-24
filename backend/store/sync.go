@@ -56,7 +56,7 @@ func requirementTypeFromSheetCourseType(raw string) enums.RequirementType {
 var SheetToMajor = map[string]SheetMajorMapping{
 	"Бизнес и аналитика":      {"Бизнес и аналитика", "Business", enums.CourseCategoryBusiness},
 	"Искусственный интеллект": {"Искусственный интеллект", "Tech", enums.CourseCategoryAI},
-	"Разработка":              {"Разработка", "Tech", enums.CourseCategoryTech},
+	"Разработка":              {"Разработка", "Tech", enums.CourseCategorySWE},
 }
 
 type SyncResult struct {
@@ -95,7 +95,7 @@ func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 	keywordMap := []kwEntry{
 		{[]string{"бизнес", "business", "экономика", "финанс", "маркетинг", "аналитик"}, SheetMajorMapping{"Бизнес и аналитика", "Business", enums.CourseCategoryBusiness}},
 		{[]string{"искусственный интеллект", "интеллект", "machine learning", "deep learning", "ml", "dl", "ai", "ии", "нейро"}, SheetMajorMapping{"Искусственный интеллект", "Tech", enums.CourseCategoryAI}},
-		{[]string{"разработка", "software", "программирован", "программист", "swe", "engineering", "development", "web", "mobile", "backend", "frontend"}, SheetMajorMapping{"Разработка", "Tech", enums.CourseCategoryTech}},
+		{[]string{"разработка", "software", "программирован", "программист", "swe", "engineering", "development", "web", "mobile", "backend", "frontend"}, SheetMajorMapping{"Разработка", "Tech", enums.CourseCategorySWE}},
 		{[]string{"дизайн", "design", "ux", "ui", "график"}, SheetMajorMapping{"Дизайн", "Design", enums.CourseCategoryDesign}},
 		{[]string{"общ", "common", "general", "fundamental", "базов", "основ"}, SheetMajorMapping{"Общие", "Common", enums.CourseCategoryFundamentals}},
 		{[]string{"stem", "стем"}, SheetMajorMapping{"STEM", "STEM", enums.CourseCategorySTEM}},
