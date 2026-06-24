@@ -170,10 +170,10 @@ func getCourses(c *gin.Context) {
 				case enums.RequirementTypeMajorChoice:
 					item["by_major_type"] = "choice"
 				default:
-					item["by_major_type"] = classifyCourseByCategory(course.Category)
+					item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
 				}
 			} else {
-				item["by_major_type"] = classifyCourseByCategory(course.Category)
+				item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
 			}
 
 			if item["by_major_type"] == "other" {
@@ -193,9 +193,16 @@ func getCourses(c *gin.Context) {
 	writeCachedJSON(c, coursesCacheKey(c), res)
 }
 
-func classifyCourseByCategory(category enums.CourseCategory) string {
+func classifyCourseByCategory(category enums.CourseCategory, courseType enums.CourseType) string {
+	if category == enums.CourseCategoryFundamentals {
+		if courseType == enums.CourseTypeElective {
+			return "elective"
+		}
+		return "other"
+	}
+
 	switch category {
-	case enums.CourseCategoryFundamentals, enums.CourseCategorySoft, enums.CourseCategorySTEM:
+	case enums.CourseCategorySoft, enums.CourseCategorySTEM:
 		return "other"
 	default:
 		return "elective"

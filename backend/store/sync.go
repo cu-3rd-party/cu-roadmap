@@ -723,7 +723,17 @@ var (
 func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) interfaces.CourseData {
 	rawType := strings.ToLower(getFirst(row, "Тип курса"))
 	var courseType enums.CourseType
-	if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
+	if category == enums.CourseCategoryFundamentals {
+		if strings.Contains(rawType, "факультатив") || strings.Contains(rawType, "elective") {
+			courseType = enums.CourseTypeElective
+		} else if strings.Contains(rawType, "общеуниверситетский") || strings.Contains(rawType, "универ") {
+			courseType = enums.CourseTypeOther
+		} else if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
+			courseType = enums.CourseTypeMandatory
+		} else {
+			courseType = enums.CourseTypeOther
+		}
+	} else if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
 		courseType = enums.CourseTypeMandatory
 	} else if strings.Contains(rawType, "choice") || strings.Contains(rawType, "elective") || strings.Contains(rawType, "факультатив") {
 		courseType = enums.CourseTypeElective
