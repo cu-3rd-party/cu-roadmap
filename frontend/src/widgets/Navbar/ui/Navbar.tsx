@@ -56,7 +56,7 @@ export const Navbar = () => {
   return (
     <>
       <header className="relative hidden sm:flex h-16 items-center justify-between border-b border-border bg-background px-6">
-        <img src="/cu.svg" width={36} height={36} alt="ЦУ" />
+        <img src="/favicon.svg" width={36} height={36} alt="ЦУ" />
 
         <nav className="absolute left-1/2 hidden -translate-x-1/2 grid-flow-col auto-cols-fr items-center gap-4 rounded-full p-1 sm:grid">
           {NAV_ITEMS.map((item) => (

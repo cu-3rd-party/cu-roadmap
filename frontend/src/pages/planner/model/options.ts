@@ -14,7 +14,8 @@ export const buildPlannerStats = (
 ): SummaryStat[] => [
   { label: "Курсов выбрано", value: selectedCount },
   { label: "Конфликты", value: conflicts },
-  { label: "Средняя нагрузка", value: 32 },
+  // TODO: change later when real load appears
+  { label: "Средняя нагрузка", value: selectedCount / 8 },
 ];
 
 // Per-semester static metadata; runtime course data is injected by PlannerPage.
