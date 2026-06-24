@@ -171,16 +171,13 @@ func identifySpecializations(c *gin.Context) {
 		}
 
 		coreReqIDs := make(map[uuid.UUID]bool)
-		for _, r := range reqs {
-			if len(r.Specializations) == 0 {
-				coreReqIDs[r.CourseID] = true
-			}
-		}
 
 		if len(specs) == 0 {
 			reqIDs := make(map[uuid.UUID]bool)
 			for _, r := range reqs {
-				reqIDs[r.CourseID] = true
+				if r.RequirementType == enums.RequirementTypeMajorChoice {
+					reqIDs[r.CourseID] = true
+				}
 			}
 			if len(reqIDs) == 0 {
 				continue
@@ -217,6 +214,9 @@ func identifySpecializations(c *gin.Context) {
 				specReqIDs[id] = true
 			}
 			for _, r := range reqs {
+				if r.RequirementType != enums.RequirementTypeMajorChoice {
+					continue
+				}
 				if len(r.Specializations) > 0 {
 					for _, sTitle := range r.Specializations {
 						if sTitle == spec.Title {

@@ -674,6 +674,88 @@ func TestIdentifySpecializationsCanFilterByMajorID(t *testing.T) {
 	assert.Equal(t, "AI", analysis[0]["title"])
 }
 
+func TestIdentifySpecializationsCountsOnlyChoiceRequirements(t *testing.T) {
+	majorID := uuid.New()
+	specID := uuid.New()
+	coreCourseID := uuid.New()
+	choiceCourseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
+		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
+		s.CreateCourse(interfaces.CourseData{ID: coreCourseID, Title: "Core Course", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateCourse(interfaces.CourseData{ID: choiceCourseID, Title: "Choice Course", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        coreCourseID,
+			RequirementType: enums.RequirementTypeMajorCore,
+			Specializations: []string{"AI"},
+		})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        choiceCourseID,
+			RequirementType: enums.RequirementTypeMajorChoice,
+			Specializations: []string{"AI"},
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/majors/identify-specializations/2025", strings.NewReader(`{"passed_course_ids":["`+choiceCourseID.String()+`"]}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var analysis []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &analysis)
+	assert.Len(t, analysis, 1)
+	assert.Equal(t, float64(1), analysis[0]["covered_count"])
+	assert.Equal(t, float64(0), analysis[0]["can_cover_count"])
+	assert.Equal(t, float64(1), analysis[0]["total_count"])
+	assert.Equal(t, "AI", analysis[0]["title"])
+}
+
+func TestIdentifySpecializationsIgnoresUnscopedChoiceRequirements(t *testing.T) {
+	majorID := uuid.New()
+	specID := uuid.New()
+	scopedCourseID := uuid.New()
+	unscopedCourseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
+		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
+		s.CreateCourse(interfaces.CourseData{ID: scopedCourseID, Title: "Scoped Choice", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateCourse(interfaces.CourseData{ID: unscopedCourseID, Title: "Global Choice", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        scopedCourseID,
+			RequirementType: enums.RequirementTypeMajorChoice,
+			Specializations: []string{"AI"},
+		})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        unscopedCourseID,
+			RequirementType: enums.RequirementTypeMajorChoice,
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/majors/identify-specializations/2025", strings.NewReader(`[]`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var analysis []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &analysis)
+	assert.Len(t, analysis, 1)
+	assert.Equal(t, float64(1), analysis[0]["total_count"])
+	assert.Equal(t, float64(0), analysis[0]["covered_count"])
+	assert.Equal(t, "AI", analysis[0]["title"])
+}
+
 func findCourseByTitle(courses []map[string]interface{}, title string) map[string]interface{} {
 	for _, c := range courses {
 		if c["title"] == title {
