@@ -59,7 +59,7 @@ describe("buildCategoryFilters", () => {
       },
       {
         id: "elective:swe",
-        label: "Факультатив",
+        label: "Факультативы",
         type: "elective",
         category: "swe",
       },
@@ -78,7 +78,7 @@ describe("buildCategoryFilters", () => {
       },
       {
         id: "fundamentals:elective",
-        label: "Fundamentals (Факультатив)",
+        label: "Fundamentals (Факультативы)",
         type: "elective",
         category: "fundamentals",
       },
@@ -94,7 +94,7 @@ describe("buildCategoryFilters", () => {
 
     // First elective (the major itself) uses the elective label; the two
     // remaining majors are labeled by their major name.
-    expect(labels).toEqual(["Факультатив", "Business", "SWE"]);
+    expect(labels).toEqual(["Факультативы", "Business", "SWE"]);
   });
 
   it("drops the single major elective and lists all majors when none is selected", () => {
