@@ -93,7 +93,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
 
   /api/v1/courses/{cohort_year}:
-    description: операции с курсами, отфильтрованными по году поступления
+    description: операции с курсами, отфильтрованными по году поступления или по мейджору
     get:
       description: |
         возвращает курсы, доступные для указанного года поступления.
@@ -101,13 +101,15 @@ paths:
         (allowed_cohorts пуст) или указанный год есть в allowed_cohorts.
         path-параметр cohort_year работает как значение по умолчанию;
         query-параметр cohort_year переопределяет его.
+        Для мейджор-специфичной классификации используйте маршрут
+        /api/v1/courses/{cohort_year}/{major_id}.
       parameters:
         - name: cohort_year
           in: path
           required: true
           schema:
             type: integer
-          description: год поступления (например, 2025) — значение по умолчанию
+          description: год поступления (например, 2025)
         - $ref: '#/components/parameters/CohortYears'
         - $ref: '#/components/parameters/CourseTitle'
         - $ref: '#/components/parameters/CourseTypes'
@@ -124,6 +126,51 @@ paths:
                   $ref: '#/components/schemas/Course'
         '400':
           $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
+  /api/v1/courses/{cohort_year}/{major_id}:
+    description: операции с курсами для конкретного года поступления и мейджора
+    get:
+      description: |
+        возвращает курсы для указанного года поступления и дополнительно
+        классифицирует их относительно переданного мейджора.
+        В ответе появляются поля by_major_type и specializations,
+        связанные с этим мейджором.
+      parameters:
+        - name: cohort_year
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: год поступления (например, 2025)
+        - name: major_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID мейджора, для которого нужно получить классификацию
+        - $ref: '#/components/parameters/CohortYears'
+        - $ref: '#/components/parameters/CourseTitle'
+        - $ref: '#/components/parameters/CourseTypes'
+        - $ref: '#/components/parameters/CourseCategories'
+        - $ref: '#/components/parameters/CourseWorkload'
+      responses:
+        '200':
+          description: отфильтрованный список курсов с мейджор-специфичной классификацией
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Course'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          description: мейджор не найден
         '500':
           $ref: '#/components/responses/InternalServerError'
         '503':
@@ -715,7 +762,7 @@ components:
         type: string
       description: >
         фильтр по категории курса (через запятую).
-        допустимые значения: fundamentals, ai, stem, soft, business, tech, design.
+        допустимые значения: fundamentals, ai, stem, soft, business, tech, swe, design.
         пример: `?category=ai,stem`
 
     CourseWorkload:
@@ -833,6 +880,9 @@ components:
         title:
           type: string
           description: название мейджора
+        internal_name:
+          type: string
+          description: внутреннее имя мейджора, например ai, swe, business
         school:
           type: string
           description: название школы
@@ -984,6 +1034,7 @@ components:
             - soft
             - business
             - tech
+            - swe
             - design
         available_semesters:
           type: array
@@ -1040,6 +1091,16 @@ components:
           items:
             type: string
             format: uuid
+        by_major_type:
+          type: string
+          description: >-
+            дополнительная классификация курса относительно конкретного мейджора,
+            если в path передан UUID мейджора; значения: core, choice, elective, other
+          enum:
+            - core
+            - choice
+            - elective
+            - other
         to_major:
           type: object
           description: |
@@ -1090,6 +1151,7 @@ components:
             - soft
             - business
             - tech
+            - swe
             - design
         allowed_cohorts:
           type: array

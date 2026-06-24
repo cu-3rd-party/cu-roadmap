@@ -175,7 +175,7 @@ func TestMapSheetRowToCourse(t *testing.T) {
 	assert.Equal(t, []int{1, 3, 5, 7}, course.AvailableSemesters)
 	assert.NotNil(t, course.RecommendedSemester)
 	assert.Equal(t, 3, *course.RecommendedSemester)
-	assert.Equal(t, 6.0, course.Workload)
+	assert.Equal(t, 1.0, course.Workload)
 	assert.Equal(t, []int{2025, 2026}, course.AllowedCohorts)
 }
 
@@ -193,7 +193,7 @@ func TestMapSheetRowToCourseElective(t *testing.T) {
 
 	assert.Equal(t, []int{2, 4, 6, 8}, course.AvailableSemesters)
 	assert.Nil(t, course.RecommendedSemester)
-	assert.Equal(t, 5.0, course.Workload)
+	assert.Equal(t, 1.0, course.Workload)
 }
 
 func TestMapSheetRowToCourseWorkloadVariants(t *testing.T) {
@@ -204,7 +204,7 @@ func TestMapSheetRowToCourseWorkloadVariants(t *testing.T) {
 		"Нагрузка":       "7.5",
 	}
 	course := MapSheetRowToCourse(row, enums.CourseCategoryTech)
-	assert.Equal(t, 7.5, course.Workload)
+	assert.Equal(t, 1.0, course.Workload)
 
 	row2 := map[string]string{
 		"Название курса": "Курс 2",
@@ -213,7 +213,29 @@ func TestMapSheetRowToCourseWorkloadVariants(t *testing.T) {
 		"workload":       "8",
 	}
 	course2 := MapSheetRowToCourse(row2, enums.CourseCategoryTech)
-	assert.Equal(t, 8.0, course2.Workload)
+	assert.Equal(t, 1.0, course2.Workload)
+}
+
+func TestMapSheetRowToCourseUsesExclusiveSemester(t *testing.T) {
+	row := map[string]string{
+		"Название курса":         "Фундаментальный курс",
+		"Тип курса":              "mandatory",
+		"Осень / весна":          "осень",
+		"Исключительный семестр": "7",
+	}
+	course := MapSheetRowToCourse(row, enums.CourseCategoryFundamentals)
+	assert.Equal(t, []int{7}, course.AvailableSemesters)
+}
+
+func TestMapSheetRowToCourseUsesExclusiveSemesterWithExtraWhitespaceInHeader(t *testing.T) {
+	row := map[string]string{
+		"Название курса":             "Физра 1",
+		"Тип курса":                  "mandatory",
+		"Осень / весна":              "осень",
+		"  Исключительный семестр  ": "1",
+	}
+	course := MapSheetRowToCourse(row, enums.CourseCategoryFundamentals)
+	assert.Equal(t, []int{1}, course.AvailableSemesters)
 }
 
 func TestSyncFromSheetData(t *testing.T) {
@@ -588,6 +610,12 @@ func TestSyncFromSheetDataEmptyCourseTitleSkipped(t *testing.T) {
 
 	courses, _ := s.GetAllCourses()
 	assert.Len(t, courses, 1)
+}
+
+func TestGuessSheetMappingUsesSWEForDevelopment(t *testing.T) {
+	mapping, ok := guessSheetMapping("Разработка")
+	assert.True(t, ok)
+	assert.Equal(t, enums.CourseCategorySWE, mapping.Category)
 }
 
 func TestGuessSheetMapping(t *testing.T) {

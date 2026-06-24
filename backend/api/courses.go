@@ -19,6 +19,7 @@ import (
 func RegisterCoursesRoutes(rg *gin.RouterGroup) {
 	rg.GET("/", getCourses)
 	rg.GET("/:cohort_year", getCourses)
+	rg.GET("/:cohort_year/:major_id", getCourses)
 
 	admin := rg.Group("/")
 	admin.Use(middleware.AuthMiddleware())
@@ -40,14 +41,42 @@ func getCourses(c *gin.Context) {
 	}
 	f := parseCourseFilter(c)
 
-	if len(f.CohortYears) == 0 {
-		if cohortStr := c.Param("cohort_year"); cohortStr != "" {
+	var majorID uuid.UUID
+	if cohortStr := c.Param("cohort_year"); cohortStr != "" {
+		if parsedMajorID, err := uuid.Parse(cohortStr); err == nil {
+			majorID = parsedMajorID
+		} else {
 			year, err := strconv.Atoi(cohortStr)
 			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid cohort_year"})
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid cohort_year or major id"})
 				return
 			}
-			f.CohortYears = []int{year}
+			if len(f.CohortYears) == 0 {
+				f.CohortYears = []int{year}
+			}
+		}
+	}
+
+	if majorIDParam := c.Param("major_id"); majorIDParam != "" {
+		parsedMajorID, err := uuid.Parse(majorIDParam)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid major id"})
+			return
+		}
+		majorID = parsedMajorID
+	}
+
+	var err error
+	var majorData *interfaces.MajorData
+	if majorID != uuid.Nil {
+		majorData, err = s.GetMajorByID(majorID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if majorData == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "major not found"})
+			return
 		}
 	}
 
@@ -71,9 +100,22 @@ func getCourses(c *gin.Context) {
 		courseToMajor[req.CourseID][req.MajorID] = string(req.RequirementType)
 	}
 
+	majorRequirementByCourse := make(map[uuid.UUID]enums.RequirementType)
+	for _, req := range allReqs {
+		if majorID != uuid.Nil && req.MajorID != majorID {
+			continue
+		}
+		if req.MajorID == majorID {
+			majorRequirementByCourse[req.CourseID] = req.RequirementType
+		}
+	}
+
 	courseToSpecializations := make(map[uuid.UUID]map[uuid.UUID]struct{})
 	specializationsByMajor := make(map[uuid.UUID]map[string]uuid.UUID)
 	for _, req := range allReqs {
+		if majorID != uuid.Nil && req.MajorID != majorID {
+			continue
+		}
 		if len(req.Specializations) == 0 {
 			continue
 		}
@@ -120,6 +162,25 @@ func getCourses(c *gin.Context) {
 			item["to_major"] = gin.H{}
 		}
 
+		if majorID != uuid.Nil {
+			if requirementType, ok := majorRequirementByCourse[course.ID]; ok {
+				switch requirementType {
+				case enums.RequirementTypeMajorCore:
+					item["by_major_type"] = "core"
+				case enums.RequirementTypeMajorChoice:
+					item["by_major_type"] = "choice"
+				default:
+					item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
+				}
+			} else {
+				item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
+			}
+
+			if item["by_major_type"] == "other" {
+				item["course_type"] = "other"
+			}
+		}
+
 		specializationIDs := make([]string, 0)
 		if ids, ok := courseToSpecializations[course.ID]; ok {
 			for specID := range ids {
@@ -130,6 +191,38 @@ func getCourses(c *gin.Context) {
 		res = append(res, item)
 	}
 	writeCachedJSON(c, coursesCacheKey(c), res)
+}
+
+func classifyCourseByCategory(category enums.CourseCategory, courseType enums.CourseType) string {
+	if category == enums.CourseCategoryFundamentals {
+		if courseType == enums.CourseTypeElective {
+			return "elective"
+		}
+		return "other"
+	}
+
+	switch category {
+	case enums.CourseCategorySoft, enums.CourseCategorySTEM:
+		return "other"
+	default:
+		return "elective"
+	}
+}
+
+func inferMajorCategory(major *interfaces.MajorData) string {
+	if major == nil {
+		return ""
+	}
+	switch major.Title {
+	case "Искусственный интеллект":
+		return "ai"
+	case "Разработка":
+		return "swe"
+	case "Бизнес и аналитика":
+		return "business"
+	default:
+		return ""
+	}
 }
 
 func createCourse(c *gin.Context) {

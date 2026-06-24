@@ -17,6 +17,7 @@ const (
 	CourseCategorySoft         CourseCategory = "soft"
 	CourseCategoryBusiness     CourseCategory = "business"
 	CourseCategoryTech         CourseCategory = "tech"
+	CourseCategorySWE          CourseCategory = "swe"
 	CourseCategoryDesign       CourseCategory = "design"
 )
 

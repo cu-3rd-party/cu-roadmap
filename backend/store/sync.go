@@ -56,7 +56,7 @@ func requirementTypeFromSheetCourseType(raw string) enums.RequirementType {
 var SheetToMajor = map[string]SheetMajorMapping{
 	"Бизнес и аналитика":      {"Бизнес и аналитика", "Business", enums.CourseCategoryBusiness},
 	"Искусственный интеллект": {"Искусственный интеллект", "Tech", enums.CourseCategoryAI},
-	"Разработка":              {"Разработка", "Tech", enums.CourseCategoryTech},
+	"Разработка":              {"Разработка", "Tech", enums.CourseCategorySWE},
 }
 
 type SyncResult struct {
@@ -95,7 +95,7 @@ func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 	keywordMap := []kwEntry{
 		{[]string{"бизнес", "business", "экономика", "финанс", "маркетинг", "аналитик"}, SheetMajorMapping{"Бизнес и аналитика", "Business", enums.CourseCategoryBusiness}},
 		{[]string{"искусственный интеллект", "интеллект", "machine learning", "deep learning", "ml", "dl", "ai", "ии", "нейро"}, SheetMajorMapping{"Искусственный интеллект", "Tech", enums.CourseCategoryAI}},
-		{[]string{"разработка", "software", "программирован", "программист", "swe", "engineering", "development", "web", "mobile", "backend", "frontend"}, SheetMajorMapping{"Разработка", "Tech", enums.CourseCategoryTech}},
+		{[]string{"разработка", "software", "программирован", "программист", "swe", "engineering", "development", "web", "mobile", "backend", "frontend"}, SheetMajorMapping{"Разработка", "Tech", enums.CourseCategorySWE}},
 		{[]string{"дизайн", "design", "ux", "ui", "график"}, SheetMajorMapping{"Дизайн", "Design", enums.CourseCategoryDesign}},
 		{[]string{"общ", "common", "general", "fundamental", "базов", "основ"}, SheetMajorMapping{"Общие", "Common", enums.CourseCategoryFundamentals}},
 		{[]string{"stem", "стем"}, SheetMajorMapping{"STEM", "STEM", enums.CourseCategorySTEM}},
@@ -638,10 +638,32 @@ func SplitSheetTitles(raw string) []string {
 	return out
 }
 
+func normalizeSheetHeader(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.ToLower(raw)
+	return strings.Join(strings.Fields(raw), " ")
+}
+
 func getFirst(row map[string]string, keys ...string) string {
+	normalizedKeys := make([]string, 0, len(keys))
+	for _, k := range keys {
+		normalizedKeys = append(normalizedKeys, normalizeSheetHeader(k))
+	}
+
 	for _, k := range keys {
 		if v := strings.TrimSpace(row[k]); v != "" {
 			return v
+		}
+	}
+
+	for k, v := range row {
+		normalizedKey := normalizeSheetHeader(k)
+		for _, want := range normalizedKeys {
+			if normalizedKey == want {
+				if trimmed := strings.TrimSpace(v); trimmed != "" {
+					return trimmed
+				}
+			}
 		}
 	}
 	return ""
@@ -701,7 +723,17 @@ var (
 func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) interfaces.CourseData {
 	rawType := strings.ToLower(getFirst(row, "Тип курса"))
 	var courseType enums.CourseType
-	if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
+	if category == enums.CourseCategoryFundamentals {
+		if strings.Contains(rawType, "факультатив") || strings.Contains(rawType, "elective") {
+			courseType = enums.CourseTypeElective
+		} else if strings.Contains(rawType, "общеуниверситетский") || strings.Contains(rawType, "универ") {
+			courseType = enums.CourseTypeOther
+		} else if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
+			courseType = enums.CourseTypeMandatory
+		} else {
+			courseType = enums.CourseTypeOther
+		}
+	} else if strings.Contains(rawType, "core") || strings.Contains(rawType, "mandatory") {
 		courseType = enums.CourseTypeMandatory
 	} else if strings.Contains(rawType, "choice") || strings.Contains(rawType, "elective") || strings.Contains(rawType, "факультатив") {
 		courseType = enums.CourseTypeElective
@@ -719,6 +751,17 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		availableSemesters = []int{1, 2, 3, 4, 5, 6, 7, 8}
 	}
 
+	exclusiveSemesterRaw := getFirst(row, "Исключительный семестр", "Исключительный семестр ")
+	if exclusiveSemesterRaw != "" {
+		if match := RecommendedSemesterRegexp.FindString(exclusiveSemesterRaw); match != "" {
+			v := 0
+			_, err := fmt.Sscanf(match, "%d", &v)
+			if err == nil {
+				availableSemesters = []int{v}
+			}
+		}
+	}
+
 	var recommendedSemester *int
 	rawRec := getFirst(row, "Рекомендованный к прохождению семестр", "Семестр")
 	if match := RecommendedSemesterRegexp.FindString(rawRec); match != "" {
@@ -730,17 +773,7 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		recommendedSemester = &v
 	}
 
-	rawWorkload := getFirst(row, "Нагрузка", "workload")
-	if rawWorkload == "" {
-		rawWorkload = "5"
-	}
-	workload := 5.0
-	if match := WorkloadRegexp.FindString(rawWorkload); match != "" {
-		_, err := fmt.Sscanf(match, "%f", &workload)
-		if err != nil {
-			return interfaces.CourseData{}
-		}
-	}
+	workload := 1.0
 
 	cd := interfaces.CourseData{
 		ID:                  uuid.New(),
