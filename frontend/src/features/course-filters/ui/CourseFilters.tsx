@@ -1,7 +1,6 @@
 import { Chip } from "@/shared/ui";
 
 import {
-  buildCategoryFilters,
   buildTypeFilters,
   SEMESTER_OPTIONS,
   type CategoryFilterOption,
@@ -13,7 +12,6 @@ import { FilterCard } from "./FilterCard";
 import { ChipSkeletonRow } from "./FilterSkeleton";
 
 const TYPE_OPTIONS = buildTypeFilters();
-const CATEGORY_OPTIONS = buildCategoryFilters();
 
 interface CourseFiltersProps {
   value: CourseFilterState;
@@ -21,9 +19,9 @@ interface CourseFiltersProps {
   onToggleSemester: (semester: string) => void;
   onToggleCategory: (id: string) => void;
   onSearchChange: (search: string) => void;
+  categories: CategoryFilterOption[];
   types?: { id: string; label: string }[];
   semesters?: readonly string[];
-  categories?: CategoryFilterOption[];
   loading?: boolean;
 }
 
@@ -33,9 +31,9 @@ export const CourseFilters = ({
   onToggleSemester,
   onToggleCategory,
   onSearchChange,
+  categories,
   types = TYPE_OPTIONS,
   semesters = SEMESTER_OPTIONS,
-  categories = CATEGORY_OPTIONS,
   loading = false,
 }: CourseFiltersProps) => {
   return (

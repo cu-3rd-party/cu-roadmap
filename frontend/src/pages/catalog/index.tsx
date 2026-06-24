@@ -2,7 +2,9 @@ import { Compass } from "lucide-react";
 import { useMemo } from "react";
 
 import { useCoursesQuery } from "@/entities/course";
-import { CourseFilters } from "@/features/course-filters";
+import { useMajorsQuery } from "@/entities/major";
+import { useSpecializationsQuery } from "@/entities/specialization";
+import { buildCategoryFilters, CourseFilters } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
 import { useMediaQuery } from "@/shared/lib";
 import { Chip, CollapsiblePanel, Panel } from "@/shared/ui";
@@ -13,7 +15,7 @@ import {
 
 import { buildCatalogCategories } from "./lib";
 import {
-  categoryToDescription,
+  optionDescription,
   useCatalogFiltersStore,
   categoryOptionsWithCounts,
   filterCatalog,
@@ -31,9 +33,22 @@ const CatalogPage = () => {
     isError,
   } = useCoursesQuery(admissionYear, majorId);
 
+  const { data: majors } = useMajorsQuery(admissionYear);
+  const { data: specializations } = useSpecializationsQuery(majorId);
+
+  const majorType = useMemo(
+    () => majors?.find((major) => major.id === majorId)?.type ?? null,
+    [majors, majorId],
+  );
+
+  const options = useMemo(
+    () => buildCategoryFilters(majorType, specializations ?? []),
+    [majorType, specializations],
+  );
+
   const categories = useMemo(
-    () => buildCatalogCategories(courses ?? []),
-    [courses],
+    () => buildCatalogCategories(courses ?? [], options),
+    [courses, options],
   );
 
   const categoryOptions = useMemo(
@@ -99,10 +114,10 @@ const CatalogPage = () => {
         !isError &&
         visibleCategories.map((category) => (
           <CoursesSection
-            key={category.id}
-            title={category.title}
+            key={category.option.id}
+            title={category.option.label}
             courses={category.courses}
-            panelTitle={categoryToDescription[category.id]}
+            panelTitle={optionDescription(category.option)}
           />
         ))}
     </div>

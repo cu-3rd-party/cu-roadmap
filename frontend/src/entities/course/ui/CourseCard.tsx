@@ -8,7 +8,6 @@ import {
   CourseCategory,
   CourseType,
   typeSlugToName,
-  typeSlugToShortName,
   type UUID,
 } from "@/shared/model";
 import {
@@ -81,9 +80,7 @@ const CourseBadges = ({
       )}
       {type && (
         <Badge variant="blue" size="3xs">
-          {variant == "planned" && !isMobile
-            ? typeSlugToName[type]
-            : typeSlugToShortName[type]}
+          {typeSlugToName[type]}
         </Badge>
       )}
       {recommendedSemester && (

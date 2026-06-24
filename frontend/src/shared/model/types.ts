@@ -1,18 +1,22 @@
 export type UUID = string;
 
-export type CourseType = "mandatory" | "elective" | "other";
+export type CourseType = "core" | "choice" | "elective" | "other";
 
 export const typeSlugToName: Record<CourseType, string> = {
-  mandatory: "Обязательный",
+  core: "Core",
+  choice: "Choice",
   elective: "Факультатив",
-  other: "Другое",
+  other: "Other",
 };
 
+/* 
 export const typeSlugToShortName: Record<CourseType, string> = {
-  mandatory: "Обяз.",
-  elective: "Факульт.",
-  other: "Другое",
+  core: "Core",
+  choice: "Choice",
+  elective: "Elective",
+  other: "Other",
 };
+*/
 
 export type CourseCategory =
   | "fundamentals"
@@ -20,14 +24,14 @@ export type CourseCategory =
   | "stem"
   | "soft"
   | "business"
-  | "tech"
+  | "swe"
   | "design";
 
 export const categorySlugToName: Record<CourseCategory, string> = {
   fundamentals: "Fundamentals",
   ai: "AI",
   business: "Business",
-  tech: "SWE",
+  swe: "SWE",
   design: "Design",
   stem: "STEM",
   soft: "Soft",
@@ -37,7 +41,7 @@ export const categorySlugToShortName: Record<CourseCategory, string> = {
   fundamentals: "Fund.",
   ai: "AI",
   business: "Business",
-  tech: "SWE",
+  swe: "SWE",
   design: "Design",
   stem: "STEM",
   soft: "Soft",
@@ -53,22 +57,12 @@ export type MajorRequirementType =
   | "soft"
   | "selected_topics";
 
-export const requirementSlugToName: Record<MajorRequirementType, string> = {
-  major_core: "Core",
-  major_choice: "Choice",
-  university: "University",
-  minor: "Minor",
-  soft: "Soft",
-  elective: "Elective",
-  flex: "Other",
-  selected_topics: "Other",
-};
+export const MAJOR_TYPES = ["business", "swe", "ai"] as const;
 
-// TODO change in future
-export const majorToShortName: Record<string, string> = {
-  "Искусственный интеллект": "AI",
-  "Бизнес и аналитика": "Business",
-  Разработка: "SWE",
-};
+export type MajorType = (typeof MAJOR_TYPES)[number];
 
-export type MajorSchool = "Tech" | "Business" | "Common";
+export const OTHER_CATEGORIES: CourseCategory[] = [
+  "fundamentals",
+  "stem",
+  "soft",
+];

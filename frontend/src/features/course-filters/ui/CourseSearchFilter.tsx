@@ -3,11 +3,9 @@ import { useState } from "react";
 
 import { Chip, Counter, Input, Skeleton } from "@/shared/ui";
 
-import { buildCategoryFilters, type CategoryFilterOption } from "../model";
+import { type CategoryFilterOption } from "../model";
 
 import { ChipSkeletonRow } from "./FilterSkeleton";
-
-const CATEGORY_OPTIONS = buildCategoryFilters();
 
 interface CourseSearchFilterProps {
   categories?: CategoryFilterOption[];
@@ -19,7 +17,7 @@ interface CourseSearchFilterProps {
 }
 
 export const CourseSearchFilter = ({
-  categories = CATEGORY_OPTIONS,
+  categories = [],
   search,
   onSearchChange,
   selectedCategories,

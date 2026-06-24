@@ -23,6 +23,7 @@ export const CoursesSection = ({
           {courses.map((course) => (
             <CourseCard
               key={course.id}
+              variant="catalog"
               courseId={course.id}
               title={course.title}
               recommendedSemester={course.recommendedSemester}

@@ -1,9 +1,5 @@
 import type { SemesterNumber } from "@/shared/constants";
-import {
-  categorySlugToName,
-  requirementSlugToName,
-  type UUID,
-} from "@/shared/model";
+import { categorySlugToName, typeSlugToName, type UUID } from "@/shared/model";
 
 import type {
   CourseDetails,
@@ -66,8 +62,8 @@ export const courseToDetails = (
   description: course.description,
   syllabus: course.handbookLink,
   admissionYears: formatAdmissionYears(course.allowedCohorts),
-  category: course.majorRequirement
-    ? `${categorySlugToName[course.category]} ${requirementSlugToName[course.majorRequirement]}`
+  category: ["core", "choice"].includes(course.type)
+    ? `${categorySlugToName[course.category]} ${typeSlugToName[course.type]}`
     : categorySlugToName[course.category],
   specializations: (course.specializations ?? [])
     .map((id) => specializationTitleMap.get(id))

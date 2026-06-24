@@ -24,7 +24,7 @@ export const normalizeCourse = (dto: CourseDto): Course => {
     id: dto.id,
     title: dto.title.trim(),
     description: dto.description?.trim() ?? null,
-    type: dto.course_type,
+    type: dto.by_major_type,
     category: dto.category,
     handbookLink: sanitizeURL(dto.handbook_link),
     availableSemesters: dto.available_semesters,
@@ -36,7 +36,6 @@ export const normalizeCourse = (dto: CourseDto): Course => {
       .sort((item1, item2) => item1.courses.length - item2.courses.length),
     corequisites: dto.corequisites,
     postrequisites: dto.postrequisites,
-    toMajor: dto.to_major,
     specializations: dto.specializations,
   };
 };

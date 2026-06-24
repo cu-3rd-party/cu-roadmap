@@ -1,6 +1,6 @@
 import type { Course } from "@/entities/course";
 import {
-  buildCategoryFilters,
+  courseMatchesOption,
   type CategoryFilterOption,
   type CourseFilterState,
 } from "@/features/course-filters";
@@ -14,28 +14,36 @@ const matchesSearch = (course: Course, search: string) => {
   );
 };
 
-// Filter modal courses by search (title/description) and category chips
+// Filter modal courses by search (title/description) and the combined chips
 export const filterAvailableCourses = (
   courses: Course[],
   filters: CourseFilterState,
-): Course[] =>
-  courses.filter((course) => {
+  options: CategoryFilterOption[],
+): Course[] => {
+  const selectedOptions = options.filter((option) =>
+    filters.categories.includes(option.id),
+  );
+
+  return courses.filter((course) => {
     const categoryOk =
-      filters.categories.length === 0 ||
-      filters.categories.includes(course.category);
+      selectedOptions.length === 0 ||
+      selectedOptions.some((option) => courseMatchesOption(course, option));
 
     return categoryOk && matchesSearch(course, filters.search);
   });
+};
 
-// Category chip options with a live count of courses matching the current search
+// Chip options with a live count of courses matching the current search
 export const availableCategoryOptions = (
   courses: Course[],
   filters: CourseFilterState,
+  options: CategoryFilterOption[],
 ): CategoryFilterOption[] =>
-  buildCategoryFilters().map((option) => ({
+  options.map((option) => ({
     ...option,
     count: courses.filter(
       (course) =>
-        course.category === option.id && matchesSearch(course, filters.search),
+        courseMatchesOption(course, option) &&
+        matchesSearch(course, filters.search),
     ).length,
   }));

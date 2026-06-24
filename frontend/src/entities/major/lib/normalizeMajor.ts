@@ -1,21 +1,12 @@
-import type { MajorDto, MajorMatchDto, MajorRequirementDto } from "../api";
-import type { Major, MajorMatch, MajorRequirement } from "../model";
-
-const normalizeRequirement = (dto: MajorRequirementDto): MajorRequirement => {
-  return {
-    courseId: dto.course_id,
-    requirementType: dto.requirement_type,
-  };
-};
+import type { MajorDto, MajorMatchDto } from "../api";
+import type { Major, MajorMatch } from "../model";
 
 export const normalizeMajor = (dto: MajorDto): Major => {
   return {
     id: dto.id,
     title: dto.title,
-    school: dto.school,
+    type: dto.internal_name,
     cohortYear: dto.cohort_year,
-    requirements:
-      dto.requirements?.map((req) => normalizeRequirement(req)) ?? [],
   };
 };
 

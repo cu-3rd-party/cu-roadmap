@@ -8,7 +8,7 @@ describe("normalizeMajor", () => {
     const dto: MajorDto = {
       id: "1",
       title: "Software Engineering",
-      school: "Tech",
+      internal_name: "swe",
       cohort_year: 2025,
       requirements: [
         { course_id: "c1", requirement_type: "major_core" },
@@ -21,27 +21,9 @@ describe("normalizeMajor", () => {
     expect(result).toEqual({
       id: "1",
       title: "Software Engineering",
-      school: "Tech",
+      type: "swe",
       cohortYear: 2025,
-      requirements: [
-        { courseId: "c1", requirementType: "major_core" },
-        { courseId: "c2", requirementType: "flex" },
-      ],
     });
-  });
-
-  it("handles missing requirements", () => {
-    const dto: MajorDto = {
-      id: "2",
-      title: "AI",
-      school: "Tech",
-      cohort_year: 2025,
-      requirements: undefined as never,
-    };
-
-    const result = normalizeMajor(dto);
-
-    expect(result.requirements).toEqual([]);
   });
 });
 

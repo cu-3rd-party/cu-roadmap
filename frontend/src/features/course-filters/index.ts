@@ -4,6 +4,7 @@ export { createCourseFiltersStore } from "./model";
 export {
   buildCategoryFilters,
   buildTypeFilters,
+  courseMatchesOption,
   SEMESTER_OPTIONS,
   EMPTY_FILTERS,
   type CategoryFilterOption,
