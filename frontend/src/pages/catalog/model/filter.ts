@@ -1,7 +1,7 @@
 import { Course } from "@/entities/course";
-import type {
-  CategoryFilterOption,
-  CourseFilterState,
+import {
+  optionMatchesFilter,
+  type CourseFilterState,
 } from "@/features/course-filters";
 
 import type { CatalogCategory } from "./category";
@@ -23,17 +23,15 @@ const matchesSemesterSearch = (course: Course, filters: CourseFilterState) => {
   return semesterOk && searchOk;
 };
 
-// Show the selected sections (or all when none selected), narrowed by
+// Show the sections selected by the (group, sub) filter, each narrowed by
 // semester + search. A section disappears once it becomes empty.
 export const filterCatalog = (
   categories: CatalogCategory[],
   filters: CourseFilterState,
 ): CatalogCategory[] =>
   categories
-    .filter(
-      (category) =>
-        filters.categories.length === 0 ||
-        filters.categories.includes(category.option.id),
+    .filter((category) =>
+      optionMatchesFilter(category.option, filters.group, filters.sub),
     )
     .map((category) => ({
       ...category,
@@ -42,16 +40,3 @@ export const filterCatalog = (
       ),
     }))
     .filter((category) => category.courses.length > 0);
-
-// Chip options with a live count of courses matching the current
-// semester + search filters within each section.
-export const categoryOptionsWithCounts = (
-  categories: CatalogCategory[],
-  filters: CourseFilterState,
-): CategoryFilterOption[] =>
-  categories.map((category) => ({
-    ...category.option,
-    count: category.courses.filter((course) =>
-      matchesSemesterSearch(course, filters),
-    ).length,
-  }));

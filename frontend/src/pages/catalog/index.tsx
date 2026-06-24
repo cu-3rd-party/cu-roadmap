@@ -4,7 +4,11 @@ import { useMemo } from "react";
 import { useCoursesQuery } from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
 import { useSpecializationsQuery } from "@/entities/specialization";
-import { buildCategoryFilters, CourseFilters } from "@/features/course-filters";
+import {
+  buildCategoryFilters,
+  buildSubOptions,
+  CourseFilters,
+} from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
 import { useMediaQuery } from "@/shared/lib";
 import { Chip, CollapsiblePanel, Panel } from "@/shared/ui";
@@ -17,14 +21,13 @@ import { buildCatalogCategories } from "./lib";
 import {
   optionDescription,
   useCatalogFiltersStore,
-  categoryOptionsWithCounts,
   filterCatalog,
 } from "./model";
 
 const CatalogPage = () => {
   const isMobile = useMediaQuery("md");
   const { admissionYear, majorId } = useSettingsStore();
-  const { filters, toggleType, toggleSemester, toggleCategory, setSearch } =
+  const { filters, toggleType, toggleSemester, setGroup, setSub, setSearch } =
     useCatalogFiltersStore();
 
   const {
@@ -46,14 +49,14 @@ const CatalogPage = () => {
     [majorType, specializations],
   );
 
+  const subOptions = useMemo(
+    () => buildSubOptions(filters.group, majorType, specializations ?? []),
+    [filters.group, majorType, specializations],
+  );
+
   const categories = useMemo(
     () => buildCatalogCategories(courses ?? [], options),
     [courses, options],
-  );
-
-  const categoryOptions = useMemo(
-    () => categoryOptionsWithCounts(categories, filters),
-    [categories, filters],
   );
 
   const visibleCategories = useMemo(
@@ -86,11 +89,12 @@ const CatalogPage = () => {
         <CollapsiblePanel title="Фильтры">
           <CourseFilters
             value={filters}
-            categories={categoryOptions}
+            subOptions={subOptions}
             loading={coursesLoading}
             onToggleType={toggleType}
             onToggleSemester={toggleSemester}
-            onToggleCategory={toggleCategory}
+            onGroupChange={setGroup}
+            onSubChange={setSub}
             onSearchChange={setSearch}
           />
         </CollapsiblePanel>

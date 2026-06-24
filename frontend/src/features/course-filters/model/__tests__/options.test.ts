@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 import type { Course } from "@/entities/course";
 import type { Specialization } from "@/entities/specialization";
 
-import { buildCategoryFilters, courseMatchesOption } from "../options";
+import {
+  buildCategoryFilters,
+  buildSubOptions,
+  courseMatchesOption,
+  optionMatchesFilter,
+} from "../options";
 
 const spec = (id: string, title: string): Specialization => ({
   id,
@@ -59,26 +64,32 @@ describe("buildCategoryFilters", () => {
         category: "swe",
       },
       {
-        id: "other:fundamentals",
-        label: "Fundamentals",
-        type: "other",
-        category: "fundamentals",
-      },
-      { id: "other:stem", label: "STEM", type: "other", category: "stem" },
-      { id: "other:soft", label: "Soft", type: "other", category: "soft" },
-      {
         id: "elective:business",
         label: "Business",
         type: "elective",
         category: "business",
       },
       { id: "elective:ai", label: "AI", type: "elective", category: "ai" },
+      {
+        id: "fundamentals:mandatory",
+        label: "Fundamentals",
+        type: "other",
+        category: "fundamentals",
+      },
+      {
+        id: "fundamentals:elective",
+        label: "Fundamentals (Факультатив)",
+        type: "elective",
+        category: "fundamentals",
+      },
+      { id: "other:stem", label: "STEM", type: "other", category: "stem" },
+      { id: "other:soft", label: "Soft", type: "other", category: "soft" },
     ]);
   });
 
   it("labels the remaining-major electives by major name, not the elective slug", () => {
     const labels = buildCategoryFilters("ai", [])
-      .filter((option) => option.type === "elective")
+      .filter((option) => option.id.startsWith("elective:"))
       .map((option) => option.label);
 
     // First elective (the major itself) uses the elective label; the two
@@ -98,9 +109,80 @@ describe("buildCategoryFilters", () => {
 
     expect(
       options
-        .filter((option) => option.type === "elective")
+        .filter((option) => option.id.startsWith("elective:"))
         .map((option) => option.id),
     ).toEqual(["elective:business", "elective:swe", "elective:ai"]);
+  });
+});
+
+describe("buildSubOptions", () => {
+  it("has no sub-options for all/core", () => {
+    expect(buildSubOptions("all", "swe", [])).toEqual([]);
+    expect(buildSubOptions("core", "swe", [])).toEqual([]);
+  });
+
+  it("leads choice with All then the specializations", () => {
+    expect(buildSubOptions("choice", "swe", [spec("s1", "Backend")])).toEqual([
+      { id: "all", label: "Все" },
+      { id: "s1", label: "Backend" },
+    ]);
+  });
+
+  it("orders elective with the settings major first", () => {
+    expect(
+      buildSubOptions("elective", "business", []).map((o) => o.id),
+    ).toEqual(["all", "business", "swe", "ai"]);
+  });
+
+  it("offers mandatory/elective for fundamentals and stem/soft for other", () => {
+    expect(buildSubOptions("fundamentals", "swe", []).map((o) => o.id)).toEqual(
+      ["all", "mandatory", "elective"],
+    );
+    expect(buildSubOptions("other", "swe", []).map((o) => o.id)).toEqual([
+      "all",
+      "stem",
+      "soft",
+    ]);
+  });
+});
+
+describe("optionMatchesFilter", () => {
+  const options = buildCategoryFilters("swe", [
+    spec("s1", "Backend"),
+    spec("s2", "Frontend"),
+  ]);
+  const ids = (group: Parameters<typeof optionMatchesFilter>[1], sub: string) =>
+    options
+      .filter((option) => optionMatchesFilter(option, group, sub))
+      .map((option) => option.id);
+
+  it("shows every card under all", () => {
+    expect(ids("all", "all")).toEqual(options.map((o) => o.id));
+  });
+
+  it("scopes each group to its own cards", () => {
+    expect(ids("core", "all")).toEqual(["core"]);
+    expect(ids("choice", "all")).toEqual(["choice:s1", "choice:s2"]);
+    expect(ids("elective", "all")).toEqual([
+      "elective:swe",
+      "elective:business",
+      "elective:ai",
+    ]);
+    expect(ids("fundamentals", "all")).toEqual([
+      "fundamentals:mandatory",
+      "fundamentals:elective",
+    ]);
+    expect(ids("other", "all")).toEqual(["other:stem", "other:soft"]);
+  });
+
+  it("narrows by the sub-selection", () => {
+    expect(ids("choice", "s1")).toEqual(["choice:s1"]);
+    expect(ids("elective", "business")).toEqual(["elective:business"]);
+    expect(ids("fundamentals", "mandatory")).toEqual([
+      "fundamentals:mandatory",
+    ]);
+    expect(ids("fundamentals", "elective")).toEqual(["fundamentals:elective"]);
+    expect(ids("other", "soft")).toEqual(["other:soft"]);
   });
 });
 

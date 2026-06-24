@@ -3,7 +3,6 @@ import type { Specialization } from "@/entities/specialization";
 import {
   categorySlugToName,
   MAJOR_TYPES,
-  OTHER_CATEGORIES,
   typeSlugToName,
   type CourseCategory,
   type CourseType,
@@ -21,22 +20,42 @@ export interface CategoryFilterOption {
   count?: number;
 }
 
+export type FilterGroup =
+  | "all"
+  | "core"
+  | "choice"
+  | "elective"
+  | "fundamentals"
+  | "other";
+
+// Top-level (row 1) chips, single-select, in display order.
+export const FILTER_GROUPS: { id: FilterGroup; label: string }[] = [
+  { id: "all", label: "Все" },
+  { id: "core", label: typeSlugToName.core },
+  { id: "choice", label: typeSlugToName.choice },
+  { id: "elective", label: typeSlugToName.elective },
+  { id: "fundamentals", label: "Fundamentals" },
+  { id: "other", label: typeSlugToName.other },
+];
+
 export interface CourseFilterState {
   types: string[];
   semesters: string[];
-  categories: string[];
+  group: FilterGroup;
+  sub: string;
   search: string;
 }
 
 export const EMPTY_FILTERS: CourseFilterState = {
   types: [],
   semesters: [],
-  categories: [],
+  group: "all",
+  sub: "all",
   search: "",
 };
 
-// Build the combined type + category chips. Each chip carries a course type and,
-// optionally, a category or specialization used to match courses against it.
+// Build the catalog cards / filter options. Each option carries a course type
+// and, optionally, a category or specialization used to match courses against it.
 export const buildCategoryFilters = (
   majorType: MajorType | null,
   specializations: Specialization[],
@@ -44,9 +63,8 @@ export const buildCategoryFilters = (
   const otherMajorCategories = MAJOR_TYPES.filter((type) => type !== majorType);
 
   const options: CategoryFilterOption[] = [
-    // Major Core — no category
+    // Core
     { id: "core", type: "core", label: typeSlugToName.core },
-    // Major Choice — one chip per specialization
     ...specializations.map(
       (spec): CategoryFilterOption => ({
         id: `choice:${spec.id}`,
@@ -58,7 +76,7 @@ export const buildCategoryFilters = (
     ),
   ];
 
-  // Elective for the selected major type (first elective chip)
+  // Elective for the selected major type (first elective card)
   if (majorType) {
     options.push({
       id: `elective:${majorType}`,
@@ -67,18 +85,6 @@ export const buildCategoryFilters = (
       category: majorType,
     });
   }
-
-  // Other — fundamentals / stem / soft
-  options.push(
-    ...OTHER_CATEGORIES.map(
-      (category): CategoryFilterOption => ({
-        id: `other:${category}`,
-        type: "other",
-        label: categorySlugToName[category],
-        category,
-      }),
-    ),
-  );
 
   // Elective for the remaining major types — labeled with the major-type name
   options.push(
@@ -92,7 +98,114 @@ export const buildCategoryFilters = (
     ),
   );
 
+  // Fundamentals split into mandatory (type other) and elective (type elective)
+  options.push(
+    {
+      id: "fundamentals:mandatory",
+      type: "other",
+      label: categorySlugToName.fundamentals,
+      category: "fundamentals",
+    },
+    {
+      id: "fundamentals:elective",
+      type: "elective",
+      label: `${categorySlugToName.fundamentals} (${typeSlugToName.elective})`,
+      category: "fundamentals",
+    },
+  );
+
+  // Other — stem / soft
+  options.push(
+    ...(["stem", "soft"] as CourseCategory[]).map(
+      (category): CategoryFilterOption => ({
+        id: `other:${category}`,
+        type: "other",
+        label: categorySlugToName[category],
+        category,
+      }),
+    ),
+  );
+
   return options;
+};
+
+export const buildSubOptions = (
+  group: FilterGroup,
+  majorType: MajorType | null,
+  specializations: Specialization[],
+): { id: string; label: string }[] => {
+  const all = { id: "all", label: "Все" };
+
+  switch (group) {
+    case "choice":
+      return [
+        all,
+        ...specializations.map((spec) => ({ id: spec.id, label: spec.title })),
+      ];
+    case "elective": {
+      const ordered = majorType
+        ? [majorType, ...MAJOR_TYPES.filter((type) => type !== majorType)]
+        : [...MAJOR_TYPES];
+      return [
+        all,
+        ...ordered.map((category) => ({
+          id: category,
+          label: categorySlugToName[category],
+        })),
+      ];
+    }
+    case "fundamentals":
+      return [
+        all,
+        { id: "mandatory", label: "Обязательные" },
+        { id: "elective", label: typeSlugToName.elective },
+      ];
+    case "other":
+      return [
+        all,
+        { id: "stem", label: categorySlugToName.stem },
+        { id: "soft", label: categorySlugToName.soft },
+      ];
+    default:
+      return [];
+  }
+};
+
+// Whether a catalog card / option survives the current (group, sub) selection.
+export const optionMatchesFilter = (
+  option: CategoryFilterOption,
+  group: FilterGroup,
+  sub: string,
+): boolean => {
+  switch (group) {
+    case "all":
+      return true;
+    case "core":
+      return option.type === "core";
+    case "choice":
+      return (
+        option.type === "choice" &&
+        (sub === "all" || option.specializationId === sub)
+      );
+    case "elective":
+      return (
+        option.type === "elective" &&
+        option.category != null &&
+        (MAJOR_TYPES as readonly string[]).includes(option.category) &&
+        (sub === "all" || option.category === sub)
+      );
+    case "fundamentals":
+      if (option.category !== "fundamentals") return false;
+      if (sub === "all") return true;
+      return sub === "mandatory"
+        ? option.type === "other"
+        : option.type === "elective";
+    case "other":
+      return (
+        (option.category === "stem" || option.category === "soft") &&
+        (sub === "all" || option.category === sub)
+      );
+  }
 };
 
 export const buildTypeFilters = (): CategoryFilterOption[] =>

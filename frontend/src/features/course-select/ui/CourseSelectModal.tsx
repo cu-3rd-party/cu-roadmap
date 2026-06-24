@@ -6,6 +6,8 @@ import { usePlannerStore } from "@/entities/roadmap";
 import { useSpecializationsQuery } from "@/entities/specialization";
 import {
   buildCategoryFilters,
+  buildSubOptions,
+  CategoryFilter,
   CourseSearchFilter,
 } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
@@ -23,11 +25,7 @@ import {
 } from "@/shared/ui";
 import { RevealImage } from "@/shared/ui/reveal-image";
 
-import {
-  availableCategoryOptions,
-  filterAvailableCourses,
-  useCourseSelectFiltersStore,
-} from "../model";
+import { filterAvailableCourses, useCourseSelectFiltersStore } from "../model";
 
 interface CourseSelectModalProps {
   semester: number;
@@ -47,7 +45,8 @@ export const CourseSelectModal = ({
   onOpenChange,
 }: CourseSelectModalProps) => {
   const { selections, addCourse, removeCourse } = usePlannerStore();
-  const { filters, toggleCategory, setSearch } = useCourseSelectFiltersStore();
+  const { filters, setGroup, setSub, setSearch } =
+    useCourseSelectFiltersStore();
   const { admissionYear, majorId } = useSettingsStore();
   const isMobile = useMediaQuery("sm");
 
@@ -62,6 +61,11 @@ export const CourseSelectModal = ({
   const options = useMemo(
     () => buildCategoryFilters(majorType, specializations ?? []),
     [majorType, specializations],
+  );
+
+  const subOptions = useMemo(
+    () => buildSubOptions(filters.group, majorType, specializations ?? []),
+    [filters.group, majorType, specializations],
   );
 
   // Selection is tracked across ALL semesters
@@ -82,11 +86,6 @@ export const CourseSelectModal = ({
     [courses, semester],
   );
 
-  const categoryOptions = useMemo(
-    () => availableCategoryOptions(semesterCourses, filters, options),
-    [semesterCourses, filters, options],
-  );
-
   const visibleCourses = useMemo(
     () => filterAvailableCourses(semesterCourses, filters, options),
     [semesterCourses, filters, options],
@@ -99,9 +98,13 @@ export const CourseSelectModal = ({
           <CourseSearchFilter
             search={filters.search}
             onSearchChange={setSearch}
-            selectedCategories={filters.categories}
-            onToggleCategory={toggleCategory}
-            categories={categoryOptions}
+          />
+          <CategoryFilter
+            group={filters.group}
+            sub={filters.sub}
+            subOptions={subOptions}
+            onGroupChange={setGroup}
+            onSubChange={setSub}
           />
         </div>
       </div>

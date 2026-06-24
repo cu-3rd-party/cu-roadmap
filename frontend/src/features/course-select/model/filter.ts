@@ -1,6 +1,7 @@
 import type { Course } from "@/entities/course";
 import {
   courseMatchesOption,
+  optionMatchesFilter,
   type CategoryFilterOption,
   type CourseFilterState,
 } from "@/features/course-filters";
@@ -14,36 +15,19 @@ const matchesSearch = (course: Course, search: string) => {
   );
 };
 
-// Filter modal courses by search (title/description) and the combined chips
+// Filter modal courses by the (group, sub) selection and the search query.
 export const filterAvailableCourses = (
   courses: Course[],
   filters: CourseFilterState,
   options: CategoryFilterOption[],
 ): Course[] => {
-  const selectedOptions = options.filter((option) =>
-    filters.categories.includes(option.id),
+  const visibleOptions = options.filter((option) =>
+    optionMatchesFilter(option, filters.group, filters.sub),
   );
 
-  return courses.filter((course) => {
-    const categoryOk =
-      selectedOptions.length === 0 ||
-      selectedOptions.some((option) => courseMatchesOption(course, option));
-
-    return categoryOk && matchesSearch(course, filters.search);
-  });
+  return courses.filter(
+    (course) =>
+      visibleOptions.some((option) => courseMatchesOption(course, option)) &&
+      matchesSearch(course, filters.search),
+  );
 };
-
-// Chip options with a live count of courses matching the current search
-export const availableCategoryOptions = (
-  courses: Course[],
-  filters: CourseFilterState,
-  options: CategoryFilterOption[],
-): CategoryFilterOption[] =>
-  options.map((option) => ({
-    ...option,
-    count: courses.filter(
-      (course) =>
-        courseMatchesOption(course, option) &&
-        matchesSearch(course, filters.search),
-    ).length,
-  }));
