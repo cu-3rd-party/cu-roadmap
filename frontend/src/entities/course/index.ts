@@ -17,3 +17,4 @@ export {
   type RequisiteItem,
   type Season,
 } from "./model/details";
+export { useCourseDrawerStore } from "./model/detailsDrawer";

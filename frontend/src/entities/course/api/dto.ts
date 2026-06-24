@@ -1,17 +1,17 @@
 import { AdmissionYear, SemesterNumber } from "@/shared/constants";
-import {
-  CourseCategory,
-  CourseType,
-  MajorRequirementType,
-  UUID,
-} from "@/shared/model";
+import { CourseCategory, CourseType, UUID } from "@/shared/model";
+
+export interface CoursePrerequisiteDto {
+  course_ids: UUID[];
+  group_id: UUID;
+}
 
 // Raw course as returned by GET /api/v1/courses/
 export interface CourseDto {
   id: UUID;
   title: string;
   description?: string | null;
-  course_type: CourseType;
+  by_major_type: CourseType;
   category: CourseCategory;
   handbook_link?: string | null;
   available_semesters: SemesterNumber[];
@@ -19,9 +19,8 @@ export interface CourseDto {
   recommended_semester?: SemesterNumber | null;
   workload: number;
   /** UUIDs of prerequisite courses. */
-  prerequisites?: UUID[];
+  prerequisites?: CoursePrerequisiteDto[];
   corequisites?: UUID[];
   postrequisites?: UUID[];
-  to_major: Record<UUID, MajorRequirementType>;
   specializations?: UUID[];
 }

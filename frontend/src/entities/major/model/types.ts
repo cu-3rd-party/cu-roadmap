@@ -1,17 +1,11 @@
-import { MajorRequirementType, UUID } from "@/shared/model";
-
-export interface MajorRequirement {
-  courseId: UUID;
-  requirementType: MajorRequirementType;
-}
+import { MajorType, UUID } from "@/shared/model";
 
 /** Frontend domain model for a major (normalized from MajorDto). */
 export interface Major {
   id: UUID;
   title: string;
-  school: string;
+  type: MajorType;
   cohortYear: number;
-  requirements: MajorRequirement[];
 }
 
 /** Frontend domain model for a major match (normalized from MajorMatchDto). */

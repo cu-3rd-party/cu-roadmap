@@ -1,41 +1,42 @@
 import { Chip } from "@/shared/ui";
 
 import {
-  buildCategoryFilters,
   buildTypeFilters,
   SEMESTER_OPTIONS,
-  type CategoryFilterOption,
   type CourseFilterState,
+  type FilterGroup,
 } from "../model";
 
+import { CategoryFilter } from "./CategoryFilter";
 import { CourseSearchFilter } from "./CourseSearchFilter";
 import { FilterCard } from "./FilterCard";
 import { ChipSkeletonRow } from "./FilterSkeleton";
 
 const TYPE_OPTIONS = buildTypeFilters();
-const CATEGORY_OPTIONS = buildCategoryFilters();
 
 interface CourseFiltersProps {
   value: CourseFilterState;
+  subOptions: { id: string; label: string }[];
   onToggleType: (type: string) => void;
   onToggleSemester: (semester: string) => void;
-  onToggleCategory: (id: string) => void;
+  onGroupChange: (group: FilterGroup) => void;
+  onSubChange: (sub: string) => void;
   onSearchChange: (search: string) => void;
   types?: { id: string; label: string }[];
   semesters?: readonly string[];
-  categories?: CategoryFilterOption[];
   loading?: boolean;
 }
 
 export const CourseFilters = ({
   value,
+  subOptions,
   onToggleType,
   onToggleSemester,
-  onToggleCategory,
+  onGroupChange,
+  onSubChange,
   onSearchChange,
   types = TYPE_OPTIONS,
   semesters = SEMESTER_OPTIONS,
-  categories = CATEGORY_OPTIONS,
   loading = false,
 }: CourseFiltersProps) => {
   return (
@@ -85,12 +86,17 @@ export const CourseFilters = ({
 
       <FilterCard>
         <CourseSearchFilter
-          categories={categories}
           search={value.search}
-          selectedCategories={value.categories}
           loading={loading}
           onSearchChange={onSearchChange}
-          onToggleCategory={onToggleCategory}
+        />
+        <CategoryFilter
+          group={value.group}
+          sub={value.sub}
+          subOptions={subOptions}
+          loading={loading}
+          onGroupChange={onGroupChange}
+          onSubChange={onSubChange}
         />
       </FilterCard>
     </div>

@@ -18,15 +18,8 @@ import {
 import { Check, Loader2, Trash } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import {
-  buildCourseTitleMap,
-  CourseCard,
-  courseToDetails,
-  StatusPanel,
-  type Course,
-} from "@/entities/course";
+import { CourseCard, StatusPanel, type Course } from "@/entities/course";
 import { isSemesterCompleted, usePlannerStore } from "@/entities/roadmap";
-import { useSpecializationsQuery } from "@/entities/specialization";
 import { CourseSelectModal } from "@/features/course-select";
 import { useSettingsStore } from "@/features/settings";
 import { useMediaQuery } from "@/shared/lib";
@@ -63,31 +56,13 @@ export const SemesterSection = ({
     moveCourse,
     reorderCourses,
   } = usePlannerStore();
-  const { admissionYear, majorId, hideCompletedSemesters } = useSettingsStore();
-  const { data: specializations } = useSpecializationsQuery(majorId);
+  const { admissionYear, hideCompletedSemesters } = useSettingsStore();
   const courses = selections[index] ?? [];
-
-  const titleMap = useMemo(
-    () => buildCourseTitleMap(catalogCourses),
-    [catalogCourses],
-  );
-
-  const specializationTitleMap = useMemo(
-    () => new Map((specializations ?? []).map((s) => [s.id, s.title])),
-    [specializations],
-  );
 
   const courseById = useMemo(
     () => new Map(catalogCourses.map((course) => [course.id, course])),
     [catalogCourses],
   );
-
-  const detailsFor = (id: string) => {
-    const course = courseById.get(id);
-    return course
-      ? courseToDetails(course, { titleMap, specializationTitleMap })
-      : undefined;
-  };
 
   // Move menu only offers semesters the course is actually available in.
   const moveTargetsFor = (id: string) =>
@@ -219,7 +194,6 @@ export const SemesterSection = ({
                       generated={generatedIds.has(course.id)}
                       onRemove={() => removeCourse(index, course.id)}
                       onMove={(to) => moveCourse(index, to, course.id)}
-                      details={detailsFor(course.id)}
                     />
                   ))}
                   <AddCourseButton
@@ -234,13 +208,13 @@ export const SemesterSection = ({
                   <div>
                     <CourseCard
                       variant="planned"
+                      courseId={activeCourse.id}
                       title={activeCourse.title}
                       category={activeCourse.category}
                       type={activeCourse.type}
                       moveTargets={moveTargetsFor(activeCourse.id)}
                       conflict={conflictIds.has(activeCourse.id)}
                       generated={generatedIds.has(activeCourse.id)}
-                      details={detailsFor(activeCourse.id)}
                     />
                   </div>
                 ) : null}

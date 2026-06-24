@@ -1,8 +1,16 @@
 import { useMemo } from "react";
 
 import { CourseCard, CourseCardSkeleton, type Course } from "@/entities/course";
+import { useMajorsQuery } from "@/entities/major";
 import { usePlannerStore } from "@/entities/roadmap";
-import { CourseSearchFilter } from "@/features/course-filters";
+import { useSpecializationsQuery } from "@/entities/specialization";
+import {
+  buildCategoryFilters,
+  buildSubOptions,
+  CategoryFilter,
+  CourseSearchFilter,
+} from "@/features/course-filters";
+import { useSettingsStore } from "@/features/settings";
 import type { SemesterNumber } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
 import {
@@ -17,11 +25,7 @@ import {
 } from "@/shared/ui";
 import { RevealImage } from "@/shared/ui/reveal-image";
 
-import {
-  availableCategoryOptions,
-  filterAvailableCourses,
-  useCourseSelectFiltersStore,
-} from "../model";
+import { filterAvailableCourses, useCourseSelectFiltersStore } from "../model";
 
 interface CourseSelectModalProps {
   semester: number;
@@ -41,8 +45,28 @@ export const CourseSelectModal = ({
   onOpenChange,
 }: CourseSelectModalProps) => {
   const { selections, addCourse, removeCourse } = usePlannerStore();
-  const { filters, toggleCategory, setSearch } = useCourseSelectFiltersStore();
+  const { filters, setGroup, setSub, setSearch } =
+    useCourseSelectFiltersStore();
+  const { admissionYear, majorId } = useSettingsStore();
   const isMobile = useMediaQuery("sm");
+
+  const { data: majors } = useMajorsQuery(admissionYear);
+  const { data: specializations } = useSpecializationsQuery(majorId);
+
+  const majorType = useMemo(
+    () => majors?.find((major) => major.id === majorId)?.type ?? null,
+    [majors, majorId],
+  );
+
+  const options = useMemo(
+    () => buildCategoryFilters(majorType, specializations ?? []),
+    [majorType, specializations],
+  );
+
+  const subOptions = useMemo(
+    () => buildSubOptions(filters.group, majorType, specializations ?? []),
+    [filters.group, majorType, specializations],
+  );
 
   // Selection is tracked across ALL semesters
   const semesterByCourseId = useMemo(() => {
@@ -62,14 +86,9 @@ export const CourseSelectModal = ({
     [courses, semester],
   );
 
-  const categoryOptions = useMemo(
-    () => availableCategoryOptions(semesterCourses, filters),
-    [semesterCourses, filters],
-  );
-
   const visibleCourses = useMemo(
-    () => filterAvailableCourses(semesterCourses, filters),
-    [semesterCourses, filters],
+    () => filterAvailableCourses(semesterCourses, filters, options),
+    [semesterCourses, filters, options],
   );
 
   const content = (
@@ -79,9 +98,13 @@ export const CourseSelectModal = ({
           <CourseSearchFilter
             search={filters.search}
             onSearchChange={setSearch}
-            selectedCategories={filters.categories}
-            onToggleCategory={toggleCategory}
-            categories={categoryOptions}
+          />
+          <CategoryFilter
+            group={filters.group}
+            sub={filters.sub}
+            subOptions={subOptions}
+            onGroupChange={setGroup}
+            onSubChange={setSub}
           />
         </div>
       </div>
@@ -171,7 +194,7 @@ export const CourseSelectModal = ({
       >
         <DialogHeader className="relative shrink-0 px-8 pt-7 pb-4 overflow-hidden">
           <DialogTitle className="text-2xl font-bold text-fg-primary">
-            <h1>Доступные курсы</h1>
+            Доступные курсы
           </DialogTitle>
           <RevealImage
             src="/character3.png"

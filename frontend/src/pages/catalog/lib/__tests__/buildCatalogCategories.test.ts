@@ -1,71 +1,99 @@
 import { describe, expect, it } from "vitest";
 
 import type { Course } from "@/entities/course";
+import type { Specialization } from "@/entities/specialization";
+import { buildCategoryFilters } from "@/features/course-filters";
 
 import { buildCatalogCategories } from "../buildCatalogCategories";
 
-const makeCourse = (
-  id: string,
-  category: Course["category"],
-  title: string,
-): Course => ({
+const spec = (id: string, title: string): Specialization => ({
   id,
+  majorId: "m1",
   title,
-  description: null,
-  type: "mandatory",
-  category,
-  handbookLink: "",
-  availableSemesters: [1],
-  allowedCohorts: [2026],
-  recommendedSemester: null,
-  workload: 3,
-  prerequisites: [],
-  corequisites: [],
-  postrequisites: [],
-  toMajor: {},
 });
 
+const makeCourse = (overrides: Partial<Course>): Course => ({
+  id: "c1",
+  title: "Course",
+  description: null,
+  type: "core",
+  category: "swe",
+  handbookLink: "",
+  availableSemesters: [1],
+  recommendedSemester: null,
+  workload: 3,
+  ...overrides,
+});
+
+const options = buildCategoryFilters("swe", [
+  spec("s1", "Backend"),
+  spec("s2", "Frontend"),
+]);
+
 describe("buildCatalogCategories", () => {
-  it("groups courses by category in defined order", () => {
-    const courses = [
-      makeCourse("1", "ai", "ML"),
-      makeCourse("2", "stem", "Math"),
-      makeCourse("3", "fundamentals", "CS Basics"),
-    ];
+  it("builds one section per filter chip, in chip order", () => {
+    const result = buildCatalogCategories([], options);
 
-    const result = buildCatalogCategories(courses);
-
-    expect(result[0].id).toBe("fundamentals");
-    expect(result[0].courses).toHaveLength(1);
-    expect(result[1].id).toBe("ai");
-    expect(result[1].courses).toHaveLength(1);
-    expect(result[5].id).toBe("stem");
-    expect(result[5].courses).toHaveLength(1);
+    expect(result.map((section) => section.option.id)).toEqual(
+      options.map((option) => option.id),
+    );
   });
 
-  it("sorts courses alphabetically within category", () => {
+  it("places courses into sections using courseMatchesOption", () => {
     const courses = [
-      makeCourse("1", "tech", "Zebra"),
-      makeCourse("2", "tech", "Alpha"),
-      makeCourse("3", "tech", "Beta"),
+      makeCourse({ id: "core1", type: "core", title: "Core course" }),
+      makeCourse({
+        id: "ch1",
+        type: "choice",
+        specializations: ["s1"],
+        title: "Backend course",
+      }),
+      makeCourse({
+        id: "el1",
+        type: "elective",
+        category: "swe",
+        title: "SWE elective",
+      }),
+      makeCourse({
+        id: "stem1",
+        type: "other",
+        category: "stem",
+        title: "Math",
+      }),
+      makeCourse({
+        id: "ai1",
+        type: "elective",
+        category: "ai",
+        title: "AI elective",
+      }),
     ];
 
-    const result = buildCatalogCategories(courses);
+    const result = buildCatalogCategories(courses, options);
+    const byId = (id: string) =>
+      result.find((section) => section.option.id === id)!;
 
-    const tech = result.find((c) => c.id === "tech")!;
-    expect(tech.courses.map((c) => c.title)).toEqual([
+    expect(byId("core").courses.map((c) => c.id)).toEqual(["core1"]);
+    expect(byId("choice:s1").courses.map((c) => c.id)).toEqual(["ch1"]);
+    expect(byId("choice:s2").courses).toHaveLength(0);
+    expect(byId("elective:swe").courses.map((c) => c.id)).toEqual(["el1"]);
+    expect(byId("other:stem").courses.map((c) => c.id)).toEqual(["stem1"]);
+    expect(byId("elective:ai").courses.map((c) => c.id)).toEqual(["ai1"]);
+  });
+
+  it("sorts courses alphabetically within a section", () => {
+    const courses = [
+      makeCourse({ id: "1", type: "other", category: "stem", title: "Zebra" }),
+      makeCourse({ id: "2", type: "other", category: "stem", title: "Alpha" }),
+      makeCourse({ id: "3", type: "other", category: "stem", title: "Beta" }),
+    ];
+
+    const result = buildCatalogCategories(courses, options);
+    const stem = result.find((section) => section.option.id === "other:stem")!;
+
+    expect(stem.courses.map((c) => c.title)).toEqual([
       "Alpha",
       "Beta",
       "Zebra",
     ]);
-  });
-
-  it("returns empty arrays for categories with no courses", () => {
-    const result = buildCatalogCategories([]);
-
-    expect(result).toHaveLength(7);
-    for (const cat of result) {
-      expect(cat.courses).toEqual([]);
-    }
   });
 });

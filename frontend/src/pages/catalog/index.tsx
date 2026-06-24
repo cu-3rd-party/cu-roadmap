@@ -1,9 +1,14 @@
 import { Compass } from "lucide-react";
 import { useMemo } from "react";
 
-import { buildCourseTitleMap, useCoursesQuery } from "@/entities/course";
+import { useCoursesQuery } from "@/entities/course";
+import { useMajorsQuery } from "@/entities/major";
 import { useSpecializationsQuery } from "@/entities/specialization";
-import { CourseFilters } from "@/features/course-filters";
+import {
+  buildCategoryFilters,
+  buildSubOptions,
+  CourseFilters,
+} from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
 import { useMediaQuery } from "@/shared/lib";
 import { Chip, CollapsiblePanel, Panel } from "@/shared/ui";
@@ -14,16 +19,15 @@ import {
 
 import { buildCatalogCategories } from "./lib";
 import {
-  categoryToDescription,
+  optionDescription,
   useCatalogFiltersStore,
-  categoryOptionsWithCounts,
   filterCatalog,
 } from "./model";
 
 const CatalogPage = () => {
   const isMobile = useMediaQuery("md");
   const { admissionYear, majorId } = useSettingsStore();
-  const { filters, toggleType, toggleSemester, toggleCategory, setSearch } =
+  const { filters, toggleType, toggleSemester, setGroup, setSub, setSearch } =
     useCatalogFiltersStore();
 
   const {
@@ -31,28 +35,33 @@ const CatalogPage = () => {
     isLoading: coursesLoading,
     isError,
   } = useCoursesQuery(admissionYear, majorId);
+
+  const { data: majors } = useMajorsQuery(admissionYear);
   const { data: specializations } = useSpecializationsQuery(majorId);
 
-  const categories = useMemo(
-    () => buildCatalogCategories(courses ?? []),
-    [courses],
+  const majorType = useMemo(
+    () => majors?.find((major) => major.id === majorId)?.type ?? null,
+    [majors, majorId],
   );
 
-  const categoryOptions = useMemo(
-    () => categoryOptionsWithCounts(categories, filters),
-    [categories, filters],
+  const options = useMemo(
+    () => buildCategoryFilters(majorType, specializations ?? []),
+    [majorType, specializations],
+  );
+
+  const subOptions = useMemo(
+    () => buildSubOptions(filters.group, majorType, specializations ?? []),
+    [filters.group, majorType, specializations],
+  );
+
+  const categories = useMemo(
+    () => buildCatalogCategories(courses ?? [], options),
+    [courses, options],
   );
 
   const visibleCategories = useMemo(
     () => filterCatalog(categories, filters),
     [categories, filters],
-  );
-
-  const titleMap = useMemo(() => buildCourseTitleMap(courses ?? []), [courses]);
-
-  const specializationTitleMap = useMemo(
-    () => new Map((specializations ?? []).map((s) => [s.id, s.title])),
-    [specializations],
   );
 
   return (
@@ -80,11 +89,12 @@ const CatalogPage = () => {
         <CollapsiblePanel title="Фильтры">
           <CourseFilters
             value={filters}
-            categories={categoryOptions}
+            subOptions={subOptions}
             loading={coursesLoading}
             onToggleType={toggleType}
             onToggleSemester={toggleSemester}
-            onToggleCategory={toggleCategory}
+            onGroupChange={setGroup}
+            onSubChange={setSub}
             onSearchChange={setSearch}
           />
         </CollapsiblePanel>
@@ -108,12 +118,10 @@ const CatalogPage = () => {
         !isError &&
         visibleCategories.map((category) => (
           <CoursesSection
-            key={category.id}
-            title={category.title}
+            key={category.option.id}
+            title={category.option.label}
             courses={category.courses}
-            titleMap={titleMap}
-            specializationTitleMap={specializationTitleMap}
-            panelTitle={categoryToDescription[category.id]}
+            panelTitle={optionDescription(category.option)}
           />
         ))}
     </div>

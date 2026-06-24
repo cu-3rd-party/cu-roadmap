@@ -1,7 +1,11 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { EMPTY_FILTERS, type CourseFilterState } from "./options";
+import {
+  EMPTY_FILTERS,
+  type CourseFilterState,
+  type FilterGroup,
+} from "./options";
 
 const toggle = (list: string[], value: string) =>
   list.includes(value)
@@ -12,7 +16,8 @@ interface CourseFiltersStore {
   filters: CourseFilterState;
   toggleType: (type: string) => void;
   toggleSemester: (semester: string) => void;
-  toggleCategory: (id: string) => void;
+  setGroup: (group: FilterGroup) => void;
+  setSub: (sub: string) => void;
   setSearch: (search: string) => void;
   reset: () => void;
 }
@@ -46,13 +51,12 @@ export const createCourseFiltersStore = ({
           semesters: toggle(state.filters.semesters, semester),
         },
       })),
-    toggleCategory: (id) =>
+    setGroup: (group) =>
       set((state) => ({
-        filters: {
-          ...state.filters,
-          categories: toggle(state.filters.categories, id),
-        },
+        // Switching the top-level group resets the sub-selection to "all".
+        filters: { ...state.filters, group, sub: "all" },
       })),
+    setSub: (sub) => set((state) => ({ filters: { ...state.filters, sub } })),
     setSearch: (search) =>
       set((state) => ({ filters: { ...state.filters, search } })),
     reset: () => set({ filters: EMPTY_FILTERS }),
@@ -71,7 +75,8 @@ export const createCourseFiltersStore = ({
         filters: {
           types: state.filters.types,
           semesters: state.filters.semesters,
-          categories: state.filters.categories,
+          group: state.filters.group,
+          sub: state.filters.sub,
           search: "",
         },
       }),

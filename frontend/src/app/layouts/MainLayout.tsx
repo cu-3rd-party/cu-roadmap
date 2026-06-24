@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { GreetingModal } from "@/features/settings";
+import { CourseDetailsDrawer } from "@/widgets/CourseDetailsDrawer";
 import { Navbar } from "@/widgets/Navbar";
 
 interface MainLayoutProps {
@@ -15,6 +16,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         {children}
       </main>
       <GreetingModal />
+      <CourseDetailsDrawer />
     </div>
   );
 }

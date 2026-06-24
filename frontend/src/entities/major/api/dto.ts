@@ -1,5 +1,5 @@
 import { SemesterNumber } from "@/shared/constants";
-import { MajorRequirementType, MajorSchool, UUID } from "@/shared/model";
+import { MajorRequirementType, MajorType, UUID } from "@/shared/model";
 
 export interface MajorRequirementDto {
   course_id: UUID;
@@ -10,7 +10,7 @@ export interface MajorRequirementDto {
 export interface MajorDto {
   id: UUID;
   title: string;
-  school: MajorSchool;
+  internal_name: MajorType;
   cohort_year: number;
   requirements: MajorRequirementDto[];
 }

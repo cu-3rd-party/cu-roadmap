@@ -13,5 +13,5 @@ export type {
   MajorMatchDto,
   IdentifyMajorsRequestDto,
 } from "./api";
-export type { Major, MajorRequirement, MajorMatch } from "./model/types";
+export type { Major, MajorMatch } from "./model/types";
 export { normalizeMajor, normalizeMajorMatch } from "./lib";

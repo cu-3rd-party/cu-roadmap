@@ -1,20 +1,15 @@
-import { Course, CourseCard, courseToDetails } from "@/entities/course";
-import type { UUID } from "@/shared/model";
+import { Course, CourseCard } from "@/entities/course";
 import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
 
 interface CourseCategorySectionProps {
   title: string;
   courses: Course[];
-  titleMap: Map<UUID, string>;
-  specializationTitleMap: Map<UUID, string>;
   panelTitle?: string;
 }
 
 export const CoursesSection = ({
   title,
   courses,
-  titleMap,
-  specializationTitleMap,
   panelTitle,
 }: CourseCategorySectionProps) => {
   return (
@@ -28,14 +23,12 @@ export const CoursesSection = ({
           {courses.map((course) => (
             <CourseCard
               key={course.id}
+              variant="catalog"
+              courseId={course.id}
               title={course.title}
               recommendedSemester={course.recommendedSemester}
               category={course.category}
               type={course.type}
-              details={courseToDetails(course, {
-                titleMap,
-                specializationTitleMap,
-              })}
             />
           ))}
         </div>
