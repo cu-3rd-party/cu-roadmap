@@ -88,6 +88,26 @@ func (v *RoadmapValidator) ValidateSemester(
 		}
 	}
 
+	for _, course := range v.AllCourses {
+		if !shouldAutoForceExclusiveSemester(course, v.AllCourses) {
+			continue
+		}
+		if course.AvailableSemesters == nil || len(course.AvailableSemesters) == 0 {
+			continue
+		}
+		if course.AvailableSemesters[0] != currentSemNum {
+			continue
+		}
+		if inSemIDs[course.ID] || previouslyPassedIDs[course.ID] {
+			continue
+		}
+		messages = append(messages, schemas.ValidationMessage{
+			Level:    "error",
+			Message:  fmt.Sprintf("Курс '%s' является обязательным к прохождению в %d-м семестре", course.Title, currentSemNum),
+			CourseID: &course.ID,
+		})
+	}
+
 	hasSTEM := false
 	hasScienceStudio := false
 	hasBusinessStudio := false

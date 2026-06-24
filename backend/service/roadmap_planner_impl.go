@@ -498,7 +498,74 @@ func generateRoadmapWithStrategy(
 		}
 	}
 
+	forcedCourseIDs := make(map[uuid.UUID]int)
+	for cid, course := range ctx.coursesTodo {
+		if !shouldAutoForceExclusiveSemester(course, allCourses) {
+			continue
+		}
+		semester := course.AvailableSemesters[0]
+		forcedCourseIDs[cid] = semester
+		ctx.reservedForFuture[cid] = true
+	}
+
+	for cid, semester := range forcedCourseIDs {
+		if _, exists := plannedBySem[semester]; !exists {
+			plannedBySem[semester] = []uuid.UUID{}
+		}
+		plannedBySem[semester] = append(plannedBySem[semester], cid)
+	}
+
 	var roadmap []map[string]interface{}
+	backfillSemesters := make(map[int]bool)
+	for semester := range plannedBySem {
+		if semester < currentSemester {
+			backfillSemesters[semester] = true
+		}
+	}
+	for _, semester := range forcedCourseIDs {
+		if semester < currentSemester {
+			backfillSemesters[semester] = true
+		}
+	}
+
+	orderedBackfillSemesters := make([]int, 0, len(backfillSemesters))
+	for semester := range backfillSemesters {
+		orderedBackfillSemesters = append(orderedBackfillSemesters, semester)
+	}
+	sort.Ints(orderedBackfillSemesters)
+
+	for _, semester := range orderedBackfillSemesters {
+		semLoad := 0.0
+		var courseIDs []string
+		var newlyPassed []uuid.UUID
+		if planned, ok := plannedBySem[semester]; ok {
+			for _, cid := range planned {
+				if course, exists := ctx.coursesTodo[cid]; exists {
+					courseIDs = append(courseIDs, cid.String())
+					semLoad += course.Workload
+					newlyPassed = append(newlyPassed, cid)
+					delete(ctx.coursesTodo, cid)
+					delete(ctx.reservedForFuture, cid)
+				}
+			}
+			delete(plannedBySem, semester)
+		}
+
+		for _, cid := range newlyPassed {
+			ctx.passedIDs[cid] = true
+		}
+
+		if len(courseIDs) == 0 {
+			continue
+		}
+
+		roadmap = append(roadmap, map[string]interface{}{
+			"semester":   semester,
+			"course_ids": courseIDs,
+			"total_load": semLoad,
+		})
+	}
+
 	for semester := currentSemester; (len(ctx.coursesTodo) > 0 || len(plannedBySem) > 0) && semester <= 12; semester++ {
 		semLoad := 0.0
 		var courseIDs []string
@@ -830,6 +897,34 @@ func coreqsSchedulable(ctx *roadmapPlanningContext, cid uuid.UUID, semester int)
 		}
 	}
 	return true
+}
+
+func shouldAutoForceExclusiveSemester(course interfaces.CourseData, allCourses map[uuid.UUID]interfaces.CourseData) bool {
+	if course.Category != enums.CourseCategoryFundamentals {
+		return false
+	}
+	if !strings.Contains(strings.ToUpper(course.AnalogGroup), "ОБЯЗ:") {
+		return false
+	}
+	if len(course.AvailableSemesters) != 1 {
+		return false
+	}
+
+	group := strings.TrimSpace(course.AnalogGroup)
+	if group == "" {
+		return false
+	}
+
+	count := 0
+	for _, other := range allCourses {
+		if other.ID == course.ID {
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(other.AnalogGroup), group) {
+			count++
+		}
+	}
+	return count == 0
 }
 
 func buildBundle(ctx *roadmapPlanningContext, cid uuid.UUID, semester int) (semesterBundle, bool) {

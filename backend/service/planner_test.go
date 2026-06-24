@@ -111,6 +111,97 @@ func createMajorWithRequirements(s interfaces.StoreBase, courseIDs ...uuid.UUID)
 	return major.ID
 }
 
+func TestGenerateRoadmapForcesFundamentalsObyazCourseIntoExclusiveSemester(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s := store.NewMemoryStore()
+		s.Init("admin")
+		defer s.Close()
+
+		prereq := interfaces.CourseData{ID: uuid.New(), Title: "Prereq", Description: new("Prereq"), AvailableSemesters: []int{8}, Workload: 3.0, Category: enums.CourseCategoryFundamentals}
+		forced := interfaces.CourseData{
+			ID:                  uuid.New(),
+			Title:               "Forced Fundamentals",
+			Description:         new("Forced"),
+			AvailableSemesters:  []int{4},
+			Workload:            3.0,
+			Category:            enums.CourseCategoryFundamentals,
+			CourseType:          enums.CourseTypeMandatory,
+			AnalogGroup:         "ОБЯЗ: Fundamentals",
+			Prerequisites:       []uuid.UUID{prereq.ID},
+			RecommendedSemester: new(int),
+		}
+		*forced.RecommendedSemester = 4
+
+		_, _ = s.CreateCourse(prereq)
+		_, _ = s.CreateCourse(forced)
+
+		majorID := createMajorWithRequirements(s, forced.ID)
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: forced.ID, RequiredCourseID: prereq.ID, DependencyType: enums.DependencyTypePrerequisite})
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, majorID, nil, 1, 12.0, 0)
+		assert.NoError(t, err)
+
+		rm := roadmap.([]map[string]interface{})
+		found := false
+		for _, sem := range rm {
+			if ids, ok := sem["course_ids"].([]string); ok {
+				for _, id := range ids {
+					if id == forced.ID.String() {
+						assert.Equal(t, 4, sem["semester"])
+						found = true
+					}
+				}
+			}
+		}
+		assert.True(t, found, "forced fundamentals course should be scheduled into its exclusive semester")
+	})
+}
+
+func TestGenerateRoadmapBackfillsForcedFundamentalsCourseIntoPastSemester(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s := store.NewMemoryStore()
+		s.Init("admin")
+		defer s.Close()
+
+		forced := interfaces.CourseData{
+			ID:                 uuid.New(),
+			Title:              "Forced Past Fundamentals",
+			Description:        new("Forced"),
+			AvailableSemesters: []int{2},
+			Workload:           3.0,
+			Category:           enums.CourseCategoryFundamentals,
+			CourseType:         enums.CourseTypeMandatory,
+			AnalogGroup:        "ОБЯЗ: Fundamentals",
+		}
+
+		_, _ = s.CreateCourse(forced)
+		majorID := createMajorWithRequirements(s, forced.ID)
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, majorID, nil, 3, 12.0, 0)
+		assert.NoError(t, err)
+
+		rm := roadmap.([]map[string]interface{})
+		foundSemester := -1
+		for _, sem := range rm {
+			if ids, ok := sem["course_ids"].([]string); ok {
+				for _, id := range ids {
+					if id == forced.ID.String() {
+						foundSemester = sem["semester"].(int)
+						break
+					}
+				}
+			}
+			if foundSemester != -1 {
+				break
+			}
+		}
+
+		assert.Equal(t, 2, foundSemester, "forced fundamentals course should be backfilled into its actual past semester")
+	})
+}
+
 func TestGenerateRoadmapBasic(t *testing.T) {
 	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
 		s, c1, c2, c3 := newTestData()

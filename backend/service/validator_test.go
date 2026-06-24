@@ -132,6 +132,52 @@ func TestValidateSemesterPassedPrerequisite(t *testing.T) {
 	assert.True(t, result.IsValid)
 }
 
+func TestValidateSemesterRequiresExclusiveFundamentalsCourse(t *testing.T) {
+	s := store.NewMemoryStore()
+	s.Init("admin")
+	defer s.Close()
+
+	forced := interfaces.CourseData{
+		ID:                 uuid.New(),
+		Title:              "Физическая культура",
+		AvailableSemesters: []int{2},
+		Workload:           2.0,
+		Category:           enums.CourseCategoryFundamentals,
+		CourseType:         enums.CourseTypeMandatory,
+		AnalogGroup:        "ОБЯЗ: Fundamentals",
+	}
+	other := interfaces.CourseData{
+		ID:                 uuid.New(),
+		Title:              "Math",
+		AvailableSemesters: []int{2},
+		Workload:           4.0,
+		Category:           enums.CourseCategorySTEM,
+	}
+
+	s.CreateCourse(forced)
+	s.CreateCourse(other)
+
+	allCourses, _ := s.GetAllCourses()
+	validator := NewRoadmapValidator(allCourses)
+	validator.LoadDependencies(s)
+
+	result := validator.ValidateSemester(
+		[]interfaces.CourseData{other},
+		make(map[uuid.UUID]bool),
+		2,
+		12.0,
+	)
+	assert.False(t, result.IsValid)
+	found := false
+	for _, m := range result.Messages {
+		if strings.Contains(m.Message, "Физическая культура") {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "validator should require the exclusive fundamentals course in its semester")
+}
+
 func TestValidateFullRoadmapValid(t *testing.T) {
 	s, c1, c2, _ := newTestData()
 	defer s.Close()
