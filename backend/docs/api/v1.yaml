@@ -833,6 +833,9 @@ components:
         title:
           type: string
           description: название мейджора
+        internal_name:
+          type: string
+          description: внутреннее имя мейджора, например ai, swe, business
         school:
           type: string
           description: название школы

@@ -330,6 +330,37 @@ func TestGetMajorsWithData(t *testing.T) {
 	assert.Len(t, reqs, 1)
 }
 
+func TestGetMajorsReturnsInternalNameForKnownMajors(t *testing.T) {
+	tests := []struct {
+		name         string
+		title        string
+		expectedName string
+	}{
+		{name: "ai", title: "Искусственный интеллект", expectedName: "ai"},
+		{name: "swe", title: "Разработка", expectedName: "swe"},
+		{name: "business", title: "Бизнес и аналитика", expectedName: "business"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+				m := interfaces.MajorData{ID: uuid.New(), Title: tc.title, School: "Tech"}
+				s.CreateMajor(m)
+			})
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/api/v1/majors/", nil)
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, 200, w.Code)
+			var majors []map[string]interface{}
+			json.Unmarshal(w.Body.Bytes(), &majors)
+			assert.Len(t, majors, 1)
+			assert.Equal(t, tc.expectedName, majors[0]["internal_name"])
+		})
+	}
+}
+
 func TestGetMajorsWithCohortYear(t *testing.T) {
 	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
 		m2025 := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech", CohortYear: 2025}

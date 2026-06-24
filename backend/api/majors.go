@@ -51,6 +51,16 @@ func getMajors(c *gin.Context) {
 
 	res := []gin.H{}
 	for _, m := range majors {
+		internalName := ""
+		switch m.Title {
+		case "Искусственный интеллект":
+			internalName = "ai"
+		case "Разработка":
+			internalName = "swe"
+		case "Бизнес и аналитика":
+			internalName = "business"
+		}
+
 		if cohortYear != 0 && m.CohortYear != cohortYear {
 			continue
 		}
@@ -71,11 +81,12 @@ func getMajors(c *gin.Context) {
 			})
 		}
 		res = append(res, gin.H{
-			"id":           m.ID.String(),
-			"title":        m.Title,
-			"school":       m.School,
-			"cohort_year":  m.CohortYear,
-			"requirements": reqList,
+			"id":            m.ID.String(),
+			"title":         m.Title,
+			"internal_name": internalName,
+			"school":        m.School,
+			"cohort_year":   m.CohortYear,
+			"requirements":  reqList,
 		})
 	}
 	writeCachedJSON(c, majorsCacheKey(c), res)
