@@ -216,6 +216,28 @@ func TestMapSheetRowToCourseWorkloadVariants(t *testing.T) {
 	assert.Equal(t, 8.0, course2.Workload)
 }
 
+func TestMapSheetRowToCourseUsesExclusiveSemester(t *testing.T) {
+	row := map[string]string{
+		"Название курса":         "Фундаментальный курс",
+		"Тип курса":              "mandatory",
+		"Осень / весна":          "осень",
+		"Исключительный семестр": "7",
+	}
+	course := MapSheetRowToCourse(row, enums.CourseCategoryFundamentals)
+	assert.Equal(t, []int{7}, course.AvailableSemesters)
+}
+
+func TestMapSheetRowToCourseUsesExclusiveSemesterWithExtraWhitespaceInHeader(t *testing.T) {
+	row := map[string]string{
+		"Название курса":             "Физра 1",
+		"Тип курса":                  "mandatory",
+		"Осень / весна":              "осень",
+		"  Исключительный семестр  ": "1",
+	}
+	course := MapSheetRowToCourse(row, enums.CourseCategoryFundamentals)
+	assert.Equal(t, []int{1}, course.AvailableSemesters)
+}
+
 func TestSyncFromSheetData(t *testing.T) {
 	s := NewMemoryStore()
 	s.Init("admin")
