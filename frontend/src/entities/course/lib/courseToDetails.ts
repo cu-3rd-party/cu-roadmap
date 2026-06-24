@@ -5,8 +5,13 @@ import {
   type UUID,
 } from "@/shared/model";
 
-import type { CourseDetails, RequisiteItem, Season } from "../model/details";
-import type { Course } from "../model/types";
+import type {
+  CourseDetails,
+  PrerequisiteGroupItem,
+  RequisiteItem,
+  Season,
+} from "../model/details";
+import type { Course, CoursePrerequisite } from "../model/types";
 
 export const buildCourseTitleMap = (courses: Course[]): Map<UUID, string> =>
   new Map(courses.map((course) => [course.id, course.title]));
@@ -36,6 +41,17 @@ const resolveRequisites = (
     .map((id) => ({ id, title: titleMap.get(id) }))
     .filter((item): item is RequisiteItem => Boolean(item.title));
 
+const resolvePrerequisites = (
+  groups: CoursePrerequisite[] | undefined,
+  titleMap: Map<UUID, string>,
+): PrerequisiteGroupItem[] =>
+  (groups ?? [])
+    .map((group) => ({
+      groupId: group.groupId,
+      prerequisites: resolveRequisites(group.courses, titleMap),
+    }))
+    .filter((group) => group.prerequisites.length > 0);
+
 interface CourseToDetailsLookups {
   titleMap: Map<UUID, string>;
   specializationTitleMap: Map<UUID, string>;
@@ -60,7 +76,7 @@ export const courseToDetails = (
   recommendedSemester: course.recommendedSemester
     ? `${course.recommendedSemester} семестр`
     : "Не указан",
-  prerequisites: resolveRequisites(course.prerequisites, titleMap),
+  prerequisites: resolvePrerequisites(course.prerequisites, titleMap),
   postrequisites: resolveRequisites(course.postrequisites, titleMap),
   corequisites: resolveRequisites(course.corequisites, titleMap),
 });

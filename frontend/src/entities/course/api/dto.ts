@@ -6,6 +6,11 @@ import {
   UUID,
 } from "@/shared/model";
 
+export interface CoursePrerequisiteDto {
+  course_ids: UUID[];
+  group_id: UUID;
+}
+
 // Raw course as returned by GET /api/v1/courses/
 export interface CourseDto {
   id: UUID;
@@ -19,7 +24,7 @@ export interface CourseDto {
   recommended_semester?: SemesterNumber | null;
   workload: number;
   /** UUIDs of prerequisite courses. */
-  prerequisites?: UUID[];
+  prerequisites?: CoursePrerequisiteDto[];
   corequisites?: UUID[];
   postrequisites?: UUID[];
   to_major: Record<UUID, MajorRequirementType>;

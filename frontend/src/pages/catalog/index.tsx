@@ -1,8 +1,7 @@
 import { Compass } from "lucide-react";
 import { useMemo } from "react";
 
-import { buildCourseTitleMap, useCoursesQuery } from "@/entities/course";
-import { useSpecializationsQuery } from "@/entities/specialization";
+import { useCoursesQuery } from "@/entities/course";
 import { CourseFilters } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
 import { useMediaQuery } from "@/shared/lib";
@@ -31,7 +30,6 @@ const CatalogPage = () => {
     isLoading: coursesLoading,
     isError,
   } = useCoursesQuery(admissionYear, majorId);
-  const { data: specializations } = useSpecializationsQuery(majorId);
 
   const categories = useMemo(
     () => buildCatalogCategories(courses ?? []),
@@ -46,13 +44,6 @@ const CatalogPage = () => {
   const visibleCategories = useMemo(
     () => filterCatalog(categories, filters),
     [categories, filters],
-  );
-
-  const titleMap = useMemo(() => buildCourseTitleMap(courses ?? []), [courses]);
-
-  const specializationTitleMap = useMemo(
-    () => new Map((specializations ?? []).map((s) => [s.id, s.title])),
-    [specializations],
   );
 
   return (
@@ -111,8 +102,6 @@ const CatalogPage = () => {
             key={category.id}
             title={category.title}
             courses={category.courses}
-            titleMap={titleMap}
-            specializationTitleMap={specializationTitleMap}
             panelTitle={categoryToDescription[category.id]}
           />
         ))}

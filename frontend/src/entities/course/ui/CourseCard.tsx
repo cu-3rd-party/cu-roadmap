@@ -1,5 +1,4 @@
 import { ArrowRightLeft, Info, Trash2 } from "lucide-react";
-import { useState } from "react";
 
 import { SemesterNumber } from "@/shared/constants";
 import { cn, useMediaQuery } from "@/shared/lib";
@@ -10,6 +9,7 @@ import {
   CourseType,
   typeSlugToName,
   typeSlugToShortName,
+  type UUID,
 } from "@/shared/model";
 import {
   Badge,
@@ -22,13 +22,13 @@ import {
   Separator,
 } from "@/shared/ui/kit";
 
-import { type CourseDetails } from "../model";
-
-import { DetailsDrawer } from "./DetailsDrawer";
+import { useCourseDrawerStore } from "../model";
 
 export type CourseCardVariant = "catalog" | "select" | "planned";
 
 interface CourseCardProps {
+  // course id used to open the shared details drawer (catalog/planned variants)
+  courseId?: UUID;
   title: string;
   recommendedSemester?: SemesterNumber | null;
   /**
@@ -46,8 +46,6 @@ interface CourseCardProps {
   // select variant only: semester (1-8) this course is currently placed in.
   // Shown as a corner counter; selection is tracked across all semesters.
   selectedSemester?: SemesterNumber;
-  // catalog variant only: real course data shown in the "О курсе" drawer on click
-  details?: CourseDetails;
   // planned variant only: semesters offered in the "move to" menu (already excludes current)
   moveTargets?: number[];
   // planned variant only: renders a negative ring when the course has a validation conflict
@@ -98,6 +96,7 @@ const CourseBadges = ({
 };
 
 export const CourseCard = ({
+  courseId,
   title,
   recommendedSemester,
   variant = "catalog",
@@ -105,7 +104,6 @@ export const CourseCard = ({
   type,
   selected = false,
   selectedSemester,
-  details,
   moveTargets,
   conflict = false,
   generated = false,
@@ -113,7 +111,8 @@ export const CourseCard = ({
   onRemove,
   onMove,
 }: CourseCardProps) => {
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const { openCourse } = useCourseDrawerStore();
+  const openDetails = () => courseId && openCourse(courseId);
   const isMobile = useMediaQuery("sm"); // max-width: 639.98px
 
   if (variant === "select") {
@@ -157,39 +156,29 @@ export const CourseCard = ({
 
   if (variant === "catalog") {
     return (
-      <>
-        <button
-          type="button"
-          onClick={() => setDetailsOpen(true)}
-          className={cn(
-            "flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
-            "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-          )}
-        >
-          <div
-            title={title}
-            className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-medium text-fg-primary"
-          >
-            {title}
-          </div>
-          <CourseBadges
-            variant="catalog"
-            category={category}
-            type={type}
-            recommendedSemester={recommendedSemester}
-            isMobile={isMobile}
-            className="mt-auto"
-          />
-        </button>
-
-        {details && (
-          <DetailsDrawer
-            course={details}
-            open={detailsOpen}
-            onOpenChange={setDetailsOpen}
-          />
+      <button
+        type="button"
+        onClick={openDetails}
+        className={cn(
+          "flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
+          "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         )}
-      </>
+      >
+        <div
+          title={title}
+          className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-medium text-fg-primary"
+        >
+          {title}
+        </div>
+        <CourseBadges
+          variant="catalog"
+          category={category}
+          type={type}
+          recommendedSemester={recommendedSemester}
+          isMobile={isMobile}
+          className="mt-auto"
+        />
+      </button>
     );
   }
 
@@ -254,7 +243,7 @@ export const CourseCard = ({
           size="xs"
           className={isMobile ? "flex-1" : undefined}
           icon={isMobile ? <Info size={20} /> : undefined}
-          onClick={() => setDetailsOpen(true)}
+          onClick={openDetails}
         >
           {isMobile ? undefined : <span className="text-base">О курсе</span>}
         </Button>
@@ -270,14 +259,6 @@ export const CourseCard = ({
           </Button>
         )}
       </div>
-
-      {details && (
-        <DetailsDrawer
-          course={details}
-          open={detailsOpen}
-          onOpenChange={setDetailsOpen}
-        />
-      )}
     </div>
   );
 };

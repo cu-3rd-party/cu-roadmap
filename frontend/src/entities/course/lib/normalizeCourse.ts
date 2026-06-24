@@ -1,5 +1,5 @@
-import type { CourseDto } from "../api";
-import type { Course } from "../model";
+import type { CourseDto, CoursePrerequisiteDto } from "../api";
+import type { Course, CoursePrerequisite } from "../model";
 
 const sanitizeURL = (link: string | null | undefined): string => {
   if (!link) return "";
@@ -8,6 +8,15 @@ const sanitizeURL = (link: string | null | undefined): string => {
   } catch {
     return "";
   }
+};
+
+export const normalizePrerequisite = (
+  dto: CoursePrerequisiteDto,
+): CoursePrerequisite => {
+  return {
+    courses: dto.course_ids,
+    groupId: dto.group_id,
+  };
 };
 
 export const normalizeCourse = (dto: CourseDto): Course => {
@@ -22,7 +31,9 @@ export const normalizeCourse = (dto: CourseDto): Course => {
     allowedCohorts: dto.allowed_cohorts,
     recommendedSemester: dto.recommended_semester,
     workload: dto.workload,
-    prerequisites: dto.prerequisites,
+    prerequisites: dto.prerequisites
+      ?.map((prereq) => normalizePrerequisite(prereq))
+      .sort((item1, item2) => item1.courses.length - item2.courses.length),
     corequisites: dto.corequisites,
     postrequisites: dto.postrequisites,
     toMajor: dto.to_major,

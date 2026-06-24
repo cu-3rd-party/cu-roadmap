@@ -11,7 +11,7 @@ export const SyllabusCard = ({ link }: SyllabusCardProps) => (
     rel="noreferrer"
     className="relative block overflow-hidden rounded-xl bg-sure-blue-transparent p-4 transition duration-(--std-duration) hover:bg-sure-blue-pale focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
   >
-    <div className="text-sm text-fg-sure-blue">О курсе</div>
+    <div className="text-sm text-fg-sure-blue">Подробнее о курсе</div>
     <div className="text-lg font-medium text-fg-primary">Силлабус</div>
     <RevealImage
       src="/confederate.png"
