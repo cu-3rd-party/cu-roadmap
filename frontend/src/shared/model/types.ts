@@ -21,13 +21,15 @@ export type CourseCategory =
   | "soft"
   | "business"
   | "tech"
+  | "swe"
   | "design";
 
 export const categorySlugToName: Record<CourseCategory, string> = {
   fundamentals: "Fundamentals",
   ai: "AI",
   business: "Business",
-  tech: "SWE",
+  tech: "Tech",
+  swe: "SWE",
   design: "Design",
   stem: "STEM",
   soft: "Soft",
@@ -37,7 +39,8 @@ export const categorySlugToShortName: Record<CourseCategory, string> = {
   fundamentals: "Fund.",
   ai: "AI",
   business: "Business",
-  tech: "SWE",
+  tech: "Tech",
+  swe: "SWE",
   design: "Design",
   stem: "STEM",
   soft: "Soft",

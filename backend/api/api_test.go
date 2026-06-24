@@ -294,6 +294,66 @@ func TestGetCoursesReturnsSpecializations(t *testing.T) {
 	assert.ElementsMatch(t, []interface{}{specID.String()}, specializations)
 }
 
+func TestGetCoursesWithMajorPathReturnsByMajorTypeAndSpecializations(t *testing.T) {
+	majorID := uuid.New()
+	specID := uuid.New()
+	coreCourseID := uuid.New()
+	choiceCourseID := uuid.New()
+	electiveCourseID := uuid.New()
+	fundamentalsCourseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		_, _ = s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "Разработка", School: "Tech"})
+		_, _ = s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "Web"})
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: coreCourseID, Title: "Core Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryTech, CourseType: enums.CourseTypeMandatory})
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: choiceCourseID, Title: "Choice Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryAI, CourseType: enums.CourseTypeElective})
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: electiveCourseID, Title: "Elective Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryBusiness, CourseType: enums.CourseTypeElective})
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: fundamentalsCourseID, Title: "Fundamentals Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory})
+		_, _ = s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: majorID, CourseID: coreCourseID, RequirementType: enums.RequirementTypeMajorCore, Specializations: []string{"Web"}})
+		_, _ = s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: majorID, CourseID: choiceCourseID, RequirementType: enums.RequirementTypeMajorChoice, Specializations: []string{"Web"}})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/2025/"+majorID.String(), nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	var courses []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &courses)
+
+	findCourse := func(title string) map[string]interface{} {
+		for _, course := range courses {
+			if course["title"] == title {
+				return course
+			}
+		}
+		return nil
+	}
+
+	coreCourse := findCourse("Core Course")
+	assert.NotNil(t, coreCourse)
+	assert.Equal(t, "core", coreCourse["by_major_type"])
+	specializations, ok := coreCourse["specializations"].([]interface{})
+	assert.True(t, ok)
+	assert.ElementsMatch(t, []interface{}{specID.String()}, specializations)
+
+	choiceCourse := findCourse("Choice Course")
+	assert.NotNil(t, choiceCourse)
+	assert.Equal(t, "choice", choiceCourse["by_major_type"])
+
+	electiveCourse := findCourse("Elective Course")
+	assert.NotNil(t, electiveCourse)
+	assert.Equal(t, "elective", electiveCourse["by_major_type"])
+	assert.Equal(t, "business", electiveCourse["category"])
+
+	fundamentalsCourse := findCourse("Fundamentals Course")
+	assert.NotNil(t, fundamentalsCourse)
+	assert.Equal(t, "other", fundamentalsCourse["by_major_type"])
+	assert.Equal(t, "other", fundamentalsCourse["course_type"])
+	assert.Equal(t, "fundamentals", fundamentalsCourse["category"])
+}
+
 func TestGetMajorsEmpty(t *testing.T) {
 	router := setupRouterRoot(t, nil)
 

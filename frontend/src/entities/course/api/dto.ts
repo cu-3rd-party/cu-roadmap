@@ -24,4 +24,5 @@ export interface CourseDto {
   postrequisites?: UUID[];
   to_major: Record<UUID, MajorRequirementType>;
   specializations?: UUID[];
+  by_major_type?: "core" | "choice" | "elective" | "other";
 }
