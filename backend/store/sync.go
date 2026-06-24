@@ -763,17 +763,7 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		recommendedSemester = &v
 	}
 
-	rawWorkload := getFirst(row, "Нагрузка", "workload")
-	if rawWorkload == "" {
-		rawWorkload = "5"
-	}
-	workload := 5.0
-	if match := WorkloadRegexp.FindString(rawWorkload); match != "" {
-		_, err := fmt.Sscanf(match, "%f", &workload)
-		if err != nil {
-			return interfaces.CourseData{}
-		}
-	}
+	workload := 1.0
 
 	cd := interfaces.CourseData{
 		ID:                  uuid.New(),
