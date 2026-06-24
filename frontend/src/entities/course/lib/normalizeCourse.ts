@@ -27,6 +27,5 @@ export const normalizeCourse = (dto: CourseDto): Course => {
     postrequisites: dto.postrequisites,
     toMajor: dto.to_major,
     specializations: dto.specializations,
-    byMajorType: dto.by_major_type,
   };
 };
