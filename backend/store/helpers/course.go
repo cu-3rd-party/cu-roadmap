@@ -1,8 +1,6 @@
 package helpers
 
 import (
-	"sort"
-
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -31,38 +29,43 @@ func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDepe
 }
 
 func buildPrerequisiteGroups(course interfaces.CourseData, deps []interfaces.CourseDependencyData) interface{} {
-	grouped := make(map[int][]uuid.UUID)
-	groupOrder := make([]int, 0)
-	seenGroups := make(map[int]bool)
+	type prerequisiteGroup struct {
+		courseIDs []uuid.UUID
+	}
+
+	var prerequisiteGroups []prerequisiteGroup
+	groupIndexByAlt := make(map[int]int)
 
 	for _, dep := range deps {
 		if dep.DependencyType != enums.DependencyTypePrerequisite || dep.CourseID != course.ID {
 			continue
 		}
-		if !seenGroups[dep.AlternativeGroup] {
-			seenGroups[dep.AlternativeGroup] = true
-			groupOrder = append(groupOrder, dep.AlternativeGroup)
+
+		if dep.AlternativeGroup > 0 {
+			idx, ok := groupIndexByAlt[dep.AlternativeGroup]
+			if !ok {
+				idx = len(prerequisiteGroups)
+				groupIndexByAlt[dep.AlternativeGroup] = idx
+				prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{})
+			}
+			prerequisiteGroups[idx].courseIDs = append(prerequisiteGroups[idx].courseIDs, dep.RequiredCourseID)
+			continue
 		}
-		grouped[dep.AlternativeGroup] = append(grouped[dep.AlternativeGroup], dep.RequiredCourseID)
+
+		prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{courseIDs: []uuid.UUID{dep.RequiredCourseID}})
 	}
 
-	if len(grouped) == 0 && len(course.Prerequisites) > 0 {
+	if len(prerequisiteGroups) == 0 && len(course.Prerequisites) > 0 {
 		res := make([]gin.H, 0, len(course.Prerequisites))
-		for _, prereq := range course.Prerequisites {
-			res = append(res, gin.H{"group_id": 0, "course_ids": []string{prereq.String()}})
+		for idx, prereq := range course.Prerequisites {
+			res = append(res, gin.H{"group_id": idx, "course_ids": []string{prereq.String()}})
 		}
 		return res
 	}
 
-	sort.Ints(groupOrder)
-	res := make([]gin.H, 0, len(groupOrder))
-	for idx, groupID := range groupOrder {
-		groupItems := grouped[groupID]
-		if len(groupItems) == 1 {
-			res = append(res, gin.H{"group_id": idx, "course_ids": []string{groupItems[0].String()}})
-			continue
-		}
-		res = append(res, gin.H{"group_id": idx, "course_ids": CourseUUIDsToStrings(groupItems)})
+	res := make([]gin.H, 0, len(prerequisiteGroups))
+	for idx, group := range prerequisiteGroups {
+		res = append(res, gin.H{"group_id": idx, "course_ids": CourseUUIDsToStrings(group.courseIDs)})
 	}
 	return res
 }
