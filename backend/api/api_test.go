@@ -334,6 +334,7 @@ func TestGetCoursesWithMajorPathReturnsByMajorTypeAndSpecializations(t *testing.
 	coreCourse := findCourse("Core Course")
 	assert.NotNil(t, coreCourse)
 	assert.Equal(t, "core", coreCourse["by_major_type"])
+	assert.Equal(t, "swe", coreCourse["category"])
 	specializations, ok := coreCourse["specializations"].([]interface{})
 	assert.True(t, ok)
 	assert.ElementsMatch(t, []interface{}{specID.String()}, specializations)
@@ -341,6 +342,7 @@ func TestGetCoursesWithMajorPathReturnsByMajorTypeAndSpecializations(t *testing.
 	choiceCourse := findCourse("Choice Course")
 	assert.NotNil(t, choiceCourse)
 	assert.Equal(t, "choice", choiceCourse["by_major_type"])
+	assert.Equal(t, "swe", choiceCourse["category"])
 
 	electiveCourse := findCourse("Elective Course")
 	assert.NotNil(t, electiveCourse)

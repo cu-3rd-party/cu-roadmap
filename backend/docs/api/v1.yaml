@@ -1026,7 +1026,10 @@ components:
             - other
         category:
           type: string
-          description: категория курса
+          description: >-
+            категория курса. Если в path передан UUID мейджора и курс относится
+            к этому мейджору как major core или major choice, значение
+            переопределяется внутренним именем мейджора (ai/business/swe).
           enum:
             - fundamentals
             - ai
@@ -1095,7 +1098,9 @@ components:
           type: string
           description: >-
             дополнительная классификация курса относительно конкретного мейджора,
-            если в path передан UUID мейджора; значения: core, choice, elective, other
+            если в path передан UUID мейджора; значения: core, choice, elective, other.
+            Для major core/major choice также переопределяется поле category
+            внутренним именем мейджора.
           enum:
             - core
             - choice

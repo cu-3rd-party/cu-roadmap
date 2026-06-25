@@ -167,8 +167,14 @@ func getCourses(c *gin.Context) {
 				switch requirementType {
 				case enums.RequirementTypeMajorCore:
 					item["by_major_type"] = "core"
+					if majorData != nil {
+						item["category"] = inferMajorCategory(majorData)
+					}
 				case enums.RequirementTypeMajorChoice:
 					item["by_major_type"] = "choice"
+					if majorData != nil {
+						item["category"] = inferMajorCategory(majorData)
+					}
 				default:
 					item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
 				}
