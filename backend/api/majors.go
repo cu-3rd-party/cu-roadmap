@@ -248,6 +248,17 @@ func identifyMajor(c *gin.Context) {
 			}
 		}
 
+		for _, pid := range coreqMap[id] {
+			coreqSem := earliestCompletionSemester(pid, visited)
+			if coreqSem == math.MaxInt32 {
+				visited[id] = false
+				return math.MaxInt32
+			}
+			if coreqSem > readySemester {
+				readySemester = coreqSem
+			}
+		}
+
 		visited[id] = false
 		for sem := readySemester; sem <= 8; sem++ {
 			if offeredInSemester(course, sem) {

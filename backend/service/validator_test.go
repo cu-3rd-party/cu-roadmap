@@ -278,6 +278,57 @@ func TestValidateFullRoadmapCoreqsInDifferentSemesters(t *testing.T) {
 	assert.False(t, results[0]["valid"].(bool))
 }
 
+func TestValidateFullRoadmapAllowsSequentialWhenPrereqAndCoreqAreTheSamePair(t *testing.T) {
+	s := store.NewMemoryStore()
+	s.Init("admin")
+	defer s.Close()
+
+	c1 := interfaces.CourseData{ID: uuid.New(), Title: "Base Course", Workload: 4.0, AvailableSemesters: []int{1, 2}, Category: enums.CourseCategorySTEM}
+	c2 := interfaces.CourseData{ID: uuid.New(), Title: "Dependent Course", Workload: 3.0, AvailableSemesters: []int{1, 2}, Category: enums.CourseCategorySTEM}
+
+	s.CreateCourse(c1)
+	s.CreateCourse(c2)
+
+	s.CreateCourseDependency(interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         c2.ID,
+		RequiredCourseID: c1.ID,
+		DependencyType:   enums.DependencyTypePrerequisite,
+	})
+	s.CreateCourseDependency(interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         c2.ID,
+		RequiredCourseID: c1.ID,
+		DependencyType:   enums.DependencyTypeCorequisite,
+	})
+
+	soft := interfaces.CourseData{ID: uuid.New(), Title: "Soft Skill", Workload: 2.0, AvailableSemesters: []int{1, 2}, Category: enums.CourseCategorySoft}
+	s.CreateCourse(soft)
+
+	stem2 := interfaces.CourseData{ID: uuid.New(), Title: "Another STEM", Workload: 3.0, AvailableSemesters: []int{2}, Category: enums.CourseCategorySTEM}
+	s.CreateCourse(stem2)
+
+	stem1 := interfaces.CourseData{ID: uuid.New(), Title: "First STEM", Workload: 3.0, AvailableSemesters: []int{1}, Category: enums.CourseCategorySTEM}
+	s.CreateCourse(stem1)
+
+	allCourses, _ := s.GetAllCourses()
+	validator := NewRoadmapValidator(allCourses)
+	validator.LoadDependencies(s)
+
+	roadmap := []map[string]interface{}{
+		{"semester": 1, "course_ids": []string{c1.ID.String(), stem1.ID.String(), soft.ID.String()}},
+		{"semester": 2, "course_ids": []string{c2.ID.String(), stem2.ID.String(), soft.ID.String()}},
+	}
+
+	results := validator.ValidateFullRoadmap(roadmap, make(map[uuid.UUID]bool), 12.0, nil)
+	for i, res := range results {
+		t.Logf("semester %d valid=%v messages=%v", i+1, res["valid"], res["messages"])
+	}
+	assert.Len(t, results, 2)
+	assert.Empty(t, results[0]["messages"])
+	assert.Empty(t, results[1]["messages"])
+}
+
 func TestCreateValidatorFromStore(t *testing.T) {
 	s, _, _, _ := newTestData()
 	defer s.Close()

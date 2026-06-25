@@ -714,6 +714,15 @@ func TestIdentifySpecializationsCountsOnlyChoiceRequirements(t *testing.T) {
 	assert.Equal(t, float64(0), analysis[0]["can_cover_count"])
 	assert.Equal(t, float64(1), analysis[0]["total_count"])
 	assert.Equal(t, "AI", analysis[0]["title"])
+	coveredCourses, ok := analysis[0]["covered_courses"].([]interface{})
+	assert.True(t, ok)
+	assert.Len(t, coveredCourses, 1)
+	canCoverCourses, ok := analysis[0]["can_cover_courses"].([]interface{})
+	assert.True(t, ok)
+	assert.Empty(t, canCoverCourses)
+	cannotCoverCourses, ok := analysis[0]["cannot_cover_courses"].([]interface{})
+	assert.True(t, ok)
+	assert.Empty(t, cannotCoverCourses)
 }
 
 func TestIdentifySpecializationsIgnoresUnscopedChoiceRequirements(t *testing.T) {
@@ -754,6 +763,125 @@ func TestIdentifySpecializationsIgnoresUnscopedChoiceRequirements(t *testing.T) 
 	assert.Equal(t, float64(1), analysis[0]["total_count"])
 	assert.Equal(t, float64(0), analysis[0]["covered_count"])
 	assert.Equal(t, "AI", analysis[0]["title"])
+}
+
+func TestIdentifySpecializationsTreatsCurrentSemesterAsFlexibleStart(t *testing.T) {
+	majorID := uuid.New()
+	specID := uuid.New()
+	courseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
+		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
+		s.CreateCourse(interfaces.CourseData{ID: courseID, Title: "Early Course", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        courseID,
+			RequirementType: enums.RequirementTypeMajorChoice,
+			Specializations: []string{"AI"},
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/majors/identify-specializations/2025", strings.NewReader(`{"passed_course_ids":[],"current_semester":3}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var analysis []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &analysis)
+	assert.Len(t, analysis, 1)
+	assert.Equal(t, float64(1), analysis[0]["can_cover_count"])
+	assert.Equal(t, float64(0), analysis[0]["covered_count"])
+	assert.Equal(t, float64(1), analysis[0]["total_count"])
+}
+
+func TestIdentifySpecializationsTreatsPrereqAndCoreqPairAsSameSemesterOption(t *testing.T) {
+	majorID := uuid.New()
+	specID := uuid.New()
+	baseCourseID := uuid.New()
+	dependentCourseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
+		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
+		s.CreateCourse(interfaces.CourseData{ID: baseCourseID, Title: "Base Course", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateCourse(interfaces.CourseData{ID: dependentCourseID, Title: "Dependent Course", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        dependentCourseID,
+			RequirementType: enums.RequirementTypeMajorChoice,
+			Specializations: []string{"AI"},
+		})
+		s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         dependentCourseID,
+			RequiredCourseID: baseCourseID,
+			DependencyType:   enums.DependencyTypePrerequisite,
+		})
+		s.CreateCourseDependency(interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         dependentCourseID,
+			RequiredCourseID: baseCourseID,
+			DependencyType:   enums.DependencyTypeCorequisite,
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/majors/identify-specializations/2025", strings.NewReader(`[]`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var analysis []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &analysis)
+	assert.Len(t, analysis, 1)
+	assert.Equal(t, float64(0), analysis[0]["covered_count"])
+	assert.Equal(t, float64(1), analysis[0]["can_cover_count"])
+	assert.Equal(t, float64(1), analysis[0]["total_count"])
+}
+
+func TestIdentifySpecializationsCollapsesAnalogGroupRequirements(t *testing.T) {
+	majorID := uuid.New()
+	specID := uuid.New()
+	firstCourseID := uuid.New()
+	secondCourseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
+		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
+		s.CreateCourse(interfaces.CourseData{ID: firstCourseID, Title: "First Analog Choice", AnalogGroup: "GROUP1", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateCourse(interfaces.CourseData{ID: secondCourseID, Title: "Second Analog Choice", AnalogGroup: "GROUP1", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        firstCourseID,
+			RequirementType: enums.RequirementTypeMajorChoice,
+			Specializations: []string{"AI"},
+		})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        secondCourseID,
+			RequirementType: enums.RequirementTypeMajorChoice,
+			Specializations: []string{"AI"},
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/majors/identify-specializations/2025", strings.NewReader(`[]`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var analysis []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &analysis)
+	assert.Len(t, analysis, 1)
+	assert.Equal(t, float64(1), analysis[0]["total_count"])
+	assert.Equal(t, float64(0), analysis[0]["covered_count"])
+	assert.Equal(t, float64(1), analysis[0]["can_cover_count"])
 }
 
 func findCourseByTitle(courses []map[string]interface{}, title string) map[string]interface{} {

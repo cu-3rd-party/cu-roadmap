@@ -891,12 +891,29 @@ func coreqsSchedulable(ctx *roadmapPlanningContext, cid uuid.UUID, semester int)
 				anySchedulable = true
 				break
 			}
+			if hasEquivalentPrerequisiteRelation(ctx, cid, reqID) {
+				if reqCourse, ok := ctx.coursesTodo[reqID]; ok && offeredInSemester(reqCourse, semester) {
+					anySchedulable = true
+					break
+				}
+			}
 		}
 		if !anySchedulable {
 			return false
 		}
 	}
 	return true
+}
+
+func hasEquivalentPrerequisiteRelation(ctx *roadmapPlanningContext, courseID, requiredCourseID uuid.UUID) bool {
+	for _, altIDs := range ctx.prereqGroups[courseID] {
+		for _, id := range altIDs {
+			if id == requiredCourseID {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func shouldAutoForceExclusiveSemester(course interfaces.CourseData, allCourses map[uuid.UUID]interfaces.CourseData) bool {

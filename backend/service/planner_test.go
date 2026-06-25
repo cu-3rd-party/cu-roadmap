@@ -202,6 +202,45 @@ func TestGenerateRoadmapBackfillsForcedFundamentalsCourseIntoPastSemester(t *tes
 	})
 }
 
+func TestGenerateRoadmapAllowsSequentialPrereqAndCoreqPair(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s := store.NewMemoryStore()
+		s.Init("admin")
+		defer s.Close()
+
+		base := interfaces.CourseData{ID: uuid.New(), Title: "Base", AvailableSemesters: []int{1, 2}, Workload: 4.0, Category: enums.CourseCategorySTEM}
+		dependent := interfaces.CourseData{ID: uuid.New(), Title: "Dependent", AvailableSemesters: []int{1, 2}, Workload: 3.0, Category: enums.CourseCategorySTEM}
+		_, _ = s.CreateCourse(base)
+		_, _ = s.CreateCourse(dependent)
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: dependent.ID, RequiredCourseID: base.ID, DependencyType: enums.DependencyTypePrerequisite})
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: dependent.ID, RequiredCourseID: base.ID, DependencyType: enums.DependencyTypeCorequisite})
+
+		majorID := createMajorWithRequirements(s, dependent.ID)
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, majorID, nil, 1, 12.0, 0)
+		assert.NoError(t, err)
+
+		rm := roadmap.([]map[string]interface{})
+		assert.NotZero(t, len(rm))
+		seenBase := false
+		seenDependent := false
+		for _, sem := range rm {
+			if ids, ok := sem["course_ids"].([]string); ok {
+				for _, id := range ids {
+					if id == base.ID.String() {
+						seenBase = true
+					}
+					if id == dependent.ID.String() {
+						seenDependent = true
+					}
+				}
+			}
+		}
+		assert.True(t, seenBase)
+		assert.True(t, seenDependent)
+	})
+}
+
 func TestGenerateRoadmapBasic(t *testing.T) {
 	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
 		s, c1, c2, c3 := newTestData()

@@ -246,7 +246,13 @@ func (v *RoadmapValidator) ValidateSemester(
 			if rc, ok := v.AllCourses[dep.RequiredCourseID]; ok {
 				reqTitle = rc.Title
 			}
-			if !inSemIDs[dep.RequiredCourseID] {
+
+			satisfied := inSemIDs[dep.RequiredCourseID]
+			if !satisfied && v.hasEquivalentPrerequisite(dep.CourseID, dep.RequiredCourseID) {
+				satisfied = previouslyPassedIDs[dep.RequiredCourseID]
+			}
+
+			if !satisfied {
 				messages = append(messages, schemas.ValidationMessage{
 					Level:    "error",
 					Message:  formatMissingCoreq(c.Title, reqTitle),
@@ -346,6 +352,15 @@ func (v *RoadmapValidator) ValidateFullRoadmap(
 	}
 
 	return results
+}
+
+func (v *RoadmapValidator) hasEquivalentPrerequisite(courseID, requiredCourseID uuid.UUID) bool {
+	for _, dep := range v.depsByCourse[courseID] {
+		if dep.DependencyType == enums.DependencyTypePrerequisite && dep.RequiredCourseID == requiredCourseID {
+			return true
+		}
+	}
+	return false
 }
 
 func formatLoadExceeded(total, max float64) string {
