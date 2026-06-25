@@ -34,7 +34,9 @@ func identifySpecializations(c *gin.Context) {
 			return
 		}
 		passedIDs = req.PassedCourseIDs
-		if req.CurrentSemester > 0 {
+		if len(passedIDs) == 0 {
+			currentSemester = 1
+		} else if req.CurrentSemester > 0 {
 			currentSemester = req.CurrentSemester
 		}
 		if req.MajorID != "" {

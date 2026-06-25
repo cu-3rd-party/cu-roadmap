@@ -799,6 +799,37 @@ func TestIdentifySpecializationsTreatsCurrentSemesterAsFlexibleStart(t *testing.
 	assert.Equal(t, float64(1), analysis[0]["total_count"])
 }
 
+func TestIdentifySpecializationsResetsCurrentSemesterWhenPassedCoursesAreEmpty(t *testing.T) {
+	majorID := uuid.New()
+	specID := uuid.New()
+	courseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
+		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
+		s.CreateCourse(interfaces.CourseData{ID: courseID, Title: "Early Course", AvailableSemesters: []int{1}, Workload: 3.0})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        courseID,
+			RequirementType: enums.RequirementTypeMajorChoice,
+			Specializations: []string{"AI"},
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/v1/majors/identify-specializations/2025", strings.NewReader(`{"passed_course_ids":[],"current_semester":5}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var analysis []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &analysis)
+	assert.Len(t, analysis, 1)
+	assert.Equal(t, float64(1), analysis[0]["can_cover_count"])
+	assert.Equal(t, float64(0), analysis[0]["covered_count"])
+}
+
 func TestIdentifySpecializationsTreatsPrereqAndCoreqPairAsSameSemesterOption(t *testing.T) {
 	majorID := uuid.New()
 	specID := uuid.New()
