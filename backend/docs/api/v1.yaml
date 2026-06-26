@@ -1056,6 +1056,12 @@ components:
           type: string
           nullable: true
           description: группа аналогичных курсов
+        fixed_semester:
+          type: integer
+          description: >-
+            фиксированный семестр для автодобавления в план, если курс является
+            единственным курсом в обязательной analog group и имеет ровно один
+            доступный семестр; в остальных случаях 0
         prerequisites:
           type: array
           description: >-

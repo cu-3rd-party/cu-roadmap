@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"strings"
+
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -9,7 +11,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDependencyData) gin.H {
+func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDependencyData, analogGroupSizes map[string]int) gin.H {
 	return gin.H{
 		"id":                   course.ID.String(),
 		"title":                course.Title,
@@ -22,10 +24,31 @@ func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDepe
 		"recommended_semester": course.RecommendedSemester,
 		"workload":             course.Workload,
 		"analog_group":         course.AnalogGroup,
+		"fixed_semester":       inferFixedSemester(course, analogGroupSizes),
 		"prerequisites":        buildPrerequisiteGroups(course, deps),
 		"corequisites":         CourseUUIDsToStrings(course.Corequisites),
 		"postrequisites":       CourseUUIDsToStrings(course.Postrequisites),
 	}
+}
+
+func inferFixedSemester(course interfaces.CourseData, analogGroupSizes map[string]int) int {
+	analogGroupKey := strings.ToLower(strings.TrimSpace(course.AnalogGroup))
+	if analogGroupKey == "" {
+		return 0
+	}
+	if len(course.AvailableSemesters) != 1 {
+		return 0
+	}
+	if !strings.Contains(analogGroupKey, "обяз") {
+		return 0
+	}
+	if analogGroupSizes == nil {
+		return 0
+	}
+	if analogGroupSizes[analogGroupKey] != 1 {
+		return 0
+	}
+	return course.AvailableSemesters[0]
 }
 
 func buildPrerequisiteGroups(course interfaces.CourseData, deps []interfaces.CourseDependencyData) interface{} {

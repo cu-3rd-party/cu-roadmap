@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
@@ -149,9 +150,17 @@ func getCourses(c *gin.Context) {
 		return
 	}
 
+	analogGroupSizes := make(map[string]int)
+	for _, course := range courses {
+		key := strings.ToLower(strings.TrimSpace(course.AnalogGroup))
+		if key != "" {
+			analogGroupSizes[key]++
+		}
+	}
+
 	res := []gin.H{}
 	for _, course := range courses {
-		item := helpers.CourseToResponse(course, allDeps)
+		item := helpers.CourseToResponse(course, allDeps, analogGroupSizes)
 		if m, ok := courseToMajor[course.ID]; ok {
 			toMajor := make(gin.H)
 			for majorID, reqType := range m {

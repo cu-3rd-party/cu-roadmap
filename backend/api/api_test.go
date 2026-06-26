@@ -261,6 +261,82 @@ func TestGetCoursesReturnsPrerequisiteGroups(t *testing.T) {
 	assert.Equal(t, 2, len(groups))
 }
 
+func TestGetCoursesReturnsFixedSemesterForMandatoryAnalogGroup(t *testing.T) {
+	courseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		_, _ = s.CreateCourse(interfaces.CourseData{
+			ID:                 courseID,
+			Title:              "Mandatory Fundamentals",
+			AvailableSemesters: []int{4},
+			Workload:           3.0,
+			AnalogGroup:        "ОБЯЗ:",
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	var courses []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &courses)
+
+	var course map[string]interface{}
+	for _, item := range courses {
+		if item["id"] == courseID.String() {
+			course = item
+			break
+		}
+	}
+
+	assert.NotNil(t, course)
+	assert.Equal(t, float64(4), course["fixed_semester"])
+}
+
+func TestGetCoursesReturnsZeroFixedSemesterWhenAnalogGroupHasMultipleCourses(t *testing.T) {
+	courseID := uuid.New()
+	otherCourseID := uuid.New()
+
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		_, _ = s.CreateCourse(interfaces.CourseData{
+			ID:                 courseID,
+			Title:              "Mandatory Fundamentals",
+			AvailableSemesters: []int{4},
+			Workload:           3.0,
+			AnalogGroup:        "ОБЯЗ:",
+		})
+		_, _ = s.CreateCourse(interfaces.CourseData{
+			ID:                 otherCourseID,
+			Title:              "Another Mandatory Fundamentals",
+			AvailableSemesters: []int{5},
+			Workload:           3.0,
+			AnalogGroup:        "ОБЯЗ:",
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	var courses []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &courses)
+
+	var course map[string]interface{}
+	for _, item := range courses {
+		if item["id"] == courseID.String() {
+			course = item
+			break
+		}
+	}
+
+	assert.NotNil(t, course)
+	assert.Equal(t, float64(0), course["fixed_semester"])
+}
+
 func TestGetCoursesReturnsSpecializations(t *testing.T) {
 	majorID := uuid.New()
 	specID := uuid.New()
