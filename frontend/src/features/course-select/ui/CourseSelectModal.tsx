@@ -77,6 +77,15 @@ export const CourseSelectModal = ({
     return map;
   }, [selections]);
 
+  // Fixed (pinned) courses can't be deselected from this modal.
+  const fixedCourseIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const list of Object.values(selections)) {
+      for (const c of list) if (c.fixed) ids.add(c.id);
+    }
+    return ids;
+  }, [selections]);
+
   // Only courses offered in this semester are selectable from this modal.
   const semesterCourses = useMemo(
     () =>
@@ -90,6 +99,24 @@ export const CourseSelectModal = ({
     () => filterAvailableCourses(semesterCourses, filters, options),
     [semesterCourses, filters, options],
   );
+
+  const handleCourseSelect = (
+    isFixed: boolean,
+    course: Course,
+    selectedSemester?: SemesterNumber,
+  ) => {
+    if (isFixed) return;
+    if (selectedSemester !== undefined) {
+      removeCourse(selectedSemester, course.id);
+    } else {
+      addCourse(semester, {
+        id: course.id,
+        title: course.title,
+        category: course.category,
+        type: course.type,
+      });
+    }
+  };
 
   const content = (
     <>
@@ -131,6 +158,7 @@ export const CourseSelectModal = ({
                 course.id,
               ) as SemesterNumber;
               const isSelected = selectedSemester !== undefined;
+              const isFixed = fixedCourseIds.has(course.id);
               return (
                 <CourseCard
                   key={course.id}
@@ -140,15 +168,9 @@ export const CourseSelectModal = ({
                   type={course.type}
                   selected={isSelected}
                   selectedSemester={selectedSemester}
+                  fixed={isFixed}
                   onSelect={() =>
-                    selectedSemester !== undefined
-                      ? removeCourse(selectedSemester, course.id)
-                      : addCourse(semester, {
-                          id: course.id,
-                          title: course.title,
-                          category: course.category,
-                          type: course.type,
-                        })
+                    handleCourseSelect(isFixed, course, selectedSemester)
                   }
                 />
               );

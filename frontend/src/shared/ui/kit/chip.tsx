@@ -33,7 +33,7 @@ const chipVariants = cva(
       },
       active: {
         false: "border-border hover:text-fg-hover hover:border-border-hover",
-        true: "border-border-pressed text-fg-primary bg-accent-pale",
+        true: "border-transparent bg-accent text-accent-opposite [&>svg]:text-accent-opposite",
       },
     },
     defaultVariants: {

@@ -192,6 +192,7 @@ export const SemesterSection = ({
                       moveTargets={moveTargetsFor(course.id)}
                       conflict={conflictIds.has(course.id)}
                       generated={generatedIds.has(course.id)}
+                      fixed={course.fixed}
                       onRemove={() => removeCourse(index, course.id)}
                       onMove={(to) => moveCourse(index, to, course.id)}
                     />
@@ -215,6 +216,7 @@ export const SemesterSection = ({
                       moveTargets={moveTargetsFor(activeCourse.id)}
                       conflict={conflictIds.has(activeCourse.id)}
                       generated={generatedIds.has(activeCourse.id)}
+                      fixed={activeCourse.fixed}
                     />
                   </div>
                 ) : null}

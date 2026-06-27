@@ -17,6 +17,8 @@ export interface CourseDto {
   available_semesters: SemesterNumber[];
   allowed_cohorts?: AdmissionYear[];
   recommended_semester?: SemesterNumber | null;
+  // 0 = not fixed (normal flow); 1-8 = course is pinned to that semester
+  fixed_semester?: SemesterNumber | 0;
   workload: number;
   /** UUIDs of prerequisite courses. */
   prerequisites?: CoursePrerequisiteDto[];

@@ -12,13 +12,13 @@ import { Button, Checkbox, Chip, Label, Panel } from "@/shared/ui";
 
 import { ResetConfirmModal } from "./ResetConfirmModal";
 import {
-  SpecializationProgressCardSkeleton,
-  SummaryStatCardSkeleton,
-} from "./Skeletons";
-import {
   type SpecializationProgress,
   SpecializationProgressCard,
 } from "./SpecializationProgressCard";
+import {
+  SpecializationProgressCardSkeleton,
+  SummaryStatCardSkeleton,
+} from "./SummarySkeletons";
 import { type SummaryStat, SummaryStatCard } from "./SummaryStatCard";
 
 interface PlannerSummaryProps {

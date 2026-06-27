@@ -56,8 +56,10 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const handleProceed = () => {
     if (!selectedYear || !selectedMajorId) return;
     const yearChanged = Number(selectedYear) !== admissionYear;
+    const majorChanged = selectedMajorId !== majorId;
     setAdmissionYear(Number(selectedYear) as AdmissionYear);
-    if (yearChanged) reset();
+    // Switching year or major wipes all selections
+    if (yearChanged || majorChanged) reset(undefined, false);
     setMajorId(selectedMajorId);
     onOpenChange(false);
   };

@@ -24,12 +24,28 @@ const sameIds = (a: string[], b: string[]) => {
 
 const PlannerPage = () => {
   const { admissionYear, majorId } = useSettingsStore();
-  const { selections, validation } = usePlannerStore();
+  const { selections, validation, resyncSelections } = usePlannerStore();
   const {
     data: courses,
     isLoading,
     isError,
   } = useCoursesQuery(admissionYear, majorId);
+
+  // Reconcile placed courses against the catalog whenever it loads/changes:
+  // refresh display fields, recompute `fixed`, and pin fixed courses into their
+  // semester. Idempotent — no-ops when nothing changed.
+  useEffect(() => {
+    if (!courses) return;
+    resyncSelections(
+      courses.map((c) => ({
+        id: c.id,
+        title: c.title,
+        category: c.category,
+        type: c.type,
+        fixedSemester: c.fixedSemester ?? 0,
+      })),
+    );
+  }, [courses, resyncSelections]);
 
   // Re-validate the whole plan whenever the selection settles. Debounced so
   // rapid drag/drop edits collapse into one request; the initial value passes
@@ -62,14 +78,11 @@ const PlannerPage = () => {
     majorId,
   );
 
-  // Show the spinner from the moment the plan changes — while the debounce is
-  // still pending the request hasn't fired yet (isFetching is false), so also
-  // flag the gap where the live selection hasn't caught up to the debounced one.
+  // Show the spinner from the moment the plan changes
   const identifying =
     !sameIds(selectedCourseIds, debouncedCourseIds) || identifyQuery.isFetching;
 
   // First-load only: header + buttons stay live, the grid shows skeletons.
-  // keepPreviousData keeps isLoading false on later updates.
   const summaryLoading = identifyQuery.isLoading;
 
   // The request is already scoped to the major chosen in Settings, so the

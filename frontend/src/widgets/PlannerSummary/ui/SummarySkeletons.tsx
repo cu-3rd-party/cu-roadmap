@@ -5,7 +5,7 @@ export const SummaryStatCardSkeleton = ({ label }: { label: string }) => (
     <span className="text-center sm:text-start text-xs sm:text-sm text-fg-secondary font-semibold">
       {label}
     </span>
-    <Skeleton className="h-8 w-10" />
+    <Skeleton className="h-8 w-5" />
   </div>
 );
 

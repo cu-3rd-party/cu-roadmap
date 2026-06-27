@@ -14,6 +14,7 @@ interface SortableCourseCardProps {
   moveTargets: number[];
   conflict?: boolean;
   generated?: boolean;
+  fixed?: boolean;
   onRemove: () => void;
   onMove: (toSemester: number) => void;
 }

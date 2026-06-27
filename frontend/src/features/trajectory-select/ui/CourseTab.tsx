@@ -96,7 +96,7 @@ export const CourseTab = ({
 
     <div className="flex flex-col gap-1.5">
       <p className="text-xs sm:text-sm text-fg-secondary self-center">
-        Желаемый для прохождения семестр
+        Семестр, в котором курс хотелось бы пройти
       </p>
       <Select value={semester} onValueChange={onSemesterChange}>
         <SelectTrigger className="w-full">

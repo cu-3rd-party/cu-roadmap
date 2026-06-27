@@ -22,6 +22,8 @@ export interface Course {
   availableSemesters: SemesterNumber[];
   allowedCohorts?: number[];
   recommendedSemester?: SemesterNumber | null;
+  // 0 = not fixed (normal flow); 1-8 = course is pinned to that semester
+  fixedSemester?: SemesterNumber | 0;
   workload: number;
   prerequisites?: CoursePrerequisite[];
   corequisites?: UUID[];

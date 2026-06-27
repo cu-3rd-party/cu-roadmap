@@ -6,7 +6,7 @@ export const typeSlugToName: Record<CourseType, string> = {
   core: "Core",
   choice: "Choice",
   elective: "Факультативы",
-  other: "Other",
+  other: "Flex",
 };
 
 /* 

@@ -52,6 +52,9 @@ interface CourseCardProps {
   // planned variant only: blue highlight for courses just added by the generate
   // algorithm. A conflict (red) takes precedence over this.
   generated?: boolean;
+  // course is pinned to its semester: select/planned actions (deselect, move,
+  // delete) are disabled. Drag-reordering stays allowed (lives on the wrapper).
+  fixed?: boolean;
   onSelect?: () => void;
   onRemove?: () => void;
   onMove?: (toSemester: number) => void;
@@ -104,6 +107,7 @@ export const CourseCard = ({
   moveTargets,
   conflict = false,
   generated = false,
+  fixed = false,
   onSelect,
   onRemove,
   onMove,
@@ -116,12 +120,14 @@ export const CourseCard = ({
     return (
       <button
         type="button"
-        onClick={onSelect}
+        onClick={fixed ? undefined : onSelect}
+        disabled={fixed}
         aria-pressed={selected}
         className={cn(
           "relative flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-2 px-2 sm:py-4 sm:px-3 text-left transition-colors duration-(--std-duration) ",
           "cursor-pointer hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           selected && "border-accent/80",
+          fixed && "cursor-default hover:bg-background",
         )}
       >
         <div
@@ -157,8 +163,9 @@ export const CourseCard = ({
         type="button"
         onClick={openDetails}
         className={cn(
-          "flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
+          "relative flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
           "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+          selected && "border-accent/80",
         )}
       >
         <div
@@ -173,14 +180,23 @@ export const CourseCard = ({
           type={type}
           recommendedSemester={recommendedSemester}
           isMobile={isMobile}
-          className="mt-auto"
+          className={cn("mt-auto", selectedSemester !== undefined && "pr-8")}
         />
+        {selectedSemester !== undefined && (
+          <Counter
+            variant="primary"
+            size="xxs"
+            className="absolute right-2 bottom-2"
+          >
+            {selectedSemester}
+          </Counter>
+        )}
       </button>
     );
   }
 
   const showMoveMenu =
-    variant === "planned" && moveTargets && moveTargets.length > 0;
+    variant === "planned" && !fixed && moveTargets && moveTargets.length > 0;
 
   return (
     <div
@@ -246,11 +262,12 @@ export const CourseCard = ({
         </Button>
         {variant === "planned" && (
           <Button
-            variant="destructive"
+            variant={fixed ? "outline" : "destructive"}
             size="xs"
+            disabled={fixed}
             className={isMobile ? "flex-1" : undefined}
             icon={isMobile ? <Trash2 size={20} /> : undefined}
-            onClick={onRemove}
+            onClick={fixed ? undefined : onRemove}
           >
             {isMobile ? undefined : <span className="text-base">Удалить</span>}
           </Button>

@@ -30,6 +30,7 @@ export const normalizeCourse = (dto: CourseDto): Course => {
     availableSemesters: dto.available_semesters,
     allowedCohorts: dto.allowed_cohorts,
     recommendedSemester: dto.recommended_semester,
+    fixedSemester: dto.fixed_semester ?? 0,
     workload: dto.workload,
     prerequisites: dto.prerequisites
       ?.map((prereq) => normalizePrerequisite(prereq))
