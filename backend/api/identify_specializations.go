@@ -234,7 +234,89 @@ func identifySpecializations(c *gin.Context) {
 		return coveredCourses, canCoverCourses, cannotCoverCourses
 	}
 
+	appendUniqueCourseID := func(ids []uuid.UUID, seen map[uuid.UUID]bool, id uuid.UUID) []uuid.UUID {
+		if seen[id] {
+			return ids
+		}
+		seen[id] = true
+		return append(ids, id)
+	}
+
+	buildRequirementGroups := func(orderedIDs []uuid.UUID) []map[uuid.UUID]bool {
+		requirementGroups := []map[uuid.UUID]bool{}
+		analogGroupToGroupIndex := make(map[string]int)
+		for _, id := range orderedIDs {
+			course, ok := coursesByID[id]
+			if ok && course.AnalogGroup != "" {
+				if idx, exists := analogGroupToGroupIndex[course.AnalogGroup]; exists {
+					requirementGroups[idx][id] = true
+					continue
+				}
+			}
+
+			idx := len(requirementGroups)
+			if ok && course.AnalogGroup != "" {
+				analogGroupToGroupIndex[course.AnalogGroup] = idx
+			}
+			requirementGroups = append(requirementGroups, map[uuid.UUID]bool{id: true})
+		}
+		return requirementGroups
+	}
+
 	analysis := []gin.H{}
+	appendAnalysis := func(resultID, majorID uuid.UUID, title string, cohortYear int, orderedReqIDs []uuid.UUID) {
+		requirementGroups := buildRequirementGroups(orderedReqIDs)
+		if len(requirementGroups) == 0 {
+			return
+		}
+
+		covered := 0
+		canCover := 0
+		coveredCourses := make([]gin.H, 0)
+		canCoverCourses := make([]gin.H, 0)
+		cannotCoverCourses := make([]gin.H, 0)
+		for _, group := range requirementGroups {
+			groupCovered := false
+			groupCanCover := false
+			for id := range group {
+				if passedUUIDs[id] {
+					groupCovered = true
+				} else {
+					earliestSemester := earliestCompletionSemester(id, make(map[uuid.UUID]bool))
+					if earliestSemester <= 8 {
+						groupCanCover = true
+					}
+				}
+			}
+			if groupCovered {
+				covered++
+			}
+			if groupCanCover {
+				canCover++
+			}
+		}
+		for _, group := range requirementGroups {
+			groupCoveredCourses, groupCanCoverCourses, groupCannotCoverCourses := buildCourseStatusDetails(group)
+			coveredCourses = append(coveredCourses, groupCoveredCourses...)
+			canCoverCourses = append(canCoverCourses, groupCanCoverCourses...)
+			cannotCoverCourses = append(cannotCoverCourses, groupCannotCoverCourses...)
+		}
+
+		analysis = append(analysis, gin.H{
+			"id":                   resultID.String(),
+			"major_id":             majorID.String(),
+			"title":                title,
+			"cohort_year":          cohortYear,
+			"score":                float64(covered) / float64(len(requirementGroups)),
+			"covered_count":        covered,
+			"can_cover_count":      canCover,
+			"total_count":          len(requirementGroups),
+			"covered_courses":      coveredCourses,
+			"can_cover_courses":    canCoverCourses,
+			"cannot_cover_courses": cannotCoverCourses,
+		})
+	}
+
 	for _, m := range majors {
 		if majorIDFilter != nil && m.ID != *majorIDFilter {
 			continue
@@ -251,88 +333,31 @@ func identifySpecializations(c *gin.Context) {
 			continue
 		}
 
-		coreReqIDs := make(map[uuid.UUID]bool)
+		orderedCoreReqIDs := make([]uuid.UUID, 0)
+		coreReqIDsSeen := make(map[uuid.UUID]bool)
+		orderedChoiceReqIDs := make([]uuid.UUID, 0)
+		choiceReqIDsSeen := make(map[uuid.UUID]bool)
+		for _, r := range reqs {
+			switch r.RequirementType {
+			case enums.RequirementTypeMajorCore:
+				orderedCoreReqIDs = appendUniqueCourseID(orderedCoreReqIDs, coreReqIDsSeen, r.CourseID)
+			case enums.RequirementTypeMajorChoice:
+				orderedChoiceReqIDs = appendUniqueCourseID(orderedChoiceReqIDs, choiceReqIDsSeen, r.CourseID)
+			}
+		}
 
 		if len(specs) == 0 {
-			reqIDs := make(map[uuid.UUID]bool)
-			for _, r := range reqs {
-				if r.RequirementType == enums.RequirementTypeMajorChoice {
-					reqIDs[r.CourseID] = true
-				}
-			}
-			if len(reqIDs) == 0 {
-				continue
-			}
-
-			requirementGroups := []map[uuid.UUID]bool{}
-			analogGroupToGroupIndex := make(map[string]int)
-			for id := range reqIDs {
-				course, ok := coursesByID[id]
-				if ok && course.AnalogGroup != "" {
-					if idx, exists := analogGroupToGroupIndex[course.AnalogGroup]; exists {
-						requirementGroups[idx][id] = true
-						continue
-					}
-				}
-				idx := len(requirementGroups)
-				if ok && course.AnalogGroup != "" {
-					analogGroupToGroupIndex[course.AnalogGroup] = idx
-				}
-				requirementGroups = append(requirementGroups, map[uuid.UUID]bool{id: true})
-			}
-
-			covered := 0
-			canCover := 0
-			coveredCourses := make([]gin.H, 0)
-			canCoverCourses := make([]gin.H, 0)
-			cannotCoverCourses := make([]gin.H, 0)
-			for _, group := range requirementGroups {
-				groupCovered := false
-				groupCanCover := false
-				for id := range group {
-					if passedUUIDs[id] {
-						groupCovered = true
-					} else {
-						earliestSemester := earliestCompletionSemester(id, make(map[uuid.UUID]bool))
-						if earliestSemester <= 8 {
-							groupCanCover = true
-						}
-					}
-				}
-				if groupCovered {
-					covered++
-				}
-				if groupCanCover {
-					canCover++
-				}
-			}
-			for _, group := range requirementGroups {
-				groupCoveredCourses, groupCanCoverCourses, groupCannotCoverCourses := buildCourseStatusDetails(group)
-				coveredCourses = append(coveredCourses, groupCoveredCourses...)
-				canCoverCourses = append(canCoverCourses, groupCanCoverCourses...)
-				cannotCoverCourses = append(cannotCoverCourses, groupCannotCoverCourses...)
-			}
-			score := float64(covered) / float64(len(requirementGroups))
-			analysis = append(analysis, gin.H{
-				"id":                   m.ID.String(),
-				"major_id":             m.ID.String(),
-				"title":                m.Title,
-				"cohort_year":          m.CohortYear,
-				"score":                score,
-				"covered_count":        covered,
-				"can_cover_count":      canCover,
-				"total_count":          len(requirementGroups),
-				"covered_courses":      coveredCourses,
-				"can_cover_courses":    canCoverCourses,
-				"cannot_cover_courses": cannotCoverCourses,
-			})
+			orderedReqIDs := append([]uuid.UUID{}, orderedCoreReqIDs...)
+			orderedReqIDs = append(orderedReqIDs, orderedChoiceReqIDs...)
+			appendAnalysis(m.ID, m.ID, m.Title, m.CohortYear, orderedReqIDs)
 			continue
 		}
 
 		for _, spec := range specs {
-			specReqIDs := make(map[uuid.UUID]bool)
-			for id := range coreReqIDs {
-				specReqIDs[id] = true
+			orderedReqIDs := append([]uuid.UUID{}, orderedCoreReqIDs...)
+			reqIDsSeen := make(map[uuid.UUID]bool, len(orderedReqIDs))
+			for _, id := range orderedReqIDs {
+				reqIDsSeen[id] = true
 			}
 			for _, r := range reqs {
 				if r.RequirementType != enums.RequirementTypeMajorChoice {
@@ -341,79 +366,14 @@ func identifySpecializations(c *gin.Context) {
 				if len(r.Specializations) > 0 {
 					for _, sTitle := range r.Specializations {
 						if sTitle == spec.Title {
-							specReqIDs[r.CourseID] = true
+							orderedReqIDs = appendUniqueCourseID(orderedReqIDs, reqIDsSeen, r.CourseID)
 							break
 						}
 					}
 				}
 			}
 
-			if len(specReqIDs) == 0 {
-				continue
-			}
-
-			requirementGroups := []map[uuid.UUID]bool{}
-			analogGroupToGroupIndex := make(map[string]int)
-			for id := range specReqIDs {
-				course, ok := coursesByID[id]
-				if ok && course.AnalogGroup != "" {
-					if idx, exists := analogGroupToGroupIndex[course.AnalogGroup]; exists {
-						requirementGroups[idx][id] = true
-						continue
-					}
-				}
-				idx := len(requirementGroups)
-				if ok && course.AnalogGroup != "" {
-					analogGroupToGroupIndex[course.AnalogGroup] = idx
-				}
-				requirementGroups = append(requirementGroups, map[uuid.UUID]bool{id: true})
-			}
-
-			covered := 0
-			canCover := 0
-			coveredCourses := make([]gin.H, 0)
-			canCoverCourses := make([]gin.H, 0)
-			cannotCoverCourses := make([]gin.H, 0)
-			for _, group := range requirementGroups {
-				groupCovered := false
-				groupCanCover := false
-				for id := range group {
-					if passedUUIDs[id] {
-						groupCovered = true
-					} else {
-						earliestSemester := earliestCompletionSemester(id, make(map[uuid.UUID]bool))
-						if earliestSemester <= 8 {
-							groupCanCover = true
-						}
-					}
-				}
-				if groupCovered {
-					covered++
-				}
-				if groupCanCover {
-					canCover++
-				}
-			}
-			for _, group := range requirementGroups {
-				groupCoveredCourses, groupCanCoverCourses, groupCannotCoverCourses := buildCourseStatusDetails(group)
-				coveredCourses = append(coveredCourses, groupCoveredCourses...)
-				canCoverCourses = append(canCoverCourses, groupCanCoverCourses...)
-				cannotCoverCourses = append(cannotCoverCourses, groupCannotCoverCourses...)
-			}
-			score := float64(covered) / float64(len(requirementGroups))
-			analysis = append(analysis, gin.H{
-				"id":                   spec.ID.String(),
-				"major_id":             m.ID.String(),
-				"title":                spec.Title,
-				"cohort_year":          m.CohortYear,
-				"score":                score,
-				"covered_count":        covered,
-				"can_cover_count":      canCover,
-				"total_count":          len(requirementGroups),
-				"covered_courses":      coveredCourses,
-				"can_cover_courses":    canCoverCourses,
-				"cannot_cover_courses": cannotCoverCourses,
-			})
+			appendAnalysis(spec.ID, m.ID, spec.Title, m.CohortYear, orderedReqIDs)
 		}
 	}
 

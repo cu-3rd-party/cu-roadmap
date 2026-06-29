@@ -481,6 +481,11 @@ paths:
                       covered_count: 0
                       can_cover_count: 16
                       total_count: 16
+                      covered_courses: []
+                      can_cover_courses:
+                        - course_id: 6aad3927-b012-458c-a0ec-3ad142fa8ae2
+                          title: Введение в ИИ
+                      cannot_cover_courses: []
         '400':
           $ref: '#/components/responses/BadRequestError'
         '500':
@@ -539,6 +544,11 @@ paths:
                       covered_count: 0
                       can_cover_count: 16
                       total_count: 16
+                      covered_courses: []
+                      can_cover_courses:
+                        - course_id: 6aad3927-b012-458c-a0ec-3ad142fa8ae2
+                          title: Введение в ИИ
+                      cannot_cover_courses: []
         '400':
           $ref: '#/components/responses/BadRequestError'
         '500':
@@ -975,6 +985,30 @@ components:
           type: integer
         total_count:
           type: integer
+        covered_courses:
+          type: array
+          description: курсы этой специализации, уже закрытые студентом/в текущем плане
+          items:
+            $ref: '#/components/schemas/CourseStatusResult'
+        can_cover_courses:
+          type: array
+          description: курсы этой специализации, которые еще можно закрыть до конца обучения
+          items:
+            $ref: '#/components/schemas/CourseStatusResult'
+        cannot_cover_courses:
+          type: array
+          description: курсы этой специализации, которые уже нельзя успеть закрыть
+          items:
+            $ref: '#/components/schemas/CourseStatusResult'
+
+    CourseStatusResult:
+      type: object
+      properties:
+        course_id:
+          type: string
+          format: uuid
+        title:
+          type: string
 
     IdentifyMajorRequest:
       description: запрос может быть или массивом UUID пройденных курсов, или объектом с текущим семестром и необязательным фильтром по мейджору
