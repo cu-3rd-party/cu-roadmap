@@ -33,6 +33,9 @@ describe("normalizeSpecializationMatch", () => {
       covered_count: 5,
       can_cover_count: 3,
       total_count: 10,
+      covered_courses: [{ course_id: "c1", title: "Algorithms" }],
+      can_cover_courses: [{ course_id: "c2", title: "Databases" }],
+      cannot_cover_courses: [{ course_id: "c3", title: "Compilers" }],
     };
 
     expect(normalizeSpecializationMatch(dto)).toEqual({
@@ -44,6 +47,9 @@ describe("normalizeSpecializationMatch", () => {
       coveredCount: 5,
       canCoverCount: 3,
       totalCount: 10,
+      coveredCourses: [{ courseId: "c1", title: "Algorithms" }],
+      canCoverCourses: [{ courseId: "c2", title: "Databases" }],
+      cannotCoverCourses: [{ courseId: "c3", title: "Compilers" }],
     });
   });
 });

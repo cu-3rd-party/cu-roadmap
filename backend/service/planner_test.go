@@ -13,6 +13,17 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 )
 
+func roadmapToValidationInput(roadmap []map[string]interface{}) []map[string]interface{} {
+	validationInput := make([]map[string]interface{}, 0, len(roadmap))
+	for _, sem := range roadmap {
+		validationInput = append(validationInput, map[string]interface{}{
+			"semester":   sem["semester"],
+			"course_ids": sem["course_ids"],
+		})
+	}
+	return validationInput
+}
+
 type plannerFactory struct {
 	name string
 	kind PlannerKind
@@ -199,6 +210,139 @@ func TestGenerateRoadmapBackfillsForcedFundamentalsCourseIntoPastSemester(t *tes
 		}
 
 		assert.Equal(t, 2, foundSemester, "forced fundamentals course should be backfilled into its actual past semester")
+	})
+}
+
+func TestGenerateRoadmapProducesValidatorCleanPlanForMandatorySemesters(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s := store.NewMemoryStore()
+		s.Init("admin")
+		defer s.Close()
+
+		major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+		s.CreateMajor(major)
+		majorID := major.ID
+
+		mandatoryCourses := []interfaces.CourseData{
+			{ID: uuid.New(), Title: "Statehood", AvailableSemesters: []int{1}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: Statehood"},
+			{ID: uuid.New(), Title: "English 1", AvailableSemesters: []int{1}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: English 1"},
+			{ID: uuid.New(), Title: "English 2", AvailableSemesters: []int{2}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: English 2"},
+			{ID: uuid.New(), Title: "English 3", AvailableSemesters: []int{3}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: English 3"},
+			{ID: uuid.New(), Title: "English 4", AvailableSemesters: []int{4}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: English 4"},
+			{ID: uuid.New(), Title: "PE 1", AvailableSemesters: []int{1}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: PE 1"},
+			{ID: uuid.New(), Title: "PE 2", AvailableSemesters: []int{2}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: PE 2"},
+			{ID: uuid.New(), Title: "PE 3", AvailableSemesters: []int{3}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: PE 3"},
+			{ID: uuid.New(), Title: "PE 4", AvailableSemesters: []int{4}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: PE 4"},
+			{ID: uuid.New(), Title: "BJD", AvailableSemesters: []int{2}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: BJD"},
+			{ID: uuid.New(), Title: "History", AvailableSemesters: []int{4}, Workload: 1.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory, AnalogGroup: "ОБЯЗ: History"},
+		}
+
+		for _, course := range mandatoryCourses {
+			s.CreateCourse(course)
+		}
+
+		// The planner requires at least one explicit major requirement before global injections kick in.
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			ID:              uuid.New(),
+			MajorID:         majorID,
+			CourseID:        mandatoryCourses[0].ID,
+			RequirementType: enums.RequirementTypeMajorCore,
+		})
+
+		stemCourses := []interfaces.CourseData{
+			{ID: uuid.New(), Title: "Science Studio", AvailableSemesters: []int{1, 2, 3, 4}, Workload: 1.0, Category: enums.CourseCategorySTEM, AnalogGroup: "Научная студия"},
+			{ID: uuid.New(), Title: "Business Studio", AvailableSemesters: []int{1, 2, 3, 4}, Workload: 1.0, Category: enums.CourseCategorySTEM, AnalogGroup: "Бизнес студия"},
+			{ID: uuid.New(), Title: "STEM 2", AvailableSemesters: []int{2}, Workload: 1.0, Category: enums.CourseCategorySTEM},
+			{ID: uuid.New(), Title: "STEM 3", AvailableSemesters: []int{3}, Workload: 1.0, Category: enums.CourseCategorySTEM},
+			{ID: uuid.New(), Title: "STEM 4", AvailableSemesters: []int{4}, Workload: 1.0, Category: enums.CourseCategorySTEM},
+		}
+		for _, course := range stemCourses {
+			s.CreateCourse(course)
+		}
+
+		softCourses := []interfaces.CourseData{
+			{ID: uuid.New(), Title: "Soft 2", AvailableSemesters: []int{2}, Workload: 1.0, Category: enums.CourseCategorySoft},
+			{ID: uuid.New(), Title: "Soft 3", AvailableSemesters: []int{3}, Workload: 1.0, Category: enums.CourseCategorySoft},
+			{ID: uuid.New(), Title: "Soft 4", AvailableSemesters: []int{4}, Workload: 1.0, Category: enums.CourseCategorySoft},
+		}
+		for _, course := range softCourses {
+			s.CreateCourse(course)
+		}
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmapRaw, err := planner.GenerateRoadmap(nil, nil, majorID, nil, 5, 20.0, 0)
+		assert.NoError(t, err)
+
+		roadmap := roadmapRaw.([]map[string]interface{})
+		validator, err := CreateValidatorFromStore(s)
+		assert.NoError(t, err)
+
+		results := validator.ValidateFullRoadmap(roadmapToValidationInput(roadmap), make(map[uuid.UUID]bool), 20.0, nil)
+		assert.NotEmpty(t, results)
+		for _, result := range results {
+			assert.True(t, result["valid"].(bool), "semester %v should be valid, got messages %v", result["semester"], result["messages"])
+			assert.Empty(t, result["messages"])
+		}
+
+		coursesBySemester := make(map[int][]string)
+		for _, sem := range roadmap {
+			coursesBySemester[sem["semester"].(int)] = sem["course_ids"].([]string)
+		}
+		assert.Contains(t, coursesBySemester[1], mandatoryCourses[1].ID.String())
+		assert.Contains(t, coursesBySemester[2], mandatoryCourses[2].ID.String())
+		assert.Contains(t, coursesBySemester[3], mandatoryCourses[3].ID.String())
+		assert.Contains(t, coursesBySemester[4], mandatoryCourses[4].ID.String())
+		assert.Contains(t, coursesBySemester[4], mandatoryCourses[10].ID.String())
+	})
+}
+
+func TestGenerateRoadmapPrioritizesCommonMandatoryCoursesBeforeProfileCourses(t *testing.T) {
+	runRoadmapPlannerTests(t, func(t *testing.T, factory plannerFactory) {
+		s := store.NewMemoryStore()
+		s.Init("admin")
+		defer s.Close()
+
+		major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
+		s.CreateMajor(major)
+
+		commonA := interfaces.CourseData{ID: uuid.New(), Title: "Common Mandatory A", AvailableSemesters: []int{1, 2}, Workload: 3.0, Category: enums.CourseCategoryFundamentals}
+		commonB := interfaces.CourseData{ID: uuid.New(), Title: "Common Mandatory B", AvailableSemesters: []int{1, 2}, Workload: 3.0, Category: enums.CourseCategoryFundamentals}
+		profileA := interfaces.CourseData{ID: uuid.New(), Title: "Profile A", AvailableSemesters: []int{1, 2, 3}, Workload: 4.0, Category: enums.CourseCategorySWE}
+		profileB := interfaces.CourseData{ID: uuid.New(), Title: "Profile B", AvailableSemesters: []int{1, 2, 3}, Workload: 4.0, Category: enums.CourseCategorySWE}
+		unlock1 := interfaces.CourseData{ID: uuid.New(), Title: "Unlock 1", AvailableSemesters: []int{2, 3}, Workload: 2.0, Category: enums.CourseCategorySWE}
+		unlock2 := interfaces.CourseData{ID: uuid.New(), Title: "Unlock 2", AvailableSemesters: []int{2, 3}, Workload: 2.0, Category: enums.CourseCategorySWE}
+
+		for _, course := range []interfaces.CourseData{commonA, commonB, profileA, profileB, unlock1, unlock2} {
+			s.CreateCourse(course)
+		}
+
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: commonA.ID, RequirementType: enums.RequirementTypeUniversity})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: commonB.ID, RequirementType: enums.RequirementTypeUniversity})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: profileA.ID, RequirementType: enums.RequirementTypeMajorCore})
+		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: profileB.ID, RequirementType: enums.RequirementTypeMajorCore})
+
+		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: unlock1.ID, RequiredCourseID: profileA.ID, DependencyType: enums.DependencyTypePrerequisite})
+		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: unlock2.ID, RequiredCourseID: profileB.ID, DependencyType: enums.DependencyTypePrerequisite})
+
+		planner := createPlannerForTest(t, factory.kind, s)
+		roadmapRaw, err := planner.GenerateRoadmap(nil, nil, major.ID, nil, 1, 6.0, 0)
+		assert.NoError(t, err)
+
+		roadmap := roadmapRaw.([]map[string]interface{})
+		assert.NotEmpty(t, roadmap)
+
+		semesterOne := roadmap[0]["course_ids"].([]string)
+		assert.Contains(t, semesterOne, commonA.ID.String())
+		assert.Contains(t, semesterOne, commonB.ID.String())
+		assert.NotContains(t, semesterOne, profileA.ID.String())
+		assert.NotContains(t, semesterOne, profileB.ID.String())
+
+		laterSemesters := make([]string, 0)
+		for _, sem := range roadmap[1:] {
+			laterSemesters = append(laterSemesters, sem["course_ids"].([]string)...)
+		}
+		assert.Contains(t, laterSemesters, profileA.ID.String())
+		assert.Contains(t, laterSemesters, profileB.ID.String())
 	})
 }
 

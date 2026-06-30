@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,6 +17,7 @@ func TestNormalizeSheetTitle(t *testing.T) {
 		{"\U0001f4d6 Введение в Python", "Введение в Python"},
 		{"\u26a1 Алгоритмы", "Алгоритмы"},
 		{"\U0001f534 Линал", "Линал"},
+		{"🔴⚫️ Математический анализ", "Математический анализ"},
 		{"Обычный курс", "Обычный курс"},
 		{"  С пробелами  ", "С пробелами"},
 		{"Программирование C++", "Программирование С++"},
@@ -576,6 +578,148 @@ func TestSyncFromSheetDataWithEmojiPrefix(t *testing.T) {
 
 	deps, _ := s.GetCourseDependencies()
 	assert.Len(t, deps, 1)
+}
+
+func TestSyncFromSheetDataResolvesHumanReadableDependencyAliases(t *testing.T) {
+	s := NewMemoryStore()
+	s.Init("admin")
+	defer s.Close()
+
+	sheetsData := map[string][]map[string]string{
+		"2026 Разработка": {
+			{
+				"Название курса":  "🔵 Разработка на Python",
+				"Тип курса":       "mandatory",
+				"Осень / весна":   "осень",
+				"Поток":           "2026-2030",
+				"Группа аналогов": "Python family",
+			},
+			{
+				"Название курса":  "🔴 Разработка на Python",
+				"Тип курса":       "mandatory",
+				"Осень / весна":   "осень",
+				"Поток":           "2026-2030",
+				"Группа аналогов": "Python family",
+			},
+			{
+				"Название курса":  "⚫️ Разработка на Python",
+				"Тип курса":       "mandatory",
+				"Осень / весна":   "осень",
+				"Поток":           "2026-2030",
+				"Группа аналогов": "Python family",
+			},
+			{
+				"Название курса": "🔵🔴⚫️ Введение в статистику",
+				"Тип курса":      "mandatory",
+				"Осень / весна":  "осень",
+				"Поток":          "2026-2030",
+			},
+			{
+				"Название курса": "Введение в алгоритмы и структуры данных",
+				"Тип курса":      "mandatory",
+				"Осень / весна":  "осень",
+				"Поток":          "2026-2030",
+				"Пререквизиты":   "🔵 Разработка на Python",
+			},
+			{
+				"Название курса": "Продуктовая аналитика",
+				"Тип курса":      "mandatory",
+				"Осень / весна":  "осень",
+				"Поток":          "2026-2030",
+				"Пререквизиты":   "Основы статистики, Язык программирования Python",
+			},
+			{
+				"Название курса": "Глубокое обучение",
+				"Тип курса":      "mandatory",
+				"Осень / весна":  "осень",
+				"Поток":          "2026-2030",
+			},
+			{
+				"Название курса": "Временные ряды",
+				"Тип курса":      "mandatory",
+				"Осень / весна":  "осень",
+				"Поток":          "2026-2030",
+				"Кореквизиты":    "Глубокое обучение (можно взять и кореквизитом)",
+			},
+		},
+	}
+
+	sheetMapping := map[string]SheetMajorMapping{
+		"2026 Разработка": {"Разработка", "Tech", enums.CourseCategorySWE},
+	}
+
+	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
+	assert.NoError(t, err)
+	assert.Equal(t, 8, result.Courses)
+
+	courses, err := s.GetAllCourses()
+	assert.NoError(t, err)
+
+	idsByTitle := make(map[string]uuid.UUID)
+	lookupCourses := make(map[string]interfaces.CourseData, len(courses))
+	for id, course := range courses {
+		idsByTitle[course.Title] = id
+		lookupCourses[id.String()] = course
+	}
+
+	lookup := buildCourseReferenceLookup(lookupCourses)
+	assert.Len(t, lookup.aliasByYear[2026]["разработка на python"], 3)
+	targets, ok := resolveCourseReferenceTargets(lookup, "Язык программирования Python", 2026)
+	assert.True(t, ok)
+	assert.Len(t, targets, 3)
+
+	deps, err := s.GetCourseDependencies()
+	assert.NoError(t, err)
+	assert.Len(t, deps, 6)
+
+	depSet := make(map[string]bool)
+	altGroupByPair := make(map[string]int)
+	for _, dep := range deps {
+		key := dep.CourseID.String() + "|" + dep.RequiredCourseID.String() + "|" + string(dep.DependencyType)
+		depSet[key] = true
+		altGroupByPair[key] = dep.AlternativeGroup
+	}
+
+	assert.True(t, depSet[idsByTitle["Введение в алгоритмы и структуры данных"].String()+"|"+idsByTitle["🔵 Разработка на Python"].String()+"|"+string(enums.DependencyTypePrerequisite)])
+	pythonBlueKey := idsByTitle["Продуктовая аналитика"].String() + "|" + idsByTitle["🔵 Разработка на Python"].String() + "|" + string(enums.DependencyTypePrerequisite)
+	pythonRedKey := idsByTitle["Продуктовая аналитика"].String() + "|" + idsByTitle["🔴 Разработка на Python"].String() + "|" + string(enums.DependencyTypePrerequisite)
+	pythonBlackKey := idsByTitle["Продуктовая аналитика"].String() + "|" + idsByTitle["⚫️ Разработка на Python"].String() + "|" + string(enums.DependencyTypePrerequisite)
+	statsKey := idsByTitle["Продуктовая аналитика"].String() + "|" + idsByTitle["🔵🔴⚫️ Введение в статистику"].String() + "|" + string(enums.DependencyTypePrerequisite)
+	assert.True(t, depSet[pythonBlueKey])
+	assert.True(t, depSet[pythonRedKey])
+	assert.True(t, depSet[pythonBlackKey])
+	assert.Equal(t, altGroupByPair[pythonBlueKey], altGroupByPair[pythonRedKey])
+	assert.Equal(t, altGroupByPair[pythonRedKey], altGroupByPair[pythonBlackKey])
+	assert.True(t, depSet[statsKey])
+	assert.True(t, depSet[idsByTitle["Временные ряды"].String()+"|"+idsByTitle["Глубокое обучение"].String()+"|"+string(enums.DependencyTypeCorequisite)])
+}
+
+func TestResolveCourseReferenceTargetsReturnsAnalogAlternativesForHumanAlias(t *testing.T) {
+	courses := map[string]interfaces.CourseData{
+		"blue|2026": {
+			ID:             uuid.New(),
+			Title:          "🔵 Разработка на Python",
+			AnalogGroup:    "Python family",
+			AllowedCohorts: []int{2026},
+		},
+		"red|2026": {
+			ID:             uuid.New(),
+			Title:          "🔴 Разработка на Python",
+			AnalogGroup:    "Python family",
+			AllowedCohorts: []int{2026},
+		},
+		"black|2026": {
+			ID:             uuid.New(),
+			Title:          "⚫️ Разработка на Python",
+			AnalogGroup:    "Python family",
+			AllowedCohorts: []int{2026},
+		},
+	}
+
+	lookup := buildCourseReferenceLookup(courses)
+	targets, ok := resolveCourseReferenceTargets(lookup, "Язык программирования Python", 2026)
+	assert.True(t, ok)
+	assert.Len(t, targets, 3)
 }
 
 func TestSyncFromSheetDataEmptyCourseTitleSkipped(t *testing.T) {

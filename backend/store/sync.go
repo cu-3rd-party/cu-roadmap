@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -320,7 +321,17 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 		}
 	}
 
+	lookupCoursesByID, err := s.GetAllCourses()
+	if err != nil {
+		return SyncResult{}, fmt.Errorf("get courses for dependency lookup: %w", err)
+	}
+	lookupCourseMap := make(map[string]interfaces.CourseData, len(lookupCoursesByID))
+	for id, course := range lookupCoursesByID {
+		lookupCourseMap[id.String()] = course
+	}
+
 	prereqGroupCounter := make(map[uuid.UUID]int) // per-course group counter
+	courseLookup := buildCourseReferenceLookup(lookupCourseMap)
 
 	for _, entry := range allRows {
 		rawPrereqs := getFirst(
@@ -333,22 +344,16 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 		for _, group := range SplitPrerequisiteGroups(rawPrereqs) {
 			var resolvedIDs []uuid.UUID
 			for _, prereqTitle := range group {
-				normTitle := prereqTitle
-				targetKey := normTitle + "|" + strconv.Itoa(entry.SheetYear)
-				target, exists := courseMap[targetKey]
+				targets, exists := resolveCourseReferenceTargets(courseLookup, prereqTitle, entry.SheetYear)
 				if !exists {
-					targetKeyZero := normTitle + "|0"
-					target, exists = courseMap[targetKeyZero]
-					if !exists {
-						target, exists = courseMap[prereqTitle+"|"+strconv.Itoa(entry.SheetYear)]
-						if !exists {
-							fmt.Printf("MISSING PREREQUISITE: course '%s' requires '%s', but it wasn't found\n", entry.Course.Title, prereqTitle)
-							continue
-						}
-					}
+					fmt.Printf("MISSING PREREQUISITE: course '%s' requires '%s', but it wasn't found\n", entry.Course.Title, prereqTitle)
+					continue
 				}
-				resolvedIDs = append(resolvedIDs, target.ID)
+				for _, target := range targets {
+					resolvedIDs = append(resolvedIDs, target.ID)
+				}
 			}
+			resolvedIDs = dedupeUUIDs(resolvedIDs)
 			if len(resolvedIDs) == 0 {
 				continue
 			}
@@ -388,18 +393,10 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 		)
 
 		for _, coreqTitle := range SplitSheetTitles(coreqsStr) {
-			targetKey := coreqTitle + "|" + strconv.Itoa(entry.SheetYear)
-			target, exists := courseMap[targetKey]
+			target, exists := resolveCourseReference(courseLookup, coreqTitle, entry.SheetYear)
 			if !exists {
-				targetKeyZero := coreqTitle + "|0"
-				target, exists = courseMap[targetKeyZero]
-				if !exists {
-					target, exists = courseMap[coreqTitle]
-					if !exists {
-						fmt.Printf("MISSING COREQUISITE: course '%s' requires '%s', but it wasn't found\n", entry.Course.Title, coreqTitle)
-						continue
-					}
-				}
+				fmt.Printf("MISSING COREQUISITE: course '%s' requires '%s', but it wasn't found\n", entry.Course.Title, coreqTitle)
+				continue
 			}
 			depID := uuid.New()
 			depKey := entry.Course.ID.String() + "\x00" + target.ID.String() + "\x00" + string(enums.DependencyTypeCorequisite)
@@ -606,13 +603,360 @@ func syncWithSheets(s interfaces.StoreBase) error {
 	return nil
 }
 
-var NormalizeSheetTileRegexp = regexp.MustCompile("^[\u2600-\u27BF\U0001F300-\U0001F64F\U0001F680-\U0001F6FF\U0001F534\U0001F535\u26AB]\\s*")
-
 func NormalizeSheetTitle(raw string) string {
-	s := strings.TrimSpace(NormalizeSheetTileRegexp.ReplaceAllString(raw, ""))
+	s := strings.TrimSpace(trimLeadingCourseMarkers(strings.ReplaceAll(raw, "\u00a0", " ")))
+	s = strings.Join(strings.Fields(s), " ")
 	// Prefer Cyrillic lookalikes for a few common gremlins.
 	s = strings.ReplaceAll(s, "C++", "С++")
 	return s
+}
+
+type courseReferenceLookup struct {
+	exactByYear map[int]map[string][]interfaces.CourseData
+	aliasByYear map[int]map[string][]interfaces.CourseData
+	exactGlobal map[string][]interfaces.CourseData
+	aliasGlobal map[string][]interfaces.CourseData
+	allCourses  []interfaces.CourseData
+}
+
+var titleParentheticalRegexp = regexp.MustCompile(`\([^)]*\)`)
+
+var courseReferenceCanonicalReplacer = strings.NewReplacer(
+	"\u00a0", " ",
+	"ё", "е",
+	"Ё", "Е",
+	"&", " и ",
+	"/", " / ",
+	"-", " ",
+	"–", " ",
+	"—", " ",
+	"−", " ",
+	",", " ",
+	";", " ",
+	":", " ",
+	".", " ",
+	"«", " ",
+	"»", " ",
+	"\"", " ",
+	"'", " ",
+	"`", " ",
+)
+
+var humanReadableTitleAliases = map[string][]string{
+	"язык программирования python":                     {"разработка на python"},
+	"основы статистики":                                {"введение в статистику"},
+	"алгоритмы и структуры данных":                     {"введение в алгоритмы и структуры данных", "введение в алгоритмы и сд"},
+	"математическая статистика":                        {"теория вероятностей и математическая статистика"},
+	"теория веростяностей и математическая статистика": {"теория вероятностей и математическая статистика"},
+	"введение в искусственный интеллект":               {"введение в ии"},
+	"введение в ии":                                    {"введение в искусственный интеллект"},
+	"машинное обучение":                                {"машинное обучение (ml)"},
+}
+
+func trimLeadingCourseMarkers(raw string) string {
+	return strings.TrimLeftFunc(raw, func(r rune) bool {
+		return unicode.IsSpace(r) || r == '\uFE0F' || unicode.In(r, unicode.So, unicode.Sk, unicode.Sm)
+	})
+}
+
+func canonicalizeCourseReferenceTitle(raw string) string {
+	raw = NormalizeSheetTitle(raw)
+	raw = courseReferenceCanonicalReplacer.Replace(raw)
+	raw = strings.ToLower(raw)
+	raw = strings.Join(strings.Fields(raw), " ")
+	return raw
+}
+
+func exactCourseReferenceTitle(raw string) string {
+	raw = strings.ReplaceAll(raw, "\u00a0", " ")
+	raw = strings.ReplaceAll(raw, "\uFE0F", "")
+	raw = strings.ReplaceAll(raw, "C++", "С++")
+	raw = strings.ReplaceAll(raw, "ё", "е")
+	raw = strings.ReplaceAll(raw, "Ё", "Е")
+	raw = strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(raw)), " "))
+	return raw
+}
+
+func titleAliasVariants(raw string) []string {
+	seen := make(map[string]struct{})
+	queue := []string{
+		canonicalizeCourseReferenceTitle(raw),
+		canonicalizeCourseReferenceTitle(titleParentheticalRegexp.ReplaceAllString(raw, " ")),
+	}
+
+	for i := 0; i < len(queue); i++ {
+		candidate := strings.TrimSpace(queue[i])
+		if candidate == "" {
+			continue
+		}
+		if _, ok := seen[candidate]; ok {
+			continue
+		}
+		seen[candidate] = struct{}{}
+		for _, alias := range humanReadableTitleAliases[candidate] {
+			queue = append(queue, canonicalizeCourseReferenceTitle(alias))
+		}
+		if strings.Contains(candidate, "глубокое обучение") {
+			queue = append(queue, "глубокое обучение")
+		}
+	}
+
+	variants := make([]string, 0, len(seen))
+	for candidate := range seen {
+		variants = append(variants, candidate)
+	}
+	sort.Strings(variants)
+	return variants
+}
+
+func buildCourseReferenceLookup(courseMap map[string]interfaces.CourseData) courseReferenceLookup {
+	lookup := courseReferenceLookup{
+		exactByYear: make(map[int]map[string][]interfaces.CourseData),
+		aliasByYear: make(map[int]map[string][]interfaces.CourseData),
+		exactGlobal: make(map[string][]interfaces.CourseData),
+		aliasGlobal: make(map[string][]interfaces.CourseData),
+	}
+
+	register := func(year int, target map[int]map[string][]interfaces.CourseData, global map[string][]interfaces.CourseData, key string, course interfaces.CourseData) {
+		if key == "" {
+			return
+		}
+		if target[year] == nil {
+			target[year] = make(map[string][]interfaces.CourseData)
+		}
+		target[year][key] = appendUniqueCourseRef(target[year][key], course)
+		global[key] = appendUniqueCourseRef(global[key], course)
+	}
+
+	for _, course := range courseMap {
+		lookup.allCourses = appendUniqueCourseRef(lookup.allCourses, course)
+		exactKey := exactCourseReferenceTitle(course.Title)
+		aliases := titleAliasVariants(course.Title)
+		if len(course.AllowedCohorts) == 0 {
+			register(0, lookup.exactByYear, lookup.exactGlobal, exactKey, course)
+			for _, alias := range aliases {
+				register(0, lookup.aliasByYear, lookup.aliasGlobal, alias, course)
+			}
+			continue
+		}
+		for _, year := range course.AllowedCohorts {
+			register(year, lookup.exactByYear, lookup.exactGlobal, exactKey, course)
+			for _, alias := range aliases {
+				register(year, lookup.aliasByYear, lookup.aliasGlobal, alias, course)
+			}
+		}
+	}
+
+	return lookup
+}
+
+func appendUniqueCourseRef(list []interfaces.CourseData, course interfaces.CourseData) []interfaces.CourseData {
+	for _, existing := range list {
+		if existing.ID == course.ID {
+			return list
+		}
+	}
+	return append(list, course)
+}
+
+func resolveCourseReferenceTargets(lookup courseReferenceLookup, rawTitle string, year int) ([]interfaces.CourseData, bool) {
+	exactVariants := []string{exactCourseReferenceTitle(rawTitle)}
+	for _, variant := range exactVariants {
+		if targets, ok := resolveCourseReferenceCandidates(lookup.exactByYear[year][variant], rawTitle, false); ok {
+			return targets, true
+		}
+	}
+	for _, variant := range exactVariants {
+		if targets, ok := resolveCourseReferenceCandidates(lookup.exactByYear[0][variant], rawTitle, false); ok {
+			return targets, true
+		}
+	}
+	for _, variant := range exactVariants {
+		if targets, ok := resolveCourseReferenceCandidates(lookup.exactGlobal[variant], rawTitle, false); ok {
+			return targets, true
+		}
+	}
+
+	variants := titleAliasVariants(rawTitle)
+	for _, variant := range variants {
+		if targets, ok := resolveCourseReferenceCandidates(lookup.aliasByYear[year][variant], rawTitle, true); ok {
+			return targets, true
+		}
+	}
+	for _, variant := range variants {
+		if targets, ok := resolveCourseReferenceCandidates(lookup.aliasByYear[0][variant], rawTitle, true); ok {
+			return targets, true
+		}
+	}
+	for _, variant := range variants {
+		if targets, ok := resolveCourseReferenceCandidates(lookup.aliasGlobal[variant], rawTitle, true); ok {
+			return targets, true
+		}
+	}
+	if targets, ok := resolveCourseReferenceByScan(lookup.allCourses, rawTitle, year); ok {
+		return targets, true
+	}
+	return nil, false
+}
+
+func resolveCourseReferenceByScan(courses []interfaces.CourseData, rawTitle string, year int) ([]interfaces.CourseData, bool) {
+	exactKey := exactCourseReferenceTitle(rawTitle)
+	aliasVariants := titleAliasVariants(rawTitle)
+	aliasSet := make(map[string]struct{}, len(aliasVariants))
+	for _, variant := range aliasVariants {
+		aliasSet[variant] = struct{}{}
+	}
+
+	exactMatches := make([]interfaces.CourseData, 0)
+	aliasMatches := make([]interfaces.CourseData, 0)
+	for _, course := range courses {
+		if year != 0 && len(course.AllowedCohorts) > 0 && !containsInt(course.AllowedCohorts, year) {
+			continue
+		}
+		if exactCourseReferenceTitle(course.Title) == exactKey {
+			exactMatches = appendUniqueCourseRef(exactMatches, course)
+			continue
+		}
+		for _, variant := range titleAliasVariants(course.Title) {
+			if _, ok := aliasSet[variant]; ok {
+				aliasMatches = appendUniqueCourseRef(aliasMatches, course)
+				break
+			}
+		}
+	}
+
+	if targets, ok := resolveCourseReferenceCandidates(exactMatches, rawTitle, false); ok {
+		return targets, true
+	}
+	if targets, ok := resolveCourseReferenceCandidates(aliasMatches, rawTitle, true); ok {
+		return targets, true
+	}
+	return nil, false
+}
+
+func containsInt(values []int, target int) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
+}
+
+func resolveCourseReference(lookup courseReferenceLookup, rawTitle string, year int) (interfaces.CourseData, bool) {
+	targets, ok := resolveCourseReferenceTargets(lookup, rawTitle, year)
+	if !ok || len(targets) != 1 {
+		return interfaces.CourseData{}, false
+	}
+	return targets[0], true
+}
+
+func resolveCourseReferenceCandidates(candidates []interfaces.CourseData, rawTitle string, allowAnalogAlternatives bool) ([]interfaces.CourseData, bool) {
+	if len(candidates) == 0 {
+		return nil, false
+	}
+	if len(candidates) == 1 {
+		return candidates, true
+	}
+
+	exactKey := exactCourseReferenceTitle(rawTitle)
+	for _, candidate := range candidates {
+		if exactCourseReferenceTitle(candidate.Title) == exactKey {
+			return []interfaces.CourseData{candidate}, true
+		}
+	}
+
+	if allowAnalogAlternatives && (candidatesShareAnalogGroup(candidates) || candidatesShareCanonicalTitle(candidates)) {
+		return candidates, true
+	}
+
+	preferred, ok := pickPreferredCourseReference(candidates)
+	if !ok {
+		return nil, false
+	}
+	return []interfaces.CourseData{preferred}, true
+}
+
+func candidatesShareAnalogGroup(candidates []interfaces.CourseData) bool {
+	if len(candidates) == 0 {
+		return false
+	}
+	group := strings.TrimSpace(candidates[0].AnalogGroup)
+	if group == "" {
+		return false
+	}
+	for _, candidate := range candidates[1:] {
+		if !strings.EqualFold(strings.TrimSpace(candidate.AnalogGroup), group) {
+			return false
+		}
+	}
+	return true
+}
+
+func candidatesShareCanonicalTitle(candidates []interfaces.CourseData) bool {
+	if len(candidates) == 0 {
+		return false
+	}
+	canonical := canonicalizeCourseReferenceTitle(candidates[0].Title)
+	if canonical == "" {
+		return false
+	}
+	for _, candidate := range candidates[1:] {
+		if canonicalizeCourseReferenceTitle(candidate.Title) != canonical {
+			return false
+		}
+	}
+	return true
+}
+
+func pickPreferredCourseReference(candidates []interfaces.CourseData) (interfaces.CourseData, bool) {
+	if len(candidates) == 0 {
+		return interfaces.CourseData{}, false
+	}
+	sorted := append([]interfaces.CourseData{}, candidates...)
+	sort.Slice(sorted, func(i, j int) bool {
+		scoreI := courseReferencePreferenceScore(sorted[i])
+		scoreJ := courseReferencePreferenceScore(sorted[j])
+		if scoreI == scoreJ {
+			return sorted[i].Title < sorted[j].Title
+		}
+		return scoreI > scoreJ
+	})
+	return sorted[0], true
+}
+
+func courseReferencePreferenceScore(course interfaces.CourseData) int {
+	title := strings.ToLower(course.Title)
+	score := 0
+	if course.CourseType == enums.CourseTypeMandatory {
+		score += 200
+	}
+	if strings.Contains(title, "🔴") {
+		score += 150
+	}
+	if strings.Contains(title, "🔵") {
+		score += 100
+	}
+	if !strings.Contains(title, "продвинут") && !strings.Contains(title, "advanced") {
+		score += 50
+	}
+	if strings.Contains(title, "⚫") {
+		score -= 25
+	}
+	return score
+}
+
+func dedupeUUIDs(ids []uuid.UUID) []uuid.UUID {
+	seen := make(map[uuid.UUID]bool, len(ids))
+	out := make([]uuid.UUID, 0, len(ids))
+	for _, id := range ids {
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		out = append(out, id)
+	}
+	return out
 }
 
 func SplitSheetTitles(raw string) []string {

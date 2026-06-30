@@ -8,8 +8,13 @@ export {
 } from "./api";
 export type {
   SpecializationDto,
+  SpecializationMatchCourseDto,
   SpecializationMatchDto,
   IdentifySpecializationsRequestDto,
 } from "./api";
-export type { Specialization, SpecializationMatch } from "./model/types";
+export type {
+  Specialization,
+  SpecializationMatch,
+  SpecializationMatchCourse,
+} from "./model/types";
 export { normalizeSpecialization, normalizeSpecializationMatch } from "./lib";

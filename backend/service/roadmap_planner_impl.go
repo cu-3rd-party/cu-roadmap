@@ -16,6 +16,7 @@ type roadmapSelectionStrategy func(*roadmapPlanningContext, int) []uuid.UUID
 
 type roadmapPlanningContext struct {
 	store             interfaces.StoreBase
+	allCourses        map[uuid.UUID]interfaces.CourseData
 	targetCourses     map[uuid.UUID]interfaces.CourseData
 	prereqGroups      map[uuid.UUID]map[int][]uuid.UUID // courseID -> groupNum -> []alternativeCourseIDs
 	coreqs            map[uuid.UUID]map[int][]uuid.UUID
@@ -23,8 +24,10 @@ type roadmapPlanningContext struct {
 	passedIDs         map[uuid.UUID]bool
 	coursesTodo       map[uuid.UUID]interfaces.CourseData
 	coreCourseIDs     map[uuid.UUID]bool
+	commonCourseIDs   map[uuid.UUID]bool
 	reservedForFuture map[uuid.UUID]bool
 	maxLoad           float64
+	cohort            int
 }
 
 type semesterBundle struct {
@@ -100,14 +103,14 @@ func newRoadmapPlanningContext(
 	fulfilledAnalogGroups := make(map[string]bool)
 	// Mark groups from passed courses
 	for _, id := range passedCourseIDs {
-		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" && !shouldAutoForceExclusiveSemester(c, allCourses) {
 			fulfilledAnalogGroups[c.AnalogGroup] = true
 		}
 	}
 	// Mark groups from planned courses
 	for _, ps := range plannedSemesters {
 		for _, id := range ps.CourseIDs {
-			if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+			if c, ok := allCourses[id]; ok && c.AnalogGroup != "" && !shouldAutoForceExclusiveSemester(c, allCourses) {
 				fulfilledAnalogGroups[c.AnalogGroup] = true
 			}
 		}
@@ -115,6 +118,7 @@ func newRoadmapPlanningContext(
 
 	targetCourses := make(map[uuid.UUID]interfaces.CourseData)
 	coreCourseIDs := make(map[uuid.UUID]bool)
+	commonCourseIDs := make(map[uuid.UUID]bool)
 	for _, req := range requirements {
 		if c, ok := allCourses[req.CourseID]; ok {
 			if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
@@ -136,7 +140,7 @@ func newRoadmapPlanningContext(
 
 			// If the analog group is fulfilled by passed or planned courses,
 			// we skip other courses of this group from being added to targetCourses.
-			if c.AnalogGroup != "" && fulfilledAnalogGroups[c.AnalogGroup] {
+			if c.AnalogGroup != "" && !shouldAutoForceExclusiveSemester(c, allCourses) && fulfilledAnalogGroups[c.AnalogGroup] {
 				isTheFulfillingCourse := passedIDs[req.CourseID] || plannedIDs[req.CourseID]
 				if !isTheFulfillingCourse {
 					fmt.Printf("DEBUG: Skipping %s (group %s already fulfilled)\n", c.Title, c.AnalogGroup)
@@ -150,6 +154,9 @@ func newRoadmapPlanningContext(
 			}
 			if !plannedIDs[req.CourseID] && (req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity) {
 				coreCourseIDs[req.CourseID] = true
+			}
+			if req.RequirementType == enums.RequirementTypeUniversity || c.Category == enums.CourseCategoryFundamentals {
+				commonCourseIDs[req.CourseID] = true
 			}
 		}
 	}
@@ -196,18 +203,18 @@ func newRoadmapPlanningContext(
 	// Prune targetCourses for AnalogGroup duplicates BEFORE resolving dependencies
 	analogGroupKeepers := make(map[string]uuid.UUID)
 	for id := range passedIDs {
-		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" && !shouldAutoForceExclusiveSemester(c, allCourses) {
 			analogGroupKeepers[c.AnalogGroup] = id
 		}
 	}
 	for id := range plannedIDs {
-		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
+		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" && !shouldAutoForceExclusiveSemester(c, allCourses) {
 			analogGroupKeepers[c.AnalogGroup] = id
 		}
 	}
 
 	for reqCourseID, reqCourse := range targetCourses {
-		if reqCourse.AnalogGroup != "" {
+		if reqCourse.AnalogGroup != "" && !shouldAutoForceExclusiveSemester(reqCourse, allCourses) {
 			if existingID, exists := analogGroupKeepers[reqCourse.AnalogGroup]; exists {
 				// Duplicate found!
 				// If the existing one was explicitly passed/planned, we MUST keep it and drop the new one.
@@ -252,14 +259,17 @@ func newRoadmapPlanningContext(
 
 	// Recursively resolve prerequisite and corequisite dependencies
 
-	var resolveDependencies func(uuid.UUID, bool)
-	resolveDependencies = func(cid uuid.UUID, parentIsCore bool) {
+	var resolveDependencies func(uuid.UUID, bool, bool)
+	resolveDependencies = func(cid uuid.UUID, parentIsCore bool, parentIsCommon bool) {
 		for groupNum, altIDs := range prereqGroups[cid] {
 			if groupNum == 0 {
 				// All are mandatory
 				for _, reqID := range altIDs {
 					if parentIsCore {
 						coreCourseIDs[reqID] = true
+					}
+					if parentIsCommon {
+						commonCourseIDs[reqID] = true
 					}
 					if _, exists := targetCourses[reqID]; !exists {
 						if c, ok := allCourses[reqID]; ok {
@@ -268,11 +278,17 @@ func newRoadmapPlanningContext(
 							}
 							fmt.Printf("DEBUG Add: %s added %s (mandatory)\n", allCourses[cid].Title, c.Title)
 							targetCourses[reqID] = c
-							resolveDependencies(reqID, parentIsCore)
+							resolveDependencies(reqID, parentIsCore, parentIsCommon)
 						}
 					} else if parentIsCore && !coreCourseIDs[reqID] {
 						coreCourseIDs[reqID] = true
-						resolveDependencies(reqID, true)
+						if parentIsCommon {
+							commonCourseIDs[reqID] = true
+						}
+						resolveDependencies(reqID, true, parentIsCommon)
+					} else if parentIsCommon && !commonCourseIDs[reqID] {
+						commonCourseIDs[reqID] = true
+						resolveDependencies(reqID, parentIsCore, true)
 					}
 				}
 			} else {
@@ -328,6 +344,9 @@ func newRoadmapPlanningContext(
 					if parentIsCore {
 						coreCourseIDs[reqID] = true
 					}
+					if parentIsCommon {
+						commonCourseIDs[reqID] = true
+					}
 					if _, exists := targetCourses[reqID]; !exists {
 						if c, ok := allCourses[reqID]; ok {
 							if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
@@ -335,11 +354,17 @@ func newRoadmapPlanningContext(
 							}
 							fmt.Printf("DEBUG Add: %s added %s (mandatory)\n", allCourses[cid].Title, c.Title)
 							targetCourses[reqID] = c
-							resolveDependencies(reqID, parentIsCore)
+							resolveDependencies(reqID, parentIsCore, parentIsCommon)
 						}
 					} else if parentIsCore && !coreCourseIDs[reqID] {
 						coreCourseIDs[reqID] = true
-						resolveDependencies(reqID, true)
+						if parentIsCommon {
+							commonCourseIDs[reqID] = true
+						}
+						resolveDependencies(reqID, true, parentIsCommon)
+					} else if parentIsCommon && !commonCourseIDs[reqID] {
+						commonCourseIDs[reqID] = true
+						resolveDependencies(reqID, parentIsCore, true)
 					}
 				}
 			}
@@ -352,6 +377,9 @@ func newRoadmapPlanningContext(
 					if parentIsCore {
 						coreCourseIDs[reqID] = true
 					}
+					if parentIsCommon {
+						commonCourseIDs[reqID] = true
+					}
 					if _, exists := targetCourses[reqID]; !exists {
 						if c, ok := allCourses[reqID]; ok {
 							if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
@@ -359,11 +387,17 @@ func newRoadmapPlanningContext(
 							}
 							fmt.Printf("DEBUG Add: %s added %s (mandatory)\n", allCourses[cid].Title, c.Title)
 							targetCourses[reqID] = c
-							resolveDependencies(reqID, parentIsCore)
+							resolveDependencies(reqID, parentIsCore, parentIsCommon)
 						}
 					} else if parentIsCore && !coreCourseIDs[reqID] {
 						coreCourseIDs[reqID] = true
-						resolveDependencies(reqID, true)
+						if parentIsCommon {
+							commonCourseIDs[reqID] = true
+						}
+						resolveDependencies(reqID, true, parentIsCommon)
+					} else if parentIsCommon && !commonCourseIDs[reqID] {
+						commonCourseIDs[reqID] = true
+						resolveDependencies(reqID, parentIsCore, true)
 					}
 				}
 			} else {
@@ -419,6 +453,9 @@ func newRoadmapPlanningContext(
 					if parentIsCore {
 						coreCourseIDs[reqID] = true
 					}
+					if parentIsCommon {
+						commonCourseIDs[reqID] = true
+					}
 					if _, exists := targetCourses[reqID]; !exists {
 						if c, ok := allCourses[reqID]; ok {
 							if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
@@ -426,11 +463,17 @@ func newRoadmapPlanningContext(
 							}
 							fmt.Printf("DEBUG Add: %s added %s (mandatory)\n", allCourses[cid].Title, c.Title)
 							targetCourses[reqID] = c
-							resolveDependencies(reqID, parentIsCore)
+							resolveDependencies(reqID, parentIsCore, parentIsCommon)
 						}
 					} else if parentIsCore && !coreCourseIDs[reqID] {
 						coreCourseIDs[reqID] = true
-						resolveDependencies(reqID, true)
+						if parentIsCommon {
+							commonCourseIDs[reqID] = true
+						}
+						resolveDependencies(reqID, true, parentIsCommon)
+					} else if parentIsCommon && !commonCourseIDs[reqID] {
+						commonCourseIDs[reqID] = true
+						resolveDependencies(reqID, parentIsCore, true)
 					}
 				}
 			}
@@ -442,7 +485,7 @@ func newRoadmapPlanningContext(
 		initialCIDs = append(initialCIDs, cid)
 	}
 	for _, cid := range initialCIDs {
-		resolveDependencies(cid, coreCourseIDs[cid])
+		resolveDependencies(cid, coreCourseIDs[cid], commonCourseIDs[cid])
 	}
 
 	coursesTodo := make(map[uuid.UUID]interfaces.CourseData)
@@ -454,6 +497,7 @@ func newRoadmapPlanningContext(
 
 	return &roadmapPlanningContext{
 		store:             store,
+		allCourses:        allCourses,
 		targetCourses:     targetCourses,
 		prereqGroups:      prereqGroups,
 		coreqs:            coreqs,
@@ -461,8 +505,10 @@ func newRoadmapPlanningContext(
 		passedIDs:         passedIDs,
 		coursesTodo:       coursesTodo,
 		coreCourseIDs:     coreCourseIDs,
+		commonCourseIDs:   commonCourseIDs,
 		reservedForFuture: make(map[uuid.UUID]bool),
 		maxLoad:           maxLoad,
+		cohort:            cohort,
 	}, nil, nil
 }
 
@@ -551,6 +597,10 @@ func generateRoadmapWithStrategy(
 			delete(plannedBySem, semester)
 		}
 
+		prefillCommonMandatoryCourses(ctx, semester, &courseIDs, &newlyPassed, &semLoad)
+
+		supplementSemesterPlan(ctx, semester, &courseIDs, &newlyPassed, &semLoad)
+
 		for _, cid := range newlyPassed {
 			ctx.passedIDs[cid] = true
 		}
@@ -584,6 +634,8 @@ func generateRoadmapWithStrategy(
 			delete(plannedBySem, semester)
 		}
 
+		prefillCommonMandatoryCourses(ctx, semester, &courseIDs, &newlyPassed, &semLoad)
+
 		originalMaxLoad := ctx.maxLoad
 		ctx.maxLoad = math.Max(0, originalMaxLoad-semLoad)
 
@@ -603,6 +655,8 @@ func generateRoadmapWithStrategy(
 				delete(ctx.coursesTodo, cid)
 			}
 		}
+
+		supplementSemesterPlan(ctx, semester, &courseIDs, &newlyPassed, &semLoad)
 
 		for _, cid := range newlyPassed {
 			ctx.passedIDs[cid] = true
@@ -914,6 +968,328 @@ func hasEquivalentPrerequisiteRelation(ctx *roadmapPlanningContext, courseID, re
 		}
 	}
 	return false
+}
+
+func prefillCommonMandatoryCourses(
+	ctx *roadmapPlanningContext,
+	semester int,
+	courseIDs *[]string,
+	newlyPassed *[]uuid.UUID,
+	semLoad *float64,
+) {
+	currentSet := make(map[uuid.UUID]bool, len(*newlyPassed))
+	for _, cid := range *newlyPassed {
+		currentSet[cid] = true
+	}
+
+	for {
+		added := tryAddSupplementalBundle(ctx, semester, currentSet, courseIDs, newlyPassed, semLoad, func(course interfaces.CourseData) bool {
+			return ctx.commonCourseIDs[course.ID]
+		}, func(course interfaces.CourseData) int {
+			score := 3000
+			if shouldAutoForceExclusiveSemester(course, ctx.allCourses) {
+				score += 2000
+			}
+			if course.RecommendedSemester != nil {
+				delta := *course.RecommendedSemester - semester
+				if delta < 0 {
+					delta = -delta
+				}
+				score += max(0, 200-delta)
+			}
+			if len(course.AvailableSemesters) == 1 && course.AvailableSemesters[0] == semester {
+				score += 1000
+			}
+			return score
+		})
+		if !added {
+			return
+		}
+	}
+}
+
+func supplementSemesterPlan(
+	ctx *roadmapPlanningContext,
+	semester int,
+	courseIDs *[]string,
+	newlyPassed *[]uuid.UUID,
+	semLoad *float64,
+) {
+	currentSet := make(map[uuid.UUID]bool, len(*newlyPassed))
+	for _, cid := range *newlyPassed {
+		currentSet[cid] = true
+	}
+	if len(currentSet) == 0 {
+		return
+	}
+
+	hasSTEM := semesterHasCategory(ctx, currentSet, enums.CourseCategorySTEM)
+	hasSoft := semesterHasCategory(ctx, currentSet, enums.CourseCategorySoft)
+	hasScienceStudio := hasPassedMatchingCourse(ctx, isScienceStudio) || semesterHasMatchingCourse(ctx, currentSet, isScienceStudio)
+	hasBusinessStudio := hasPassedMatchingCourse(ctx, isBusinessStudio) || semesterHasMatchingCourse(ctx, currentSet, isBusinessStudio)
+
+	if semester <= 4 && !hasScienceStudio {
+		if tryAddSupplementalBundle(ctx, semester, currentSet, courseIDs, newlyPassed, semLoad, func(course interfaces.CourseData) bool {
+			return isScienceStudio(course)
+		}, nil) {
+			hasScienceStudio = true
+			hasSTEM = true
+		}
+	}
+
+	if semester <= 4 && !hasBusinessStudio {
+		if tryAddSupplementalBundle(ctx, semester, currentSet, courseIDs, newlyPassed, semLoad, func(course interfaces.CourseData) bool {
+			return isBusinessStudio(course)
+		}, nil) {
+			hasBusinessStudio = true
+			hasSTEM = true
+		}
+	}
+
+	if !hasSTEM {
+		preferScienceStudio := semester < 4 && !hasScienceStudio
+		preferBusinessStudio := semester < 4 && !hasBusinessStudio
+		if tryAddSupplementalBundle(ctx, semester, currentSet, courseIDs, newlyPassed, semLoad, func(course interfaces.CourseData) bool {
+			return course.Category == enums.CourseCategorySTEM
+		}, func(course interfaces.CourseData) int {
+			score := 0
+			if preferScienceStudio && isScienceStudio(course) {
+				score += 2000
+			}
+			if preferBusinessStudio && isBusinessStudio(course) {
+				score += 1900
+			}
+			return score
+		}) {
+			hasSTEM = true
+			hasScienceStudio = hasScienceStudio || semesterHasMatchingCourse(ctx, currentSet, isScienceStudio)
+			hasBusinessStudio = hasBusinessStudio || semesterHasMatchingCourse(ctx, currentSet, isBusinessStudio)
+		}
+	}
+
+	if semester > 1 && !hasSoft {
+		if tryAddSupplementalBundle(ctx, semester, currentSet, courseIDs, newlyPassed, semLoad, func(course interfaces.CourseData) bool {
+			return course.Category == enums.CourseCategorySoft
+		}, nil) {
+			hasSoft = true
+		}
+	}
+}
+
+func tryAddSupplementalBundle(
+	ctx *roadmapPlanningContext,
+	semester int,
+	currentSet map[uuid.UUID]bool,
+	courseIDs *[]string,
+	newlyPassed *[]uuid.UUID,
+	semLoad *float64,
+	predicate func(interfaces.CourseData) bool,
+	extraPriority func(interfaces.CourseData) int,
+) bool {
+	type candidate struct {
+		id       uuid.UUID
+		priority int
+		load     float64
+		title    string
+	}
+
+	candidates := make([]candidate, 0)
+	for id, course := range ctx.allCourses {
+		if ctx.passedIDs[id] || currentSet[id] || ctx.reservedForFuture[id] {
+			continue
+		}
+		if !courseAllowedForCohort(course, ctx.cohort) || !predicate(course) {
+			continue
+		}
+		if course.AnalogGroup != "" && analogGroupFulfilled(ctx, currentSet, course) {
+			continue
+		}
+
+		priority := 0
+		if _, ok := ctx.coursesTodo[id]; ok {
+			priority += 1000
+		}
+		if course.RecommendedSemester != nil {
+			delta := *course.RecommendedSemester - semester
+			if delta < 0 {
+				delta = -delta
+			}
+			priority += max(0, 100-delta)
+		}
+		if extraPriority != nil {
+			priority += extraPriority(course)
+		}
+
+		candidates = append(candidates, candidate{
+			id:       id,
+			priority: priority,
+			load:     course.Workload,
+			title:    course.Title,
+		})
+	}
+
+	sort.Slice(candidates, func(i, j int) bool {
+		if candidates[i].priority == candidates[j].priority {
+			if candidates[i].load == candidates[j].load {
+				if candidates[i].title == candidates[j].title {
+					return candidates[i].id.String() < candidates[j].id.String()
+				}
+				return candidates[i].title < candidates[j].title
+			}
+			return candidates[i].load < candidates[j].load
+		}
+		return candidates[i].priority > candidates[j].priority
+	})
+
+	for pass := 0; pass < 2; pass++ {
+		enforceLoad := pass == 0
+		for _, candidate := range candidates {
+			bundle, ok := buildSupplementalBundle(ctx, candidate.id, semester, currentSet)
+			if !ok || overlaps(currentSet, bundle.courseIDs) {
+				continue
+			}
+			if enforceLoad && *semLoad+bundle.load > ctx.maxLoad {
+				continue
+			}
+
+			for _, cid := range bundle.courseIDs {
+				if currentSet[cid] {
+					continue
+				}
+				course := ctx.allCourses[cid]
+				currentSet[cid] = true
+				*courseIDs = append(*courseIDs, cid.String())
+				*newlyPassed = append(*newlyPassed, cid)
+				*semLoad += course.Workload
+				delete(ctx.coursesTodo, cid)
+				delete(ctx.reservedForFuture, cid)
+			}
+			return true
+		}
+	}
+
+	return false
+}
+
+func buildSupplementalBundle(
+	ctx *roadmapPlanningContext,
+	cid uuid.UUID,
+	semester int,
+	currentSet map[uuid.UUID]bool,
+) (semesterBundle, bool) {
+	bundleSet := make(map[uuid.UUID]bool)
+	queue := []uuid.UUID{cid}
+	load := 0.0
+
+	for len(queue) > 0 {
+		curr := queue[len(queue)-1]
+		queue = queue[:len(queue)-1]
+		if bundleSet[curr] || ctx.passedIDs[curr] || currentSet[curr] {
+			continue
+		}
+
+		course, ok := ctx.allCourses[curr]
+		if !ok || !courseAllowedForCohort(course, ctx.cohort) || !prereqsSatisfied(ctx, curr) || !offeredInSemester(course, semester) {
+			return semesterBundle{}, false
+		}
+
+		bundleSet[curr] = true
+		load += course.Workload
+
+		for _, altIDs := range ctx.coreqs[curr] {
+			pickedReqID := uuid.Nil
+			for _, reqID := range altIDs {
+				if ctx.passedIDs[reqID] || currentSet[reqID] || bundleSet[reqID] {
+					pickedReqID = reqID
+					break
+				}
+				if ctx.reservedForFuture[reqID] {
+					continue
+				}
+				reqCourse, ok := ctx.allCourses[reqID]
+				if !ok || !courseAllowedForCohort(reqCourse, ctx.cohort) || !offeredInSemester(reqCourse, semester) {
+					continue
+				}
+				if prereqsSatisfied(ctx, reqID) || hasEquivalentPrerequisiteRelation(ctx, curr, reqID) {
+					pickedReqID = reqID
+					break
+				}
+			}
+			if pickedReqID == uuid.Nil {
+				return semesterBundle{}, false
+			}
+			if !ctx.passedIDs[pickedReqID] && !currentSet[pickedReqID] {
+				queue = append(queue, pickedReqID)
+			}
+		}
+	}
+
+	courseIDs := make([]uuid.UUID, 0, len(bundleSet))
+	for id := range bundleSet {
+		courseIDs = append(courseIDs, id)
+	}
+	sort.Slice(courseIDs, func(i, j int) bool { return courseIDs[i].String() < courseIDs[j].String() })
+
+	return semesterBundle{courseIDs: courseIDs, load: load}, true
+}
+
+func semesterHasCategory(ctx *roadmapPlanningContext, currentSet map[uuid.UUID]bool, category enums.CourseCategory) bool {
+	for cid := range currentSet {
+		if course, ok := ctx.allCourses[cid]; ok && course.Category == category {
+			return true
+		}
+	}
+	return false
+}
+
+func semesterHasMatchingCourse(ctx *roadmapPlanningContext, currentSet map[uuid.UUID]bool, predicate func(interfaces.CourseData) bool) bool {
+	for cid := range currentSet {
+		if course, ok := ctx.allCourses[cid]; ok && predicate(course) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPassedMatchingCourse(ctx *roadmapPlanningContext, predicate func(interfaces.CourseData) bool) bool {
+	for cid := range ctx.passedIDs {
+		if course, ok := ctx.allCourses[cid]; ok && predicate(course) {
+			return true
+		}
+	}
+	return false
+}
+
+func isScienceStudio(course interfaces.CourseData) bool {
+	return strings.Contains(strings.ToLower(course.AnalogGroup), "научн")
+}
+
+func isBusinessStudio(course interfaces.CourseData) bool {
+	return strings.Contains(strings.ToLower(course.AnalogGroup), "бизнес")
+}
+
+func analogGroupFulfilled(ctx *roadmapPlanningContext, currentSet map[uuid.UUID]bool, course interfaces.CourseData) bool {
+	if course.AnalogGroup == "" || shouldAutoForceExclusiveSemester(course, ctx.allCourses) {
+		return false
+	}
+	for cid := range currentSet {
+		if scheduled, ok := ctx.allCourses[cid]; ok && scheduled.AnalogGroup == course.AnalogGroup {
+			return true
+		}
+	}
+	for cid := range ctx.passedIDs {
+		if scheduled, ok := ctx.allCourses[cid]; ok && scheduled.AnalogGroup == course.AnalogGroup {
+			return true
+		}
+	}
+	return false
+}
+
+func courseAllowedForCohort(course interfaces.CourseData, cohort int) bool {
+	if cohort == 0 || len(course.AllowedCohorts) == 0 {
+		return true
+	}
+	return cohortInSlice(cohort, course.AllowedCohorts)
 }
 
 func shouldAutoForceExclusiveSemester(course interfaces.CourseData, allCourses map[uuid.UUID]interfaces.CourseData) bool {

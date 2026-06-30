@@ -7,6 +7,11 @@ export interface SpecializationDto {
   title: string;
 }
 
+export interface SpecializationMatchCourseDto {
+  course_id: UUID;
+  title: string;
+}
+
 // Item of the POST majors/identify-specializations/{year} response
 export interface SpecializationMatchDto {
   id: UUID;
@@ -17,6 +22,9 @@ export interface SpecializationMatchDto {
   covered_count: number;
   can_cover_count: number;
   total_count: number;
+  covered_courses: SpecializationMatchCourseDto[];
+  can_cover_courses: SpecializationMatchCourseDto[];
+  cannot_cover_courses: SpecializationMatchCourseDto[];
 }
 
 // Request body for POST majors/identify-specializations/{year}.

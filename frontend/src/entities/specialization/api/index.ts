@@ -10,6 +10,7 @@ export {
 } from "./useIdentifySpecializationsQuery";
 export type {
   SpecializationDto,
+  SpecializationMatchCourseDto,
   SpecializationMatchDto,
   IdentifySpecializationsRequestDto,
 } from "./dto";
