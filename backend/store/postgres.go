@@ -10,7 +10,6 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
 	"github.com/cu-3rd-party/cu-roadmap/backend/metrics"
-	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
@@ -67,7 +66,6 @@ func (s *PostgresStore) Init(password string) error {
 		&models.Major{},
 		&models.Specialization{},
 		&models.CourseDependency{},
-		&models.MajorRequirement{},
 		&models.Student{},
 	)
 }
@@ -134,9 +132,6 @@ func (s *PostgresStore) ClearAll() error {
 		return err
 	}
 	if err := s.db.Exec("DELETE FROM specializations").Error; err != nil {
-		return err
-	}
-	if err := s.db.Exec("DELETE FROM major_requirements").Error; err != nil {
 		return err
 	}
 	if err := s.db.Exec("DELETE FROM student_passed_courses").Error; err != nil {
@@ -412,110 +407,6 @@ func (s *PostgresStore) DeleteBoxEdgesByParent(parentBoxID uuid.UUID) error {
 
 func (s *PostgresStore) DeleteBoxEdgesByChild(childBoxID uuid.UUID) error {
 	return s.db.Where("child_box_id = ?", childBoxID).Delete(&models.BoxEdge{}).Error
-}
-
-func (s *PostgresStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.MajorRequirementData, error) {
-	return requirements.NewResolver(s).ProjectMajorRequirements(majorID)
-}
-
-func (s *PostgresStore) GetAllMajorRequirements() ([]interfaces.MajorRequirementData, error) {
-	return requirements.NewResolver(s).ProjectAllMajorRequirements()
-}
-
-func (s *PostgresStore) CreateMajorRequirement(req interfaces.MajorRequirementData) (interfaces.MajorRequirementData, error) {
-	major, err := s.GetMajorByID(req.MajorID)
-	if err != nil || major == nil {
-		return req, err
-	}
-	reqType := req.RequirementType
-	leaf, err := s.CreateBox(interfaces.BoxData{
-		ID:              req.ID,
-		Kind:            enums.BoxKindCourse,
-		CourseID:        &req.CourseID,
-		RequirementType: &reqType,
-		Specializations: append([]string(nil), req.Specializations...),
-	})
-	if err != nil {
-		return req, err
-	}
-	if major.RequirementsBoxID != nil && (req.RequirementType != enums.RequirementTypeMajorChoice || len(req.Specializations) == 0) {
-		edges, err := s.GetBoxEdges()
-		if err != nil {
-			return req, err
-		}
-		position := 0
-		for _, edge := range edges {
-			if edge.ParentBoxID == *major.RequirementsBoxID && edge.Position >= position {
-				position = edge.Position + 1
-			}
-		}
-		if _, err := s.CreateBoxEdge(interfaces.BoxEdgeData{ID: uuid.New(), ParentBoxID: *major.RequirementsBoxID, ChildBoxID: leaf.ID, Position: position}); err != nil {
-			return req, err
-		}
-	}
-	if req.RequirementType == enums.RequirementTypeMajorChoice && len(req.Specializations) > 0 {
-		specs, err := s.GetSpecializationsByMajor(req.MajorID)
-		if err != nil {
-			return req, err
-		}
-		edges, err := s.GetBoxEdges()
-		if err != nil {
-			return req, err
-		}
-		for _, specTitle := range req.Specializations {
-			for _, spec := range specs {
-				if spec.RequirementsBoxID == nil || !strings.EqualFold(spec.Title, specTitle) {
-					continue
-				}
-				position := 0
-				for _, edge := range edges {
-					if edge.ParentBoxID == *spec.RequirementsBoxID && edge.Position >= position {
-						position = edge.Position + 1
-					}
-				}
-				if _, err := s.CreateBoxEdge(interfaces.BoxEdgeData{ID: uuid.New(), ParentBoxID: *spec.RequirementsBoxID, ChildBoxID: leaf.ID, Position: position}); err != nil {
-					return req, err
-				}
-			}
-		}
-	}
-	return req, nil
-}
-
-func (s *PostgresStore) DeleteMajorRequirements(majorID uuid.UUID) error {
-	major, err := s.GetMajorByID(majorID)
-	if err != nil || major == nil {
-		return err
-	}
-	projected, err := requirements.NewResolver(s).ProjectMajorRequirements(majorID)
-	if err != nil {
-		return err
-	}
-	if major.RequirementsBoxID != nil {
-		if err := s.DeleteBoxEdgesByParent(*major.RequirementsBoxID); err != nil {
-			return err
-		}
-	}
-	specs, err := s.GetSpecializationsByMajor(majorID)
-	if err != nil {
-		return err
-	}
-	for _, spec := range specs {
-		if spec.RequirementsBoxID != nil {
-			if err := s.DeleteBoxEdgesByParent(*spec.RequirementsBoxID); err != nil {
-				return err
-			}
-		}
-	}
-	for _, req := range projected {
-		if err := s.DeleteBoxEdgesByChild(req.ID); err != nil {
-			return err
-		}
-		if err := s.DeleteBox(req.ID); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (s *PostgresStore) CreateCourseDependency(dep interfaces.CourseDependencyData) (interfaces.CourseDependencyData, error) {

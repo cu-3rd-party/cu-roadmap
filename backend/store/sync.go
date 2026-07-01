@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2/google"
@@ -143,7 +144,7 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 		existingMajorByKey[key] = id
 	}
 
-	existingReqs, err := s.GetAllMajorRequirements()
+	existingReqs, err := requirements.NewResolver(s).ProjectAllMajorRequirements()
 	if err != nil {
 		return SyncResult{}, fmt.Errorf("get existing major requirements: %w", err)
 	}
@@ -450,9 +451,8 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			if existingID, ok := existingReqByPair[reqKey]; ok {
 				reqID = existingID
 			}
-			if _, err := s.CreateMajorRequirement(interfaces.MajorRequirementData{
+			if err := requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{
 				ID:              reqID,
-				MajorID:         major.ID,
 				CourseID:        course.ID,
 				RequirementType: req.reqType,
 				Specializations: req.specializations,

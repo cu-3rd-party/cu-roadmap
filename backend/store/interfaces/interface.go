@@ -49,11 +49,6 @@ type StoreBase interface {
 	DeleteBoxEdgesByParent(parentBoxID uuid.UUID) error
 	DeleteBoxEdgesByChild(childBoxID uuid.UUID) error
 
-	GetMajorRequirements(majorID uuid.UUID) ([]MajorRequirementData, error)
-	GetAllMajorRequirements() ([]MajorRequirementData, error)
-	CreateMajorRequirement(req MajorRequirementData) (MajorRequirementData, error)
-	DeleteMajorRequirements(majorID uuid.UUID) error
-
 	GetSpecializationsByMajor(majorID uuid.UUID) ([]SpecializationData, error)
 	CreateSpecialization(spec SpecializationData) (SpecializationData, error)
 	DeleteSpecializations(majorID uuid.UUID) error

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -461,7 +462,7 @@ func TestSyncFromSheetDataMajorsAreCohortSpecificAndRequirementTypeRespectsMajor
 	assert.NotEqual(t, uuid.Nil, discID)
 	assert.NotEqual(t, uuid.Nil, speakID)
 
-	reqs2026, _ := s.GetMajorRequirements(found[2026])
+	reqs2026, _ := requirements.NewResolver(s).ProjectMajorRequirements(found[2026])
 	// We expect 2 requirements from the mock data
 	assert.True(t, len(reqs2026) >= 2)
 	for _, r := range reqs2026 {

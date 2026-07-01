@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -76,15 +77,14 @@ func RestoreDB(c *gin.Context) {
 				CohortYear: int(m["cohort_year"].(float64)),
 			})
 			if reqs, ok := m["requirements"].([]interface{}); ok {
+				flatReqs := make([]requirements.FlatRequirementInput, 0, len(reqs))
 				for _, r := range reqs {
 					rm := r.(map[string]interface{})
 					cid, _ := uuid.Parse(rm["course_id"].(string))
-					s.CreateMajorRequirement(interfaces.MajorRequirementData{
-						ID:              uuid.New(),
-						MajorID:         mid,
-						CourseID:        cid,
-						RequirementType: enums.RequirementType(rm["type"].(string)),
-					})
+					flatReqs = append(flatReqs, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: cid, RequirementType: enums.RequirementType(rm["type"].(string))})
+				}
+				if err := requirements.ReplaceFlatRequirements(s, mid, flatReqs); err != nil {
+					fmt.Println("Error restoring requirements:", err)
 				}
 			}
 		}

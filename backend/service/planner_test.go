@@ -6,6 +6,7 @@ import (
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -101,12 +102,7 @@ func createMajorWithRequirements(s interfaces.StoreBase, courseIDs ...uuid.UUID)
 	major := interfaces.MajorData{ID: uuid.New(), Title: "SE", School: "Tech"}
 	s.CreateMajor(major)
 	for _, courseID := range courseIDs {
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         major.ID,
-			CourseID:        courseID,
-			RequirementType: enums.RequirementTypeMajorCore,
-		})
+		_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: courseID, RequirementType: enums.RequirementTypeMajorCore})
 	}
 	return major.ID
 }
@@ -400,12 +396,7 @@ func TestGenerateRoadmapRepeatsOddEvenAvailabilityBeyondSemesterEight(t *testing
 		}
 		s.CreateCourse(course)
 		courseIDs = append(courseIDs, course.ID)
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         major.ID,
-			CourseID:        course.ID,
-			RequirementType: enums.RequirementTypeMajorCore,
-		})
+		_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: course.ID, RequirementType: enums.RequirementTypeMajorCore})
 		if i > 0 {
 			s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               uuid.New(),
@@ -424,12 +415,7 @@ func TestGenerateRoadmapRepeatsOddEvenAvailabilityBeyondSemesterEight(t *testing
 		Workload:           3.0,
 	}
 	s.CreateCourse(target)
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{
-		ID:              uuid.New(),
-		MajorID:         major.ID,
-		CourseID:        target.ID,
-		RequirementType: enums.RequirementTypeMajorCore,
-	})
+	_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: target.ID, RequirementType: enums.RequirementTypeMajorCore})
 	s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         target.ID,
@@ -469,12 +455,7 @@ func newSequentialPlannerData(courseCount int) (interfaces.StoreBase, uuid.UUID)
 		}
 		s.CreateCourse(course)
 		courseIDs = append(courseIDs, course.ID)
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         major.ID,
-			CourseID:        course.ID,
-			RequirementType: enums.RequirementTypeMajorCore,
-		})
+		_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: course.ID, RequirementType: enums.RequirementTypeMajorCore})
 
 		if i > 0 {
 			s.CreateCourseDependency(interfaces.CourseDependencyData{

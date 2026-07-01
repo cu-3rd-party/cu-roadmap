@@ -36,6 +36,14 @@ type Resolver struct {
 	store Store
 }
 
+type Projection struct {
+	ID              uuid.UUID
+	MajorID         uuid.UUID
+	CourseID        uuid.UUID
+	RequirementType enums.RequirementType
+	Specializations []string
+}
+
 func NewResolver(store Store) *Resolver {
 	return &Resolver{store: store}
 }
@@ -106,7 +114,7 @@ func (g *Graph) DescendantLeaves(rootID uuid.UUID) ([]interfaces.BoxData, error)
 	return out, nil
 }
 
-func (r *Resolver) ProjectMajorRequirements(majorID uuid.UUID) ([]interfaces.MajorRequirementData, error) {
+func (r *Resolver) ProjectMajorRequirements(majorID uuid.UUID) ([]Projection, error) {
 	g, err := r.LoadGraph()
 	if err != nil {
 		return nil, err
@@ -134,7 +142,7 @@ func (r *Resolver) ProjectMajorRequirements(majorID uuid.UUID) ([]interfaces.Maj
 		leaves = append(leaves, specLeaves...)
 	}
 
-	byBoxID := make(map[uuid.UUID]interfaces.MajorRequirementData)
+	byBoxID := make(map[uuid.UUID]Projection)
 	for _, leaf := range leaves {
 		if leaf.Kind != enums.BoxKindCourse || leaf.CourseID == nil {
 			continue
@@ -145,7 +153,7 @@ func (r *Resolver) ProjectMajorRequirements(majorID uuid.UUID) ([]interfaces.Maj
 		}
 		current, ok := byBoxID[leaf.ID]
 		if !ok {
-			current = interfaces.MajorRequirementData{
+			current = Projection{
 				ID:              leaf.ID,
 				MajorID:         majorID,
 				CourseID:        *leaf.CourseID,
@@ -158,7 +166,7 @@ func (r *Resolver) ProjectMajorRequirements(majorID uuid.UUID) ([]interfaces.Maj
 		byBoxID[leaf.ID] = current
 	}
 
-	out := make([]interfaces.MajorRequirementData, 0, len(byBoxID))
+	out := make([]Projection, 0, len(byBoxID))
 	for _, req := range byBoxID {
 		out = append(out, req)
 	}
@@ -171,18 +179,86 @@ func (r *Resolver) ProjectMajorRequirements(majorID uuid.UUID) ([]interfaces.Maj
 	return out, nil
 }
 
-func (r *Resolver) ProjectAllMajorRequirements() ([]interfaces.MajorRequirementData, error) {
+func (r *Resolver) ProjectAllMajorRequirements() ([]Projection, error) {
 	majors, err := r.store.GetAllMajors()
 	if err != nil {
 		return nil, err
 	}
-	var out []interfaces.MajorRequirementData
+	var out []Projection
 	for majorID := range majors {
 		reqs, err := r.ProjectMajorRequirements(majorID)
 		if err != nil {
 			return nil, err
 		}
 		out = append(out, reqs...)
+	}
+	return out, nil
+}
+
+func (r *Resolver) MajorLeafCourseIDs(majorID uuid.UUID) (map[uuid.UUID]bool, error) {
+	g, err := r.LoadGraph()
+	if err != nil {
+		return nil, err
+	}
+	major, err := r.store.GetMajorByID(majorID)
+	if err != nil || major == nil || major.RequirementsBoxID == nil {
+		return nil, err
+	}
+	leaves, err := g.DescendantLeaves(*major.RequirementsBoxID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]bool)
+	for _, leaf := range leaves {
+		if leaf.Kind == enums.BoxKindCourse && leaf.CourseID != nil {
+			out[*leaf.CourseID] = true
+		}
+	}
+	return out, nil
+}
+
+func (r *Resolver) MajorChoiceCourseIDs(majorID uuid.UUID) (map[uuid.UUID]bool, error) {
+	g, err := r.LoadGraph()
+	if err != nil {
+		return nil, err
+	}
+	major, err := r.store.GetMajorByID(majorID)
+	if err != nil || major == nil || major.RequirementsBoxID == nil {
+		return nil, err
+	}
+	leaves, err := g.DescendantLeaves(*major.RequirementsBoxID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]bool)
+	for _, leaf := range leaves {
+		if leaf.Kind != enums.BoxKindCourse || leaf.CourseID == nil || leaf.RequirementType == nil {
+			continue
+		}
+		if *leaf.RequirementType == enums.RequirementTypeMajorChoice {
+			out[*leaf.CourseID] = true
+		}
+	}
+	return out, nil
+}
+
+func (r *Resolver) SpecializationCourseIDs(spec interfaces.SpecializationData) (map[uuid.UUID]bool, error) {
+	if spec.RequirementsBoxID == nil {
+		return map[uuid.UUID]bool{}, nil
+	}
+	g, err := r.LoadGraph()
+	if err != nil {
+		return nil, err
+	}
+	leaves, err := g.DescendantLeaves(*spec.RequirementsBoxID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]bool)
+	for _, leaf := range leaves {
+		if leaf.Kind == enums.BoxKindCourse && leaf.CourseID != nil {
+			out[*leaf.CourseID] = true
+		}
 	}
 	return out, nil
 }

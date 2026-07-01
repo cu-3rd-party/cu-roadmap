@@ -10,6 +10,7 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -87,7 +88,7 @@ func getCourses(c *gin.Context) {
 		return
 	}
 
-	allReqs, err := s.GetAllMajorRequirements()
+	allReqs, err := requirements.NewResolver(s).ProjectAllMajorRequirements()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -391,9 +392,10 @@ func backupDB(c *gin.Context) {
 	os.WriteFile("courses_backup.json", file, 0o644)
 
 	majors, _ := s.GetAllMajors()
+	resolver := requirements.NewResolver(s)
 	var backupMajors []map[string]interface{}
 	for _, m := range majors {
-		reqs, _ := s.GetMajorRequirements(m.ID)
+		reqs, _ := resolver.ProjectMajorRequirements(m.ID)
 		var reqsList []map[string]interface{}
 		for _, r := range reqs {
 			reqsList = append(reqsList, map[string]interface{}{
@@ -448,12 +450,15 @@ func restoreDB(c *gin.Context) {
 				ID: id, Title: rm["title"].(string), School: rm["school"].(string), CohortYear: cohortYear,
 			})
 			if reqs, ok := rm["requirements"].([]interface{}); ok {
+				flatReqs := make([]requirements.FlatRequirementInput, 0, len(reqs))
 				for _, r := range reqs {
 					reqMap := r.(map[string]interface{})
 					cid, _ := uuid.Parse(reqMap["course_id"].(string))
-					s.CreateMajorRequirement(interfaces.MajorRequirementData{
-						ID: uuid.New(), MajorID: id, CourseID: cid, RequirementType: enums.RequirementType(reqMap["type"].(string)),
-					})
+					flatReqs = append(flatReqs, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: cid, RequirementType: enums.RequirementType(reqMap["type"].(string))})
+				}
+				if err := requirements.ReplaceFlatRequirements(s, id, flatReqs); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+					return
 				}
 			}
 		}

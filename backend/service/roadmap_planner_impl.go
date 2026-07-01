@@ -61,11 +61,11 @@ func newRoadmapPlanningContext(
 	maxLoad float64,
 	cohort int,
 ) (*roadmapPlanningContext, interface{}, error) {
-	projectedRequirements, err := store.GetMajorRequirements(majorID)
+	resolver := requirements.NewResolver(store)
+	projectedRequirements, err := resolver.ProjectMajorRequirements(majorID)
 	if err != nil {
 		return nil, nil, err
 	}
-	resolver := requirements.NewResolver(store)
 	targetCourseIDs, err := resolver.ResolveTargetCourseIDs(majorID, specializationID, toBoolMap(passedCourseIDs), plannedCourseIDMap(plannedSemesters), cohort)
 	if err != nil {
 		return nil, nil, err

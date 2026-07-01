@@ -18,7 +18,6 @@ type MemoryStore struct {
 	mu                 sync.RWMutex
 	courses            map[uuid.UUID]interfaces.CourseData
 	majors             map[uuid.UUID]interfaces.MajorData
-	majorRequirements  []interfaces.MajorRequirementData
 	boxes              map[uuid.UUID]interfaces.BoxData
 	boxEdges           []interfaces.BoxEdgeData
 	courseDependencies []interfaces.CourseDependencyData
@@ -65,7 +64,6 @@ func (s *MemoryStore) Close() error { return nil }
 func (s *MemoryStore) ClearAll() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.majorRequirements = nil
 	s.boxEdges = nil
 	s.courseDependencies = nil
 	s.specializations = nil
@@ -329,110 +327,6 @@ func (s *MemoryStore) DeleteMajor(majorID uuid.UUID) error {
 	if exists {
 		delete(s.majorsByTitle, major.Title)
 		delete(s.majors, majorID)
-	}
-	return nil
-}
-
-func (s *MemoryStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.MajorRequirementData, error) {
-	return requirements.NewResolver(s).ProjectMajorRequirements(majorID)
-}
-
-func (s *MemoryStore) GetAllMajorRequirements() ([]interfaces.MajorRequirementData, error) {
-	return requirements.NewResolver(s).ProjectAllMajorRequirements()
-}
-
-func (s *MemoryStore) CreateMajorRequirement(req interfaces.MajorRequirementData) (interfaces.MajorRequirementData, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if _, ok := s.majors[req.MajorID]; !ok {
-		return req, nil
-	}
-	reqType := req.RequirementType
-	s.boxes[req.ID] = interfaces.BoxData{ID: req.ID, Kind: enums.BoxKindCourse, CourseID: &req.CourseID, RequirementType: &reqType, Specializations: append([]string(nil), req.Specializations...)}
-	major := s.majors[req.MajorID]
-	if major.RequirementsBoxID != nil && (req.RequirementType != enums.RequirementTypeMajorChoice || len(req.Specializations) == 0) {
-		position := 0
-		for _, edge := range s.boxEdges {
-			if edge.ParentBoxID == *major.RequirementsBoxID && edge.Position >= position {
-				position = edge.Position + 1
-			}
-		}
-		s.boxEdges = append(s.boxEdges, interfaces.BoxEdgeData{ID: uuid.New(), ParentBoxID: *major.RequirementsBoxID, ChildBoxID: req.ID, Position: position})
-	}
-	if req.RequirementType == enums.RequirementTypeMajorChoice && len(req.Specializations) > 0 {
-		for _, specTitle := range req.Specializations {
-			for _, spec := range s.specializations {
-				if spec.MajorID != req.MajorID || spec.RequirementsBoxID == nil || !strings.EqualFold(spec.Title, specTitle) {
-					continue
-				}
-				position := 0
-				for _, edge := range s.boxEdges {
-					if edge.ParentBoxID == *spec.RequirementsBoxID && edge.Position >= position {
-						position = edge.Position + 1
-					}
-				}
-				s.boxEdges = append(s.boxEdges, interfaces.BoxEdgeData{ID: uuid.New(), ParentBoxID: *spec.RequirementsBoxID, ChildBoxID: req.ID, Position: position})
-			}
-		}
-	}
-	return req, nil
-}
-
-func (s *MemoryStore) DeleteMajorRequirements(majorID uuid.UUID) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	major, ok := s.majors[majorID]
-	if !ok {
-		return nil
-	}
-	childIDs := make(map[uuid.UUID]struct{})
-	if major.RequirementsBoxID != nil {
-		for _, edge := range s.boxEdges {
-			if edge.ParentBoxID == *major.RequirementsBoxID {
-				childIDs[edge.ChildBoxID] = struct{}{}
-			}
-		}
-	}
-	for _, spec := range s.specializations {
-		if spec.MajorID != majorID || spec.RequirementsBoxID == nil {
-			continue
-		}
-		for _, edge := range s.boxEdges {
-			if edge.ParentBoxID == *spec.RequirementsBoxID {
-				childIDs[edge.ChildBoxID] = struct{}{}
-			}
-		}
-	}
-	if major.RequirementsBoxID != nil {
-		filtered := s.boxEdges[:0]
-		for _, edge := range s.boxEdges {
-			if edge.ParentBoxID != *major.RequirementsBoxID {
-				filtered = append(filtered, edge)
-			}
-		}
-		s.boxEdges = append([]interfaces.BoxEdgeData(nil), filtered...)
-	}
-	for _, spec := range s.specializations {
-		if spec.MajorID != majorID || spec.RequirementsBoxID == nil {
-			continue
-		}
-		filtered := s.boxEdges[:0]
-		for _, edge := range s.boxEdges {
-			if edge.ParentBoxID != *spec.RequirementsBoxID {
-				filtered = append(filtered, edge)
-			}
-		}
-		s.boxEdges = append([]interfaces.BoxEdgeData(nil), filtered...)
-	}
-	for childID := range childIDs {
-		delete(s.boxes, childID)
-		filtered := s.boxEdges[:0]
-		for _, edge := range s.boxEdges {
-			if edge.ChildBoxID != childID {
-				filtered = append(filtered, edge)
-			}
-		}
-		s.boxEdges = append([]interfaces.BoxEdgeData(nil), filtered...)
 	}
 	return nil
 }
@@ -701,9 +595,8 @@ func (s *MemoryStore) LoadMockData() error {
 			if !ok {
 				continue
 			}
-			s.majorRequirements = append(s.majorRequirements, interfaces.MajorRequirementData{
+			_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{
 				ID:              uuid.New(),
-				MajorID:         major.ID,
 				CourseID:        c.ID,
 				RequirementType: enums.RequirementTypeMajorCore,
 			})
