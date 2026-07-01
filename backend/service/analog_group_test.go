@@ -5,6 +5,7 @@ import (
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
@@ -52,24 +53,9 @@ func TestAnalogGroupOnlyOneRecommended(t *testing.T) {
 	major := interfaces.MajorData{ID: uuid.New(), Title: "Test Major", School: "Tech"}
 	s.CreateMajor(major)
 
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{
-		ID:              uuid.New(),
-		MajorID:         major.ID,
-		CourseID:        blueMatan.ID,
-		RequirementType: enums.RequirementTypeMajorCore,
-	})
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{
-		ID:              uuid.New(),
-		MajorID:         major.ID,
-		CourseID:        redMatan.ID,
-		RequirementType: enums.RequirementTypeMajorCore,
-	})
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{
-		ID:              uuid.New(),
-		MajorID:         major.ID,
-		CourseID:        blackMatan.ID,
-		RequirementType: enums.RequirementTypeMajorCore,
-	})
+	_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: blueMatan.ID, RequirementType: enums.RequirementTypeMajorCore})
+	_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: redMatan.ID, RequirementType: enums.RequirementTypeMajorCore})
+	_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: blackMatan.ID, RequirementType: enums.RequirementTypeMajorCore})
 
 	// Test 1: No courses passed - should get only one from the group
 	planner, err := NewRoadmapPlanner(PlannerKindGreedy, s)
@@ -186,24 +172,9 @@ func TestAnalogGroupDoesNotMarkVirtuallyPassedAsPassed(t *testing.T) {
 	s.CreateMajor(major)
 
 	// All three are in the major requirements
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{
-		ID:              uuid.New(),
-		MajorID:         major.ID,
-		CourseID:        courseA.ID,
-		RequirementType: enums.RequirementTypeMajorCore,
-	})
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{
-		ID:              uuid.New(),
-		MajorID:         major.ID,
-		CourseID:        courseB.ID,
-		RequirementType: enums.RequirementTypeMajorCore,
-	})
-	s.CreateMajorRequirement(interfaces.MajorRequirementData{
-		ID:              uuid.New(),
-		MajorID:         major.ID,
-		CourseID:        courseC.ID,
-		RequirementType: enums.RequirementTypeMajorCore,
-	})
+	_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: courseA.ID, RequirementType: enums.RequirementTypeMajorCore})
+	_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: courseB.ID, RequirementType: enums.RequirementTypeMajorCore})
+	_ = requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: courseC.ID, RequirementType: enums.RequirementTypeMajorCore})
 
 	planner, err := NewRoadmapPlanner(PlannerKindGreedy, s)
 	assert.NoError(t, err)

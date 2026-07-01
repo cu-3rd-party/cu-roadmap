@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"math"
 	"net/http"
 	"strconv"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/api/middleware"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
@@ -50,6 +50,7 @@ func getMajors(c *gin.Context) {
 	}
 
 	res := []gin.H{}
+	resolver := requirements.NewResolver(s)
 	for _, m := range majors {
 		internalName := ""
 		switch m.Title {
@@ -64,7 +65,7 @@ func getMajors(c *gin.Context) {
 		if cohortYear != 0 && m.CohortYear != cohortYear {
 			continue
 		}
-		reqs, err := s.GetMajorRequirements(m.ID)
+		reqs, err := resolver.ProjectMajorRequirements(m.ID)
 		if err != nil {
 			continue
 		}
@@ -173,115 +174,18 @@ func identifyMajor(c *gin.Context) {
 		return
 	}
 
-	// Build dependencies map
 	deps, _ := s.GetCourseDependencies()
-	prereqGroups := make(map[uuid.UUID]map[int][]uuid.UUID)
-	coreqMap := make(map[uuid.UUID][]uuid.UUID)
-	for _, d := range deps {
-		if d.DependencyType == enums.DependencyTypePrerequisite {
-			if prereqGroups[d.CourseID] == nil {
-				prereqGroups[d.CourseID] = make(map[int][]uuid.UUID)
-			}
-			prereqGroups[d.CourseID][d.AlternativeGroup] = append(prereqGroups[d.CourseID][d.AlternativeGroup], d.RequiredCourseID)
-		} else if d.DependencyType == enums.DependencyTypeCorequisite {
-			coreqMap[d.CourseID] = append(coreqMap[d.CourseID], d.RequiredCourseID)
-		}
-	}
-
-	// DFS to compute the earliest semester a course can be completed in,
-	// accounting for prerequisite chains and semester availability.
-	earliestMemo := make(map[uuid.UUID]int)
-	var earliestCompletionSemester func(id uuid.UUID, visited map[uuid.UUID]bool) int
-	earliestCompletionSemester = func(id uuid.UUID, visited map[uuid.UUID]bool) int {
-		if passedUUIDs[id] {
-			return 0
-		}
-		if sem, ok := earliestMemo[id]; ok {
-			return sem
-		}
-		if visited[id] {
-			return math.MaxInt32
-		}
-		course, ok := coursesByID[id]
-		if !ok {
-			return math.MaxInt32
-		}
-		if cohortYear != 0 && len(course.AllowedCohorts) > 0 && !cohortInSlice(cohortYear, course.AllowedCohorts) {
-			return math.MaxInt32
-		}
-
-		visited[id] = true
-
-		readySemester := currentSemester
-
-		for groupNum, group := range prereqGroups[id] {
-			if groupNum == 0 {
-				// AND logic: ALL must be satisfied
-				for _, pid := range group {
-					prereqSem := earliestCompletionSemester(pid, visited)
-					if prereqSem == math.MaxInt32 {
-						visited[id] = false
-						return math.MaxInt32
-					}
-					if prereqSem+1 > readySemester {
-						readySemester = prereqSem + 1
-					}
-				}
-			} else {
-				// OR logic: AT LEAST ONE must be satisfied
-				minGroupReadySem := math.MaxInt32
-				for _, pid := range group {
-					prereqSem := earliestCompletionSemester(pid, visited)
-					if prereqSem != math.MaxInt32 {
-						if prereqSem+1 < minGroupReadySem {
-							minGroupReadySem = prereqSem + 1
-						}
-					}
-				}
-				if minGroupReadySem == math.MaxInt32 {
-					visited[id] = false
-					return math.MaxInt32
-				}
-				if minGroupReadySem > readySemester {
-					readySemester = minGroupReadySem
-				}
-			}
-		}
-
-		for _, pid := range coreqMap[id] {
-			coreqSem := earliestCompletionSemester(pid, visited)
-			if coreqSem == math.MaxInt32 {
-				visited[id] = false
-				return math.MaxInt32
-			}
-			if coreqSem > readySemester {
-				readySemester = coreqSem
-			}
-		}
-
-		visited[id] = false
-		for sem := readySemester; sem <= 8; sem++ {
-			if offeredInSemester(course, sem) {
-				earliestMemo[id] = sem
-				return sem
-			}
-		}
-
-		return math.MaxInt32
-	}
+	analyzer := requirements.NewDependencyAnalyzer(coursesByID, deps, passedUUIDs, cohortYear, currentSemester, false)
+	resolver := requirements.NewResolver(s)
 
 	analysis := []gin.H{}
 	for _, m := range majors {
 		if cohortYear != 0 && m.CohortYear != cohortYear {
 			continue
 		}
-		reqs, err := s.GetMajorRequirements(m.ID)
+		reqIDs, err := resolver.MajorLeafCourseIDs(m.ID)
 		if err != nil {
 			continue
-		}
-		reqIDs := make(map[uuid.UUID]bool)
-		for _, r := range reqs {
-			reqIDs[r.CourseID] = true
 		}
 		if len(reqIDs) == 0 {
 			continue
@@ -289,10 +193,10 @@ func identifyMajor(c *gin.Context) {
 		covered := 0
 		canCover := 0
 		for id := range reqIDs {
-			if passedUUIDs[id] {
+			if analyzer.CourseCovered(id) {
 				covered++
 			} else {
-				earliestSemester := earliestCompletionSemester(id, make(map[uuid.UUID]bool))
+				earliestSemester := analyzer.EarliestCompletionSemester(id)
 				if earliestSemester <= 8 {
 					canCover++
 				}
@@ -407,26 +311,18 @@ func updateMajor(c *gin.Context) {
 		return
 	}
 
-	err = s.DeleteMajorRequirements(majorID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	flatReqs := make([]requirements.FlatRequirementInput, 0, len(req.Requirements))
 	for _, r := range req.Requirements {
 		cid, err := uuid.Parse(r.CourseID)
 		if err != nil {
 			continue
 		}
-		_, err = s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        cid,
-			RequirementType: enums.RequirementType(r.Type),
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
+		flatReqs = append(flatReqs, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: cid, RequirementType: enums.RequirementType(r.Type)})
+	}
+	err = requirements.ReplaceFlatRequirements(s, majorID, flatReqs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	invalidateCachePrefixes("majors:", "courses:")
 
@@ -464,12 +360,7 @@ func createMajor(c *gin.Context) {
 	for _, r := range req.Requirements {
 		parsedCourseID, err := uuid.Parse(r.CourseID)
 		if err == nil {
-			s.CreateMajorRequirement(interfaces.MajorRequirementData{
-				ID:              uuid.New(),
-				MajorID:         created.ID,
-				CourseID:        parsedCourseID,
-				RequirementType: enums.RequirementType(r.Type),
-			})
+			_ = requirements.AddFlatRequirement(s, created.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: parsedCourseID, RequirementType: enums.RequirementType(r.Type)})
 		}
 	}
 	invalidateCachePrefixes("majors:")

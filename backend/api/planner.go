@@ -3,8 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/service"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
@@ -155,11 +155,23 @@ func validateRoadmap(c *gin.Context) {
 
 	requiredCourseIDs := make(map[uuid.UUID]bool)
 	if req.MajorID != nil {
-		reqs, _ := s.GetMajorRequirements(*req.MajorID)
-		for _, r := range reqs {
-			if len(r.Specializations) == 0 && r.RequirementType == enums.RequirementTypeMajorCore {
-				requiredCourseIDs[r.CourseID] = true
+		finalPassed := make(map[uuid.UUID]bool, len(initialPassed))
+		for id := range initialPassed {
+			finalPassed[id] = true
+		}
+		for _, sem := range req.Roadmap {
+			for _, cid := range sem.CourseIDs {
+				finalPassed[cid] = true
 			}
+		}
+		resolver := requirements.NewResolver(s)
+		missingIDs, err := resolver.ResolveTargetCourseIDs(*req.MajorID, req.SpecializationID, finalPassed, map[uuid.UUID]bool{}, 0)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		for _, courseID := range missingIDs {
+			requiredCourseIDs[courseID] = true
 		}
 	}
 

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -18,6 +19,16 @@ import (
 
 func init() {
 	gin.SetMode(gin.TestMode)
+}
+
+func addRequirement(t testing.TB, s interfaces.StoreBase, majorID, courseID uuid.UUID, reqType enums.RequirementType, specs ...string) {
+	t.Helper()
+	assert.NoError(t, requirements.AddFlatRequirement(s, majorID, requirements.FlatRequirementInput{
+		ID:              uuid.New(),
+		CourseID:        courseID,
+		RequirementType: reqType,
+		Specializations: specs,
+	}))
 }
 
 func setupRouter(t *testing.T, seed func(s interfaces.StoreBase)) *gin.RouterGroup {
@@ -346,13 +357,7 @@ func TestGetCoursesReturnsSpecializations(t *testing.T) {
 		_, _ = s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech"})
 		_, _ = s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "Web"})
 		_, _ = s.CreateCourse(interfaces.CourseData{ID: courseID, Title: "Web Basics", AvailableSemesters: []int{1}, Workload: 3.0})
-		_, _ = s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        courseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"Web"},
-		})
+		addRequirement(t, s, majorID, courseID, enums.RequirementTypeMajorChoice, "Web")
 	})
 
 	w := httptest.NewRecorder()
@@ -385,8 +390,8 @@ func TestGetCoursesWithMajorPathReturnsByMajorTypeAndSpecializations(t *testing.
 		_, _ = s.CreateCourse(interfaces.CourseData{ID: choiceCourseID, Title: "Choice Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryAI, CourseType: enums.CourseTypeElective})
 		_, _ = s.CreateCourse(interfaces.CourseData{ID: electiveCourseID, Title: "Elective Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryBusiness, CourseType: enums.CourseTypeElective})
 		_, _ = s.CreateCourse(interfaces.CourseData{ID: fundamentalsCourseID, Title: "Fundamentals Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory})
-		_, _ = s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: majorID, CourseID: coreCourseID, RequirementType: enums.RequirementTypeMajorCore, Specializations: []string{"Web"}})
-		_, _ = s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: majorID, CourseID: choiceCourseID, RequirementType: enums.RequirementTypeMajorChoice, Specializations: []string{"Web"}})
+		addRequirement(t, s, majorID, coreCourseID, enums.RequirementTypeMajorCore, "Web")
+		addRequirement(t, s, majorID, choiceCourseID, enums.RequirementTypeMajorChoice, "Web")
 	})
 
 	w := httptest.NewRecorder()
@@ -449,7 +454,7 @@ func TestGetMajorsWithData(t *testing.T) {
 		s.CreateMajor(m)
 		c := interfaces.CourseData{ID: uuid.New(), Title: "Python", AvailableSemesters: []int{1}, Workload: 4.0}
 		s.CreateCourse(c)
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c.ID, RequirementType: enums.RequirementTypeMajorCore})
+		addRequirement(t, s, m.ID, c.ID, enums.RequirementTypeMajorCore)
 	})
 
 	w := httptest.NewRecorder()
@@ -509,8 +514,8 @@ func TestGetMajorsWithCohortYear(t *testing.T) {
 		c2 := interfaces.CourseData{ID: uuid.New(), Title: "Math", AllowedCohorts: []int{2026}, AvailableSemesters: []int{1}, Workload: 4.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m2025.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m2026.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
+		addRequirement(t, s, m2025.ID, c1.ID, enums.RequirementTypeMajorCore)
+		addRequirement(t, s, m2026.ID, c2.ID, enums.RequirementTypeMajorCore)
 	})
 
 	t.Run("without cohort returns all majors", func(t *testing.T) {
@@ -594,9 +599,9 @@ func TestIdentifyMajor(t *testing.T) {
 		s.CreateCourse(c2)
 		s.CreateCourse(c3)
 
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m2.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
+		addRequirement(t, s, m1.ID, c1.ID, enums.RequirementTypeMajorCore)
+		addRequirement(t, s, m1.ID, c2.ID, enums.RequirementTypeMajorCore)
+		addRequirement(t, s, m2.ID, c1.ID, enums.RequirementTypeMajorCore)
 	})
 
 	body := `["` + getCourseID(router, t) + `"]`
@@ -633,10 +638,10 @@ func TestIdentifyMajorWithCohortYear(t *testing.T) {
 			DependencyType:   enums.DependencyTypePrerequisite,
 		})
 
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c3.ID, RequirementType: enums.RequirementTypeMajorCore})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m2.ID, CourseID: c2.ID, RequirementType: enums.RequirementTypeMajorCore})
+		addRequirement(t, s, m1.ID, c1.ID, enums.RequirementTypeMajorCore)
+		addRequirement(t, s, m1.ID, c2.ID, enums.RequirementTypeMajorCore)
+		addRequirement(t, s, m1.ID, c3.ID, enums.RequirementTypeMajorCore)
+		addRequirement(t, s, m2.ID, c2.ID, enums.RequirementTypeMajorCore)
 	})
 
 	courses := getCoursesList(router, t)
@@ -674,7 +679,7 @@ func TestIdentifyMajorCanCoverRespectsRemainingOfferings(t *testing.T) {
 
 		c1 := interfaces.CourseData{ID: uuid.New(), Title: "Capstone", AllowedCohorts: []int{2025}, AvailableSemesters: []int{7}, Workload: 3.0}
 		s.CreateCourse(c1)
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m1.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
+		addRequirement(t, s, m1.ID, c1.ID, enums.RequirementTypeMajorCore)
 	})
 
 	w := httptest.NewRecorder()
@@ -700,13 +705,7 @@ func TestIdentifySpecializationsReturnsPlainSpecializationTitle(t *testing.T) {
 		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
 		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
 		s.CreateCourse(interfaces.CourseData{ID: courseID, Title: "Intro AI", AvailableSemesters: []int{1}, Workload: 3.0})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        courseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"AI"},
-		})
+		addRequirement(t, s, majorID, courseID, enums.RequirementTypeMajorChoice, "AI")
 	})
 
 	w := httptest.NewRecorder()
@@ -735,8 +734,8 @@ func TestIdentifySpecializationsCanFilterByMajorID(t *testing.T) {
 		s.CreateSpecialization(interfaces.SpecializationData{ID: uuid.New(), MajorID: majorTwoID, Title: "ML"})
 		s.CreateCourse(interfaces.CourseData{ID: courseOneID, Title: "Intro AI", AvailableSemesters: []int{1}, Workload: 3.0})
 		s.CreateCourse(interfaces.CourseData{ID: courseTwoID, Title: "Intro ML", AvailableSemesters: []int{1}, Workload: 3.0})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: majorOneID, CourseID: courseOneID, RequirementType: enums.RequirementTypeMajorChoice, Specializations: []string{"AI"}})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: majorTwoID, CourseID: courseTwoID, RequirementType: enums.RequirementTypeMajorChoice, Specializations: []string{"ML"}})
+		addRequirement(t, s, majorOneID, courseOneID, enums.RequirementTypeMajorChoice, "AI")
+		addRequirement(t, s, majorTwoID, courseTwoID, enums.RequirementTypeMajorChoice, "ML")
 	})
 
 	w := httptest.NewRecorder()
@@ -763,20 +762,8 @@ func TestIdentifySpecializationsCountsOnlyChoiceRequirements(t *testing.T) {
 		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
 		s.CreateCourse(interfaces.CourseData{ID: coreCourseID, Title: "Core Course", AvailableSemesters: []int{1}, Workload: 3.0})
 		s.CreateCourse(interfaces.CourseData{ID: choiceCourseID, Title: "Choice Course", AvailableSemesters: []int{1}, Workload: 3.0})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        coreCourseID,
-			RequirementType: enums.RequirementTypeMajorCore,
-			Specializations: []string{"AI"},
-		})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        choiceCourseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"AI"},
-		})
+		addRequirement(t, s, majorID, coreCourseID, enums.RequirementTypeMajorCore, "AI")
+		addRequirement(t, s, majorID, choiceCourseID, enums.RequirementTypeMajorChoice, "AI")
 	})
 
 	w := httptest.NewRecorder()
@@ -814,19 +801,8 @@ func TestIdentifySpecializationsIgnoresUnscopedChoiceRequirements(t *testing.T) 
 		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
 		s.CreateCourse(interfaces.CourseData{ID: scopedCourseID, Title: "Scoped Choice", AvailableSemesters: []int{1}, Workload: 3.0})
 		s.CreateCourse(interfaces.CourseData{ID: unscopedCourseID, Title: "Global Choice", AvailableSemesters: []int{1}, Workload: 3.0})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        scopedCourseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"AI"},
-		})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        unscopedCourseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-		})
+		addRequirement(t, s, majorID, scopedCourseID, enums.RequirementTypeMajorChoice, "AI")
+		addRequirement(t, s, majorID, unscopedCourseID, enums.RequirementTypeMajorChoice)
 	})
 
 	w := httptest.NewRecorder()
@@ -852,13 +828,7 @@ func TestIdentifySpecializationsTreatsCurrentSemesterAsFlexibleStart(t *testing.
 		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
 		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
 		s.CreateCourse(interfaces.CourseData{ID: courseID, Title: "Early Course", AvailableSemesters: []int{1}, Workload: 3.0})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        courseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"AI"},
-		})
+		addRequirement(t, s, majorID, courseID, enums.RequirementTypeMajorChoice, "AI")
 	})
 
 	w := httptest.NewRecorder()
@@ -884,13 +854,7 @@ func TestIdentifySpecializationsResetsCurrentSemesterWhenPassedCoursesAreEmpty(t
 		s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "SE", School: "Tech", CohortYear: 2025})
 		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
 		s.CreateCourse(interfaces.CourseData{ID: courseID, Title: "Early Course", AvailableSemesters: []int{1}, Workload: 3.0})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        courseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"AI"},
-		})
+		addRequirement(t, s, majorID, courseID, enums.RequirementTypeMajorChoice, "AI")
 	})
 
 	w := httptest.NewRecorder()
@@ -917,13 +881,7 @@ func TestIdentifySpecializationsTreatsPrereqAndCoreqPairAsSameSemesterOption(t *
 		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
 		s.CreateCourse(interfaces.CourseData{ID: baseCourseID, Title: "Base Course", AvailableSemesters: []int{1}, Workload: 3.0})
 		s.CreateCourse(interfaces.CourseData{ID: dependentCourseID, Title: "Dependent Course", AvailableSemesters: []int{1}, Workload: 3.0})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        dependentCourseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"AI"},
-		})
+		addRequirement(t, s, majorID, dependentCourseID, enums.RequirementTypeMajorChoice, "AI")
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         dependentCourseID,
@@ -963,20 +921,8 @@ func TestIdentifySpecializationsCollapsesAnalogGroupRequirements(t *testing.T) {
 		s.CreateSpecialization(interfaces.SpecializationData{ID: specID, MajorID: majorID, Title: "AI"})
 		s.CreateCourse(interfaces.CourseData{ID: firstCourseID, Title: "First Analog Choice", AnalogGroup: "GROUP1", AvailableSemesters: []int{1}, Workload: 3.0})
 		s.CreateCourse(interfaces.CourseData{ID: secondCourseID, Title: "Second Analog Choice", AnalogGroup: "GROUP1", AvailableSemesters: []int{1}, Workload: 3.0})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        firstCourseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"AI"},
-		})
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{
-			ID:              uuid.New(),
-			MajorID:         majorID,
-			CourseID:        secondCourseID,
-			RequirementType: enums.RequirementTypeMajorChoice,
-			Specializations: []string{"AI"},
-		})
+		addRequirement(t, s, majorID, firstCourseID, enums.RequirementTypeMajorChoice, "AI")
+		addRequirement(t, s, majorID, secondCourseID, enums.RequirementTypeMajorChoice, "AI")
 	})
 
 	w := httptest.NewRecorder()
@@ -1017,7 +963,7 @@ func TestPlannerGenerate(t *testing.T) {
 		s.CreateMajor(m)
 		c := interfaces.CourseData{ID: uuid.New(), Title: "Python", AvailableSemesters: []int{1, 2}, Workload: 4.0}
 		s.CreateCourse(c)
-		s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: m.ID, CourseID: c.ID, RequirementType: enums.RequirementTypeMajorCore})
+		addRequirement(t, s, m.ID, c.ID, enums.RequirementTypeMajorCore)
 	})
 
 	courses := getCoursesList(router, t)

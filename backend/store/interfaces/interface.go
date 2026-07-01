@@ -39,10 +39,15 @@ type StoreBase interface {
 	CreateMajor(major MajorData) (MajorData, error)
 	UpdateMajor(major MajorData) (MajorData, error)
 
-	GetMajorRequirements(majorID uuid.UUID) ([]MajorRequirementData, error)
-	GetAllMajorRequirements() ([]MajorRequirementData, error)
-	CreateMajorRequirement(req MajorRequirementData) (MajorRequirementData, error)
-	DeleteMajorRequirements(majorID uuid.UUID) error
+	GetAllBoxes() (map[uuid.UUID]BoxData, error)
+	GetBoxByID(boxID uuid.UUID) (*BoxData, error)
+	CreateBox(box BoxData) (BoxData, error)
+	UpdateBox(box BoxData) (BoxData, error)
+	DeleteBox(boxID uuid.UUID) error
+	GetBoxEdges() ([]BoxEdgeData, error)
+	CreateBoxEdge(edge BoxEdgeData) (BoxEdgeData, error)
+	DeleteBoxEdgesByParent(parentBoxID uuid.UUID) error
+	DeleteBoxEdgesByChild(childBoxID uuid.UUID) error
 
 	GetSpecializationsByMajor(majorID uuid.UUID) ([]SpecializationData, error)
 	CreateSpecialization(spec SpecializationData) (SpecializationData, error)

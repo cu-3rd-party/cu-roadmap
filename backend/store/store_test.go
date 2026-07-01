@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -147,11 +148,10 @@ func (s *MemoryStoreTestSuite) TestCreateAndGetMajorRequirement() {
 	c1 := interfaces.CourseData{ID: uuid.New(), Title: "C1", AvailableSemesters: []int{1}, Workload: 4.0}
 	s.s.CreateCourse(c1)
 
-	req := interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore}
-	_, err := s.s.CreateMajorRequirement(req)
+	err := requirements.AddFlatRequirement(s.s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: c1.ID, RequirementType: enums.RequirementTypeMajorCore})
 	assert.NoError(s.T(), err)
 
-	reqs, err := s.s.GetMajorRequirements(major.ID)
+	reqs, err := requirements.NewResolver(s.s).ProjectMajorRequirements(major.ID)
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), reqs, 1)
 }
@@ -160,7 +160,7 @@ func (s *MemoryStoreTestSuite) TestGetMajorRequirementsEmpty() {
 	major := interfaces.MajorData{ID: uuid.New(), Title: "Empty Major", School: "Test"}
 	s.s.CreateMajor(major)
 
-	reqs, err := s.s.GetMajorRequirements(major.ID)
+	reqs, err := requirements.NewResolver(s.s).ProjectMajorRequirements(major.ID)
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), reqs, 0)
 }
@@ -213,12 +213,12 @@ func (s *MemoryStoreTestSuite) TestClearAll() {
 	s.s.CreateCourse(course)
 	major := interfaces.MajorData{ID: uuid.New(), Title: "Test Major", School: "Tech"}
 	s.s.CreateMajor(major)
-	s.s.CreateMajorRequirement(interfaces.MajorRequirementData{ID: uuid.New(), MajorID: major.ID, CourseID: course.ID})
+	_ = requirements.AddFlatRequirement(s.s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: course.ID})
 	s.s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: course.ID, RequiredCourseID: course.ID})
 
 	courses, _ := s.s.GetAllCourses()
 	assert.Len(s.T(), courses, 1)
-	reqs, _ := s.s.GetMajorRequirements(major.ID)
+	reqs, _ := requirements.NewResolver(s.s).ProjectMajorRequirements(major.ID)
 	assert.Len(s.T(), reqs, 1)
 	deps, _ := s.s.GetCourseDependencies()
 	assert.Len(s.T(), deps, 1)
@@ -228,7 +228,7 @@ func (s *MemoryStoreTestSuite) TestClearAll() {
 	courses, _ = s.s.GetAllCourses()
 	assert.Len(s.T(), courses, 0) // Courses SHOULD be cleared
 
-	reqs, _ = s.s.GetMajorRequirements(major.ID)
+	reqs, _ = requirements.NewResolver(s.s).ProjectMajorRequirements(major.ID)
 	assert.Len(s.T(), reqs, 0) // Requirements should be cleared
 
 	deps, _ = s.s.GetCourseDependencies()
