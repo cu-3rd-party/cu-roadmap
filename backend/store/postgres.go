@@ -10,6 +10,7 @@ import (
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/models"
 	"github.com/cu-3rd-party/cu-roadmap/backend/metrics"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/helpers"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
@@ -61,6 +62,8 @@ func (s *PostgresStore) Init(password string) error {
 	s.SetAdminPassword(password)
 	return s.db.AutoMigrate(
 		&models.Course{},
+		&models.Box{},
+		&models.BoxEdge{},
 		&models.Major{},
 		&models.Specialization{},
 		&models.CourseDependency{},
@@ -121,6 +124,12 @@ func (s *PostgresStore) Close() error {
 }
 
 func (s *PostgresStore) ClearAll() error {
+	if err := s.db.Exec("DELETE FROM box_edges").Error; err != nil {
+		return err
+	}
+	if err := s.db.Exec("DELETE FROM boxes").Error; err != nil {
+		return err
+	}
 	if err := s.db.Exec("DELETE FROM course_dependencies").Error; err != nil {
 		return err
 	}
@@ -291,7 +300,7 @@ func (s *PostgresStore) GetAllMajors() (map[uuid.UUID]interfaces.MajorData, erro
 	}
 	out := make(map[uuid.UUID]interfaces.MajorData)
 	for _, m := range majors {
-		out[m.ID] = interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School, CohortYear: m.CohortYear}
+		out[m.ID] = interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School, CohortYear: m.CohortYear, RequirementsBoxID: m.RequirementsBoxID}
 	}
 	return out, nil
 }
@@ -304,10 +313,18 @@ func (s *PostgresStore) GetMajorByID(majorID uuid.UUID) (*interfaces.MajorData, 
 		}
 		return nil, err
 	}
-	return &interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School, CohortYear: m.CohortYear}, nil
+	return &interfaces.MajorData{ID: m.ID, Title: m.Title, School: m.School, CohortYear: m.CohortYear, RequirementsBoxID: m.RequirementsBoxID}, nil
 }
 
 func (s *PostgresStore) CreateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
+	if major.RequirementsBoxID == nil {
+		rootOp := enums.LogicalOpAnd
+		rootID := uuid.New()
+		if _, err := s.CreateBox(interfaces.BoxData{ID: rootID, Kind: enums.BoxKindLogical, Title: major.Title + " requirements", LogicalOp: &rootOp}); err != nil {
+			return major, err
+		}
+		major.RequirementsBoxID = &rootID
+	}
 	if err := s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		UpdateAll: true,
@@ -320,68 +337,185 @@ func (s *PostgresStore) CreateMajor(major interfaces.MajorData) (interfaces.Majo
 func (s *PostgresStore) UpdateMajor(major interfaces.MajorData) (interfaces.MajorData, error) {
 	if err := s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"title", "school", "cohort_year"}),
+		DoUpdates: clause.AssignmentColumns([]string{"title", "school", "cohort_year", "requirements_box_id"}),
 	}).Create(new(helpers.ToMajorModel(major))).Error; err != nil {
 		return major, err
 	}
 	return major, nil
 }
 
-func (s *PostgresStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.MajorRequirementData, error) {
-	var reqs []models.MajorRequirement
-	if err := s.db.Where("major_id = ?", majorID).Find(&reqs).Error; err != nil {
+func (s *PostgresStore) GetAllBoxes() (map[uuid.UUID]interfaces.BoxData, error) {
+	var boxes []models.Box
+	if err := s.db.Find(&boxes).Error; err != nil {
 		return nil, err
 	}
-	out := make([]interfaces.MajorRequirementData, len(reqs))
-	for i, r := range reqs {
-		out[i] = interfaces.MajorRequirementData{
-			ID:              r.ID,
-			MajorID:         r.MajorID,
-			CourseID:        r.CourseID,
-			RequirementType: r.RequirementType,
-			Specializations: []string(r.Specializations),
-		}
+	out := make(map[uuid.UUID]interfaces.BoxData, len(boxes))
+	for _, box := range boxes {
+		out[box.ID] = helpers.ToBoxData(&box)
 	}
 	return out, nil
+}
+
+func (s *PostgresStore) GetBoxByID(boxID uuid.UUID) (*interfaces.BoxData, error) {
+	var box models.Box
+	if err := s.db.First(&box, "id = ?", boxID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	boxData := helpers.ToBoxData(&box)
+	return &boxData, nil
+}
+
+func (s *PostgresStore) CreateBox(box interfaces.BoxData) (interfaces.BoxData, error) {
+	if err := s.db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, UpdateAll: true}).Create(new(helpers.ToBoxModel(box))).Error; err != nil {
+		return box, err
+	}
+	return box, nil
+}
+
+func (s *PostgresStore) UpdateBox(box interfaces.BoxData) (interfaces.BoxData, error) {
+	if err := s.db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, UpdateAll: true}).Create(new(helpers.ToBoxModel(box))).Error; err != nil {
+		return box, err
+	}
+	return box, nil
+}
+
+func (s *PostgresStore) DeleteBox(boxID uuid.UUID) error {
+	return s.db.Delete(&models.Box{}, "id = ?", boxID).Error
+}
+
+func (s *PostgresStore) GetBoxEdges() ([]interfaces.BoxEdgeData, error) {
+	var edges []models.BoxEdge
+	if err := s.db.Find(&edges).Error; err != nil {
+		return nil, err
+	}
+	out := make([]interfaces.BoxEdgeData, len(edges))
+	for i, edge := range edges {
+		out[i] = interfaces.BoxEdgeData{ID: edge.ID, ParentBoxID: edge.ParentBoxID, ChildBoxID: edge.ChildBoxID, Position: edge.Position}
+	}
+	return out, nil
+}
+
+func (s *PostgresStore) CreateBoxEdge(edge interfaces.BoxEdgeData) (interfaces.BoxEdgeData, error) {
+	model := models.BoxEdge{ID: edge.ID, ParentBoxID: edge.ParentBoxID, ChildBoxID: edge.ChildBoxID, Position: edge.Position}
+	if err := s.db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, UpdateAll: true}).Create(&model).Error; err != nil {
+		return edge, err
+	}
+	return edge, nil
+}
+
+func (s *PostgresStore) DeleteBoxEdgesByParent(parentBoxID uuid.UUID) error {
+	return s.db.Where("parent_box_id = ?", parentBoxID).Delete(&models.BoxEdge{}).Error
+}
+
+func (s *PostgresStore) DeleteBoxEdgesByChild(childBoxID uuid.UUID) error {
+	return s.db.Where("child_box_id = ?", childBoxID).Delete(&models.BoxEdge{}).Error
+}
+
+func (s *PostgresStore) GetMajorRequirements(majorID uuid.UUID) ([]interfaces.MajorRequirementData, error) {
+	return requirements.NewResolver(s).ProjectMajorRequirements(majorID)
 }
 
 func (s *PostgresStore) GetAllMajorRequirements() ([]interfaces.MajorRequirementData, error) {
-	var reqs []models.MajorRequirement
-	if err := s.db.Find(&reqs).Error; err != nil {
-		return nil, err
-	}
-	out := make([]interfaces.MajorRequirementData, len(reqs))
-	for i, r := range reqs {
-		out[i] = interfaces.MajorRequirementData{
-			ID:              r.ID,
-			MajorID:         r.MajorID,
-			CourseID:        r.CourseID,
-			RequirementType: r.RequirementType,
-			Specializations: []string(r.Specializations),
-		}
-	}
-	return out, nil
+	return requirements.NewResolver(s).ProjectAllMajorRequirements()
 }
 
 func (s *PostgresStore) CreateMajorRequirement(req interfaces.MajorRequirementData) (interfaces.MajorRequirementData, error) {
-	r := models.MajorRequirement{
-		ID:              req.ID,
-		MajorID:         req.MajorID,
-		CourseID:        req.CourseID,
-		RequirementType: req.RequirementType,
-		Specializations: pq.StringArray(req.Specializations),
-	}
-	if err := s.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
-		DoNothing: true,
-	}).Create(&r).Error; err != nil {
+	major, err := s.GetMajorByID(req.MajorID)
+	if err != nil || major == nil {
 		return req, err
+	}
+	reqType := req.RequirementType
+	leaf, err := s.CreateBox(interfaces.BoxData{
+		ID:              req.ID,
+		Kind:            enums.BoxKindCourse,
+		CourseID:        &req.CourseID,
+		RequirementType: &reqType,
+		Specializations: append([]string(nil), req.Specializations...),
+	})
+	if err != nil {
+		return req, err
+	}
+	if major.RequirementsBoxID != nil && (req.RequirementType != enums.RequirementTypeMajorChoice || len(req.Specializations) == 0) {
+		edges, err := s.GetBoxEdges()
+		if err != nil {
+			return req, err
+		}
+		position := 0
+		for _, edge := range edges {
+			if edge.ParentBoxID == *major.RequirementsBoxID && edge.Position >= position {
+				position = edge.Position + 1
+			}
+		}
+		if _, err := s.CreateBoxEdge(interfaces.BoxEdgeData{ID: uuid.New(), ParentBoxID: *major.RequirementsBoxID, ChildBoxID: leaf.ID, Position: position}); err != nil {
+			return req, err
+		}
+	}
+	if req.RequirementType == enums.RequirementTypeMajorChoice && len(req.Specializations) > 0 {
+		specs, err := s.GetSpecializationsByMajor(req.MajorID)
+		if err != nil {
+			return req, err
+		}
+		edges, err := s.GetBoxEdges()
+		if err != nil {
+			return req, err
+		}
+		for _, specTitle := range req.Specializations {
+			for _, spec := range specs {
+				if spec.RequirementsBoxID == nil || !strings.EqualFold(spec.Title, specTitle) {
+					continue
+				}
+				position := 0
+				for _, edge := range edges {
+					if edge.ParentBoxID == *spec.RequirementsBoxID && edge.Position >= position {
+						position = edge.Position + 1
+					}
+				}
+				if _, err := s.CreateBoxEdge(interfaces.BoxEdgeData{ID: uuid.New(), ParentBoxID: *spec.RequirementsBoxID, ChildBoxID: leaf.ID, Position: position}); err != nil {
+					return req, err
+				}
+			}
+		}
 	}
 	return req, nil
 }
 
 func (s *PostgresStore) DeleteMajorRequirements(majorID uuid.UUID) error {
-	return s.db.Where("major_id = ?", majorID).Delete(&models.MajorRequirement{}).Error
+	major, err := s.GetMajorByID(majorID)
+	if err != nil || major == nil {
+		return err
+	}
+	projected, err := requirements.NewResolver(s).ProjectMajorRequirements(majorID)
+	if err != nil {
+		return err
+	}
+	if major.RequirementsBoxID != nil {
+		if err := s.DeleteBoxEdgesByParent(*major.RequirementsBoxID); err != nil {
+			return err
+		}
+	}
+	specs, err := s.GetSpecializationsByMajor(majorID)
+	if err != nil {
+		return err
+	}
+	for _, spec := range specs {
+		if spec.RequirementsBoxID != nil {
+			if err := s.DeleteBoxEdgesByParent(*spec.RequirementsBoxID); err != nil {
+				return err
+			}
+		}
+	}
+	for _, req := range projected {
+		if err := s.DeleteBoxEdgesByChild(req.ID); err != nil {
+			return err
+		}
+		if err := s.DeleteBox(req.ID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *PostgresStore) CreateCourseDependency(dep interfaces.CourseDependencyData) (interfaces.CourseDependencyData, error) {
@@ -484,12 +618,20 @@ func (s *PostgresStore) GetSpecializationsByMajor(majorID uuid.UUID) ([]interfac
 	}
 	out := make([]interfaces.SpecializationData, len(specs))
 	for i, sp := range specs {
-		out[i] = interfaces.SpecializationData{ID: sp.ID, MajorID: sp.MajorID, Title: sp.Title}
+		out[i] = interfaces.SpecializationData{ID: sp.ID, MajorID: sp.MajorID, Title: sp.Title, RequirementsBoxID: sp.RequirementsBoxID}
 	}
 	return out, nil
 }
 
 func (s *PostgresStore) CreateSpecialization(spec interfaces.SpecializationData) (interfaces.SpecializationData, error) {
+	if spec.RequirementsBoxID == nil {
+		rootOp := enums.LogicalOpAnd
+		rootID := uuid.New()
+		if _, err := s.CreateBox(interfaces.BoxData{ID: rootID, Kind: enums.BoxKindLogical, Title: spec.Title + " requirements", LogicalOp: &rootOp}); err != nil {
+			return spec, err
+		}
+		spec.RequirementsBoxID = &rootID
+	}
 	sModel := helpers.ToSpecializationModel(spec)
 	if err := s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},

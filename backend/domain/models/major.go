@@ -6,11 +6,13 @@ import (
 )
 
 type Major struct {
-	ID           uuid.UUID          `gorm:"type:uuid;primaryKey"`
-	Title        string             `gorm:"index"`
-	School       string             `gorm:"not null"`
-	CohortYear   int                `gorm:"index"`
-	Requirements []MajorRequirement `gorm:"foreignKey:MajorID"`
+	ID                uuid.UUID          `gorm:"type:uuid;primaryKey"`
+	Title             string             `gorm:"index"`
+	School            string             `gorm:"not null"`
+	CohortYear        int                `gorm:"index"`
+	RequirementsBoxID *uuid.UUID         `gorm:"type:uuid;index"`
+	RequirementsBox   *Box               `gorm:"foreignKey:RequirementsBoxID"`
+	Requirements      []MajorRequirement `gorm:"foreignKey:MajorID"`
 }
 
 func (m *Major) BeforeCreate(tx *gorm.DB) error {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/enums"
 	"github.com/cu-3rd-party/cu-roadmap/backend/domain/schemas"
+	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store/interfaces"
 	"github.com/google/uuid"
 )
@@ -33,6 +34,24 @@ type semesterBundle struct {
 	score     float64
 }
 
+func toBoolMap(ids []uuid.UUID) map[uuid.UUID]bool {
+	out := make(map[uuid.UUID]bool, len(ids))
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out
+}
+
+func plannedCourseIDMap(semesters []schemas.PlannedSemester) map[uuid.UUID]bool {
+	out := make(map[uuid.UUID]bool)
+	for _, sem := range semesters {
+		for _, id := range sem.CourseIDs {
+			out[id] = true
+		}
+	}
+	return out
+}
+
 func newRoadmapPlanningContext(
 	store interfaces.StoreBase,
 	passedCourseIDs []uuid.UUID,
@@ -42,11 +61,16 @@ func newRoadmapPlanningContext(
 	maxLoad float64,
 	cohort int,
 ) (*roadmapPlanningContext, interface{}, error) {
-	requirements, err := store.GetMajorRequirements(majorID)
+	projectedRequirements, err := store.GetMajorRequirements(majorID)
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(requirements) == 0 {
+	resolver := requirements.NewResolver(store)
+	targetCourseIDs, err := resolver.ResolveTargetCourseIDs(majorID, specializationID, toBoolMap(passedCourseIDs), plannedCourseIDMap(plannedSemesters), cohort)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(projectedRequirements) == 0 && len(targetCourseIDs) == 0 {
 		return nil, map[string]interface{}{"error": "Major requirements not found"}, nil
 	}
 
@@ -55,31 +79,13 @@ func newRoadmapPlanningContext(
 		return nil, nil, err
 	}
 
-	var specTitle *string
-	if specializationID != nil {
-		specs, err := store.GetSpecializationsByMajor(majorID)
-		if err == nil {
-			for _, s := range specs {
-				if s.ID == *specializationID {
-					t := s.Title
-					specTitle = &t
-					break
-				}
-			}
-		}
-	}
-
 	for _, c := range allCourses {
 		upperGroup := strings.ToUpper(c.AnalogGroup)
 		if strings.Contains(upperGroup, "ОБЯЗ&ВРУЧНУЮ:") {
 			continue // Mandatory but must be manually picked, skip auto-injection
 		}
 		if strings.Contains(upperGroup, "ОБЯЗ:") {
-			fmt.Printf("DEBUG INJECT: Injecting %s (group: %s)\n", c.Title, c.AnalogGroup)
-			requirements = append(requirements, interfaces.MajorRequirementData{
-				CourseID:        c.ID,
-				RequirementType: enums.RequirementTypeMajorCore,
-			})
+			targetCourseIDs = append(targetCourseIDs, c.ID)
 		}
 	}
 
@@ -115,48 +121,33 @@ func newRoadmapPlanningContext(
 
 	targetCourses := make(map[uuid.UUID]interfaces.CourseData)
 	coreCourseIDs := make(map[uuid.UUID]bool)
-	for _, req := range requirements {
-		if c, ok := allCourses[req.CourseID]; ok {
+	for _, courseID := range targetCourseIDs {
+		if c, ok := allCourses[courseID]; ok {
 			if cohort != 0 && len(c.AllowedCohorts) > 0 && !cohortInSlice(cohort, c.AllowedCohorts) {
 				continue
-			}
-
-			if req.RequirementType == enums.RequirementTypeMajorChoice && specTitle != nil {
-				belongs := false
-				for _, t := range req.Specializations {
-					if t == *specTitle {
-						belongs = true
-						break
-					}
-				}
-				if !belongs {
-					continue
-				}
 			}
 
 			// If the analog group is fulfilled by passed or planned courses,
 			// we skip other courses of this group from being added to targetCourses.
 			if c.AnalogGroup != "" && fulfilledAnalogGroups[c.AnalogGroup] {
-				isTheFulfillingCourse := passedIDs[req.CourseID] || plannedIDs[req.CourseID]
+				isTheFulfillingCourse := passedIDs[courseID] || plannedIDs[courseID]
 				if !isTheFulfillingCourse {
 					fmt.Printf("DEBUG: Skipping %s (group %s already fulfilled)\n", c.Title, c.AnalogGroup)
 					continue
 				}
 			}
 
-			targetCourses[req.CourseID] = c
+			targetCourses[courseID] = c
 			if c.AnalogGroup != "" {
 				fmt.Printf("DEBUG: Added %s to targetCourses (group %s)\n", c.Title, c.AnalogGroup)
 			}
-			if !plannedIDs[req.CourseID] && (req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity) {
-				coreCourseIDs[req.CourseID] = true
-			}
 		}
 	}
-	if len(targetCourses) == 0 {
-		return nil, map[string]interface{}{"error": "No courses found for major requirements"}, nil
+	for _, req := range projectedRequirements {
+		if !plannedIDs[req.CourseID] && (req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity) {
+			coreCourseIDs[req.CourseID] = true
+		}
 	}
-
 	allDeps, err := store.GetCourseDependencies()
 	if err != nil {
 		return nil, nil, err
@@ -191,6 +182,20 @@ func newRoadmapPlanningContext(
 				mandatoryReqs[dep.RequiredCourseID] = true
 			}
 		}
+	}
+	if len(targetCourses) == 0 {
+		return &roadmapPlanningContext{
+			store:             store,
+			targetCourses:     targetCourses,
+			prereqGroups:      prereqGroups,
+			coreqs:            coreqs,
+			unlocksCount:      unlocksCount,
+			passedIDs:         passedIDs,
+			coursesTodo:       map[uuid.UUID]interfaces.CourseData{},
+			coreCourseIDs:     coreCourseIDs,
+			reservedForFuture: make(map[uuid.UUID]bool),
+			maxLoad:           maxLoad,
+		}, nil, nil
 	}
 
 	// Prune targetCourses for AnalogGroup duplicates BEFORE resolving dependencies

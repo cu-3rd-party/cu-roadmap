@@ -6,5 +6,5 @@ import (
 )
 
 func ToSpecializationModel(spec interfaces.SpecializationData) models.Specialization {
-	return models.Specialization{ID: spec.ID, MajorID: spec.MajorID, Title: spec.Title}
+	return models.Specialization{ID: spec.ID, MajorID: spec.MajorID, Title: spec.Title, RequirementsBoxID: spec.RequirementsBoxID}
 }
