@@ -107,28 +107,6 @@ func (a *DependencyAnalyzer) BuildCourseStatusDetails(courseIDs map[uuid.UUID]bo
 	return covered, canCover, cannotCover
 }
 
-func (a *DependencyAnalyzer) CategorizeCourseIDs(courseIDs map[uuid.UUID]bool) ([]string, []string, []string) {
-	ids := make([]uuid.UUID, 0, len(courseIDs))
-	for id := range courseIDs {
-		ids = append(ids, id)
-	}
-	sort.Slice(ids, func(i, j int) bool { return ids[i].String() < ids[j].String() })
-	covered := make([]string, 0)
-	canCover := make([]string, 0)
-	cannotCover := make([]string, 0)
-	for _, id := range ids {
-		idStr := id.String()
-		if a.CourseCovered(id) {
-			covered = append(covered, idStr)
-		} else if a.courseCanCover(id) {
-			canCover = append(canCover, idStr)
-		} else {
-			cannotCover = append(cannotCover, idStr)
-		}
-	}
-	return covered, canCover, cannotCover
-}
-
 func (a *DependencyAnalyzer) earliestCompletionSemester(id uuid.UUID, visited map[uuid.UUID]bool) int {
 	if a.CourseCovered(id) {
 		return 0

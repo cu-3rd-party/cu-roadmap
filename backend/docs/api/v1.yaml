@@ -481,10 +481,6 @@ paths:
                       covered_count: 0
                       can_cover_count: 16
                       total_count: 16
-                      is_core: false
-                      completed_ids: []
-                      can_cover_ids: []
-                      cannot_cover_ids: []
         '400':
           $ref: '#/components/responses/BadRequestError'
         '500':
@@ -543,10 +539,6 @@ paths:
                       covered_count: 0
                       can_cover_count: 16
                       total_count: 16
-                      is_core: false
-                      completed_ids: []
-                      can_cover_ids: []
-                      cannot_cover_ids: []
         '400':
           $ref: '#/components/responses/BadRequestError'
         '500':
@@ -983,25 +975,6 @@ components:
           type: integer
         total_count:
           type: integer
-        is_core:
-          type: boolean
-          description: true, если элемент описывает обязательные дисциплины (Core) направления, а не специализацию
-        completed_ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-        can_cover_ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-        cannot_cover_ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-
 
     IdentifyMajorRequest:
       description: запрос может быть или массивом UUID пройденных курсов, или объектом с текущим семестром и необязательным фильтром по мейджору

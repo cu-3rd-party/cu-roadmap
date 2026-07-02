@@ -82,7 +82,6 @@ func identifySpecializations(c *gin.Context) {
 	resolver := requirements.NewResolver(s)
 
 	analysis := []gin.H{}
-
 	for _, m := range majors {
 		if majorIDFilter != nil && m.ID != *majorIDFilter {
 			continue
@@ -90,60 +89,6 @@ func identifySpecializations(c *gin.Context) {
 		if cohortYear != 0 && m.CohortYear != cohortYear {
 			continue
 		}
-
-		coreReqIDs, _ := resolver.MajorCoreCourseIDs(m.ID)
-		if len(coreReqIDs) > 0 {
-			coreGroups := requirements.GroupCourseIDsByAnalog(coreReqIDs, coursesByID)
-			coreTotalCount := len(coreGroups)
-			coreCovered := 0
-			coreCanCover := 0
-			coreCompletedIDs := make([]string, 0)
-			coreCanCoverIDs := make([]string, 0)
-			coreCannotCoverIDs := make([]string, 0)
-			for _, group := range coreGroups {
-				groupCovered := false
-				groupCanCover := false
-				for id := range group {
-					if analyzer.CourseCovered(id) {
-						groupCovered = true
-					} else {
-						if analyzer.EarliestCompletionSemester(id) <= 8 {
-							groupCanCover = true
-						}
-					}
-				}
-				if groupCovered {
-					coreCovered++
-				}
-				if groupCanCover {
-					coreCanCover++
-				}
-				gCov, gCan, gCannot := analyzer.CategorizeCourseIDs(group)
-				coreCompletedIDs = append(coreCompletedIDs, gCov...)
-				coreCanCoverIDs = append(coreCanCoverIDs, gCan...)
-				coreCannotCoverIDs = append(coreCannotCoverIDs, gCannot...)
-			}
-			coreScore := 0.0
-			if coreTotalCount > 0 {
-				coreScore = float64(coreCovered) / float64(coreTotalCount)
-			}
-			coreID := uuid.NewSHA1(uuid.NameSpaceOID, []byte(m.ID.String()+"-core"))
-			analysis = append(analysis, gin.H{
-				"id":               coreID.String(),
-				"major_id":         m.ID.String(),
-				"title":            "Обязательные дисциплины",
-				"cohort_year":      m.CohortYear,
-				"score":            coreScore,
-				"covered_count":    coreCovered,
-				"can_cover_count":  coreCanCover,
-				"total_count":      coreTotalCount,
-				"is_core":          true,
-				"completed_ids":    coreCompletedIDs,
-				"can_cover_ids":    coreCanCoverIDs,
-				"cannot_cover_ids": coreCannotCoverIDs,
-			})
-		}
-
 		specs, err := s.GetSpecializationsByMajor(m.ID)
 		if err != nil {
 			continue
@@ -162,9 +107,9 @@ func identifySpecializations(c *gin.Context) {
 
 			covered := 0
 			canCover := 0
-			completedIDs := make([]string, 0)
-			canCoverIDs := make([]string, 0)
-			cannotCoverIDs := make([]string, 0)
+			coveredCourses := make([]map[string]interface{}, 0)
+			canCoverCourses := make([]map[string]interface{}, 0)
+			cannotCoverCourses := make([]map[string]interface{}, 0)
 			for _, group := range requirementGroups {
 				groupCovered := false
 				groupCanCover := false
@@ -184,25 +129,26 @@ func identifySpecializations(c *gin.Context) {
 				if groupCanCover {
 					canCover++
 				}
-				gCov, gCan, gCannot := analyzer.CategorizeCourseIDs(group)
-				completedIDs = append(completedIDs, gCov...)
-				canCoverIDs = append(canCoverIDs, gCan...)
-				cannotCoverIDs = append(cannotCoverIDs, gCannot...)
+			}
+			for _, group := range requirementGroups {
+				groupCoveredCourses, groupCanCoverCourses, groupCannotCoverCourses := analyzer.BuildCourseStatusDetails(group)
+				coveredCourses = append(coveredCourses, groupCoveredCourses...)
+				canCoverCourses = append(canCoverCourses, groupCanCoverCourses...)
+				cannotCoverCourses = append(cannotCoverCourses, groupCannotCoverCourses...)
 			}
 			score := float64(covered) / float64(len(requirementGroups))
 			analysis = append(analysis, gin.H{
-				"id":               m.ID.String(),
-				"major_id":         m.ID.String(),
-				"title":            m.Title,
-				"cohort_year":      m.CohortYear,
-				"score":            score,
-				"covered_count":    covered,
-				"can_cover_count":  canCover,
-				"total_count":      len(requirementGroups),
-				"is_core":          false,
-				"completed_ids":    completedIDs,
-				"can_cover_ids":    canCoverIDs,
-				"cannot_cover_ids": cannotCoverIDs,
+				"id":                   m.ID.String(),
+				"major_id":             m.ID.String(),
+				"title":                m.Title,
+				"cohort_year":          m.CohortYear,
+				"score":                score,
+				"covered_count":        covered,
+				"can_cover_count":      canCover,
+				"total_count":          len(requirementGroups),
+				"covered_courses":      coveredCourses,
+				"can_cover_courses":    canCoverCourses,
+				"cannot_cover_courses": cannotCoverCourses,
 			})
 			continue
 		}
@@ -220,9 +166,9 @@ func identifySpecializations(c *gin.Context) {
 
 			covered := 0
 			canCover := 0
-			completedIDs := make([]string, 0)
-			canCoverIDs := make([]string, 0)
-			cannotCoverIDs := make([]string, 0)
+			coveredCourses := make([]map[string]interface{}, 0)
+			canCoverCourses := make([]map[string]interface{}, 0)
+			cannotCoverCourses := make([]map[string]interface{}, 0)
 			for _, group := range requirementGroups {
 				groupCovered := false
 				groupCanCover := false
@@ -242,36 +188,33 @@ func identifySpecializations(c *gin.Context) {
 				if groupCanCover {
 					canCover++
 				}
-				gCov, gCan, gCannot := analyzer.CategorizeCourseIDs(group)
-				completedIDs = append(completedIDs, gCov...)
-				canCoverIDs = append(canCoverIDs, gCan...)
-				cannotCoverIDs = append(cannotCoverIDs, gCannot...)
+			}
+			for _, group := range requirementGroups {
+				groupCoveredCourses, groupCanCoverCourses, groupCannotCoverCourses := analyzer.BuildCourseStatusDetails(group)
+				coveredCourses = append(coveredCourses, groupCoveredCourses...)
+				canCoverCourses = append(canCoverCourses, groupCanCoverCourses...)
+				cannotCoverCourses = append(cannotCoverCourses, groupCannotCoverCourses...)
 			}
 			score := float64(covered) / float64(len(requirementGroups))
 			analysis = append(analysis, gin.H{
-				"id":               spec.ID.String(),
-				"major_id":         m.ID.String(),
-				"title":            spec.Title,
-				"cohort_year":      m.CohortYear,
-				"score":            score,
-				"covered_count":    covered,
-				"can_cover_count":  canCover,
-				"total_count":      len(requirementGroups),
-				"is_core":          false,
-				"completed_ids":    completedIDs,
-				"can_cover_ids":    canCoverIDs,
-				"cannot_cover_ids": cannotCoverIDs,
+				"id":                   spec.ID.String(),
+				"major_id":             m.ID.String(),
+				"title":                spec.Title,
+				"cohort_year":          m.CohortYear,
+				"score":                score,
+				"covered_count":        covered,
+				"can_cover_count":      canCover,
+				"total_count":          len(requirementGroups),
+				"covered_courses":      coveredCourses,
+				"can_cover_courses":    canCoverCourses,
+				"cannot_cover_courses": cannotCoverCourses,
 			})
 		}
 	}
 
 	for i := 0; i < len(analysis); i++ {
 		for j := i + 1; j < len(analysis); j++ {
-			isCoreI, _ := analysis[i]["is_core"].(bool)
-			isCoreJ, _ := analysis[j]["is_core"].(bool)
-			if isCoreJ && !isCoreI {
-				analysis[i], analysis[j] = analysis[j], analysis[i]
-			} else if isCoreI == isCoreJ && analysis[j]["score"].(float64) > analysis[i]["score"].(float64) {
+			if analysis[j]["score"].(float64) > analysis[i]["score"].(float64) {
 				analysis[i], analysis[j] = analysis[j], analysis[i]
 			}
 		}

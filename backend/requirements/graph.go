@@ -242,35 +242,6 @@ func (r *Resolver) MajorChoiceCourseIDs(majorID uuid.UUID) (map[uuid.UUID]bool, 
 	return out, nil
 }
 
-func (r *Resolver) MajorCoreCourseIDs(majorID uuid.UUID) (map[uuid.UUID]bool, error) {
-	g, err := r.LoadGraph()
-	if err != nil {
-		return nil, err
-	}
-	major, err := r.store.GetMajorByID(majorID)
-	if err != nil || major == nil || major.RequirementsBoxID == nil {
-		return nil, err
-	}
-	leaves, err := g.DescendantLeaves(*major.RequirementsBoxID)
-	if err != nil {
-		return nil, err
-	}
-	out := make(map[uuid.UUID]bool)
-	for _, leaf := range leaves {
-		if leaf.Kind != enums.BoxKindCourse || leaf.CourseID == nil {
-			continue
-		}
-		reqType := enums.RequirementTypeMajorCore
-		if leaf.RequirementType != nil {
-			reqType = *leaf.RequirementType
-		}
-		if reqType == enums.RequirementTypeMajorCore {
-			out[*leaf.CourseID] = true
-		}
-	}
-	return out, nil
-}
-
 func (r *Resolver) SpecializationCourseIDs(spec interfaces.SpecializationData) (map[uuid.UUID]bool, error) {
 	if spec.RequirementsBoxID == nil {
 		return map[uuid.UUID]bool{}, nil
