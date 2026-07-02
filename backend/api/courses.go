@@ -185,16 +185,20 @@ func getCourses(c *gin.Context) {
 					if majorData != nil {
 						item["category"] = inferMajorCategory(majorData)
 					}
+				case enums.RequirementTypeFlex:
+					item["by_major_type"] = "flex"
 				default:
 					item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
 				}
 			} else {
 				item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
 			}
+		} else {
+			item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
+		}
 
-			if item["by_major_type"] == "other" {
-				item["course_type"] = "other"
-			}
+		if item["by_major_type"] == "other" || item["by_major_type"] == "flex" {
+			item["course_type"] = item["by_major_type"]
 		}
 
 		specializationIDs := make([]string, 0)
@@ -219,7 +223,7 @@ func classifyCourseByCategory(category enums.CourseCategory, courseType enums.Co
 
 	switch category {
 	case enums.CourseCategorySoft, enums.CourseCategorySTEM:
-		return "other"
+		return "flex"
 	default:
 		return "elective"
 	}

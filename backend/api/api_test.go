@@ -382,6 +382,7 @@ func TestGetCoursesWithMajorPathReturnsByMajorTypeAndSpecializations(t *testing.
 	choiceCourseID := uuid.New()
 	electiveCourseID := uuid.New()
 	fundamentalsCourseID := uuid.New()
+	flexCourseID := uuid.New()
 
 	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
 		_, _ = s.CreateMajor(interfaces.MajorData{ID: majorID, Title: "Разработка", School: "Tech"})
@@ -390,6 +391,7 @@ func TestGetCoursesWithMajorPathReturnsByMajorTypeAndSpecializations(t *testing.
 		_, _ = s.CreateCourse(interfaces.CourseData{ID: choiceCourseID, Title: "Choice Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryAI, CourseType: enums.CourseTypeElective})
 		_, _ = s.CreateCourse(interfaces.CourseData{ID: electiveCourseID, Title: "Elective Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryBusiness, CourseType: enums.CourseTypeElective})
 		_, _ = s.CreateCourse(interfaces.CourseData{ID: fundamentalsCourseID, Title: "Fundamentals Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategoryFundamentals, CourseType: enums.CourseTypeMandatory})
+		_, _ = s.CreateCourse(interfaces.CourseData{ID: flexCourseID, Title: "STEM Flex Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategorySTEM, CourseType: enums.CourseTypeOther})
 		addRequirement(t, s, majorID, coreCourseID, enums.RequirementTypeMajorCore, "Web")
 		addRequirement(t, s, majorID, choiceCourseID, enums.RequirementTypeMajorChoice, "Web")
 	})
@@ -435,6 +437,12 @@ func TestGetCoursesWithMajorPathReturnsByMajorTypeAndSpecializations(t *testing.
 	assert.Equal(t, "other", fundamentalsCourse["by_major_type"])
 	assert.Equal(t, "other", fundamentalsCourse["course_type"])
 	assert.Equal(t, "fundamentals", fundamentalsCourse["category"])
+
+	flexCourse := findCourse("STEM Flex Course")
+	assert.NotNil(t, flexCourse)
+	assert.Equal(t, "flex", flexCourse["by_major_type"])
+	assert.Equal(t, "flex", flexCourse["course_type"])
+	assert.Equal(t, "stem", flexCourse["category"])
 }
 
 func TestGetMajorsEmpty(t *testing.T) {
