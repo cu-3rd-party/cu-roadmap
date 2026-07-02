@@ -19,6 +19,14 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+type legacyMajorRequirement struct {
+	ID              uuid.UUID
+	MajorID         uuid.UUID
+	CourseID        uuid.UUID
+	RequirementType enums.RequirementType
+	Specializations pq.StringArray
+}
+
 type PostgresStore struct {
 	db            *gorm.DB
 	databaseURL   string
@@ -59,7 +67,7 @@ func (s *PostgresStore) Init(password string) error {
 		return err
 	}
 	s.SetAdminPassword(password)
-	return s.db.AutoMigrate(
+	err = s.db.AutoMigrate(
 		&models.Course{},
 		&models.Box{},
 		&models.BoxEdge{},
@@ -68,6 +76,133 @@ func (s *PostgresStore) Init(password string) error {
 		&models.CourseDependency{},
 		&models.Student{},
 	)
+	if err != nil {
+		return err
+	}
+	return s.backfillLegacyRequirementBoxes()
+}
+
+func (s *PostgresStore) backfillLegacyRequirementBoxes() error {
+	if !s.db.Migrator().HasTable("major_requirements") {
+		return nil
+	}
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		rootOp := enums.LogicalOpAnd
+
+		var majors []models.Major
+		if err := tx.Find(&majors).Error; err != nil {
+			return err
+		}
+		majorRoots := make(map[uuid.UUID]uuid.UUID, len(majors))
+		for _, major := range majors {
+			rootID := major.RequirementsBoxID
+			if rootID == nil {
+				createdID := uuid.New()
+				if err := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoNothing: true}).Create(&models.Box{
+					ID:        createdID,
+					Kind:      enums.BoxKindLogical,
+					Title:     major.Title + " requirements",
+					LogicalOp: &rootOp,
+				}).Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&models.Major{}).Where("id = ?", major.ID).Update("requirements_box_id", createdID).Error; err != nil {
+					return err
+				}
+				rootID = &createdID
+			}
+			majorRoots[major.ID] = *rootID
+		}
+
+		var specs []models.Specialization
+		if err := tx.Find(&specs).Error; err != nil {
+			return err
+		}
+		specRoots := make(map[uuid.UUID]uuid.UUID, len(specs))
+		specTitleToIDByMajor := make(map[uuid.UUID]map[string]uuid.UUID)
+		for _, spec := range specs {
+			rootID := spec.RequirementsBoxID
+			if rootID == nil {
+				createdID := uuid.New()
+				if err := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoNothing: true}).Create(&models.Box{
+					ID:        createdID,
+					Kind:      enums.BoxKindLogical,
+					Title:     spec.Title + " requirements",
+					LogicalOp: &rootOp,
+				}).Error; err != nil {
+					return err
+				}
+				if err := tx.Model(&models.Specialization{}).Where("id = ?", spec.ID).Update("requirements_box_id", createdID).Error; err != nil {
+					return err
+				}
+				rootID = &createdID
+			}
+			specRoots[spec.ID] = *rootID
+			if specTitleToIDByMajor[spec.MajorID] == nil {
+				specTitleToIDByMajor[spec.MajorID] = make(map[string]uuid.UUID)
+			}
+			specTitleToIDByMajor[spec.MajorID][strings.ToLower(strings.TrimSpace(spec.Title))] = spec.ID
+		}
+
+		var reqs []legacyMajorRequirement
+		if err := tx.Table("major_requirements").Find(&reqs).Error; err != nil {
+			return err
+		}
+
+		for _, req := range reqs {
+			reqType := req.RequirementType
+			leaf := models.Box{
+				ID:              req.ID,
+				Kind:            enums.BoxKindCourse,
+				CourseID:        &req.CourseID,
+				RequirementType: &reqType,
+				Specializations: req.Specializations,
+			}
+			if err := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoNothing: true}).Create(&leaf).Error; err != nil {
+				return err
+			}
+
+			if req.RequirementType != enums.RequirementTypeMajorChoice || len(req.Specializations) == 0 {
+				parentID, ok := majorRoots[req.MajorID]
+				if !ok {
+					continue
+				}
+				edgeID := uuid.NewSHA1(uuid.NameSpaceOID, []byte(parentID.String()+"|"+req.ID.String()))
+				if err := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoNothing: true}).Create(&models.BoxEdge{
+					ID:          edgeID,
+					ParentBoxID: parentID,
+					ChildBoxID:  req.ID,
+				}).Error; err != nil {
+					return err
+				}
+				continue
+			}
+
+			majorSpecs := specTitleToIDByMajor[req.MajorID]
+			for _, title := range req.Specializations {
+				specID, ok := majorSpecs[strings.ToLower(strings.TrimSpace(title))]
+				if !ok {
+					continue
+				}
+				parentID, ok := specRoots[specID]
+				if !ok {
+					continue
+				}
+				edgeID := uuid.NewSHA1(uuid.NameSpaceOID, []byte(parentID.String()+"|"+req.ID.String()))
+				if err := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "id"}}, DoNothing: true}).Create(&models.BoxEdge{
+					ID:          edgeID,
+					ParentBoxID: parentID,
+					ChildBoxID:  req.ID,
+				}).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+		slog.Info("legacy major_requirements backfill complete", "majors", len(majors), "specializations", len(specs), "requirements", len(reqs))
+		return nil
+	})
 }
 
 func registerDBMetricsCallbacks(db *gorm.DB) error {
