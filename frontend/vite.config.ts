@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
         manifest: manifest,
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+          navigateFallbackDenylist: [/^\/admin(?:\/|$)/, /^\/grafana(?:\/|$)/],
         },
         devOptions: {
           enabled: DEV_ENABLE_PWA,
