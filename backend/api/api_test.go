@@ -782,20 +782,28 @@ func TestIdentifySpecializationsCountsOnlyChoiceRequirements(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 	var analysis []map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &analysis)
-	assert.Len(t, analysis, 1)
-	assert.Equal(t, float64(1), analysis[0]["covered_count"])
-	assert.Equal(t, float64(0), analysis[0]["can_cover_count"])
+	assert.Len(t, analysis, 2)
+	// Core card (Обязательные дисциплины) is always sorted first and has is_core: true
+	assert.Equal(t, "Обязательные дисциплины", analysis[0]["title"])
+	assert.Equal(t, true, analysis[0]["is_core"])
+	assert.Equal(t, float64(0), analysis[0]["covered_count"])
+	assert.Equal(t, float64(1), analysis[0]["can_cover_count"])
 	assert.Equal(t, float64(1), analysis[0]["total_count"])
-	assert.Equal(t, "AI", analysis[0]["title"])
-	coveredCourses, ok := analysis[0]["covered_courses"].([]interface{})
+	canCoverIDs, ok := analysis[0]["can_cover_ids"].([]interface{})
 	assert.True(t, ok)
-	assert.Len(t, coveredCourses, 1)
-	canCoverCourses, ok := analysis[0]["can_cover_courses"].([]interface{})
+	assert.Len(t, canCoverIDs, 1)
+	assert.Equal(t, coreCourseID.String(), canCoverIDs[0])
+
+	// Choice card (AI) is sorted second and has is_core: false
+	assert.Equal(t, "AI", analysis[1]["title"])
+	assert.Equal(t, false, analysis[1]["is_core"])
+	assert.Equal(t, float64(1), analysis[1]["covered_count"])
+	assert.Equal(t, float64(0), analysis[1]["can_cover_count"])
+	assert.Equal(t, float64(1), analysis[1]["total_count"])
+	completedIDs, ok := analysis[1]["completed_ids"].([]interface{})
 	assert.True(t, ok)
-	assert.Empty(t, canCoverCourses)
-	cannotCoverCourses, ok := analysis[0]["cannot_cover_courses"].([]interface{})
-	assert.True(t, ok)
-	assert.Empty(t, cannotCoverCourses)
+	assert.Len(t, completedIDs, 1)
+	assert.Equal(t, choiceCourseID.String(), completedIDs[0])
 }
 
 func TestIdentifySpecializationsIgnoresUnscopedChoiceRequirements(t *testing.T) {
