@@ -1,12 +1,13 @@
 export type UUID = string;
 
-export type CourseType = "core" | "choice" | "elective" | "other";
+export type CourseType = "core" | "choice" | "elective" | "flex" | "other";
 
 export const typeSlugToName: Record<CourseType, string> = {
   core: "Core",
   choice: "Choice",
   elective: "Факультативы",
-  other: "Flex",
+  flex: "Flex",
+  other: "Другое",
 };
 
 /* 

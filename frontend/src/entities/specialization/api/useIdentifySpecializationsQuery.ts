@@ -36,7 +36,11 @@ export const useIdentifySpecializationsQuery = (
       ).then((dtos) =>
         (dtos ?? [])
           .map(normalizeSpecializationMatch)
-          .sort((a, b) => a.title.localeCompare(b.title)),
+          .sort(
+            (a, b) =>
+              Number(b.isCore) - Number(a.isCore) ||
+              a.title.localeCompare(b.title),
+          ),
       ),
     // Needs a major to scope the request; run even with no courses so the
     // planner has initial data on mount.
