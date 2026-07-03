@@ -56,7 +56,7 @@ describe("buildCatalogCategories", () => {
       }),
       makeCourse({
         id: "stem1",
-        type: "other",
+        type: "flex",
         category: "stem",
         title: "Math",
       }),
@@ -76,19 +76,19 @@ describe("buildCatalogCategories", () => {
     expect(byId("choice:s1").courses.map((c) => c.id)).toEqual(["ch1"]);
     expect(byId("choice:s2").courses).toHaveLength(0);
     expect(byId("elective:swe").courses.map((c) => c.id)).toEqual(["el1"]);
-    expect(byId("other:stem").courses.map((c) => c.id)).toEqual(["stem1"]);
+    expect(byId("flex:stem").courses.map((c) => c.id)).toEqual(["stem1"]);
     expect(byId("elective:ai").courses.map((c) => c.id)).toEqual(["ai1"]);
   });
 
   it("sorts courses alphabetically within a section", () => {
     const courses = [
-      makeCourse({ id: "1", type: "other", category: "stem", title: "Zebra" }),
-      makeCourse({ id: "2", type: "other", category: "stem", title: "Alpha" }),
-      makeCourse({ id: "3", type: "other", category: "stem", title: "Beta" }),
+      makeCourse({ id: "1", type: "flex", category: "stem", title: "Zebra" }),
+      makeCourse({ id: "2", type: "flex", category: "stem", title: "Alpha" }),
+      makeCourse({ id: "3", type: "flex", category: "stem", title: "Beta" }),
     ];
 
     const result = buildCatalogCategories(courses, options);
-    const stem = result.find((section) => section.option.id === "other:stem")!;
+    const stem = result.find((section) => section.option.id === "flex:stem")!;
 
     expect(stem.courses.map((c) => c.title)).toEqual([
       "Alpha",

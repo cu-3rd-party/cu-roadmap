@@ -169,6 +169,12 @@ if [ -n "$FRONTEND_FILES$FRONTEND_ESLINT_FILES" ]; then
   cd "$ROOT_DIR"
   { printf '%s\n' "$FRONTEND_FILES"; printf '%s\n' "$FRONTEND_ESLINT_FILES"; } | sed '/^$/d' | sort -u | xargs git add --
   ok "staged frontend files formatted"
+
+  echo ""
+  info "Running frontend tests (vitest run)"
+  cd "$ROOT_DIR/frontend"
+  pnpm exec vitest run || fail "frontend tests failed — commit aborted"
+  ok "frontend tests passed"
 fi
 
 if [ -n "$ADMIN_FILES$ADMIN_ESLINT_FILES" ]; then
@@ -191,6 +197,12 @@ if [ -n "$ADMIN_FILES$ADMIN_ESLINT_FILES" ]; then
   cd "$ROOT_DIR"
   { printf '%s\n' "$ADMIN_FILES"; printf '%s\n' "$ADMIN_ESLINT_FILES"; } | sed '/^$/d' | sort -u | xargs git add --
   ok "staged admin files formatted"
+
+  echo ""
+  info "Running admin tests (vitest run)"
+  cd "$ROOT_DIR/admin"
+  pnpm exec vitest run || fail "admin tests failed — commit aborted"
+  ok "admin tests passed"
 fi
 
 # ── stage everything ──────────────────────────────────────────────
