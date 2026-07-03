@@ -11,9 +11,13 @@ export interface SpecializationMatch {
   id: UUID;
   majorId: UUID;
   title: string;
+  isCore: boolean;
   cohortYear: number;
   score: number;
   coveredCount: number;
   canCoverCount: number;
   totalCount: number;
+  completedIds: UUID[];
+  canCoverIds: UUID[];
+  cannotCoverIds: UUID[];
 }

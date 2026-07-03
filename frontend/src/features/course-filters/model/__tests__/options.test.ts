@@ -82,8 +82,8 @@ describe("buildCategoryFilters", () => {
         type: "elective",
         category: "fundamentals",
       },
-      { id: "other:stem", label: "STEM", type: "other", category: "stem" },
-      { id: "other:soft", label: "Soft", type: "other", category: "soft" },
+      { id: "flex:stem", label: "STEM", type: "flex", category: "stem" },
+      { id: "flex:soft", label: "Soft", type: "flex", category: "soft" },
     ]);
   });
 
@@ -172,7 +172,7 @@ describe("optionMatchesFilter", () => {
       "fundamentals:mandatory",
       "fundamentals:elective",
     ]);
-    expect(ids("other", "all")).toEqual(["other:stem", "other:soft"]);
+    expect(ids("other", "all")).toEqual(["flex:stem", "flex:soft"]);
   });
 
   it("narrows by the sub-selection", () => {
@@ -182,7 +182,7 @@ describe("optionMatchesFilter", () => {
       "fundamentals:mandatory",
     ]);
     expect(ids("fundamentals", "elective")).toEqual(["fundamentals:elective"]);
-    expect(ids("other", "soft")).toEqual(["other:soft"]);
+    expect(ids("other", "soft")).toEqual(["flex:soft"]);
   });
 });
 
@@ -218,18 +218,18 @@ describe("courseMatchesOption", () => {
 
   it("matches by category when set", () => {
     const option = buildCategoryFilters("swe", []).find(
-      (o) => o.id === "other:stem",
+      (o) => o.id === "flex:stem",
     )!;
 
     expect(
       courseMatchesOption(
-        makeCourse({ type: "other", category: "stem" }),
+        makeCourse({ type: "flex", category: "stem" }),
         option,
       ),
     ).toBe(true);
     expect(
       courseMatchesOption(
-        makeCourse({ type: "other", category: "soft" }),
+        makeCourse({ type: "flex", category: "soft" }),
         option,
       ),
     ).toBe(false);

@@ -12,11 +12,15 @@ export interface SpecializationMatchDto {
   id: UUID;
   major_id: UUID;
   title: string;
+  is_core: boolean;
   cohort_year: number;
   score: number;
   covered_count: number;
   can_cover_count: number;
   total_count: number;
+  completed_ids: UUID[];
+  can_cover_ids: UUID[];
+  cannot_cover_ids: UUID[];
 }
 
 // Request body for POST majors/identify-specializations/{year}.

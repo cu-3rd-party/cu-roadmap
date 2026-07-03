@@ -1,11 +1,26 @@
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, ChevronUp } from "lucide-react";
+import { useState } from "react";
+
+import { useCourseDrawerStore } from "@/entities/course";
 import { cn } from "@/shared/lib/cn";
+import type { UUID } from "@/shared/model";
 import { AnimatedNumber } from "@/shared/ui/animated-number";
 import { SegmentedProgress } from "@/shared/ui/segmented-progress";
+
+export type LinkedCourseStatus = "available" | "completed" | "unavailable";
+
+export interface LinkedCourse {
+  id: UUID;
+  title: string;
+  status: LinkedCourseStatus;
+}
 
 export interface SpecializationProgress {
   title: string;
   earnedPct: number;
   availablePct: number;
+  linkedCourses: LinkedCourse[];
 }
 
 interface LegendRowProps {
@@ -24,13 +39,83 @@ const LegendRow = ({ dotClassName, label, percent }: LegendRowProps) => (
   </div>
 );
 
+const LinkedCourseRow = (course: LinkedCourse) => {
+  const { openCourse } = useCourseDrawerStore();
+
+  return (
+    <li className="flex items-start gap-2 text-xs sm:text-sm text-fg-secondary">
+      <span className="size-1 mt-2 shrink-0 rounded-full bg-fg-muted" />
+      <button
+        type="button"
+        onClick={() => openCourse(course.id)}
+        className={cn(
+          "text-left hover:underline cursor-pointer",
+          course.status === "unavailable" && "line-through text-fg-muted",
+        )}
+      >
+        {course.title}
+      </button>
+      {course.status === "completed" && (
+        <Check className="mt-0.5 ml-auto size-4 shrink-0 text-positive" />
+      )}
+    </li>
+  );
+};
+
+const LinkedCoursesSection = ({ courses }: { courses: LinkedCourse[] }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div data-state={open ? "open" : "closed"}>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        aria-label={
+          open ? "Свернуть связанные курсы" : "Развернуть связанные курсы"
+        }
+        className="group flex w-full items-center justify-between gap-2 cursor-pointer"
+      >
+        <span className="text-xs sm:text-sm font-semibold text-fg-secondary transition-colors group-hover:text-fg-primary">
+          Связанные курсы
+        </span>
+        <ChevronUp
+          className={cn(
+            "size-5 shrink-0 transition-transform text-fg-secondary group-hover:text-fg-primary",
+            !open && "rotate-180",
+          )}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden mt-2"
+          >
+            <ul className="flex flex-col gap-1">
+              {courses.map((course) => (
+                <LinkedCourseRow key={course.id} {...course} />
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export const SpecializationProgressCard = ({
   title,
   earnedPct,
   availablePct,
+  linkedCourses,
 }: SpecializationProgress) => {
   return (
-    <div className="flex flex-col gap-3 p-3 sm:p-5">
+    <div className="flex flex-col gap-3 p-3 sm:p-5 sm:py-3">
       <span className="line-clamp-1 text-sm font-semibold text-fg-secondary">
         {title}
       </span>
@@ -64,6 +149,10 @@ export const SpecializationProgressCard = ({
           percent={availablePct}
         />
       </div>
+
+      {linkedCourses.length > 0 && (
+        <LinkedCoursesSection courses={linkedCourses} />
+      )}
     </div>
   );
 };

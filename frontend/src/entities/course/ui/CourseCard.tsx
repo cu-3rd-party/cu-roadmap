@@ -262,7 +262,7 @@ export const CourseCard = ({
         </Button>
         {variant === "planned" && (
           <Button
-            variant={fixed ? "outline" : "destructive"}
+            variant={fixed ? "tertiaryPadded" : "destructive"}
             size="xs"
             disabled={fixed}
             className={isMobile ? "flex-1" : undefined}

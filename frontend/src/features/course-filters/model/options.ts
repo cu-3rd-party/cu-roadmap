@@ -118,8 +118,8 @@ export const buildCategoryFilters = (
   options.push(
     ...(["stem", "soft"] as CourseCategory[]).map(
       (category): CategoryFilterOption => ({
-        id: `other:${category}`,
-        type: "other",
+        id: `flex:${category}`,
+        type: "flex",
         label: categorySlugToName[category],
         category,
       }),

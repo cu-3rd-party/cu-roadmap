@@ -1,11 +1,16 @@
 import { useEffect, useMemo } from "react";
 
-import { useCoursesQuery } from "@/entities/course";
+import { buildCourseTitleMap, useCoursesQuery } from "@/entities/course";
 import { usePlannerStore, useValidatePlan } from "@/entities/roadmap";
 import { useIdentifySpecializationsQuery } from "@/entities/specialization";
 import { useSettingsStore } from "@/features/settings";
 import { toPercent, useDebouncedValue } from "@/shared/lib";
-import type { SpecializationProgress } from "@/widgets/PlannerSummary";
+import type { UUID } from "@/shared/model";
+import type {
+  LinkedCourse,
+  LinkedCourseStatus,
+  SpecializationProgress,
+} from "@/widgets/PlannerSummary";
 import { PlannerSummary } from "@/widgets/PlannerSummary";
 import { SemesterSection } from "@/widgets/SemesterSection";
 
@@ -85,17 +90,32 @@ const PlannerPage = () => {
   // First-load only: header + buttons stay live, the grid shows skeletons.
   const summaryLoading = identifyQuery.isLoading;
 
+  // Resolve linked-course ids to titles for display in the spec cards.
+  const titleMap = useMemo(() => buildCourseTitleMap(courses ?? []), [courses]);
+
   // The request is already scoped to the major chosen in Settings, so the
   // response only contains that major's specializations.
-  const plannerSpecializations: SpecializationProgress[] = useMemo(
-    () =>
-      (identifyQuery.data ?? []).map((match) => ({
-        title: match.title,
-        earnedPct: toPercent(match.coveredCount, match.totalCount),
-        availablePct: toPercent(match.canCoverCount, match.totalCount),
-      })),
-    [identifyQuery.data],
-  );
+  const plannerSpecializations: SpecializationProgress[] = useMemo(() => {
+    const toItems = (ids: UUID[], status: LinkedCourseStatus): LinkedCourse[] =>
+      ids
+        .map((id) => {
+          const title = titleMap.get(id);
+          return title ? { id, title, status } : null;
+        })
+        .filter((item): item is LinkedCourse => item !== null)
+        .sort((item1, item2) => item1.title.localeCompare(item2.title));
+
+    return (identifyQuery.data ?? []).map((match) => ({
+      title: match.title,
+      earnedPct: toPercent(match.coveredCount, match.totalCount),
+      availablePct: toPercent(match.canCoverCount, match.totalCount),
+      linkedCourses: [
+        ...toItems(match.canCoverIds, "available"),
+        ...toItems(match.completedIds, "completed"),
+        ...toItems(match.cannotCoverIds, "unavailable"),
+      ],
+    }));
+  }, [identifyQuery.data, titleMap]);
 
   // Conflicts are error/warning validation messages across all semesters.
   const conflictCount = useMemo(

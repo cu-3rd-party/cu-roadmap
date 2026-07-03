@@ -18,10 +18,14 @@ export const normalizeSpecializationMatch = (
     id: dto.id,
     majorId: dto.major_id,
     title: dto.title,
+    isCore: dto.is_core,
     cohortYear: dto.cohort_year,
     score: dto.score,
     coveredCount: dto.covered_count,
     canCoverCount: dto.can_cover_count,
     totalCount: dto.total_count,
+    completedIds: dto.completed_ids,
+    canCoverIds: dto.can_cover_ids,
+    cannotCoverIds: dto.cannot_cover_ids,
   };
 };
