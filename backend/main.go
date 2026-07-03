@@ -61,22 +61,13 @@ func main() {
 	}
 	defer s.Close()
 
-	if settings.SeedOnStartup {
-		s := store.GetStore()
-		if err := s.SeedAllData(); err != nil {
-			slog.Warn("could not seed store on startup", "error", err)
-		} else {
-			slog.Info("store seeded with data from CSV files")
-		}
-	}
-
 	if settings.GoogleSheetsSyncEnabled {
-		go func() {
-			s := store.GetStore()
-			if err := s.SyncGoogleSheetsData(); err != nil {
-				slog.Warn("initial Google Sheets sync failed", "error", err)
-			}
-		}()
+		slog.Info("performing initial Google Sheets sync...")
+		if err := store.GetStore().SyncGoogleSheetsData(); err != nil {
+			slog.Warn("initial Google Sheets sync failed", "error", err)
+		} else {
+			slog.Info("initial Google Sheets sync complete")
+		}
 		go func() {
 			ticker := time.NewTicker(time.Duration(settings.GoogleSheetsSyncIntervalSecond) * time.Second)
 			defer ticker.Stop()
@@ -128,8 +119,9 @@ func main() {
 	router.GET("/api/health", func(c *gin.Context) {
 		if !s.Ready() {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "starting", "timestamp": time.Now().Format(time.RFC3339)})
+			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "starting", "timestamp": time.Now().Format(time.RFC3339)})
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "timestamp": time.Now().Format(time.RFC3339)})
 	})
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 

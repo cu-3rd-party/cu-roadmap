@@ -260,7 +260,10 @@ func (s *PostgresStore) ClearAll() error {
 	if err := s.db.Exec("DELETE FROM box_edges").Error; err != nil {
 		return err
 	}
-	if err := s.db.Exec("DELETE FROM boxes").Error; err != nil {
+	if err := s.db.Exec("DELETE FROM student_passed_courses").Error; err != nil {
+		return err
+	}
+	if err := s.db.Exec("UPDATE students SET target_major_id = NULL").Error; err != nil {
 		return err
 	}
 	if err := s.db.Exec("DELETE FROM course_dependencies").Error; err != nil {
@@ -269,16 +272,13 @@ func (s *PostgresStore) ClearAll() error {
 	if err := s.db.Exec("DELETE FROM specializations").Error; err != nil {
 		return err
 	}
-	if err := s.db.Exec("DELETE FROM student_passed_courses").Error; err != nil {
+	if err := s.db.Exec("DELETE FROM majors").Error; err != nil {
 		return err
 	}
-	if err := s.db.Exec("UPDATE students SET target_major_id = NULL").Error; err != nil {
+	if err := s.db.Exec("DELETE FROM boxes").Error; err != nil {
 		return err
 	}
 	if err := s.db.Exec("DELETE FROM courses").Error; err != nil {
-		return err
-	}
-	if err := s.db.Exec("DELETE FROM majors").Error; err != nil {
 		return err
 	}
 	return nil
@@ -623,6 +623,12 @@ func (s *PostgresStore) SyncGoogleSheetsData() error {
 	s.Synced = false
 	err := syncWithSheets(s)
 	s.Synced = err == nil
+	if err == nil {
+		if cache := GetCacheStore(); cache != nil && cache.Ready() {
+			_ = cache.DeleteByPrefix("courses:")
+			_ = cache.DeleteByPrefix("majors:")
+		}
+	}
 	return err
 }
 

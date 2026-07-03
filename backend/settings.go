@@ -12,7 +12,6 @@ type Settings struct {
 	PostgresPassword               string `envconfig:"POSTGRES_PASSWORD" default:"roadmap_password"`
 	PostgresDB                     string `envconfig:"POSTGRES_DB" default:"roadmap_db"`
 	PostgresHost                   string `envconfig:"POSTGRES_HOST" default:"db"`
-	SeedOnStartup                  bool   `envconfig:"SEED_ON_STARTUP" default:"true"` // SeedOnStartup отвечает за загрузку данных из .csv в бд
 	UseMemoryStore                 bool   `envconfig:"USE_MEMORY_STORE" default:"true"`
 	UseMemoryCacheStore            bool   `envconfig:"USE_MEMORY_CACHE_STORE" default:"true"`
 	RedisURLValue                  string `envconfig:"REDIS_URL" default:""`
