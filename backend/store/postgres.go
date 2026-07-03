@@ -79,6 +79,10 @@ func (s *PostgresStore) Init(password string) error {
 	if err != nil {
 		return err
 	}
+	if s.db.Migrator().HasTable("major_requirements") {
+		slog.Info("dropping legacy major_requirements table")
+		_ = s.db.Migrator().DropTable("major_requirements")
+	}
 	return s.backfillLegacyRequirementBoxes()
 }
 
@@ -623,6 +627,10 @@ func (s *PostgresStore) SyncGoogleSheetsData() error {
 	s.Synced = false
 	err := syncWithSheets(s)
 	s.Synced = err == nil
+	if err == nil && globalCacheStore != nil {
+		_ = globalCacheStore.DeleteByPrefix("majors:")
+		_ = globalCacheStore.DeleteByPrefix("courses:")
+	}
 	return err
 }
 

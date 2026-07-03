@@ -146,7 +146,7 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 
 	existingReqs, err := requirements.NewResolver(s).ProjectAllMajorRequirements()
 	if err != nil {
-		return SyncResult{}, fmt.Errorf("get existing major requirements: %w", err)
+		slog.Warn("get existing major requirements failed, UUIDs will not be preserved", "error", err)
 	}
 	existingReqByPair := make(map[string]uuid.UUID)
 	for _, r := range existingReqs {

@@ -632,6 +632,10 @@ func (s *MemoryStore) SyncGoogleSheetsData() error {
 	s.Synced = false
 	err := syncWithSheets(s)
 	s.Synced = err == nil
+	if err == nil && globalCacheStore != nil {
+		_ = globalCacheStore.DeleteByPrefix("majors:")
+		_ = globalCacheStore.DeleteByPrefix("courses:")
+	}
 	return err
 }
 
