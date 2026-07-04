@@ -281,6 +281,11 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 						modified = true
 					}
 				}
+				newGroup := strings.TrimSpace(getFirst(row, "Группа аналогов(алгоритм не берет больше 1 курса из группы)", "Группа аналогов"))
+				if mergedGroup, changed := mergeAnalogGroups(course.AnalogGroup, newGroup); changed {
+					course.AnalogGroup = mergedGroup
+					modified = true
+				}
 				if modified {
 					if _, err := s.UpdateCourse(course); err != nil {
 						return SyncResult{}, fmt.Errorf("update course %s: %w", title, err)
@@ -842,4 +847,41 @@ func mergeStringSlices(a, b []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func mergeAnalogGroups(existing, newGroup string) (string, bool) {
+	existing = strings.TrimSpace(existing)
+	newGroup = strings.TrimSpace(newGroup)
+	if newGroup == "" {
+		return existing, false
+	}
+	if existing == "" {
+		return newGroup, true
+	}
+
+	// Split existing into a set
+	existingParts := strings.Split(existing, ",")
+	seen := make(map[string]bool)
+	var ordered []string
+	for _, p := range existingParts {
+		p = strings.TrimSpace(p)
+		if p != "" && !seen[strings.ToLower(p)] {
+			seen[strings.ToLower(p)] = true
+			ordered = append(ordered, p)
+		}
+	}
+
+	// Add new groups
+	newParts := strings.Split(newGroup, ",")
+	modified := false
+	for _, p := range newParts {
+		p = strings.TrimSpace(p)
+		if p != "" && !seen[strings.ToLower(p)] {
+			seen[strings.ToLower(p)] = true
+			ordered = append(ordered, p)
+			modified = true
+		}
+	}
+
+	return strings.Join(ordered, ","), modified
 }

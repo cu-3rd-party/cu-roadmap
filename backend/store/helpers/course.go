@@ -32,20 +32,28 @@ func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDepe
 }
 
 func inferFixedSemester(course interfaces.CourseData, analogGroupSizes map[string]int) int {
-	analogGroupKey := strings.ToLower(strings.TrimSpace(course.AnalogGroup))
-	if analogGroupKey == "" {
-		return 0
-	}
 	if len(course.AvailableSemesters) != 1 {
-		return 0
-	}
-	if !strings.Contains(analogGroupKey, "обяз") {
 		return 0
 	}
 	if analogGroupSizes == nil {
 		return 0
 	}
-	if analogGroupSizes[analogGroupKey] != 1 {
+
+	parts := strings.Split(course.AnalogGroup, ",")
+	hasObyaz := false
+	for _, part := range parts {
+		groupKey := strings.ToLower(strings.TrimSpace(part))
+		if groupKey == "" {
+			continue
+		}
+		if strings.Contains(groupKey, "обяз") {
+			hasObyaz = true
+			if analogGroupSizes[groupKey] != 1 {
+				return 0
+			}
+		}
+	}
+	if !hasObyaz {
 		return 0
 	}
 	return course.AvailableSemesters[0]

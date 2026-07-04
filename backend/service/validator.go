@@ -208,7 +208,7 @@ func (v *RoadmapValidator) ValidateSemester(
 					if rc, ok := v.AllCourses[dep.RequiredCourseID]; ok {
 						reqTitle = rc.Title
 					}
-					if !previouslyPassedIDs[dep.RequiredCourseID] {
+					if !v.isCoursePassedOrPlanned(dep.RequiredCourseID, nil, previouslyPassedIDs, false, true) {
 						messages = append(messages, schemas.ValidationMessage{
 							Level:    "error",
 							Message:  formatMissingPrereq(c.Title, reqTitle),
@@ -226,7 +226,7 @@ func (v *RoadmapValidator) ValidateSemester(
 						reqTitle = rc.Title
 					}
 					altTitles = append(altTitles, reqTitle)
-					if previouslyPassedIDs[dep.RequiredCourseID] {
+					if v.isCoursePassedOrPlanned(dep.RequiredCourseID, nil, previouslyPassedIDs, false, true) {
 						anyPassed = true
 					}
 				}
@@ -247,9 +247,9 @@ func (v *RoadmapValidator) ValidateSemester(
 				reqTitle = rc.Title
 			}
 
-			satisfied := inSemIDs[dep.RequiredCourseID]
+			satisfied := v.isCoursePassedOrPlanned(dep.RequiredCourseID, inSemIDs, nil, true, false)
 			if !satisfied && v.hasEquivalentPrerequisite(dep.CourseID, dep.RequiredCourseID) {
-				satisfied = previouslyPassedIDs[dep.RequiredCourseID]
+				satisfied = v.isCoursePassedOrPlanned(dep.RequiredCourseID, nil, previouslyPassedIDs, false, true)
 			}
 
 			if !satisfied {
@@ -408,4 +408,41 @@ func parseCourseIDs(v interface{}) []uuid.UUID {
 		}
 	}
 	return ids
+}
+
+func (v *RoadmapValidator) isCoursePassedOrPlanned(
+	requiredCourseID uuid.UUID,
+	inSemIDs map[uuid.UUID]bool,
+	previouslyPassedIDs map[uuid.UUID]bool,
+	checkInSem bool,
+	checkPassed bool,
+) bool {
+	if checkInSem && inSemIDs[requiredCourseID] {
+		return true
+	}
+	if checkPassed && previouslyPassedIDs[requiredCourseID] {
+		return true
+	}
+
+	reqCourse, ok := v.AllCourses[requiredCourseID]
+	if !ok || reqCourse.AnalogGroup == "" {
+		return false
+	}
+
+	if checkInSem {
+		for id := range inSemIDs {
+			if pc, ok := v.AllCourses[id]; ok && analogGroupsIntersect(pc.AnalogGroup, reqCourse.AnalogGroup) {
+				return true
+			}
+		}
+	}
+	if checkPassed {
+		for id := range previouslyPassedIDs {
+			if pc, ok := v.AllCourses[id]; ok && analogGroupsIntersect(pc.AnalogGroup, reqCourse.AnalogGroup) {
+				return true
+			}
+		}
+	}
+
+	return false
 }

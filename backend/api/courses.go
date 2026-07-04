@@ -153,9 +153,14 @@ func getCourses(c *gin.Context) {
 
 	analogGroupSizes := make(map[string]int)
 	for _, course := range courses {
-		key := strings.ToLower(strings.TrimSpace(course.AnalogGroup))
-		if key != "" {
-			analogGroupSizes[key]++
+		if course.AnalogGroup != "" {
+			parts := strings.Split(course.AnalogGroup, ",")
+			for _, part := range parts {
+				key := strings.ToLower(strings.TrimSpace(part))
+				if key != "" {
+					analogGroupSizes[key]++
+				}
+			}
 		}
 	}
 
