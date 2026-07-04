@@ -561,28 +561,47 @@ func syncWithSheets(s interfaces.StoreBase) error {
 	for _, sheetName := range sheetNames {
 		slog.Info("fetching sheet", "sheet", sheetName)
 		rangeStr := fmt.Sprintf("'%s'!A:Z", strings.ReplaceAll(sheetName, "'", "\\'"))
-		resp, err := sheetsService.Spreadsheets.Values.Get(sheetsCfg.SpreadsheetID, rangeStr).Do()
+		resp, err := sheetsService.Spreadsheets.Get(sheetsCfg.SpreadsheetID).
+			Ranges(rangeStr).
+			IncludeGridData(true).
+			Do()
 		if err != nil {
 			slog.Warn("failed to fetch sheet, skipping", "sheet", sheetName, "error", err)
 			continue
 		}
 
-		if len(resp.Values) == 0 {
+		if len(resp.Sheets) == 0 || len(resp.Sheets[0].Data) == 0 {
 			continue
 		}
 
-		headerRaw := resp.Values[0]
-		headers := make([]string, len(headerRaw))
-		for i, h := range headerRaw {
-			headers[i] = fmt.Sprint(h)
+		gridData := resp.Sheets[0].Data[0]
+		if len(gridData.RowData) == 0 {
+			continue
+		}
+
+		headerRow := gridData.RowData[0]
+		headers := make([]string, len(headerRow.Values))
+		for i, cell := range headerRow.Values {
+			if cell != nil {
+				headers[i] = cell.FormattedValue
+			}
 		}
 
 		var rows []map[string]string
-		for _, row := range resp.Values[1:] {
+		for rowIndex := 1; rowIndex < len(gridData.RowData); rowIndex++ {
+			rowData := gridData.RowData[rowIndex]
 			record := make(map[string]string)
 			for i, h := range headers {
-				if i < len(row) {
-					record[h] = fmt.Sprint(row[i])
+				if i < len(rowData.Values) {
+					cell := rowData.Values[i]
+					if cell != nil {
+						val := cell.FormattedValue
+						normH := normalizeSheetHeader(h)
+						if strings.Contains(normH, "силлабус") && cell.Hyperlink != "" {
+							val = cell.Hyperlink
+						}
+						record[h] = val
+					}
 				}
 			}
 			rows = append(rows, record)
@@ -780,10 +799,15 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 
 	workload := 1.0
 
+	descVal := getFirst(row, "Текст для отображения студентам")
+	if descVal == "" {
+		descVal = "Нет описания"
+	}
+
 	cd := interfaces.CourseData{
 		ID:                  uuid.New(),
 		Title:               strings.TrimSpace(getFirst(row, "Название курса")),
-		Description:         new(getFirst(row, "Контекст", "Контекст, чтобы правильно отобразить на траектории\nесли есть")),
+		Description:         &descVal,
 		HandbookLink:        new(getFirst(row, "Силлабус если есть", "Силлабус\nесли есть", "Силлабус")),
 		CourseType:          courseType,
 		Category:            category,

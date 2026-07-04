@@ -163,3 +163,95 @@ func TestInspectStemSheets(t *testing.T) {
 		}
 	}
 }
+
+func TestInspectSyllabusFormulas(t *testing.T) {
+	_ = godotenv.Load("../.env")
+	spreadsheetID := os.Getenv("GOOGLE_SHEETS_SPREADSHEET_ID")
+	credsB64 := os.Getenv("GOOGLE_SERVICE_ACCOUNT_JSON_B64")
+	if spreadsheetID == "" {
+		t.Fatal("GOOGLE_SHEETS_SPREADSHEET_ID is not set in env")
+	}
+
+	var credsJSON string
+	if credsB64 != "" {
+		decoded, err := base64.StdEncoding.DecodeString(credsB64)
+		if err == nil {
+			credsJSON = string(decoded)
+		}
+	}
+
+	config, err := google.JWTConfigFromJSON([]byte(credsJSON), "https://www.googleapis.com/auth/spreadsheets.readonly")
+	if err != nil {
+		t.Fatalf("parse credentials: %v", err)
+	}
+
+	client := config.Client(context.Background())
+	sheetsService, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
+	if err != nil {
+		t.Fatalf("create sheets service: %v", err)
+	}
+
+	rangeStr := "'Copy of STEM'!A1:Z5"
+	resp, err := sheetsService.Spreadsheets.Values.Get(spreadsheetID, rangeStr).ValueRenderOption("FORMULA").Do()
+	if err != nil {
+		t.Fatalf("Failed to fetch: %v", err)
+	}
+	fmt.Printf("\n=== SHEET: Copy of STEM (FORMULA) ===\n")
+	for i, row := range resp.Values {
+		fmt.Printf("Row %d: %v\n", i, row)
+	}
+}
+
+func TestInspectSpreadsheetGet(t *testing.T) {
+	_ = godotenv.Load("../.env")
+	spreadsheetID := os.Getenv("GOOGLE_SHEETS_SPREADSHEET_ID")
+	credsB64 := os.Getenv("GOOGLE_SERVICE_ACCOUNT_JSON_B64")
+	if spreadsheetID == "" {
+		t.Fatal("GOOGLE_SHEETS_SPREADSHEET_ID is not set in env")
+	}
+
+	var credsJSON string
+	if credsB64 != "" {
+		decoded, err := base64.StdEncoding.DecodeString(credsB64)
+		if err == nil {
+			credsJSON = string(decoded)
+		}
+	}
+
+	config, err := google.JWTConfigFromJSON([]byte(credsJSON), "https://www.googleapis.com/auth/spreadsheets.readonly")
+	if err != nil {
+		t.Fatalf("parse credentials: %v", err)
+	}
+
+	client := config.Client(context.Background())
+	sheetsService, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
+	if err != nil {
+		t.Fatalf("create sheets service: %v", err)
+	}
+
+	resp, err := sheetsService.Spreadsheets.Get(spreadsheetID).
+		Ranges("'Copy of STEM'!E1:E5").
+		IncludeGridData(true).
+		Do()
+	if err != nil {
+		t.Fatalf("Failed to fetch sheet: %v", err)
+	}
+
+	for _, sheet := range resp.Sheets {
+		for _, data := range sheet.Data {
+			for rowIndex, row := range data.RowData {
+				for colIndex, cell := range row.Values {
+					fmt.Printf("Row %d, Col %d: FormattedValue=%q, Hyperlink=%q, FormattedHyperlink=%v\n",
+						rowIndex, colIndex, cell.FormattedValue, cell.Hyperlink, cell.TextFormatRuns)
+					if cell.TextFormatRuns != nil {
+						for _, run := range cell.TextFormatRuns {
+							if run.Format != nil && run.Format.Link != nil {
+								fmt.Printf("  Run link: %q\n", run.Format.Link.Uri)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
