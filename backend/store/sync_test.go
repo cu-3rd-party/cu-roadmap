@@ -126,7 +126,7 @@ func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
 				"Поток":          "\"2024, 2025, 2026\"",
 			},
 		},
-		"STEM": {
+		"Copy of STEM": {
 			{
 				"Название курса": "Искусство и наука",
 				"Тип курса":      "flex",
@@ -140,7 +140,7 @@ func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
 	sheetMapping := map[string]SheetMajorMapping{
 		"2024 Разработка": {"Разработка", "Tech", enums.CourseCategoryTech},
 		"Soft":            {"Common", "Common", enums.CourseCategorySoft},
-		"STEM":            {"Common", "Common", enums.CourseCategorySTEM},
+		"Copy of STEM":    {"Common", "Common", enums.CourseCategorySTEM},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
