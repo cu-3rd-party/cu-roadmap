@@ -9,10 +9,11 @@ import (
 )
 
 type FlatRequirementInput struct {
-	ID              uuid.UUID
-	CourseID        uuid.UUID
-	RequirementType enums.RequirementType
-	Specializations []string
+	ID                       uuid.UUID
+	CourseID                 uuid.UUID
+	RequirementType          enums.RequirementType
+	Specializations          []string
+	MandatorySpecializations []string
 }
 
 type MutableStore interface {
@@ -33,11 +34,12 @@ func AddFlatRequirement(store MutableStore, majorID uuid.UUID, req FlatRequireme
 	}
 	reqType := req.RequirementType
 	leaf, err := store.CreateBox(interfaces.BoxData{
-		ID:              req.ID,
-		Kind:            enums.BoxKindCourse,
-		CourseID:        &req.CourseID,
-		RequirementType: &reqType,
-		Specializations: append([]string(nil), req.Specializations...),
+		ID:                       req.ID,
+		Kind:                     enums.BoxKindCourse,
+		CourseID:                 &req.CourseID,
+		RequirementType:          &reqType,
+		Specializations:          append([]string(nil), req.Specializations...),
+		MandatorySpecializations: append([]string(nil), req.MandatorySpecializations...),
 	})
 	if err != nil {
 		return err
@@ -46,18 +48,19 @@ func AddFlatRequirement(store MutableStore, majorID uuid.UUID, req FlatRequireme
 	if err != nil {
 		return err
 	}
-	if major.RequirementsBoxID != nil && (req.RequirementType != enums.RequirementTypeMajorChoice || len(req.Specializations) == 0) {
+	allSpecs := mergeStringsUnique(req.Specializations, req.MandatorySpecializations)
+	if major.RequirementsBoxID != nil && (req.RequirementType != enums.RequirementTypeMajorChoice || len(allSpecs) == 0) {
 		position := nextPosition(edges, *major.RequirementsBoxID)
 		if _, err := store.CreateBoxEdge(interfaces.BoxEdgeData{ID: uuid.New(), ParentBoxID: *major.RequirementsBoxID, ChildBoxID: leaf.ID, Position: position}); err != nil {
 			return err
 		}
 	}
-	if req.RequirementType == enums.RequirementTypeMajorChoice && len(req.Specializations) > 0 {
+	if req.RequirementType == enums.RequirementTypeMajorChoice && len(allSpecs) > 0 {
 		specs, err := store.GetSpecializationsByMajor(majorID)
 		if err != nil {
 			return err
 		}
-		for _, specTitle := range req.Specializations {
+		for _, specTitle := range allSpecs {
 			for _, spec := range specs {
 				if spec.RequirementsBoxID == nil || !strings.EqualFold(spec.Title, specTitle) {
 					continue
@@ -137,4 +140,24 @@ func nextPosition(edges []interfaces.BoxEdgeData, parentID uuid.UUID) int {
 		}
 	}
 	return position
+}
+
+func mergeStringsUnique(a, b []string) []string {
+	seen := make(map[string]bool)
+	var out []string
+	for _, s := range a {
+		lower := strings.ToLower(strings.TrimSpace(s))
+		if lower != "" && !seen[lower] {
+			seen[lower] = true
+			out = append(out, s)
+		}
+	}
+	for _, s := range b {
+		lower := strings.ToLower(strings.TrimSpace(s))
+		if lower != "" && !seen[lower] {
+			seen[lower] = true
+			out = append(out, s)
+		}
+	}
+	return out
 }

@@ -173,6 +173,7 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 	type reqInfo struct {
 		reqType         enums.RequirementType
 		specializations []string
+		mandatorySpecs  []string
 	}
 	courseToMajorReqs := make(map[string]map[string]reqInfo)
 	type rowEntry struct {
@@ -233,6 +234,17 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 					sPart = strings.TrimSpace(sPart)
 					if sPart != "" && !strings.EqualFold(sPart, "нет") {
 						specs = append(specs, sPart)
+					}
+				}
+			}
+
+			rawMandatorySpecs := getFirst(row, "Специализация(обязательно)", "Специализации(обязательно)")
+			var mandatorySpecs []string
+			if rawMandatorySpecs != "" && rawMandatorySpecs != "-" {
+				for _, sPart := range strings.Split(rawMandatorySpecs, ",") {
+					sPart = strings.TrimSpace(sPart)
+					if sPart != "" && !strings.EqualFold(sPart, "нет") {
+						mandatorySpecs = append(mandatorySpecs, sPart)
 					}
 				}
 			}
@@ -312,14 +324,18 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				cur, ok := courseToMajorReqs[norm][majorKey]
 				if !ok || cur.reqType != enums.RequirementTypeMajorCore {
 					var mergedSpecs []string
+					var mergedMandatory []string
 					if ok {
 						mergedSpecs = mergeStringSlices(cur.specializations, specs)
+						mergedMandatory = mergeStringSlices(cur.mandatorySpecs, mandatorySpecs)
 					} else {
 						mergedSpecs = specs
+						mergedMandatory = mandatorySpecs
 					}
 					courseToMajorReqs[norm][majorKey] = reqInfo{
 						reqType:         reqType,
 						specializations: mergedSpecs,
+						mandatorySpecs:  mergedMandatory,
 					}
 				}
 			}
@@ -437,7 +453,8 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				continue
 			}
 
-			for _, specTitle := range req.specializations {
+			allSpecTitles := mergeStringSlices(req.specializations, req.mandatorySpecs)
+			for _, specTitle := range allSpecTitles {
 				specKey := major.ID.String() + "|" + specTitle
 				if _, ok := createdSpecs[specKey]; !ok {
 					newSpec, err := s.CreateSpecialization(interfaces.SpecializationData{
@@ -457,10 +474,11 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				reqID = existingID
 			}
 			if err := requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{
-				ID:              reqID,
-				CourseID:        course.ID,
-				RequirementType: req.reqType,
-				Specializations: req.specializations,
+				ID:                       reqID,
+				CourseID:                 course.ID,
+				RequirementType:          req.reqType,
+				Specializations:          req.specializations,
+				MandatorySpecializations: req.mandatorySpecs,
 			}); err != nil {
 				return SyncResult{}, fmt.Errorf("create major requirement: %w", err)
 			}

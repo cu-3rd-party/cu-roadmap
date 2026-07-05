@@ -113,12 +113,13 @@ func getCourses(c *gin.Context) {
 	}
 
 	courseToSpecializations := make(map[uuid.UUID]map[uuid.UUID]struct{})
+	courseToMandatorySpecializations := make(map[uuid.UUID]map[uuid.UUID]struct{})
 	specializationsByMajor := make(map[uuid.UUID]map[string]uuid.UUID)
 	for _, req := range allReqs {
 		if majorID != uuid.Nil && req.MajorID != majorID {
 			continue
 		}
-		if len(req.Specializations) == 0 {
+		if len(req.Specializations) == 0 && len(req.MandatorySpecializations) == 0 {
 			continue
 		}
 		majorSpecs, ok := specializationsByMajor[req.MajorID]
@@ -141,6 +142,18 @@ func getCourses(c *gin.Context) {
 					courseToSpecializations[req.CourseID] = make(map[uuid.UUID]struct{})
 				}
 				courseToSpecializations[req.CourseID][specID] = struct{}{}
+			}
+		}
+		for _, specTitle := range req.MandatorySpecializations {
+			if specID, ok := majorSpecs[specTitle]; ok {
+				if courseToSpecializations[req.CourseID] == nil {
+					courseToSpecializations[req.CourseID] = make(map[uuid.UUID]struct{})
+				}
+				courseToSpecializations[req.CourseID][specID] = struct{}{}
+				if courseToMandatorySpecializations[req.CourseID] == nil {
+					courseToMandatorySpecializations[req.CourseID] = make(map[uuid.UUID]struct{})
+				}
+				courseToMandatorySpecializations[req.CourseID][specID] = struct{}{}
 			}
 		}
 	}
@@ -213,6 +226,14 @@ func getCourses(c *gin.Context) {
 			}
 		}
 		item["specializations"] = specializationIDs
+
+		mandatorySpecIDs := make([]string, 0)
+		if ids, ok := courseToMandatorySpecializations[course.ID]; ok {
+			for specID := range ids {
+				mandatorySpecIDs = append(mandatorySpecIDs, specID.String())
+			}
+		}
+		item["mandatory_specializations"] = mandatorySpecIDs
 		res = append(res, item)
 	}
 	writeCachedJSON(c, coursesCacheKey(c), res)

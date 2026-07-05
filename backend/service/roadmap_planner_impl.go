@@ -161,8 +161,31 @@ func newRoadmapPlanningContext(
 			}
 		}
 	}
+	var specTitle string
+	if specializationID != nil {
+		if specs, err := store.GetSpecializationsByMajor(majorID); err == nil {
+			for _, sp := range specs {
+				if sp.ID == *specializationID {
+					specTitle = sp.Title
+					break
+				}
+			}
+		}
+	}
 	for _, req := range projectedRequirements {
-		if !plannedIDs[req.CourseID] && (req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity) {
+		if plannedIDs[req.CourseID] {
+			continue
+		}
+		isCore := req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity
+		if !isCore && specTitle != "" && req.RequirementType == enums.RequirementTypeMajorChoice {
+			for _, ms := range req.MandatorySpecializations {
+				if strings.EqualFold(ms, specTitle) {
+					isCore = true
+					break
+				}
+			}
+		}
+		if isCore {
 			coreCourseIDs[req.CourseID] = true
 		}
 	}

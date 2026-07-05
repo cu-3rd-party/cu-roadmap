@@ -37,11 +37,12 @@ type Resolver struct {
 }
 
 type Projection struct {
-	ID              uuid.UUID
-	MajorID         uuid.UUID
-	CourseID        uuid.UUID
-	RequirementType enums.RequirementType
-	Specializations []string
+	ID                       uuid.UUID
+	MajorID                  uuid.UUID
+	CourseID                 uuid.UUID
+	RequirementType          enums.RequirementType
+	Specializations          []string
+	MandatorySpecializations []string
 }
 
 func NewResolver(store Store) *Resolver {
@@ -154,14 +155,16 @@ func (r *Resolver) ProjectMajorRequirements(majorID uuid.UUID) ([]Projection, er
 		current, ok := byBoxID[leaf.ID]
 		if !ok {
 			current = Projection{
-				ID:              leaf.ID,
-				MajorID:         majorID,
-				CourseID:        *leaf.CourseID,
-				RequirementType: reqType,
-				Specializations: append([]string(nil), leaf.Specializations...),
+				ID:                       leaf.ID,
+				MajorID:                  majorID,
+				CourseID:                 *leaf.CourseID,
+				RequirementType:          reqType,
+				Specializations:          append([]string(nil), leaf.Specializations...),
+				MandatorySpecializations: append([]string(nil), leaf.MandatorySpecializations...),
 			}
 		} else {
 			current.Specializations = mergeStrings(current.Specializations, leaf.Specializations)
+			current.MandatorySpecializations = mergeStrings(current.MandatorySpecializations, leaf.MandatorySpecializations)
 		}
 		byBoxID[leaf.ID] = current
 	}
