@@ -16,6 +16,8 @@ type CourseData struct {
 	AvailableSemesters  []int
 	RecommendedSemester *int
 	Workload            float64
+	SeminarsWeek        int
+	LecturesWeek        int
 	AnalogGroup         string
 	CsatMetric          *float64
 	Prerequisites       []uuid.UUID

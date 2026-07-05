@@ -295,6 +295,8 @@ func createCourse(c *gin.Context) {
 		AvailableSemesters:  req.AvailableSemesters,
 		RecommendedSemester: req.RecommendedSemester,
 		Workload:            req.Workload,
+		SeminarsWeek:        req.SeminarsWeek,
+		LecturesWeek:        req.LecturesWeek,
 	}
 
 	created, err := s.CreateCourse(course)
@@ -351,6 +353,8 @@ func updateCourse(c *gin.Context) {
 	existing.AvailableSemesters = req.AvailableSemesters
 	existing.RecommendedSemester = req.RecommendedSemester
 	existing.Workload = req.Workload
+	existing.SeminarsWeek = req.SeminarsWeek
+	existing.LecturesWeek = req.LecturesWeek
 
 	updated, err := s.UpdateCourse(*existing)
 	if err != nil {

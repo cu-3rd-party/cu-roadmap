@@ -815,7 +815,23 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		recommendedSemester = &v
 	}
 
-	workload := 1.0
+	seminarsWeek := 1
+	rawSeminars := getFirst(row, "Кол-во семинаров в неделю", "Семинары", "Количество семинаров в неделю", "Кол-во семинаров", "Количество семинаров")
+	if match := RecommendedSemesterRegexp.FindString(rawSeminars); match != "" {
+		if v, err := strconv.Atoi(match); err == nil {
+			seminarsWeek = v
+		}
+	}
+
+	lecturesWeek := 0
+	rawLectures := getFirst(row, "Кол-во лекций в неделю", "Лекции", "Количество лекций в неделю", "Кол-во лекций", "Количество лекций")
+	if match := RecommendedSemesterRegexp.FindString(rawLectures); match != "" {
+		if v, err := strconv.Atoi(match); err == nil {
+			lecturesWeek = v
+		}
+	}
+
+	workload := float64(seminarsWeek + lecturesWeek)
 
 	descVal := getFirst(row, "Текст для отображения студентам")
 	if descVal == "" {
@@ -833,6 +849,8 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		AvailableSemesters:  availableSemesters,
 		RecommendedSemester: recommendedSemester,
 		Workload:            workload,
+		SeminarsWeek:        seminarsWeek,
+		LecturesWeek:        lecturesWeek,
 		AnalogGroup:         strings.TrimSpace(getFirst(row, "Группа аналогов(алгоритм не берет больше 1 курса из группы)", "Группа аналогов")),
 	}
 
