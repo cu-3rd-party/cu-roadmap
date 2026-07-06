@@ -1,9 +1,5 @@
 import { SemesterNumber } from "@/shared/constants";
-import type {
-  UUID,
-  CourseCategory,
-  CourseType,
-} from "@/shared/model";
+import type { UUID, CourseCategory, CourseType } from "@/shared/model";
 
 export interface CoursePrerequisite {
   courses: UUID[];
