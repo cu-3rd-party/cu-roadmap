@@ -115,7 +115,7 @@ export const ScrollRail = ({
             transition={{ duration: 0.15 }}
             className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center"
           >
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-background to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-linear-to-r from-background to-transparent" />
             <Button
               type="button"
               variant="ghost"

@@ -1,4 +1,4 @@
-import { Loader2, RotateCcw, Sparkles, Waypoints } from "lucide-react";
+import { Loader2, Map, RotateCcw, Sparkles } from "lucide-react";
 import { useState } from "react";
 import type { CSSProperties } from "react";
 
@@ -8,7 +8,7 @@ import { TrajectorySelectModal } from "@/features/trajectory-select";
 import { plannerStatsLabels } from "@/pages/planner/model";
 import { admissionYearToSemester } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
-import { Button, Checkbox, Chip, Label, Panel } from "@/shared/ui";
+import { Button, Chip, Label, Panel, Switch } from "@/shared/ui";
 
 import { ResetConfirmModal } from "./ResetConfirmModal";
 import {
@@ -55,7 +55,7 @@ export const PlannerSummary = ({
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Chip variant="blue" size={isMobile ? "xs" : "sm"}>
-              <Waypoints />
+              <Map />
             </Chip>
             <div className="flex gap-2 items-center">
               <h1 className="text-2xl font-bold text-fg-primary">
@@ -102,12 +102,10 @@ export const PlannerSummary = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <Checkbox
+          <Switch
             id="hide-completed-semesters"
             checked={hideCompletedSemesters}
-            onCheckedChange={(checked) =>
-              setHideCompletedSemesters(checked === true)
-            }
+            onCheckedChange={setHideCompletedSemesters}
           />
           <Label
             htmlFor="hide-completed-semesters"

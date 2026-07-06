@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useMediaQuery } from "@/shared/lib";
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -13,6 +12,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  Switch,
 } from "@/shared/ui";
 
 interface ResetConfirmModalProps {
@@ -40,11 +40,14 @@ export const ResetConfirmModal = ({
 
   const fields = (
     <>
+      <div className="text-fg-secondary">
+        После сброса курсов вернуть их будет нельзя
+      </div>
       <div className="flex items-center justify-center gap-2">
-        <Checkbox
+        <Switch
           id="reset-keep-completed"
           checked={keepCompleted}
-          onCheckedChange={(checked) => setKeepCompleted(checked === true)}
+          onCheckedChange={setKeepCompleted}
         />
         <Label
           htmlFor="reset-keep-completed"

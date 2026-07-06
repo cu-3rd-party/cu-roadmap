@@ -18,45 +18,90 @@ function Panel({ className, ...props }: React.ComponentProps<"section">) {
 
 interface CollapsiblePanelProps extends Omit<
   React.ComponentProps<"div">,
-  "title"
+  "title" | "onClick"
 > {
   title: React.ReactNode;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  rowClickable?: boolean;
+  extraPadded?: boolean;
 }
 
 function CollapsiblePanel({
   title,
   defaultOpen = true,
+  open,
+  onOpenChange,
+  rowClickable = true,
+  extraPadded = true,
   className,
   children,
+
   ...props
 }: CollapsiblePanelProps) {
-  const [open, setOpen] = useState(defaultOpen);
+  const isControlled = open !== undefined;
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isOpen = isControlled ? open : internalOpen;
+
+  const toggle = () => {
+    const next = !isOpen;
+    if (!isControlled) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
 
   return (
     <div
       data-slot="collapsible-panel"
-      data-state={open ? "open" : "closed"}
+      data-state={isOpen ? "open" : "closed"}
       className={cn("overflow-hidden rounded-xl bg-background-alt", className)}
       {...props}
     >
-      <div className="flex items-center justify-between gap-2 px-5 py-3">
-        <span className="text-sm font-semibold text-fg-primary">{title}</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          icon={
+      {rowClickable ? (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={isOpen}
+          className="flex w-full cursor-pointer items-center justify-between gap-2 px-5 py-3 text-left"
+        >
+          <span className="text-sm font-semibold text-fg-primary">{title}</span>
+          {extraPadded ? (
+            <div className="size-10 flex items-center justify-center">
+              <ChevronUp
+                className={cn(
+                  "shrink-0 transition-transform",
+                  !isOpen && "rotate-180",
+                )}
+              />
+            </div>
+          ) : (
             <ChevronUp
-              className={cn("transition-transform", !open && "rotate-180")}
+              className={cn(
+                "shrink-0 transition-transform",
+                !isOpen && "rotate-180",
+              )}
             />
-          }
-          aria-label={open ? "Свернуть" : "Развернуть"}
-          aria-expanded={open}
-          onClick={() => setOpen((prev) => !prev)}
-        />
-      </div>
+          )}
+        </button>
+      ) : (
+        <div className="flex items-center justify-between gap-2 px-5 py-3">
+          <span className="text-sm font-semibold text-fg-primary">{title}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={
+              <ChevronUp
+                className={cn("transition-transform", !isOpen && "rotate-180")}
+              />
+            }
+            aria-label={isOpen ? "Свернуть" : "Развернуть"}
+            aria-expanded={isOpen}
+            onClick={toggle}
+          />
+        </div>
+      )}
       <AnimatePresence initial={false}>
-        {open && (
+        {isOpen && (
           <motion.div
             key="content"
             initial={{ height: 0, opacity: 0 }}

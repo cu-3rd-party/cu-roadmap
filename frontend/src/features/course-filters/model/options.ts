@@ -26,7 +26,7 @@ export type FilterGroup =
   | "choice"
   | "elective"
   | "fundamentals"
-  | "other";
+  | "flex";
 
 // Top-level (row 1) chips, single-select, in display order.
 export const FILTER_GROUPS: { id: FilterGroup; label: string }[] = [
@@ -35,7 +35,7 @@ export const FILTER_GROUPS: { id: FilterGroup; label: string }[] = [
   { id: "choice", label: typeSlugToName.choice },
   { id: "elective", label: typeSlugToName.elective },
   { id: "fundamentals", label: "Fundamentals" },
-  { id: "other", label: typeSlugToName.other },
+  { id: "flex", label: typeSlugToName.flex },
 ];
 
 export interface CourseFilterState {
@@ -56,9 +56,9 @@ export const EMPTY_FILTERS: CourseFilterState = {
   search: "",
 };
 
-// Build the catalog cards / filter options. Each option carries a course type
+// Build the catalog cards options (). Each option carries a course type
 // and, optionally, a category or specialization used to match courses against it.
-export const buildCategoryFilters = (
+export const buildCategorySections = (
   majorType: MajorType | null,
   specializations: Specialization[],
 ): CategoryFilterOption[] => {
@@ -162,7 +162,7 @@ export const buildSubOptions = (
         { id: "mandatory", label: "Обязательные" },
         { id: "elective", label: typeSlugToName.elective },
       ];
-    case "other":
+    case "flex":
       return [
         all,
         { id: "stem", label: categorySlugToName.stem },
@@ -202,7 +202,7 @@ export const optionMatchesFilter = (
       return sub === "mandatory"
         ? option.type === "other"
         : option.type === "elective";
-    case "other":
+    case "flex":
       return (
         (option.category === "stem" || option.category === "soft") &&
         (sub === "all" || option.category === sub)

@@ -5,7 +5,7 @@ import { useCoursesQuery } from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
 import { useSpecializationsQuery } from "@/entities/specialization";
 import {
-  buildCategoryFilters,
+  buildCategorySections,
   buildSubOptions,
   CourseFilters,
 } from "@/features/course-filters";
@@ -52,7 +52,7 @@ const CatalogPage = () => {
   );
 
   const options = useMemo(
-    () => buildCategoryFilters(majorType, specializations ?? []),
+    () => buildCategorySections(majorType, specializations ?? []),
     [majorType, specializations],
   );
 

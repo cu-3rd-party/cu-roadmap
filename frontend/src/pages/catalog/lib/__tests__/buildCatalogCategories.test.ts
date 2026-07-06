@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Course } from "@/entities/course";
 import type { Specialization } from "@/entities/specialization";
-import { buildCategoryFilters } from "@/features/course-filters";
+import { buildCategorySections } from "@/features/course-filters";
 
 import { buildCatalogCategories } from "../buildCatalogCategories";
 
@@ -25,7 +25,7 @@ const makeCourse = (overrides: Partial<Course>): Course => ({
   ...overrides,
 });
 
-const options = buildCategoryFilters("swe", [
+const options = buildCategorySections("swe", [
   spec("s1", "Backend"),
   spec("s2", "Frontend"),
 ]);
