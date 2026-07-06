@@ -68,6 +68,9 @@ function CommandInput({
       data-slot="command-input-wrapper"
       className={cn(
         "flex h-11 items-center gap-2 border-b border-border px-3",
+        "transition-colors duration-(--std-duration)",
+        "[&:hover:not(:focus-within)]:border-border-hover [&:hover:not(:focus-within)]:bg-accent-pale-hover",
+        "focus-within:border-border-pressed focus-within:bg-accent-pale-hover",
         wrapperClassName,
       )}
     >

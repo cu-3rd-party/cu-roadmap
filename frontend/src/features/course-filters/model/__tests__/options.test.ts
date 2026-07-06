@@ -4,7 +4,7 @@ import type { Course } from "@/entities/course";
 import type { Specialization } from "@/entities/specialization";
 
 import {
-  buildCategoryFilters,
+  buildCategorySections,
   buildSubOptions,
   courseMatchesOption,
   optionMatchesFilter,
@@ -29,9 +29,9 @@ const makeCourse = (overrides: Partial<Course>): Course => ({
   ...overrides,
 });
 
-describe("buildCategoryFilters", () => {
+describe("buildCategorySections", () => {
   it("emits chips in the documented order for a major + specializations", () => {
-    const options = buildCategoryFilters("swe", [
+    const options = buildCategorySections("swe", [
       spec("s1", "Backend"),
       spec("s2", "Frontend"),
     ]);
@@ -88,7 +88,7 @@ describe("buildCategoryFilters", () => {
   });
 
   it("labels the remaining-major electives by major name, not the elective slug", () => {
-    const labels = buildCategoryFilters("ai", [])
+    const labels = buildCategorySections("ai", [])
       .filter((option) => option.id.startsWith("elective:"))
       .map((option) => option.label);
 
@@ -98,7 +98,7 @@ describe("buildCategoryFilters", () => {
   });
 
   it("drops the single major elective and lists all majors when none is selected", () => {
-    const options = buildCategoryFilters(null, [spec("s1", "Backend")]);
+    const options = buildCategorySections(null, [spec("s1", "Backend")]);
 
     // Choice chips still render (with no category) so specializations are listed.
     expect(
@@ -138,7 +138,7 @@ describe("buildSubOptions", () => {
     expect(buildSubOptions("fundamentals", "swe", []).map((o) => o.id)).toEqual(
       ["all", "mandatory", "elective"],
     );
-    expect(buildSubOptions("other", "swe", []).map((o) => o.id)).toEqual([
+    expect(buildSubOptions("flex", "swe", []).map((o) => o.id)).toEqual([
       "all",
       "stem",
       "soft",
@@ -147,7 +147,7 @@ describe("buildSubOptions", () => {
 });
 
 describe("optionMatchesFilter", () => {
-  const options = buildCategoryFilters("swe", [
+  const options = buildCategorySections("swe", [
     spec("s1", "Backend"),
     spec("s2", "Frontend"),
   ]);
@@ -172,7 +172,7 @@ describe("optionMatchesFilter", () => {
       "fundamentals:mandatory",
       "fundamentals:elective",
     ]);
-    expect(ids("other", "all")).toEqual(["flex:stem", "flex:soft"]);
+    expect(ids("flex", "all")).toEqual(["flex:stem", "flex:soft"]);
   });
 
   it("narrows by the sub-selection", () => {
@@ -182,13 +182,13 @@ describe("optionMatchesFilter", () => {
       "fundamentals:mandatory",
     ]);
     expect(ids("fundamentals", "elective")).toEqual(["fundamentals:elective"]);
-    expect(ids("other", "soft")).toEqual(["flex:soft"]);
+    expect(ids("flex", "soft")).toEqual(["flex:soft"]);
   });
 });
 
 describe("courseMatchesOption", () => {
   it("matches core by type only", () => {
-    const option = buildCategoryFilters("swe", [])[0];
+    const option = buildCategorySections("swe", [])[0];
     expect(courseMatchesOption(makeCourse({ type: "core" }), option)).toBe(
       true,
     );
@@ -198,7 +198,7 @@ describe("courseMatchesOption", () => {
   });
 
   it("matches choice by specialization membership", () => {
-    const [option] = buildCategoryFilters("swe", [
+    const [option] = buildCategorySections("swe", [
       spec("s1", "Backend"),
     ]).filter((o) => o.type === "choice");
 
@@ -217,7 +217,7 @@ describe("courseMatchesOption", () => {
   });
 
   it("matches by category when set", () => {
-    const option = buildCategoryFilters("swe", []).find(
+    const option = buildCategorySections("swe", []).find(
       (o) => o.id === "flex:stem",
     )!;
 

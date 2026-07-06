@@ -1,6 +1,6 @@
 export { createCourseFiltersStore } from "./createCourseFiltersStore";
 export {
-  buildCategoryFilters,
+  buildCategorySections,
   buildSubOptions,
   courseMatchesOption,
   optionMatchesFilter,

@@ -74,8 +74,7 @@ export const DetailsDrawer = ({
             key={course.title}
             className="flex-1 space-y-6 touch-pan-y overflow-y-auto rounded-t-2xl bg-background px-6 pt-5 pb-8"
           >
-            <SyllabusCard link={course.syllabus} />
-
+            {course.syllabus && <SyllabusCard link={course.syllabus} />}
             {course.description && (
               <DetailField label="Описание">
                 <p className="text-fg-primary">{course.description}</p>

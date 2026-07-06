@@ -5,7 +5,7 @@ import { useMajorsQuery } from "@/entities/major";
 import { usePlannerStore } from "@/entities/roadmap";
 import { useSpecializationsQuery } from "@/entities/specialization";
 import {
-  buildCategoryFilters,
+  buildCategorySections,
   buildSubOptions,
   CategoryFilter,
   CourseSearchFilter,
@@ -59,7 +59,7 @@ export const CourseSelectModal = ({
   );
 
   const options = useMemo(
-    () => buildCategoryFilters(majorType, specializations ?? []),
+    () => buildCategorySections(majorType, specializations ?? []),
     [majorType, specializations],
   );
 

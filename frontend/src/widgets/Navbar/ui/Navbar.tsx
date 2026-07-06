@@ -1,4 +1,11 @@
-import { Compass, Map, Moon, Settings, Sun } from "lucide-react";
+import {
+  CircleQuestionMark,
+  Compass,
+  Map,
+  Moon,
+  Settings,
+  Sun,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -41,12 +48,9 @@ const BottomNavItem = ({
 );
 
 const NAV_ITEMS: NavItem[] = [
+  { label: "Глоссарий", icon: <CircleQuestionMark />, path: "/glossary" },
   { label: "Планировщик", icon: <Map />, path: "/planner" },
-  {
-    label: "Каталог",
-    icon: <Compass />,
-    path: "/catalog",
-  },
+  { label: "Каталог", icon: <Compass />, path: "/catalog" },
 ] as const;
 
 export const Navbar = () => {

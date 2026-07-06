@@ -19,6 +19,7 @@
   --background-alt: oklch(0.9674 0.0013 286.38);
   --background-section-02: oklch(0.7872 0.0157 260.73);
   --elevation-01: oklch(1 0 0);
+  --elevation-01-hover: oklch(0.4097 0.0992 257.19 / 8%);
   --elevation-02: oklch(1 0 0);
   --elevation-03: oklch(0.3695 0.0381 260.5);
 
@@ -71,50 +72,45 @@
 }
 
 .dark {
-  /* accent */
-  --accent: oklch(0.9674 0.0013 286.38);
-  --accent-opposite: oklch(0.3515 0.0059 258.35);
-  --accent-pale: oklch(0.3515 0.0059 258.35);
-  --accent-pale-hover: oklch(0.3783 0.0059 258.35);
+  --accent: oklch(0.3515 0.0059 258.35);
+  /* --accent-opposite: oklch(0.1452 0.0021 286.13); */
+  /* --accent-pale: oklch(0.1452 0.0021 286.13); */
+  --accent-pale-hover: oklch(0.9363 0.0011 197.14);
   --accent-pale-pressed: oklch(0.8538 0.0047 258.33);
 
-  /* background / surface */
-  --backdrop: oklch(0.2273 0.0038 286.09);
-  --background: oklch(0.1776 0 0);
-  --background-alt: oklch(0.252 0 0);
-  --background-section-02: oklch(0.2393 0 0);
-  --elevation-01: oklch(0.21 0.006 285.885);
-  --elevation-02: oklch(0.21 0.006 285.885);
+  /* --backdrop: oklch(1 0 0); */
+  /* --background: oklch(0.2273 0.0038 286.09); */
+  /* --background-alt: oklch(0.1452 0.0021 286.13); */
+  --background-section-02: oklch(0.7872 0.0157 260.73);
+  /* --elevation-01: oklch(0.2273 0.0038 286.09); */
+  --elevation-01-hover: oklch(0.4097 0.0992 257.19 / 8%);
+  /* --elevation-02: oklch(0.2273 0.0038 286.09); */
   --elevation-03: oklch(0.3695 0.0381 260.5);
 
-  /* border */
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(0.8538 0.0047 258.33);
   --border-muted: oklch(0.8538 0.0047 258.33 / 50%);
-  --border-hover: oklch(0.7699 0 0);
+  --border-hover: oklch(0.645 0.0088 253.89);
   --border-focus: oklch(0.7052 0.1618 292.33);
   --border-negative: oklch(0.6371 0.2104 28.54);
   --border-pale: oklch(0.9363 0.0011 197.14);
-  --border-pressed: oklch(0.9551 0 0);
-  --border-transparent: oklch(0.9551 0 0);
+  /* --border-pressed: oklch(1 0 0); */
+  --border-transparent: oklch(0.171 0.0493 250.69 / 12.2%);
 
-  /* semantic */
   --negative: oklch(0.6371 0.2104 28.54);
   --negative-pale: oklch(0.9394 0.0288 22.95);
   --positive: oklch(0.701913 0.15768 160.4375);
   --positive-pale: oklch(0.9498 0.0516 163.63);
 
-  /* brand palette */
   --categorical-23: oklch(0.9216 0.1486 98.31);
-  --education-green-pale: oklch(0.6346 0.17 151.18);
+  --education-green-pale: oklch(0.937 0.0973 160.85);
   --expert-blue: oklch(0.5139 0.267 282.44);
-  --expert-blue-pale: oklch(0.103 0.0589 286.19);
-  --expert-orange-pale: oklch(93.857% 0.03648 55.27 / 0.034);
+  --expert-blue-pale: oklch(0.8846 0.0589 286.19);
+  --expert-orange-pale: oklch(0.938567 0.036563 55.3623);
   --optimistic-t-yellow-pale: oklch(0.9755 0.0717 103.38);
   --sure-blue-pale: oklch(0.949 0.0269 241.15);
   --sure-blue-transparent: oklch(0.9764 0.0133 233.74);
   --sure-pink-pale: oklch(0.9464 0.0335 341.02);
 
-  /* text */
   --fg-education-green: oklch(0.4276 0.1035 154.38);
   --fg-expert-blue: oklch(0.5139 0.267 282.44);
   --fg-expert-orange: oklch(0.3887 0.1372 29.74);
@@ -122,10 +118,11 @@
   --fg-negative: oklch(0.5003 0.1821 29.51);
   --fg-optimistic-t-yellow: oklch(0.4224 0.0911 57.49);
   --fg-positive: oklch(0.512849 0.109955 163.5649);
-  --fg-primary: oklch(0.9851 0 0);
-  --fg-muted: oklch(0.705 0.015 286.067);
-  --fg-primary-opposite: oklch(1 0 0);
-  --fg-secondary: oklch(1 0 0 / 69.8%);
+  /* --fg-primary: oklch(1 0 0); */
+  --fg-muted: oklch(0.2273 0.0038 286.09 / 50%);
+  /* --fg-primary-on_dark: oklch(0.2273 0.0038 286.09); */
+  /* --fg-primary-opposite: oklch(0.2273 0.0038 286.09); */
+  --fg-secondary: oklch(0.4797 0.0082 248);
   --fg-secondary-transparent: oklch(0.1391 0.0146 260.73 / 65.1%);
   --fg-sure-blue: oklch(0.3878 0.0924 244.81);
   --fg-sure-pink: oklch(0.4178 0.1573 3.69);
@@ -155,6 +152,7 @@
   --color-background-alt: var(--background-alt);
   --color-background-section-02: var(--background-section-02);
   --color-elevation-01: var(--elevation-01);
+  --color-elevation-01-hover: var(--elevation-01-hover);
   --color-elevation-02: var(--elevation-02);
   --color-elevation-03: var(--elevation-03);
 

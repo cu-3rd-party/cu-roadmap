@@ -3,7 +3,7 @@ export { CourseSearchFilter } from "./ui/CourseSearchFilter";
 export { CategoryFilter } from "./ui/CategoryFilter";
 export { createCourseFiltersStore } from "./model";
 export {
-  buildCategoryFilters,
+  buildCategorySections,
   buildSubOptions,
   courseMatchesOption,
   optionMatchesFilter,
