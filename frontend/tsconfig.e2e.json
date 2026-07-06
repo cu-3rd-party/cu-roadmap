@@ -1,0 +1,11 @@
+{
+  // Covers Playwright e2e specs so type-aware ESLint has a project for them (they
+  // live outside src/, which tsconfig.json includes). playwright.config.ts lives
+  // in tsconfig.node.json instead (referenced by root, so the editor resolves its
+  // node globals). Not part of the app build — Playwright compiles these itself.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["e2e/**/*.ts"]
+}

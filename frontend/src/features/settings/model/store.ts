@@ -2,16 +2,17 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import { AdmissionYear } from "@/shared/constants";
-import { UUID } from "@/shared/model";
+import { MajorType, UUID } from "@/shared/model";
 
 interface SettingsState {
   hasSeenGreeting: boolean;
   admissionYear: AdmissionYear | null;
   hideCompletedSemesters: boolean;
   majorId: UUID | null;
+  majorType: MajorType | null;
   completeGreeting: (admissionYear: AdmissionYear) => void;
   setAdmissionYear: (admissionYear: AdmissionYear) => void;
-  setMajorId: (majorId: UUID | null) => void;
+  setMajor: (majorId: UUID | null, majorType: MajorType | null) => void;
   setHideCompletedSemesters: (hide: boolean) => void;
 }
 
@@ -22,10 +23,12 @@ export const useSettingsStore = create<SettingsState>()(
       admissionYear: null,
       hideCompletedSemesters: false,
       majorId: null,
+      majorType: null,
       completeGreeting: (admissionYear) =>
         set({ hasSeenGreeting: true, admissionYear }),
       setAdmissionYear: (admissionYear) => set({ admissionYear }),
-      setMajorId: (majorId) => set({ majorId }),
+      // id and type are always set together so they can't drift out of sync
+      setMajor: (majorId, majorType) => set({ majorId, majorType }),
       setHideCompletedSemesters: (hide) =>
         set({ hideCompletedSemesters: hide }),
     }),
@@ -36,6 +39,7 @@ export const useSettingsStore = create<SettingsState>()(
         hasSeenGreeting: state.hasSeenGreeting,
         admissionYear: state.admissionYear,
         majorId: state.majorId,
+        majorType: state.majorType,
         hideCompletedSemesters: state.hideCompletedSemesters,
       }),
     },

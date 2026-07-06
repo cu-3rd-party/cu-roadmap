@@ -39,16 +39,18 @@ export const FILTER_GROUPS: { id: FilterGroup; label: string }[] = [
 ];
 
 export interface CourseFilterState {
-  types: string[];
+  availableSemesters: string[];
   semesters: string[];
+  workload: string[];
   group: FilterGroup;
   sub: string;
   search: string;
 }
 
 export const EMPTY_FILTERS: CourseFilterState = {
-  types: [],
+  availableSemesters: [],
   semesters: [],
+  workload: [],
   group: "all",
   sub: "all",
   search: "",
@@ -208,13 +210,6 @@ export const optionMatchesFilter = (
   }
 };
 
-export const buildTypeFilters = (): CategoryFilterOption[] =>
-  (Object.keys(typeSlugToName) as CourseType[]).map((id) => ({
-    id,
-    label: typeSlugToName[id],
-    type: id,
-  }));
-
 // Match a single course against a combined type/category chip.
 export const courseMatchesOption = (
   course: Course,
@@ -240,3 +235,7 @@ export const SEMESTER_OPTIONS = [
   "7",
   "8",
 ] as const;
+
+// Workload chips (pairs/week). The last option ("4") renders as "4+" and
+// matches any course with workload >= 4; the rest match the exact number.
+export const WORKLOAD_OPTIONS = ["1", "2", "3", "4"] as const;

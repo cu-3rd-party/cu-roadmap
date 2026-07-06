@@ -136,12 +136,12 @@ export const PlannerSummary = ({
           className="grid grid-cols-1 sm:grid-cols-[repeat(var(--spec-cols),minmax(0,1fr))] [&>*:not(:last-child)]:border-b sm:[&>*:not(:last-child)]:border-b-0 sm:[&>*:not(:last-child)]:border-r"
           style={
             {
-              "--spec-cols": loading ? 4 : Math.max(specializations.length, 1),
+              "--spec-cols": loading ? 5 : Math.max(specializations.length, 1),
             } as CSSProperties
           }
         >
           {loading
-            ? Array.from({ length: 4 }).map((_, i) => (
+            ? Array.from({ length: 5 }).map((_, i) => (
                 <SpecializationProgressCardSkeleton
                   key={`spec-skeleton-${i}`}
                 />

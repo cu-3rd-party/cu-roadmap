@@ -10,6 +10,8 @@ const baseDto = (over: Partial<CourseDto> = {}): CourseDto => ({
   category: "ai",
   available_semesters: [1, 2],
   workload: 5,
+  lectures_week: 2,
+  seminars_week: 1,
   ...over,
 });
 
@@ -30,6 +32,8 @@ describe("normalizeCourse", () => {
       type: "core",
       category: "ai",
       recommendedSemester: 3,
+      lecturesWeek: 2,
+      seminarsWeek: 1,
     });
   });
 
@@ -75,6 +79,17 @@ describe("normalizeCourse", () => {
         normalizeCourse(baseDto({ handbook_link: undefined })).handbookLink,
       ).toBe("");
     });
+  });
+
+  it("passes through specializations and mandatory specializations", () => {
+    const result = normalizeCourse(
+      baseDto({
+        specializations: ["s1", "s2"],
+        mandatory_specializations: ["s1"],
+      }),
+    );
+    expect(result.specializations).toEqual(["s1", "s2"]);
+    expect(result.mandatorySpecializations).toEqual(["s1"]);
   });
 
   it("sorts prerequisite groups by ascending course count", () => {

@@ -20,9 +20,12 @@ export interface CourseDto {
   // 0 = not fixed (normal flow); 1-8 = course is pinned to that semester
   fixed_semester?: SemesterNumber | 0;
   workload: number;
+  lectures_week?: number;
+  seminars_week?: number;
   /** UUIDs of prerequisite courses. */
   prerequisites?: CoursePrerequisiteDto[];
   corequisites?: UUID[];
   postrequisites?: UUID[];
   specializations?: UUID[];
+  mandatory_specializations?: UUID[];
 }

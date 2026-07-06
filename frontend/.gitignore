@@ -10,3 +10,10 @@ docs
 CLAUDE.md
 .claude
 test.md
+
+# Playwright
+playwright-report
+test-results
+blob-report
+.cache/playwright
+/playwright/.cache

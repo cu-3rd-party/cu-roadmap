@@ -132,7 +132,7 @@ export const CourseCard = ({
       >
         <div
           title={title}
-          className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-medium text-fg-primary"
+          className="min-h-[2lh] text-sm leading-snug font-medium text-fg-primary"
         >
           {title}
         </div>
@@ -170,7 +170,7 @@ export const CourseCard = ({
       >
         <div
           title={title}
-          className="line-clamp-2 min-h-[2lh] text-sm leading-snug font-medium text-fg-primary"
+          className="min-h-[2lh] text-sm leading-snug font-medium text-fg-primary"
         >
           {title}
         </div>
@@ -210,7 +210,7 @@ export const CourseCard = ({
         <div
           title={title}
           className={cn(
-            "line-clamp-2 min-h-[2lh] text-xs sm:text-sm leading-snug font-medium text-fg-primary",
+            "min-h-[2lh] text-xs sm:text-sm leading-snug font-medium text-fg-primary",
             showMoveMenu && "pr-5 sm:pr-7",
           )}
         >

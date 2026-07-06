@@ -37,6 +37,7 @@ describe("normalizeSpecializationMatch", () => {
       completed_ids: ["c1"],
       can_cover_ids: ["c2"],
       cannot_cover_ids: ["c3"],
+      mandatory_ids: ["c1", "c2"],
     };
 
     expect(normalizeSpecializationMatch(dto)).toEqual({
@@ -52,6 +53,7 @@ describe("normalizeSpecializationMatch", () => {
       completedIds: ["c1"],
       canCoverIds: ["c2"],
       cannotCoverIds: ["c3"],
+      mandatoryIds: ["c1", "c2"],
     });
   });
 });

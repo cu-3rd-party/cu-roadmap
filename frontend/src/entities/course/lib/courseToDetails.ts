@@ -1,4 +1,5 @@
 import type { SemesterNumber } from "@/shared/constants";
+import { pluralizeRu } from "@/shared/lib";
 import { categorySlugToName, typeSlugToName, type UUID } from "@/shared/model";
 
 import type {
@@ -6,6 +7,7 @@ import type {
   PrerequisiteGroupItem,
   RequisiteItem,
   Season,
+  SpecializationItem,
 } from "../model/details";
 import type { Course, CoursePrerequisite } from "../model/types";
 
@@ -48,6 +50,19 @@ const resolvePrerequisites = (
     }))
     .filter((group) => group.prerequisites.length > 0);
 
+const buildAcademicLoad = (course: Course): string[] => {
+  const lines: string[] = [];
+  if (course.lecturesWeek && course.lecturesWeek > 0)
+    lines.push(
+      `${course.lecturesWeek} ${pluralizeRu(course.lecturesWeek, ["лекция", "лекции", "лекций"])} в неделю`,
+    );
+  if (course.seminarsWeek && course.seminarsWeek > 0)
+    lines.push(
+      `${course.seminarsWeek} ${pluralizeRu(course.seminarsWeek, ["семинар", "семинара", "семинаров"])} в неделю`,
+    );
+  return lines;
+};
+
 interface CourseToDetailsLookups {
   titleMap: Map<UUID, string>;
   specializationTitleMap: Map<UUID, string>;
@@ -57,22 +72,31 @@ interface CourseToDetailsLookups {
 export const courseToDetails = (
   course: Course,
   { titleMap, specializationTitleMap }: CourseToDetailsLookups,
-): CourseDetails => ({
-  title: course.title,
-  description: course.description,
-  syllabus: course.handbookLink,
-  admissionYears: formatAdmissionYears(course.allowedCohorts),
-  category: ["core", "choice"].includes(course.type)
-    ? `${categorySlugToName[course.category]} ${typeSlugToName[course.type]}`
-    : categorySlugToName[course.category],
-  specializations: (course.specializations ?? [])
-    .map((id) => specializationTitleMap.get(id))
-    .filter((title): title is string => Boolean(title)),
-  seasons: semestersToSeasons(course.availableSemesters),
-  recommendedSemester: course.recommendedSemester
-    ? `${course.recommendedSemester} семестр`
-    : "Не указан",
-  prerequisites: resolvePrerequisites(course.prerequisites, titleMap),
-  postrequisites: resolveRequisites(course.postrequisites, titleMap),
-  corequisites: resolveRequisites(course.corequisites, titleMap),
-});
+): CourseDetails => {
+  const mandatorySet = new Set(course.mandatorySpecializations ?? []);
+  return {
+    title: course.title,
+    description: course.description,
+    syllabus: course.handbookLink,
+    admissionYears: formatAdmissionYears(course.allowedCohorts),
+    category: ["core", "choice"].includes(course.type)
+      ? `${categorySlugToName[course.category]} ${typeSlugToName[course.type]}`
+      : categorySlugToName[course.category],
+    isCore: course.type === "core",
+    specializations: (course.specializations ?? [])
+      .map((id) => {
+        const title = specializationTitleMap.get(id);
+        return title ? { title, mandatory: mandatorySet.has(id) } : null;
+      })
+      .filter((item): item is SpecializationItem => item !== null),
+    seasons: semestersToSeasons(course.availableSemesters),
+    availableSemesters: course.availableSemesters.map((semester) => ({
+      label: `${semester} семестр`,
+      recommended: semester === course.recommendedSemester,
+    })),
+    academicLoad: buildAcademicLoad(course),
+    prerequisites: resolvePrerequisites(course.prerequisites, titleMap),
+    postrequisites: resolveRequisites(course.postrequisites, titleMap),
+    corequisites: resolveRequisites(course.corequisites, titleMap),
+  };
+};

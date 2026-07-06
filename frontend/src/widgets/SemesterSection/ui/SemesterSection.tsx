@@ -15,15 +15,15 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Check, Loader2, Trash } from "lucide-react";
+import { Check, Loader2, Trash, Weight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CourseCard, StatusPanel, type Course } from "@/entities/course";
 import { isSemesterCompleted, usePlannerStore } from "@/entities/roadmap";
 import { CourseSelectModal } from "@/features/course-select";
 import { useSettingsStore } from "@/features/settings";
-import { useMediaQuery } from "@/shared/lib";
-import { Button, CollapsiblePanel, Panel } from "@/shared/ui";
+import { pluralizeRu, useMediaQuery } from "@/shared/lib";
+import { Badge, Button, CollapsiblePanel, Panel } from "@/shared/ui";
 
 import { AddCourseButton } from "./AddCourseButton";
 import { SortableCourseCard } from "./SortableCourseCard";
@@ -62,6 +62,15 @@ export const SemesterSection = ({
   const courseById = useMemo(
     () => new Map(catalogCourses.map((course) => [course.id, course])),
     [catalogCourses],
+  );
+
+  const totalWorkload = useMemo(
+    () =>
+      courses.reduce(
+        (sum, c) => sum + (courseById.get(c.id)?.workload ?? 0),
+        0,
+      ),
+    [courses, courseById],
   );
 
   // Move menu only offers semesters the course is actually available in.
@@ -126,10 +135,22 @@ export const SemesterSection = ({
     <Panel className="relative px-2 sm:px-4 lg:p-6 lg:pt-4">
       <div className="mb-4 flex items-center gap-2.5 px-1">
         <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 sm:items-center">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-fg-primary">
               {index} семестр
             </h2>
+            {totalWorkload > 0 && (
+              <Badge
+                variant="blue"
+                size="xxs"
+                aria-label="Академическая нагрузка семестра"
+              >
+                <Weight className="size-3" />
+                {totalWorkload}{" "}
+                {pluralizeRu(totalWorkload, ["пара", "пары", "пар"])}{" "}
+                {isMobile ? "" : "в неделю"}
+              </Badge>
+            )}
             {identifying && (
               <Loader2
                 className="size-4 animate-spin text-fg-secondary"
@@ -181,7 +202,7 @@ export const SemesterSection = ({
               onDragCancel={handleDragCancel}
             >
               <SortableContext items={courseIds} strategy={rectSortingStrategy}>
-                <div className="grid gap-1 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                <div className="grid gap-1 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                   {courses.map((course) => (
                     <SortableCourseCard
                       key={course.id}

@@ -1,8 +1,8 @@
 import { Chip } from "@/shared/ui";
 
 import {
-  buildTypeFilters,
   SEMESTER_OPTIONS,
+  WORKLOAD_OPTIONS,
   type CourseFilterState,
   type FilterGroup,
 } from "../model";
@@ -10,19 +10,16 @@ import {
 import { CategoryFilter } from "./CategoryFilter";
 import { CourseSearchFilter } from "./CourseSearchFilter";
 import { FilterCard } from "./FilterCard";
-import { ChipSkeletonRow } from "./FilterSkeleton";
-
-const TYPE_OPTIONS = buildTypeFilters();
 
 interface CourseFiltersProps {
   value: CourseFilterState;
   subOptions: { id: string; label: string }[];
-  onToggleType: (type: string) => void;
+  onToggleAvailableSemester: (semester: string) => void;
   onToggleSemester: (semester: string) => void;
+  onToggleWorkload: (workload: string) => void;
   onGroupChange: (group: FilterGroup) => void;
   onSubChange: (sub: string) => void;
   onSearchChange: (search: string) => void;
-  types?: { id: string; label: string }[];
   semesters?: readonly string[];
   loading?: boolean;
 }
@@ -30,57 +27,68 @@ interface CourseFiltersProps {
 export const CourseFilters = ({
   value,
   subOptions,
-  onToggleType,
+  onToggleAvailableSemester,
   onToggleSemester,
+  onToggleWorkload,
   onGroupChange,
   onSubChange,
   onSearchChange,
-  types = TYPE_OPTIONS,
   semesters = SEMESTER_OPTIONS,
   loading = false,
 }: CourseFiltersProps) => {
   return (
     <div className="flex flex-col gap-1">
-      <div className="grid gap-1 sm:grid-cols-2">
-        <FilterCard label="Рекомендованный семестр">
-          {loading ? (
-            <ChipSkeletonRow widths={[32, 32, 32, 32, 32, 32, 32, 32]} />
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {semesters.map((semester) => (
-                <Chip
-                  variant="action"
-                  key={semester}
-                  size="xs"
-                  active={value.semesters.includes(semester)}
-                  onClick={() => onToggleSemester(semester)}
-                  className="rounded-full size-8"
-                >
-                  {semester}
-                </Chip>
-              ))}
-            </div>
-          )}
+      {/* Static options — rendered immediately, no loading skeleton. */}
+      <div className="grid gap-1 sm:grid-cols-3">
+        <FilterCard label="Доступные семестры">
+          <div className="flex flex-wrap gap-2">
+            {semesters.map((semester) => (
+              <Chip
+                variant="action"
+                key={semester}
+                size="xs"
+                active={value.availableSemesters.includes(semester)}
+                onClick={() => onToggleAvailableSemester(semester)}
+                className="rounded-full size-8"
+              >
+                {semester}
+              </Chip>
+            ))}
+          </div>
         </FilterCard>
 
-        <FilterCard label="Тип курса">
-          {loading ? (
-            <ChipSkeletonRow widths={[80, 96, 72]} />
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {types.map((type) => (
-                <Chip
-                  variant="action"
-                  key={type.id}
-                  size="xs"
-                  active={value.types.includes(type.id)}
-                  onClick={() => onToggleType(type.id)}
-                >
-                  {type.label}
-                </Chip>
-              ))}
-            </div>
-          )}
+        <FilterCard label="Рекомендованный семестр">
+          <div className="flex flex-wrap gap-2">
+            {semesters.map((semester) => (
+              <Chip
+                variant="action"
+                key={semester}
+                size="xs"
+                active={value.semesters.includes(semester)}
+                onClick={() => onToggleSemester(semester)}
+                className="rounded-full size-8"
+              >
+                {semester}
+              </Chip>
+            ))}
+          </div>
+        </FilterCard>
+
+        <FilterCard label="Нагрузка в парах в неделю">
+          <div className="flex flex-wrap gap-2">
+            {WORKLOAD_OPTIONS.map((workload) => (
+              <Chip
+                variant="action"
+                key={workload}
+                size="xs"
+                active={value.workload.includes(workload)}
+                onClick={() => onToggleWorkload(workload)}
+                className="rounded-full size-8"
+              >
+                {workload === "4" ? "4+" : workload}
+              </Chip>
+            ))}
+          </div>
         </FilterCard>
       </div>
 

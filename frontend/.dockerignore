@@ -1,1 +1,15 @@
-./.gitignore
+# Never ship host-built artifacts into the image. The Dockerfile installs deps
+# in a dedicated stage (COPY --from=install node_modules); copying the host's
+# node_modules over it breaks the build — especially on Windows, whose symlinks
+# are invalid on Linux (e.g. node_modules/typescript/bin/tsc becomes unreadable).
+node_modules
+dist
+.git
+.env
+*.log
+
+# Test / tooling output
+playwright-report
+test-results
+blob-report
+.idea

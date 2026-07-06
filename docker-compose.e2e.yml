@@ -1,0 +1,29 @@
+# Deterministic overrides for Playwright e2e runs. Layer on top of the base
+# stack:  docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build
+#
+# Why this exists:
+#  - Google Sheets sync overwrites seeded data at runtime -> disabled here so
+#    assertions are stable.
+#  - The committed backend/majors.csv titles have no "(YYYY)" cohort suffix, so
+#    seeded majors get cohortYear 0 and never show up in the frontend greeting
+#    (which filters majors by admission year). We mount a cohort-tagged fixture
+#    so year 2025 has selectable majors and the happy path can complete.
+services:
+  backend:
+    environment:
+      GOOGLE_SHEETS_SYNC_ENABLED: "false"
+      SEED_ON_STARTUP: "true"
+      # .env.example ships HOST=127.0.0.1, so the backend would bind to its own
+      # container loopback and nginx (a separate container) gets 502. Bind to all
+      # interfaces so the proxy can reach it.
+      HOST: "0.0.0.0"
+      # Use the in-memory store for e2e: it seeds majors/courses straight from the
+      # CSVs (incl. the mounted fixture) and is ephemeral, so every run starts from
+      # the same known state. (The Postgres store returned empty here — stale
+      # volume / seed quirk — and persistence isn't what these tests exercise.)
+      USE_MEMORY_STORE: "true"
+      USE_MEMORY_CACHE_STORE: "true"
+    volumes:
+      # Overlay the seed with cohort-tagged majors (WORKDIR is /app, and the
+      # backend reads "majors.csv" relative to it — see backend/Dockerfile).
+      - ./frontend/e2e/fixtures/majors.csv:/app/majors.csv:ro

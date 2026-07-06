@@ -34,7 +34,7 @@ export const CoursesSection = ({
       </div>
 
       <CollapsiblePanel title={panelTitle}>
-        <div className="grid gap-1 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6">
+        <div className="grid gap-1 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {courses.map((course) => {
             const selectedSemester = semesterByCourseId.get(course.id) as
               | SemesterNumber

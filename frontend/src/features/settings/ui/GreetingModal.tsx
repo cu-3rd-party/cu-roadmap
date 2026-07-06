@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import { useAllMajorsQuery } from "@/entities/major";
-import { usePlannerStore } from "@/entities/roadmap";
 import { ADMISSION_YEARS } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
 import {
@@ -27,11 +26,7 @@ import {
 import { useSettingsStore } from "../model";
 
 export const GreetingModal = () => {
-  const {
-    hasSeenGreeting,
-    completeGreeting,
-    setMajorId: persistMajorId,
-  } = useSettingsStore();
+  const { hasSeenGreeting, completeGreeting, setMajor } = useSettingsStore();
   const [admissionYear, setAdmissionYear] = useState("");
   const [majorId, setMajorId] = useState("");
   const isMobile = useMediaQuery("sm");
@@ -48,7 +43,8 @@ export const GreetingModal = () => {
   const handleProceed = () => {
     if (!admissionYear || !majorId) return;
     completeGreeting(Number(admissionYear) as (typeof ADMISSION_YEARS)[number]);
-    persistMajorId(majorId);
+    const chosen = yearMajors.find((m) => m.id === majorId);
+    setMajor(majorId, chosen?.type ?? null);
   };
 
   const description = (
