@@ -18,6 +18,8 @@ type Course struct {
 	AvailableSemesters  pq.Int64Array        `gorm:"type:integer[];not null"`
 	RecommendedSemester *int                 `gorm:"type:integer"`
 	Workload            float64              `gorm:"not null"`
+	SeminarsWeek        int                  `gorm:"not null;default:1"`
+	LecturesWeek        int                  `gorm:"not null;default:0"`
 	AnalogGroup         string               `gorm:"type:varchar(255);default:''"`
 	CsatMetric          *float64             `gorm:"type:float"`
 	CourseDependencies  []CourseDependency   `gorm:"foreignKey:CourseID"`

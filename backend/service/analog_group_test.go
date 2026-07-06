@@ -213,3 +213,109 @@ func TestAnalogGroupDoesNotMarkVirtuallyPassedAsPassed(t *testing.T) {
 	assert.True(t, hasC, "Course C must be scheduled")
 	assert.True(t, bSemester < cSemester, "Course B must be scheduled before Course C")
 }
+
+func TestMultipleAnalogGroups(t *testing.T) {
+	s := store.NewMemoryStore()
+	s.Init("admin")
+	defer s.Close()
+
+	// blue course belongs to both "Матан2" and "Линал2"
+	blueCourse := interfaces.CourseData{
+		ID:                 uuid.New(),
+		Title:              "Синий курс (Матан + Линал)",
+		AvailableSemesters: []int{1, 2},
+		Workload:           4.0,
+		AnalogGroup:        "Матан2,Линал2",
+		Category:           enums.CourseCategoryFundamentals,
+		CourseType:         enums.CourseTypeMandatory,
+	}
+
+	// red matan belongs to "Матан2"
+	redMatan := interfaces.CourseData{
+		ID:                 uuid.New(),
+		Title:              "Красный матан",
+		AvailableSemesters: []int{1, 2},
+		Workload:           4.0,
+		AnalogGroup:        "Матан2",
+		Category:           enums.CourseCategoryFundamentals,
+		CourseType:         enums.CourseTypeMandatory,
+	}
+
+	// red linnal belongs to "Линал2"
+	redLinnal := interfaces.CourseData{
+		ID:                 uuid.New(),
+		Title:              "Красный линал",
+		AvailableSemesters: []int{1, 2},
+		Workload:           4.0,
+		AnalogGroup:        "Линал2",
+		Category:           enums.CourseCategoryFundamentals,
+		CourseType:         enums.CourseTypeMandatory,
+	}
+
+	// Course requiring Matan2
+	matanDepCourse := interfaces.CourseData{
+		ID:                 uuid.New(),
+		Title:              "Мат.анализ 3",
+		AvailableSemesters: []int{3, 4},
+		Workload:           4.0,
+		Category:           enums.CourseCategoryFundamentals,
+		CourseType:         enums.CourseTypeMandatory,
+	}
+
+	// Course requiring Linnal2
+	linnalDepCourse := interfaces.CourseData{
+		ID:                 uuid.New(),
+		Title:              "Линейная алгебра 3",
+		AvailableSemesters: []int{3, 4},
+		Workload:           4.0,
+		Category:           enums.CourseCategoryFundamentals,
+		CourseType:         enums.CourseTypeMandatory,
+	}
+
+	s.CreateCourse(blueCourse)
+	s.CreateCourse(redMatan)
+	s.CreateCourse(redLinnal)
+	s.CreateCourse(matanDepCourse)
+	s.CreateCourse(linnalDepCourse)
+
+	// Create dependencies
+	// "Мат.анализ 3" requires "Красный матан" (Матан2)
+	s.CreateCourseDependency(interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         matanDepCourse.ID,
+		RequiredCourseID: redMatan.ID,
+		DependencyType:   enums.DependencyTypePrerequisite,
+	})
+
+	// "Линейная алгебра 3" requires "Красный линал" (Линал2)
+	s.CreateCourseDependency(interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         linnalDepCourse.ID,
+		RequiredCourseID: redLinnal.ID,
+		DependencyType:   enums.DependencyTypePrerequisite,
+	})
+
+	// Create validator from store
+	validator, err := CreateValidatorFromStore(s)
+	assert.NoError(t, err)
+
+	// Student passed ONLY the blue course
+	passed := map[uuid.UUID]bool{
+		blueCourse.ID: true,
+	}
+
+	// Validate semester with both Matan 3 and Linnal 3 being taken in sem 3
+	res := validator.ValidateSemester(
+		[]interfaces.CourseData{matanDepCourse, linnalDepCourse},
+		passed,
+		3,
+		10.0,
+	)
+
+	// Since blue course has both groups, it should satisfy the prerequisites of both!
+	// So both Matan 3 and Linnal 3 should have their prerequisites satisfied.
+	for _, m := range res.Messages {
+		assert.NotContains(t, m.Message, "нужен пререквизит")
+		assert.NotContains(t, m.Message, "нужен кореквизит")
+	}
+}

@@ -173,6 +173,7 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 	type reqInfo struct {
 		reqType         enums.RequirementType
 		specializations []string
+		mandatorySpecs  []string
 	}
 	courseToMajorReqs := make(map[string]map[string]reqInfo)
 	type rowEntry struct {
@@ -237,6 +238,17 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				}
 			}
 
+			rawMandatorySpecs := getFirst(row, "Специализация(обязательно)", "Специализации(обязательно)")
+			var mandatorySpecs []string
+			if rawMandatorySpecs != "" && rawMandatorySpecs != "-" {
+				for _, sPart := range strings.Split(rawMandatorySpecs, ",") {
+					sPart = strings.TrimSpace(sPart)
+					if sPart != "" && !strings.EqualFold(sPart, "нет") {
+						mandatorySpecs = append(mandatorySpecs, sPart)
+					}
+				}
+			}
+
 			if _, exists := courseMap[norm]; !exists {
 				course := MapSheetRowToCourse(row, mapping.Category)
 				if len(course.AllowedCohorts) == 0 {
@@ -281,6 +293,11 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 						modified = true
 					}
 				}
+				newGroup := strings.TrimSpace(getFirst(row, "Группа аналогов(алгоритм не берет больше 1 курса из группы)", "Группа аналогов"))
+				if mergedGroup, changed := mergeAnalogGroups(course.AnalogGroup, newGroup); changed {
+					course.AnalogGroup = mergedGroup
+					modified = true
+				}
 				if modified {
 					if _, err := s.UpdateCourse(course); err != nil {
 						return SyncResult{}, fmt.Errorf("update course %s: %w", title, err)
@@ -307,14 +324,18 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				cur, ok := courseToMajorReqs[norm][majorKey]
 				if !ok || cur.reqType != enums.RequirementTypeMajorCore {
 					var mergedSpecs []string
+					var mergedMandatory []string
 					if ok {
 						mergedSpecs = mergeStringSlices(cur.specializations, specs)
+						mergedMandatory = mergeStringSlices(cur.mandatorySpecs, mandatorySpecs)
 					} else {
 						mergedSpecs = specs
+						mergedMandatory = mandatorySpecs
 					}
 					courseToMajorReqs[norm][majorKey] = reqInfo{
 						reqType:         reqType,
 						specializations: mergedSpecs,
+						mandatorySpecs:  mergedMandatory,
 					}
 				}
 			}
@@ -432,7 +453,8 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				continue
 			}
 
-			for _, specTitle := range req.specializations {
+			allSpecTitles := mergeStringSlices(req.specializations, req.mandatorySpecs)
+			for _, specTitle := range allSpecTitles {
 				specKey := major.ID.String() + "|" + specTitle
 				if _, ok := createdSpecs[specKey]; !ok {
 					newSpec, err := s.CreateSpecialization(interfaces.SpecializationData{
@@ -452,10 +474,11 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				reqID = existingID
 			}
 			if err := requirements.AddFlatRequirement(s, major.ID, requirements.FlatRequirementInput{
-				ID:              reqID,
-				CourseID:        course.ID,
-				RequirementType: req.reqType,
-				Specializations: req.specializations,
+				ID:                       reqID,
+				CourseID:                 course.ID,
+				RequirementType:          req.reqType,
+				Specializations:          req.specializations,
+				MandatorySpecializations: req.mandatorySpecs,
 			}); err != nil {
 				return SyncResult{}, fmt.Errorf("create major requirement: %w", err)
 			}
@@ -556,28 +579,47 @@ func syncWithSheets(s interfaces.StoreBase) error {
 	for _, sheetName := range sheetNames {
 		slog.Info("fetching sheet", "sheet", sheetName)
 		rangeStr := fmt.Sprintf("'%s'!A:Z", strings.ReplaceAll(sheetName, "'", "\\'"))
-		resp, err := sheetsService.Spreadsheets.Values.Get(sheetsCfg.SpreadsheetID, rangeStr).Do()
+		resp, err := sheetsService.Spreadsheets.Get(sheetsCfg.SpreadsheetID).
+			Ranges(rangeStr).
+			IncludeGridData(true).
+			Do()
 		if err != nil {
 			slog.Warn("failed to fetch sheet, skipping", "sheet", sheetName, "error", err)
 			continue
 		}
 
-		if len(resp.Values) == 0 {
+		if len(resp.Sheets) == 0 || len(resp.Sheets[0].Data) == 0 {
 			continue
 		}
 
-		headerRaw := resp.Values[0]
-		headers := make([]string, len(headerRaw))
-		for i, h := range headerRaw {
-			headers[i] = fmt.Sprint(h)
+		gridData := resp.Sheets[0].Data[0]
+		if len(gridData.RowData) == 0 {
+			continue
+		}
+
+		headerRow := gridData.RowData[0]
+		headers := make([]string, len(headerRow.Values))
+		for i, cell := range headerRow.Values {
+			if cell != nil {
+				headers[i] = cell.FormattedValue
+			}
 		}
 
 		var rows []map[string]string
-		for _, row := range resp.Values[1:] {
+		for rowIndex := 1; rowIndex < len(gridData.RowData); rowIndex++ {
+			rowData := gridData.RowData[rowIndex]
 			record := make(map[string]string)
 			for i, h := range headers {
-				if i < len(row) {
-					record[h] = fmt.Sprint(row[i])
+				if i < len(rowData.Values) {
+					cell := rowData.Values[i]
+					if cell != nil {
+						val := cell.FormattedValue
+						normH := normalizeSheetHeader(h)
+						if strings.Contains(normH, "силлабус") && cell.Hyperlink != "" {
+							val = cell.Hyperlink
+						}
+						record[h] = val
+					}
 				}
 			}
 			rows = append(rows, record)
@@ -773,12 +815,33 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		recommendedSemester = &v
 	}
 
-	workload := 1.0
+	seminarsWeek := 1
+	rawSeminars := getFirst(row, "Кол-во семинаров в неделю", "Семинары", "Количество семинаров в неделю", "Кол-во семинаров", "Количество семинаров")
+	if match := RecommendedSemesterRegexp.FindString(rawSeminars); match != "" {
+		if v, err := strconv.Atoi(match); err == nil {
+			seminarsWeek = v
+		}
+	}
+
+	lecturesWeek := 0
+	rawLectures := getFirst(row, "Кол-во лекций в неделю", "Лекции", "Количество лекций в неделю", "Кол-во лекций", "Количество лекций")
+	if match := RecommendedSemesterRegexp.FindString(rawLectures); match != "" {
+		if v, err := strconv.Atoi(match); err == nil {
+			lecturesWeek = v
+		}
+	}
+
+	workload := float64(seminarsWeek + lecturesWeek)
+
+	descVal := getFirst(row, "Текст для отображения студентам")
+	if descVal == "" {
+		descVal = "Нет описания"
+	}
 
 	cd := interfaces.CourseData{
 		ID:                  uuid.New(),
 		Title:               strings.TrimSpace(getFirst(row, "Название курса")),
-		Description:         new(getFirst(row, "Контекст", "Контекст, чтобы правильно отобразить на траектории\nесли есть")),
+		Description:         &descVal,
 		HandbookLink:        new(getFirst(row, "Силлабус если есть", "Силлабус\nесли есть", "Силлабус")),
 		CourseType:          courseType,
 		Category:            category,
@@ -786,6 +849,8 @@ func MapSheetRowToCourse(row map[string]string, category enums.CourseCategory) i
 		AvailableSemesters:  availableSemesters,
 		RecommendedSemester: recommendedSemester,
 		Workload:            workload,
+		SeminarsWeek:        seminarsWeek,
+		LecturesWeek:        lecturesWeek,
 		AnalogGroup:         strings.TrimSpace(getFirst(row, "Группа аналогов(алгоритм не берет больше 1 курса из группы)", "Группа аналогов")),
 	}
 
@@ -842,4 +907,41 @@ func mergeStringSlices(a, b []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func mergeAnalogGroups(existing, newGroup string) (string, bool) {
+	existing = strings.TrimSpace(existing)
+	newGroup = strings.TrimSpace(newGroup)
+	if newGroup == "" {
+		return existing, false
+	}
+	if existing == "" {
+		return newGroup, true
+	}
+
+	// Split existing into a set
+	existingParts := strings.Split(existing, ",")
+	seen := make(map[string]bool)
+	var ordered []string
+	for _, p := range existingParts {
+		p = strings.TrimSpace(p)
+		if p != "" && !seen[strings.ToLower(p)] {
+			seen[strings.ToLower(p)] = true
+			ordered = append(ordered, p)
+		}
+	}
+
+	// Add new groups
+	newParts := strings.Split(newGroup, ",")
+	modified := false
+	for _, p := range newParts {
+		p = strings.TrimSpace(p)
+		if p != "" && !seen[strings.ToLower(p)] {
+			seen[strings.ToLower(p)] = true
+			ordered = append(ordered, p)
+			modified = true
+		}
+	}
+
+	return strings.Join(ordered, ","), modified
 }

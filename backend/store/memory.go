@@ -467,6 +467,8 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 			AvailableSemesters:  sems,
 			RecommendedSemester: recSem,
 			Workload:            workload,
+			SeminarsWeek:        1,
+			LecturesWeek:        0,
 		}
 		s.coursesByTitle[row[1]] = uid
 	}

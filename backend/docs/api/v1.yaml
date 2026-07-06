@@ -1001,6 +1001,12 @@ components:
           items:
             type: string
             format: uuid
+        mandatory_ids:
+          type: array
+          description: список UUID курсов по выбору (choice), которые являются обязательными для данной специализации
+          items:
+            type: string
+            format: uuid
 
 
     IdentifyMajorRequest:
@@ -1079,6 +1085,12 @@ components:
           nullable: true
         workload:
           type: number
+        seminars_week:
+          type: integer
+          description: количество семинаров в неделю
+        lectures_week:
+          type: integer
+          description: количество лекций в неделю
         analog_group:
           type: string
           nullable: true
@@ -1124,6 +1136,12 @@ components:
         specializations:
           type: array
           description: uuid специализаций, к которым относится курс
+          items:
+            type: string
+            format: uuid
+        mandatory_specializations:
+          type: array
+          description: uuid специализаций, для которых данный курс является обязательным (из choice)
           items:
             type: string
             format: uuid
@@ -1204,6 +1222,12 @@ components:
           nullable: true
         workload:
           type: number
+        seminars_week:
+          type: integer
+          description: количество семинаров в неделю
+        lectures_week:
+          type: integer
+          description: количество лекций в неделю
         prerequisites:
           type: array
           description: >-

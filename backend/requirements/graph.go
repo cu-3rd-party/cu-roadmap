@@ -37,11 +37,12 @@ type Resolver struct {
 }
 
 type Projection struct {
-	ID              uuid.UUID
-	MajorID         uuid.UUID
-	CourseID        uuid.UUID
-	RequirementType enums.RequirementType
-	Specializations []string
+	ID                       uuid.UUID
+	MajorID                  uuid.UUID
+	CourseID                 uuid.UUID
+	RequirementType          enums.RequirementType
+	Specializations          []string
+	MandatorySpecializations []string
 }
 
 func NewResolver(store Store) *Resolver {
@@ -154,14 +155,16 @@ func (r *Resolver) ProjectMajorRequirements(majorID uuid.UUID) ([]Projection, er
 		current, ok := byBoxID[leaf.ID]
 		if !ok {
 			current = Projection{
-				ID:              leaf.ID,
-				MajorID:         majorID,
-				CourseID:        *leaf.CourseID,
-				RequirementType: reqType,
-				Specializations: append([]string(nil), leaf.Specializations...),
+				ID:                       leaf.ID,
+				MajorID:                  majorID,
+				CourseID:                 *leaf.CourseID,
+				RequirementType:          reqType,
+				Specializations:          append([]string(nil), leaf.Specializations...),
+				MandatorySpecializations: append([]string(nil), leaf.MandatorySpecializations...),
 			}
 		} else {
 			current.Specializations = mergeStrings(current.Specializations, leaf.Specializations)
+			current.MandatorySpecializations = mergeStrings(current.MandatorySpecializations, leaf.MandatorySpecializations)
 		}
 		byBoxID[leaf.ID] = current
 	}
@@ -519,6 +522,32 @@ func (g *Graph) pickBestBranch(
 	return best, nil
 }
 
+func analogGroupsIntersect(g1, g2 string) bool {
+	g1 = strings.TrimSpace(g1)
+	g2 = strings.TrimSpace(g2)
+	if g1 == "" || g2 == "" {
+		return false
+	}
+	parts1 := strings.Split(g1, ",")
+	parts2 := strings.Split(g2, ",")
+	for _, p1 := range parts1 {
+		p1 = strings.TrimSpace(p1)
+		if p1 == "" {
+			continue
+		}
+		for _, p2 := range parts2 {
+			p2 = strings.TrimSpace(p2)
+			if p2 == "" {
+				continue
+			}
+			if strings.EqualFold(p1, p2) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func isCourseSatisfied(
 	target interfaces.CourseData,
 	allCourses map[uuid.UUID]interfaces.CourseData,
@@ -528,17 +557,17 @@ func isCourseSatisfied(
 	if passedCourseIDs[target.ID] || plannedCourseIDs[target.ID] {
 		return true
 	}
-	group := strings.TrimSpace(target.AnalogGroup)
-	if group == "" {
+	targetGroup := strings.TrimSpace(target.AnalogGroup)
+	if targetGroup == "" {
 		return false
 	}
 	for courseID := range passedCourseIDs {
-		if course, ok := allCourses[courseID]; ok && strings.EqualFold(strings.TrimSpace(course.AnalogGroup), group) {
+		if course, ok := allCourses[courseID]; ok && analogGroupsIntersect(course.AnalogGroup, targetGroup) {
 			return true
 		}
 	}
 	for courseID := range plannedCourseIDs {
-		if course, ok := allCourses[courseID]; ok && strings.EqualFold(strings.TrimSpace(course.AnalogGroup), group) {
+		if course, ok := allCourses[courseID]; ok && analogGroupsIntersect(course.AnalogGroup, targetGroup) {
 			return true
 		}
 	}

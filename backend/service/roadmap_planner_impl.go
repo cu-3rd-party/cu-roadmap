@@ -104,17 +104,35 @@ func newRoadmapPlanningContext(
 	}
 
 	fulfilledAnalogGroups := make(map[string]bool)
+	markFulfilled := func(g string) {
+		for _, part := range strings.Split(g, ",") {
+			part = strings.TrimSpace(part)
+			if part != "" {
+				fulfilledAnalogGroups[strings.ToLower(part)] = true
+			}
+		}
+	}
+	hasFulfilledGroup := func(g string) bool {
+		for _, part := range strings.Split(g, ",") {
+			part = strings.TrimSpace(part)
+			if part != "" && fulfilledAnalogGroups[strings.ToLower(part)] {
+				return true
+			}
+		}
+		return false
+	}
+
 	// Mark groups from passed courses
 	for _, id := range passedCourseIDs {
 		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
-			fulfilledAnalogGroups[c.AnalogGroup] = true
+			markFulfilled(c.AnalogGroup)
 		}
 	}
 	// Mark groups from planned courses
 	for _, ps := range plannedSemesters {
 		for _, id := range ps.CourseIDs {
 			if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
-				fulfilledAnalogGroups[c.AnalogGroup] = true
+				markFulfilled(c.AnalogGroup)
 			}
 		}
 	}
@@ -129,7 +147,7 @@ func newRoadmapPlanningContext(
 
 			// If the analog group is fulfilled by passed or planned courses,
 			// we skip other courses of this group from being added to targetCourses.
-			if c.AnalogGroup != "" && fulfilledAnalogGroups[c.AnalogGroup] {
+			if c.AnalogGroup != "" && hasFulfilledGroup(c.AnalogGroup) {
 				isTheFulfillingCourse := passedIDs[courseID] || plannedIDs[courseID]
 				if !isTheFulfillingCourse {
 					fmt.Printf("DEBUG: Skipping %s (group %s already fulfilled)\n", c.Title, c.AnalogGroup)
@@ -143,8 +161,31 @@ func newRoadmapPlanningContext(
 			}
 		}
 	}
+	var specTitle string
+	if specializationID != nil {
+		if specs, err := store.GetSpecializationsByMajor(majorID); err == nil {
+			for _, sp := range specs {
+				if sp.ID == *specializationID {
+					specTitle = sp.Title
+					break
+				}
+			}
+		}
+	}
 	for _, req := range projectedRequirements {
-		if !plannedIDs[req.CourseID] && (req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity) {
+		if plannedIDs[req.CourseID] {
+			continue
+		}
+		isCore := req.RequirementType == enums.RequirementTypeMajorCore || req.RequirementType == enums.RequirementTypeUniversity
+		if !isCore && specTitle != "" && req.RequirementType == enums.RequirementTypeMajorChoice {
+			for _, ms := range req.MandatorySpecializations {
+				if strings.EqualFold(ms, specTitle) {
+					isCore = true
+					break
+				}
+			}
+		}
+		if isCore {
 			coreCourseIDs[req.CourseID] = true
 		}
 	}
@@ -200,20 +241,40 @@ func newRoadmapPlanningContext(
 
 	// Prune targetCourses for AnalogGroup duplicates BEFORE resolving dependencies
 	analogGroupKeepers := make(map[string]uuid.UUID)
+	addKeepers := func(g string, cid uuid.UUID) {
+		for _, part := range strings.Split(g, ",") {
+			part = strings.TrimSpace(part)
+			if part != "" {
+				analogGroupKeepers[strings.ToLower(part)] = cid
+			}
+		}
+	}
+	findKeeper := func(g string) (uuid.UUID, bool) {
+		for _, part := range strings.Split(g, ",") {
+			part = strings.TrimSpace(part)
+			if part != "" {
+				if id, exists := analogGroupKeepers[strings.ToLower(part)]; exists {
+					return id, true
+				}
+			}
+		}
+		return uuid.Nil, false
+	}
+
 	for id := range passedIDs {
 		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
-			analogGroupKeepers[c.AnalogGroup] = id
+			addKeepers(c.AnalogGroup, id)
 		}
 	}
 	for id := range plannedIDs {
 		if c, ok := allCourses[id]; ok && c.AnalogGroup != "" {
-			analogGroupKeepers[c.AnalogGroup] = id
+			addKeepers(c.AnalogGroup, id)
 		}
 	}
 
 	for reqCourseID, reqCourse := range targetCourses {
 		if reqCourse.AnalogGroup != "" {
-			if existingID, exists := analogGroupKeepers[reqCourse.AnalogGroup]; exists {
+			if existingID, exists := findKeeper(reqCourse.AnalogGroup); exists {
 				// Duplicate found!
 				// If the existing one was explicitly passed/planned, we MUST keep it and drop the new one.
 				if passedIDs[existingID] || plannedIDs[existingID] {
@@ -241,7 +302,7 @@ func newRoadmapPlanningContext(
 						fmt.Printf("DEBUG Prune: Replacing %s (unlocks %d) with %s (unlocks %d)\n", allCourses[existingID].Title, unlocksCount[existingID], reqCourse.Title, unlocksCount[reqCourseID])
 						delete(targetCourses, existingID)
 						delete(coreCourseIDs, existingID)
-						analogGroupKeepers[reqCourse.AnalogGroup] = reqCourseID
+						addKeepers(reqCourse.AnalogGroup, reqCourseID)
 					} else {
 						fmt.Printf("DEBUG Prune: Dropping %s (unlocks %d), keeping %s (unlocks %d)\n", reqCourse.Title, unlocksCount[reqCourseID], allCourses[existingID].Title, unlocksCount[existingID])
 						delete(targetCourses, reqCourseID)
@@ -250,7 +311,7 @@ func newRoadmapPlanningContext(
 				}
 			} else {
 				fmt.Printf("DEBUG Prune: First seen for %s is %s\n", reqCourse.AnalogGroup, reqCourse.Title)
-				analogGroupKeepers[reqCourse.AnalogGroup] = reqCourseID
+				addKeepers(reqCourse.AnalogGroup, reqCourseID)
 			}
 		}
 	}
@@ -312,7 +373,7 @@ func newRoadmapPlanningContext(
 								}
 								groupFulfilled := false
 								for _, tc := range targetCourses {
-									if tc.AnalogGroup == c.AnalogGroup {
+									if analogGroupsIntersect(tc.AnalogGroup, c.AnalogGroup) {
 										groupFulfilled = true
 										break
 									}
@@ -403,7 +464,7 @@ func newRoadmapPlanningContext(
 								}
 								groupFulfilled := false
 								for _, tc := range targetCourses {
-									if tc.AnalogGroup == c.AnalogGroup {
+									if analogGroupsIntersect(tc.AnalogGroup, c.AnalogGroup) {
 										groupFulfilled = true
 										break
 									}
@@ -942,7 +1003,7 @@ func shouldAutoForceExclusiveSemester(course interfaces.CourseData, allCourses m
 		if other.ID == course.ID {
 			continue
 		}
-		if strings.EqualFold(strings.TrimSpace(other.AnalogGroup), group) {
+		if analogGroupsIntersect(other.AnalogGroup, group) {
 			count++
 		}
 	}
@@ -1113,4 +1174,30 @@ func joinStrings(parts []string, sep string) string {
 		result += sep + parts[i]
 	}
 	return result
+}
+
+func analogGroupsIntersect(g1, g2 string) bool {
+	g1 = strings.TrimSpace(g1)
+	g2 = strings.TrimSpace(g2)
+	if g1 == "" || g2 == "" {
+		return false
+	}
+	parts1 := strings.Split(g1, ",")
+	parts2 := strings.Split(g2, ",")
+	for _, p1 := range parts1 {
+		p1 = strings.TrimSpace(p1)
+		if p1 == "" {
+			continue
+		}
+		for _, p2 := range parts2 {
+			p2 = strings.TrimSpace(p2)
+			if p2 == "" {
+				continue
+			}
+			if strings.EqualFold(p1, p2) {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -24,11 +24,20 @@ type CreateCourseRequest struct {
 	AvailableSemesters  []int                `json:"available_semesters"`
 	RecommendedSemester *int                 `json:"recommended_semester"`
 	Workload            float64              `json:"workload"`
+	SeminarsWeek        int                  `json:"seminars_week"`
+	LecturesWeek        int                  `json:"lectures_week"`
 	Prerequisites       []string             `json:"prerequisites"`
 	Corequisites        []string             `json:"corequisites"`
 }
 
 func (c *CreateCourseRequest) Validate() error {
+	if c.SeminarsWeek == 0 && c.LecturesWeek == 0 {
+		c.SeminarsWeek = 1
+		c.LecturesWeek = 0
+	}
+	if c.Workload == 0 {
+		c.Workload = float64(c.SeminarsWeek + c.LecturesWeek)
+	}
 	if c.Description != nil && len(*c.Description) >= MaxDescriptionLength {
 		return errors.New("description too long")
 	}
@@ -54,11 +63,20 @@ type UpdateCourseRequest struct {
 	AvailableSemesters  []int                `json:"available_semesters"`
 	RecommendedSemester *int                 `json:"recommended_semester"`
 	Workload            float64              `json:"workload"`
+	SeminarsWeek        int                  `json:"seminars_week"`
+	LecturesWeek        int                  `json:"lectures_week"`
 	Prerequisites       []string             `json:"prerequisites"`
 	Corequisites        []string             `json:"corequisites"`
 }
 
 func (c *UpdateCourseRequest) Validate() error {
+	if c.SeminarsWeek == 0 && c.LecturesWeek == 0 {
+		c.SeminarsWeek = 1
+		c.LecturesWeek = 0
+	}
+	if c.Workload == 0 {
+		c.Workload = float64(c.SeminarsWeek + c.LecturesWeek)
+	}
 	if c.Description != nil && len(*c.Description) >= MaxDescriptionLength {
 		return errors.New("description too long")
 	}

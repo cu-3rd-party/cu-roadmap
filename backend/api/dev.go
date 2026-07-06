@@ -26,6 +26,8 @@ type RestoreCourse struct {
 	AvailableSemesters  []int                `json:"available_semesters"`
 	RecommendedSemester *int                 `json:"recommended_semester"`
 	Workload            float64              `json:"workload"`
+	SeminarsWeek        int                  `json:"seminars_week"`
+	LecturesWeek        int                  `json:"lectures_week"`
 	Prerequisites       []string             `json:"prerequisites"`
 	Corequisites        []string             `json:"corequisites"`
 }
@@ -44,6 +46,13 @@ func RestoreDB(c *gin.Context) {
 			fmt.Println("Successfully parsed", len(courses), "courses!")
 			for _, rc := range courses {
 				id, _ := uuid.Parse(rc.ID)
+				if rc.SeminarsWeek == 0 && rc.LecturesWeek == 0 {
+					rc.SeminarsWeek = 1
+					rc.LecturesWeek = 0
+				}
+				if rc.Workload == 0 {
+					rc.Workload = float64(rc.SeminarsWeek + rc.LecturesWeek)
+				}
 				cd := interfaces.CourseData{
 					ID:                  id,
 					Title:               rc.Title,
@@ -55,6 +64,8 @@ func RestoreDB(c *gin.Context) {
 					AvailableSemesters:  rc.AvailableSemesters,
 					RecommendedSemester: rc.RecommendedSemester,
 					Workload:            rc.Workload,
+					SeminarsWeek:        rc.SeminarsWeek,
+					LecturesWeek:        rc.LecturesWeek,
 				}
 				s.CreateCourse(cd)
 				helpers.ReplaceCourseDependencies(s, cd.ID, rc.Prerequisites, rc.Corequisites)

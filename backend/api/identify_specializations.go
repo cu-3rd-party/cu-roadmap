@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/cu-3rd-party/cu-roadmap/backend/requirements"
 	"github.com/cu-3rd-party/cu-roadmap/backend/store"
@@ -91,6 +92,15 @@ func identifySpecializations(c *gin.Context) {
 			continue
 		}
 
+		projReqs, _ := resolver.ProjectMajorRequirements(m.ID)
+		specMandatoryCourses := make(map[string][]string)
+		for _, pr := range projReqs {
+			for _, ms := range pr.MandatorySpecializations {
+				key := strings.ToLower(strings.TrimSpace(ms))
+				specMandatoryCourses[key] = append(specMandatoryCourses[key], pr.CourseID.String())
+			}
+		}
+
 		coreReqIDs, _ := resolver.MajorCoreCourseIDs(m.ID)
 		if len(coreReqIDs) > 0 {
 			coreGroups := requirements.GroupCourseIDsByAnalog(coreReqIDs, coursesByID)
@@ -141,6 +151,7 @@ func identifySpecializations(c *gin.Context) {
 				"completed_ids":    coreCompletedIDs,
 				"can_cover_ids":    coreCanCoverIDs,
 				"cannot_cover_ids": coreCannotCoverIDs,
+				"mandatory_ids":    append(append(append([]string{}, coreCompletedIDs...), coreCanCoverIDs...), coreCannotCoverIDs...),
 			})
 		}
 
@@ -203,6 +214,7 @@ func identifySpecializations(c *gin.Context) {
 				"completed_ids":    completedIDs,
 				"can_cover_ids":    canCoverIDs,
 				"cannot_cover_ids": cannotCoverIDs,
+				"mandatory_ids":    []string{},
 			})
 			continue
 		}
@@ -261,6 +273,7 @@ func identifySpecializations(c *gin.Context) {
 				"completed_ids":    completedIDs,
 				"can_cover_ids":    canCoverIDs,
 				"cannot_cover_ids": cannotCoverIDs,
+				"mandatory_ids":    specMandatoryCourses[strings.ToLower(strings.TrimSpace(spec.Title))],
 			})
 		}
 	}

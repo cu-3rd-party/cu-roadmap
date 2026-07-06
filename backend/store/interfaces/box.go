@@ -6,16 +6,17 @@ import (
 )
 
 type BoxData struct {
-	ID              uuid.UUID
-	Kind            enums.BoxKind
-	Title           string
-	CourseID        *uuid.UUID
-	LogicalOp       *enums.LogicalOp
-	RequiredCount   int
-	RequirementType *enums.RequirementType
-	Specializations []string
-	AdmissionYear   *int
-	MajorTrack      *string
+	ID                       uuid.UUID
+	Kind                     enums.BoxKind
+	Title                    string
+	CourseID                 *uuid.UUID
+	LogicalOp                *enums.LogicalOp
+	RequiredCount            int
+	RequirementType          *enums.RequirementType
+	Specializations          []string
+	MandatorySpecializations []string
+	AdmissionYear            *int
+	MajorTrack               *string
 }
 
 type BoxEdgeData struct {

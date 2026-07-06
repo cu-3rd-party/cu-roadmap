@@ -12,6 +12,16 @@ import (
 )
 
 func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDependencyData, analogGroupSizes map[string]int) gin.H {
+	seminarsWeek := course.SeminarsWeek
+	lecturesWeek := course.LecturesWeek
+	if seminarsWeek == 0 && lecturesWeek == 0 {
+		seminarsWeek = 1
+		lecturesWeek = 0
+	}
+	workload := course.Workload
+	if workload == 0 {
+		workload = float64(seminarsWeek + lecturesWeek)
+	}
 	return gin.H{
 		"id":                   course.ID.String(),
 		"title":                course.Title,
@@ -22,7 +32,9 @@ func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDepe
 		"available_semesters":  course.AvailableSemesters,
 		"allowed_cohorts":      course.AllowedCohorts,
 		"recommended_semester": course.RecommendedSemester,
-		"workload":             course.Workload,
+		"workload":             workload,
+		"seminars_week":        seminarsWeek,
+		"lectures_week":        lecturesWeek,
 		"analog_group":         course.AnalogGroup,
 		"fixed_semester":       inferFixedSemester(course, analogGroupSizes),
 		"prerequisites":        buildPrerequisiteGroups(course, deps),
@@ -32,20 +44,28 @@ func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDepe
 }
 
 func inferFixedSemester(course interfaces.CourseData, analogGroupSizes map[string]int) int {
-	analogGroupKey := strings.ToLower(strings.TrimSpace(course.AnalogGroup))
-	if analogGroupKey == "" {
-		return 0
-	}
 	if len(course.AvailableSemesters) != 1 {
-		return 0
-	}
-	if !strings.Contains(analogGroupKey, "обяз") {
 		return 0
 	}
 	if analogGroupSizes == nil {
 		return 0
 	}
-	if analogGroupSizes[analogGroupKey] != 1 {
+
+	parts := strings.Split(course.AnalogGroup, ",")
+	hasObyaz := false
+	for _, part := range parts {
+		groupKey := strings.ToLower(strings.TrimSpace(part))
+		if groupKey == "" {
+			continue
+		}
+		if strings.Contains(groupKey, "обяз") {
+			hasObyaz = true
+			if analogGroupSizes[groupKey] != 1 {
+				return 0
+			}
+		}
+	}
+	if !hasObyaz {
 		return 0
 	}
 	return course.AvailableSemesters[0]
@@ -121,6 +141,16 @@ func toIntSlice(in []int64) []int {
 }
 
 func ToCourseModel(course interfaces.CourseData) models.Course {
+	seminarsWeek := course.SeminarsWeek
+	lecturesWeek := course.LecturesWeek
+	if seminarsWeek == 0 && lecturesWeek == 0 {
+		seminarsWeek = 1
+		lecturesWeek = 0
+	}
+	workload := course.Workload
+	if workload == 0 {
+		workload = float64(seminarsWeek + lecturesWeek)
+	}
 	return models.Course{
 		ID:                  course.ID,
 		Title:               course.Title,
@@ -131,7 +161,9 @@ func ToCourseModel(course interfaces.CourseData) models.Course {
 		AllowedCohorts:      toInt64Slice(course.AllowedCohorts),
 		AvailableSemesters:  toInt64Slice(course.AvailableSemesters),
 		RecommendedSemester: course.RecommendedSemester,
-		Workload:            course.Workload,
+		Workload:            workload,
+		SeminarsWeek:        seminarsWeek,
+		LecturesWeek:        lecturesWeek,
 		AnalogGroup:         course.AnalogGroup,
 		CsatMetric:          course.CsatMetric,
 	}
@@ -149,6 +181,8 @@ func ToCourseData(c *models.Course) interfaces.CourseData {
 		AvailableSemesters:  toIntSlice(c.AvailableSemesters),
 		RecommendedSemester: c.RecommendedSemester,
 		Workload:            c.Workload,
+		SeminarsWeek:        c.SeminarsWeek,
+		LecturesWeek:        c.LecturesWeek,
 		AnalogGroup:         c.AnalogGroup,
 		CsatMetric:          c.CsatMetric,
 	}

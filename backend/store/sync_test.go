@@ -71,12 +71,12 @@ func TestParseAllowedCohorts(t *testing.T) {
 
 func TestMapSheetRowToCourseSupportsXLSXHeaderVariants(t *testing.T) {
 	row := map[string]string{
-		"Название курса": "Программирование C++",
-		"Контекст, чтобы правильно отобразить на траектории\nесли есть": "Desc",
-		"Силлабус\nесли есть": "https://example.com",
-		"Тип курса":           "major core",
-		"Поток":               "2024–2028/2025-2029",
-		"Осень / весна":       "сквозной",
+		"Название курса":                  "Программирование C++",
+		"Текст для отображения студентам": "Desc",
+		"Силлабус\nесли есть":             "https://example.com",
+		"Тип курса":                       "major core",
+		"Поток":                           "2024–2028/2025-2029",
+		"Осень / весна":                   "сквозной",
 		"Рекомендованный к прохождению семестр": "1 семестр, 2 семестр",
 		"Нагрузка": "6",
 	}
@@ -126,7 +126,7 @@ func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
 				"Поток":          "\"2024, 2025, 2026\"",
 			},
 		},
-		"STEM": {
+		"Copy of STEM": {
 			{
 				"Название курса": "Искусство и наука",
 				"Тип курса":      "flex",
@@ -140,7 +140,7 @@ func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
 	sheetMapping := map[string]SheetMajorMapping{
 		"2024 Разработка": {"Разработка", "Tech", enums.CourseCategoryTech},
 		"Soft":            {"Common", "Common", enums.CourseCategorySoft},
-		"STEM":            {"Common", "Common", enums.CourseCategorySTEM},
+		"Copy of STEM":    {"Common", "Common", enums.CourseCategorySTEM},
 	}
 
 	result, err := SyncFromSheetData(s, sheetsData, sheetMapping)
@@ -155,12 +155,12 @@ func TestSyncFromSheetDataParsesXLSXLikeRows(t *testing.T) {
 
 func TestMapSheetRowToCourse(t *testing.T) {
 	row := map[string]string{
-		"Название курса":     "Тестовый курс",
-		"Контекст":           "Описание",
-		"Силлабус если есть": "https://cu.ru",
-		"Тип курса":          "mandatory",
-		"Поток":              "2025-2029, 2026-2030",
-		"Осень / весна":      "осень",
+		"Название курса":                  "Тестовый курс",
+		"Текст для отображения студентам": "Описание",
+		"Силлабус если есть":              "https://cu.ru",
+		"Тип курса":                       "mandatory",
+		"Поток":                           "2025-2029, 2026-2030",
+		"Осень / весна":                   "осень",
 		"Рекомендованный к прохождению семестр": "3",
 		"Нагрузка": "6.0",
 	}
@@ -247,22 +247,22 @@ func TestSyncFromSheetData(t *testing.T) {
 	sheetsData := map[string][]map[string]string{
 		"Разработка": {
 			{
-				"Название курса": "Python",
-				"Контекст":       "Язык программирования",
-				"Тип курса":      "mandatory",
-				"Осень / весна":  "осень",
-				"Нагрузка":       "5",
-				"Пререквизиты":   "",
-				"Кореквизиты":    "",
+				"Название курса":                  "Python",
+				"Текст для отображения студентам": "Язык программирования",
+				"Тип курса":                       "mandatory",
+				"Осень / весна":                   "осень",
+				"Нагрузка":                        "5",
+				"Пререквизиты":                    "",
+				"Кореквизиты":                     "",
 			},
 			{
-				"Название курса": "Go",
-				"Контекст":       "Ещё один язык",
-				"Тип курса":      "mandatory",
-				"Осень / весна":  "весна",
-				"Нагрузка":       "4",
-				"Пререквизиты":   "Python",
-				"Кореквизиты":    "",
+				"Название курса":                  "Go",
+				"Текст для отображения студентам": "Ещё один язык",
+				"Тип курса":                       "mandatory",
+				"Осень / весна":                   "весна",
+				"Нагрузка":                        "4",
+				"Пререквизиты":                    "Python",
+				"Кореквизиты":                     "",
 			},
 		},
 	}
