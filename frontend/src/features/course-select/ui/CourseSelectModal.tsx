@@ -192,8 +192,8 @@ export const CourseSelectModal = ({
         >
           <SheetHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">
             <SheetTitle className="text-2xl font-bold text-fg-primary">
-              <h1>Доступные курсы</h1>
-              <h1>{`(${semester} семестр)`}</h1>
+              <span className="block">Доступные курсы</span>
+              <span className="block">{`(${semester} семестр)`}</span>
             </SheetTitle>
             <RevealImage
               src="/character3.png"

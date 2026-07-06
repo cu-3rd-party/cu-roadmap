@@ -1,4 +1,7 @@
-import { Chip } from "@/shared/ui";
+import type { ReactNode } from "react";
+
+import { useMediaQuery } from "@/shared/lib";
+import { Chip, ScrollRail } from "@/shared/ui";
 
 import { FILTER_GROUPS, type FilterGroup } from "../model";
 
@@ -22,14 +25,25 @@ export const CategoryFilter = ({
   onSubChange,
   loading = false,
 }: CategoryFilterProps) => {
+  const isMobile = useMediaQuery("sm");
+
   if (loading) {
     return <ChipSkeletonRow widths={[48, 72, 80, 96, 112, 72]} />;
   }
 
+  // On mobile the chips scroll horizontally in a single row (ScrollRail); on
+  // desktop there is room to wrap onto multiple lines.
+  const wrap = (children: ReactNode) =>
+    isMobile ? (
+      <ScrollRail>{children}</ScrollRail>
+    ) : (
+      <div className="flex flex-wrap gap-2">{children}</div>
+    );
+
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
-        {FILTER_GROUPS.map((option) => (
+      {wrap(
+        FILTER_GROUPS.map((option) => (
           <Chip
             variant="action"
             key={option.id}
@@ -39,12 +53,12 @@ export const CategoryFilter = ({
           >
             {option.label}
           </Chip>
-        ))}
-      </div>
+        )),
+      )}
 
-      {subOptions.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {subOptions.map((option) => (
+      {subOptions.length > 0 &&
+        wrap(
+          subOptions.map((option) => (
             <Chip
               variant="action"
               key={option.id}
@@ -54,9 +68,8 @@ export const CategoryFilter = ({
             >
               {option.label}
             </Chip>
-          ))}
-        </div>
-      )}
+          )),
+        )}
     </div>
   );
 };

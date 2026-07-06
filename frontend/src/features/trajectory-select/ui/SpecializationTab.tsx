@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
+
 import type { Specialization } from "@/entities/specialization";
 import {
+  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -13,6 +16,7 @@ import {
 } from "@/shared/ui";
 
 import { wrapLabel } from "../lib";
+import { MAX_LOAD, MIN_LOAD } from "../model";
 
 interface SpecializationTabProps {
   specializations: Specialization[] | undefined;
@@ -35,6 +39,29 @@ export const SpecializationTab = ({
   onScopeChange,
   isMobile,
 }: SpecializationTabProps) => {
+  // The number field keeps its own draft while focused so partial input (e.g.
+  // typing the first digit of "12") isn't clamped mid-edit. It commits on blur
+  // or Enter; the committed value flows back through maxLoad.
+  const [loadDraft, setLoadDraft] = useState(String(maxLoad));
+
+  useEffect(() => {
+    setLoadDraft(String(maxLoad));
+  }, [maxLoad]);
+
+  const commitLoad = () => {
+    const parsed = Number.parseInt(loadDraft, 10);
+    if (Number.isNaN(parsed)) {
+      setLoadDraft(String(maxLoad));
+      return;
+    }
+    // Clamp here (not only in the hook) so the field is corrected even when the
+    // clamped value equals the current maxLoad — in that case setMaxLoad is a
+    // no-op and the resync effect wouldn't fire on its own.
+    const clamped = Math.min(MAX_LOAD, Math.max(MIN_LOAD, parsed));
+    setLoadDraft(String(clamped));
+    onMaxLoadChange(clamped);
+  };
+
   return (
     <TabsContent value="major" className="flex flex-col gap-3 self-center">
       <p className="text-xs sm:text-sm text-fg-secondary self-center">
@@ -95,17 +122,37 @@ export const SpecializationTab = ({
       </Tabs>
 
       <p className="text-xs sm:text-sm text-fg-secondary self-center">
-        Максимальная нагрузка в парах в неделю:{" "}
-        <span className="font-medium text-fg-primary">{maxLoad}</span>
+        Максимальная нагрузка в парах в неделю
       </p>
-      <Slider
-        min={6}
-        max={20}
-        step={1}
-        value={[maxLoad]}
-        onValueChange={(value) => onMaxLoadChange(value[0])}
-        className="w-64 self-center"
-      />
+      <div className="flex items-center gap-4 self-center">
+        <Slider
+          min={MIN_LOAD}
+          max={MAX_LOAD}
+          step={1}
+          value={[maxLoad]}
+          onValueChange={(value) => onMaxLoadChange(value[0])}
+          className="w-64"
+        />
+        <Input
+          type="number"
+          inputMode="numeric"
+          min={MIN_LOAD}
+          max={MAX_LOAD}
+          step={1}
+          size="sm"
+          value={loadDraft}
+          onChange={(e) => setLoadDraft(e.target.value)}
+          onBlur={commitLoad}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commitLoad();
+            }
+          }}
+          wrapperClassName="w-16 shrink-0"
+          className="text-center tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+        />
+      </div>
     </TabsContent>
   );
 };

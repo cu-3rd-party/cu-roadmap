@@ -18,6 +18,10 @@ import type { SemesterNumber } from "@/shared/constants";
 
 import { getCourseHints, getInsertedText, getSemesterOptions } from "../lib";
 
+// Allowed weekly load range (pairs per week) for roadmap generation.
+export const MIN_LOAD = 12;
+export const MAX_LOAD = 26;
+
 // Holds the whole trajectory-select form state machine: the two tabs (major /
 // course goal), the course search combobox, submission, and soft/hard errors.
 // The modal shell and its tab components are pure consumers of this hook.
@@ -43,8 +47,7 @@ export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
   const [error, setError] = useState<string | null>(null);
   // Which of the already-saved courses count as "passed" for the generate
   const [scope, setScope] = useState<CourseSource>("passed");
-  // Max number of courses per semester the generator may place.
-  const [maxLoad, setMaxLoad] = useState(10);
+  const [maxLoad, setMaxLoad] = useState(MIN_LOAD);
 
   // "Нет" ("") is always a valid choice and the default. Only clear a stale
   // specialization id that no longer belongs to the current major (e.g. after
@@ -126,7 +129,10 @@ export const useTrajectorySelect = (onOpenChange: (open: boolean) => void) => {
   };
 
   const handleMaxLoadChange = (value: number) => {
-    setMaxLoad(value);
+    // The slider is always in-range, but the number field can emit NaN or an
+    // out-of-range value, so clamp defensively here.
+    if (Number.isNaN(value)) return;
+    setMaxLoad(Math.min(MAX_LOAD, Math.max(MIN_LOAD, Math.round(value))));
   };
 
   const handleSemesterChange = (value: string) => {
