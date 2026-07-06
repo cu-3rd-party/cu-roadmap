@@ -3,7 +3,6 @@ import type {
   UUID,
   CourseCategory,
   CourseType,
-  MajorRequirementType,
 } from "@/shared/model";
 
 export interface CoursePrerequisite {
