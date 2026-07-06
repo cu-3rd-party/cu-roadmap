@@ -29,9 +29,9 @@ export const AppRouter = () => (
       {sidebarRoutes.map(({ path, element }) => (
         <Route key={path} path={path} element={element} />
       ))}
+      {fallbackRoutes.map(({ path, element }) => (
+        <Route key={path} path={path} element={element} />
+      ))}
     </Route>
-    {fallbackRoutes.map(({ path, element }) => (
-      <Route key={path} path={path} element={element} />
-    ))}
   </Routes>
 );
