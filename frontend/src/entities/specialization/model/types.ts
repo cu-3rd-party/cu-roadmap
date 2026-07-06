@@ -20,4 +20,5 @@ export interface SpecializationMatch {
   completedIds: UUID[];
   canCoverIds: UUID[];
   cannotCoverIds: UUID[];
+  mandatoryIds: UUID[];
 }

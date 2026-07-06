@@ -14,8 +14,9 @@ const toggle = (list: string[], value: string) =>
 
 interface CourseFiltersStore {
   filters: CourseFilterState;
-  toggleType: (type: string) => void;
+  toggleAvailableSemester: (semester: string) => void;
   toggleSemester: (semester: string) => void;
+  toggleWorkload: (workload: string) => void;
   setGroup: (group: FilterGroup) => void;
   setSub: (sub: string) => void;
   setSearch: (search: string) => void;
@@ -37,11 +38,14 @@ export const createCourseFiltersStore = ({
     ) => void,
   ): CourseFiltersStore => ({
     filters: EMPTY_FILTERS,
-    toggleType: (type) =>
+    toggleAvailableSemester: (semester) =>
       set((state) => ({
         filters: {
           ...state.filters,
-          types: toggle(state.filters.types, type),
+          availableSemesters: toggle(
+            state.filters.availableSemesters,
+            semester,
+          ),
         },
       })),
     toggleSemester: (semester) =>
@@ -49,6 +53,13 @@ export const createCourseFiltersStore = ({
         filters: {
           ...state.filters,
           semesters: toggle(state.filters.semesters, semester),
+        },
+      })),
+    toggleWorkload: (workload) =>
+      set((state) => ({
+        filters: {
+          ...state.filters,
+          workload: toggle(state.filters.workload, workload),
         },
       })),
     setGroup: (group) =>
@@ -73,8 +84,9 @@ export const createCourseFiltersStore = ({
       // Persist chip selections only; search always rehydrates empty.
       partialize: (state) => ({
         filters: {
-          types: state.filters.types,
+          availableSemesters: state.filters.availableSemesters,
           semesters: state.filters.semesters,
+          workload: state.filters.workload,
           group: state.filters.group,
           sub: state.filters.sub,
           search: "",

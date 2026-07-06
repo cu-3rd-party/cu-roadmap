@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronUp } from "lucide-react";
+import { Check, ChevronUp, X } from "lucide-react";
 import { useState } from "react";
 
 import { useCourseDrawerStore } from "@/entities/course";
@@ -14,6 +14,7 @@ export interface LinkedCourse {
   id: UUID;
   title: string;
   status: LinkedCourseStatus;
+  isMandatory?: boolean;
 }
 
 export interface SpecializationProgress {
@@ -44,7 +45,23 @@ const LinkedCourseRow = (course: LinkedCourse) => {
 
   return (
     <li className="flex items-start gap-2 text-xs sm:text-sm text-fg-secondary">
-      <span className="size-1 mt-2 shrink-0 rounded-full bg-fg-muted" />
+      <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+        {course.status === "completed" ? (
+          <Check className="size-4 text-positive" />
+        ) : course.status === "unavailable" ? (
+          <X className="size-4 text-negative" />
+        ) : course.isMandatory ? (
+          <span
+            className="text-sm leading-none font-bold text-fg-expert-orange"
+            title="Обязательный курс"
+            aria-label="Обязательный курс"
+          >
+            !
+          </span>
+        ) : (
+          <span className="size-1 rounded-full bg-fg-muted" />
+        )}
+      </span>
       <button
         type="button"
         onClick={() => openCourse(course.id)}
@@ -55,9 +72,6 @@ const LinkedCourseRow = (course: LinkedCourse) => {
       >
         {course.title}
       </button>
-      {course.status === "completed" && (
-        <Check className="mt-0.5 ml-auto size-4 shrink-0 text-positive" />
-      )}
     </li>
   );
 };

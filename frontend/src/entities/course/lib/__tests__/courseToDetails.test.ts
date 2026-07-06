@@ -66,6 +66,54 @@ describe("courseToDetails", () => {
     expect(details.category).toBe("AI");
   });
 
+  it("flags core courses via isCore", () => {
+    expect(
+      courseToDetails(baseCourse({ type: "core" }), noLookups).isCore,
+    ).toBe(true);
+    expect(
+      courseToDetails(baseCourse({ type: "elective" }), noLookups).isCore,
+    ).toBe(false);
+  });
+
+  it("resolves specializations to titles with a mandatory flag, dropping unknown ids", () => {
+    const specializationTitleMap = new Map([
+      ["s1", "Data Science"],
+      ["s2", "Robotics"],
+    ]);
+    const details = courseToDetails(
+      baseCourse({
+        type: "choice",
+        specializations: ["s1", "s2", "unknown"],
+        mandatorySpecializations: ["s1"],
+      }),
+      { titleMap: new Map(), specializationTitleMap },
+    );
+    expect(details.specializations).toEqual([
+      { title: "Data Science", mandatory: true },
+      { title: "Robotics", mandatory: false },
+    ]);
+  });
+
+  it("maps available semesters to labelled items and flags the recommended one", () => {
+    const details = courseToDetails(
+      baseCourse({ availableSemesters: [1, 2, 3], recommendedSemester: 2 }),
+      noLookups,
+    );
+    expect(details.availableSemesters).toEqual([
+      { label: "1 семестр", recommended: false },
+      { label: "2 семестр", recommended: true },
+      { label: "3 семестр", recommended: false },
+    ]);
+  });
+
+  it("flags no semester as recommended when recommendedSemester is absent", () => {
+    const details = courseToDetails(
+      baseCourse({ availableSemesters: [1, 2], recommendedSemester: null }),
+      noLookups,
+    );
+    expect(details.availableSemesters.every((s) => !s.recommended)).toBe(true);
+  });
+
   it("formats a single admission year as the year itself", () => {
     expect(
       courseToDetails(baseCourse({ allowedCohorts: [2025] }), noLookups)
@@ -106,6 +154,32 @@ describe("courseToDetails", () => {
     expect(details.prerequisites).toEqual([
       { groupId: "g1", prerequisites: [{ id: "p1", title: "Prereq One" }] },
     ]);
+  });
+
+  it("formats academic load lines with correct Russian pluralization", () => {
+    const details = courseToDetails(
+      baseCourse({ lecturesWeek: 2, seminarsWeek: 1 }),
+      noLookups,
+    );
+    expect(details.academicLoad).toEqual([
+      "2 лекции в неделю",
+      "1 семинар в неделю",
+    ]);
+  });
+
+  it("omits academic load lines whose count is missing or zero", () => {
+    expect(
+      courseToDetails(
+        baseCourse({ lecturesWeek: 3, seminarsWeek: 0 }),
+        noLookups,
+      ).academicLoad,
+    ).toEqual(["3 лекции в неделю"]);
+    expect(
+      courseToDetails(
+        baseCourse({ lecturesWeek: undefined, seminarsWeek: undefined }),
+        noLookups,
+      ).academicLoad,
+    ).toEqual([]);
   });
 
   it("resolves post/corequisites and skips ids missing from the title map", () => {

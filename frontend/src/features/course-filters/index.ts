@@ -5,11 +5,11 @@ export { createCourseFiltersStore } from "./model";
 export {
   buildCategoryFilters,
   buildSubOptions,
-  buildTypeFilters,
   courseMatchesOption,
   optionMatchesFilter,
   FILTER_GROUPS,
   SEMESTER_OPTIONS,
+  WORKLOAD_OPTIONS,
   EMPTY_FILTERS,
   type CategoryFilterOption,
   type CourseFilterState,

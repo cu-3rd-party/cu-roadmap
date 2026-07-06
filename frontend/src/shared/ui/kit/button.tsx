@@ -97,7 +97,7 @@ const buttonVariants = cva(
         size: "md",
         iconOnly: false,
         variant: [...PADDED_VARIANTS],
-        className: "px-[18px] gap-2",
+        className: "px-4 gap-2",
       },
       {
         size: "lg",

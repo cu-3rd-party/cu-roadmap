@@ -11,11 +11,15 @@ export const plannerStatsLabels = [
 export const buildPlannerStats = (
   selectedCount: number,
   conflicts: number,
+  totalWorkload: number,
 ): SummaryStat[] => [
   { label: "Курсов выбрано", value: selectedCount },
   { label: "Конфликты", value: conflicts },
-  // TODO: change later when real load appears
-  { label: "Средняя нагрузка", value: selectedCount / 8 },
+  {
+    label: "Средняя нагрузка",
+    value: totalWorkload / TOTAL_SEMESTERS,
+    decimals: 1,
+  },
 ];
 
 // Per-semester static metadata; runtime course data is injected by PlannerPage.

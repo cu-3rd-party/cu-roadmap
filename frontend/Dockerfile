@@ -27,7 +27,7 @@ ENV NODE_ENV=production
 COPY package.json pnpm-workspace.yaml ./
 COPY --from=install /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
-# я знаю что там дохуя связанных друг с другом конфигов ебаных и мне лень их перечислять
+# я знаю что там очень много связанных друг с другом конфигов, но сейчас оставим так
 COPY . .
 
 EXPOSE 5173

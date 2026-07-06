@@ -30,7 +30,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
-  const { admissionYear, setAdmissionYear, majorId, setMajorId } =
+  const { admissionYear, setAdmissionYear, majorId, setMajor } =
     useSettingsStore();
   const { reset } = usePlannerStore();
   const [selectedYear, setSelectedYear] = useState("");
@@ -60,7 +60,8 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
     setAdmissionYear(Number(selectedYear) as AdmissionYear);
     // Switching year or major wipes all selections
     if (yearChanged || majorChanged) reset(undefined, false);
-    setMajorId(selectedMajorId);
+    const chosen = yearMajors.find((m) => m.id === selectedMajorId);
+    setMajor(selectedMajorId, chosen?.type ?? null);
     onOpenChange(false);
   };
 

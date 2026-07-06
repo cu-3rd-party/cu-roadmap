@@ -49,7 +49,7 @@ export const DetailsDrawer = ({
           <SheetTitle className="text-xl font-bold text-fg-primary">
             О курсе
           </SheetTitle>
-          <SheetDescription className="max-w-[60%] line-clamp-2 min-h-[2lh] text-sm text-fg-primary">
+          <SheetDescription className="max-w-[60%] min-h-[2lh] text-sm text-fg-primary">
             {course?.title ?? ""}
           </SheetDescription>
           <RevealImage
@@ -92,17 +92,31 @@ export const DetailsDrawer = ({
               </Badge>
             </DetailField>
             <DetailField label="Специализации">
-              <ul className="list-disc space-y-1 pl-5 text-fg-primary">
-                {course.specializations.length > 0 ? (
-                  course.specializations.map((item) => (
-                    <li key={item} className="pl-1">
-                      {item}
-                    </li>
-                  ))
-                ) : (
-                  <li>Общеуниверситетская дисциплина</li>
-                )}
-              </ul>
+              {course.isCore ? (
+                <p className="text-fg-primary">Все специализации</p>
+              ) : (
+                <ul className="list-disc space-y-1 pl-5 text-fg-primary">
+                  {course.specializations.length > 0 ? (
+                    course.specializations.map((item) => (
+                      <li key={item.title} className="pl-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <span>{item.title}</span>
+                          <Badge
+                            variant={item.mandatory ? "green" : "blue"}
+                            size="3xs"
+                          >
+                            {item.mandatory
+                              ? "Обязательный курс"
+                              : "Курс по выбору"}
+                          </Badge>
+                        </div>
+                      </li>
+                    ))
+                  ) : (
+                    <li>Общеуниверситетская дисциплина</li>
+                  )}
+                </ul>
+              )}
             </DetailField>
 
             <DetailField label="Осень / весна">
@@ -122,12 +136,38 @@ export const DetailsDrawer = ({
                 <p className="text-fg-primary">—</p>
               )}
             </DetailField>
-
-            <DetailField label="Рекомендованный к прохождению семестр">
-              <Badge variant="blue" size="xs">
-                {course.recommendedSemester}
-              </Badge>
+            <DetailField label="Доступные к прохождению семестры">
+              {course.availableSemesters.length > 0 ? (
+                <ul className="list-disc space-y-1 pl-5 text-fg-primary">
+                  {course.availableSemesters.map((item) => (
+                    <li key={item.label} className="pl-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <span>{item.label}</span>
+                        {item.recommended && (
+                          <Badge variant="green" size="3xs">
+                            Рекомендованный семестр
+                          </Badge>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-fg-primary">—</p>
+              )}
             </DetailField>
+
+            {course.academicLoad.length > 0 && (
+              <DetailField label="Академическая нагрузка">
+                <ul className="list-disc space-y-1 pl-5 text-fg-primary">
+                  {course.academicLoad.map((line) => (
+                    <li key={line} className="pl-1">
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </DetailField>
+            )}
 
             <DetailField label="Пререквизиты">
               <RequisiteList

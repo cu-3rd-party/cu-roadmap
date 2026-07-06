@@ -88,7 +88,9 @@ const PlannerPage = () => {
     !sameIds(selectedCourseIds, debouncedCourseIds) || identifyQuery.isFetching;
 
   // First-load only: header + buttons stay live, the grid shows skeletons.
-  const summaryLoading = identifyQuery.isLoading;
+  // Gate on the catalog too — linked-course titles resolve from `courses`, so
+  // without this the cards render before "Связанные курсы" can populate.
+  const summaryLoading = identifyQuery.isLoading || isLoading;
 
   // Resolve linked-course ids to titles for display in the spec cards.
   const titleMap = useMemo(() => buildCourseTitleMap(courses ?? []), [courses]);
@@ -96,25 +98,43 @@ const PlannerPage = () => {
   // The request is already scoped to the major chosen in Settings, so the
   // response only contains that major's specializations.
   const plannerSpecializations: SpecializationProgress[] = useMemo(() => {
-    const toItems = (ids: UUID[], status: LinkedCourseStatus): LinkedCourse[] =>
+    const toItems = (
+      ids: UUID[],
+      status: LinkedCourseStatus,
+      mandatorySet: Set<UUID>,
+    ): LinkedCourse[] =>
       ids
-        .map((id) => {
+        .map((id): LinkedCourse | null => {
           const title = titleMap.get(id);
-          return title ? { id, title, status } : null;
+          return title
+            ? { id, title, status, isMandatory: mandatorySet.has(id) }
+            : null;
         })
         .filter((item): item is LinkedCourse => item !== null)
         .sort((item1, item2) => item1.title.localeCompare(item2.title));
 
-    return (identifyQuery.data ?? []).map((match) => ({
-      title: match.title,
-      earnedPct: toPercent(match.coveredCount, match.totalCount),
-      availablePct: toPercent(match.canCoverCount, match.totalCount),
-      linkedCourses: [
-        ...toItems(match.canCoverIds, "available"),
-        ...toItems(match.completedIds, "completed"),
-        ...toItems(match.cannotCoverIds, "unavailable"),
-      ],
-    }));
+    return (identifyQuery.data ?? []).map((match) => {
+      const mandatorySet = new Set(match.mandatoryIds);
+      // Within the can-cover group, float mandatory courses to the top so the
+      // list reads: mandatory -> neutral -> completed -> crossed. toItems already
+      // sorts each subset alphabetically.
+      const availableItems = toItems(
+        match.canCoverIds,
+        "available",
+        mandatorySet,
+      );
+      return {
+        title: match.title,
+        earnedPct: toPercent(match.coveredCount, match.totalCount),
+        availablePct: toPercent(match.canCoverCount, match.totalCount),
+        linkedCourses: [
+          ...availableItems.filter((item) => item.isMandatory),
+          ...availableItems.filter((item) => !item.isMandatory),
+          ...toItems(match.completedIds, "completed", mandatorySet),
+          ...toItems(match.cannotCoverIds, "unavailable", mandatorySet),
+        ],
+      };
+    });
   }, [identifyQuery.data, titleMap]);
 
   // Conflicts are error/warning validation messages across all semesters.
@@ -123,9 +143,22 @@ const PlannerPage = () => {
     [validation],
   );
 
+  // Real academic load: sum the workload of every placed course, looked up from
+  // the catalog (selection entries don't carry workload themselves).
+  const totalWorkload = useMemo(() => {
+    const workloadById = new Map(
+      (courses ?? []).map((c) => [c.id, c.workload]),
+    );
+    return selectedCourseIds.reduce(
+      (sum, id) => sum + (workloadById.get(id) ?? 0),
+      0,
+    );
+  }, [courses, selectedCourseIds]);
+
   const stats = useMemo(
-    () => buildPlannerStats(selectedCourseIds.length, conflictCount),
-    [selectedCourseIds.length, conflictCount],
+    () =>
+      buildPlannerStats(selectedCourseIds.length, conflictCount, totalWorkload),
+    [selectedCourseIds.length, conflictCount, totalWorkload],
   );
 
   const semesters = useMemo(() => buildSemesters(), [admissionYear]);

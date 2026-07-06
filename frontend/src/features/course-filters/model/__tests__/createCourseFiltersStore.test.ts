@@ -13,12 +13,21 @@ describe("createCourseFiltersStore (transient)", () => {
     expect(store.getState().filters).toEqual(EMPTY_FILTERS);
   });
 
-  it("toggleType adds then removes a value", () => {
+  it("toggleWorkload adds then removes a value", () => {
     const store = createCourseFiltersStore();
-    store.getState().toggleType("core");
-    expect(store.getState().filters.types).toEqual(["core"]);
-    store.getState().toggleType("core");
-    expect(store.getState().filters.types).toEqual([]);
+    store.getState().toggleWorkload("4");
+    expect(store.getState().filters.workload).toEqual(["4"]);
+    store.getState().toggleWorkload("4");
+    expect(store.getState().filters.workload).toEqual([]);
+  });
+
+  it("toggleAvailableSemester adds then removes a value", () => {
+    const store = createCourseFiltersStore();
+    store.getState().toggleAvailableSemester("1");
+    store.getState().toggleAvailableSemester("2");
+    expect(store.getState().filters.availableSemesters).toEqual(["1", "2"]);
+    store.getState().toggleAvailableSemester("1");
+    expect(store.getState().filters.availableSemesters).toEqual(["2"]);
   });
 
   it("toggleSemester adds then removes a value", () => {
@@ -48,7 +57,7 @@ describe("createCourseFiltersStore (transient)", () => {
 
   it("reset restores EMPTY_FILTERS", () => {
     const store = createCourseFiltersStore();
-    store.getState().toggleType("core");
+    store.getState().toggleWorkload("4");
     store.getState().setSearch("x");
     store.getState().reset();
     expect(store.getState().filters).toEqual(EMPTY_FILTERS);
@@ -59,7 +68,7 @@ describe("createCourseFiltersStore (persisted)", () => {
   const KEY = "test-course-filters";
 
   it("backfills missing keys from EMPTY_FILTERS and clears search on rehydrate", () => {
-    // Older/partial persisted shape: no `types`, a non-empty search.
+    // Older/partial persisted shape: no `workload`/`availableSemesters`, stale search.
     localStorage.setItem(
       KEY,
       JSON.stringify({
@@ -78,8 +87,9 @@ describe("createCourseFiltersStore (persisted)", () => {
     const store = createCourseFiltersStore({ persistKey: KEY });
 
     expect(store.getState().filters).toEqual({
-      types: [],
+      availableSemesters: [],
       semesters: ["1"],
+      workload: [],
       group: "core",
       sub: "all",
       search: "",
@@ -88,11 +98,11 @@ describe("createCourseFiltersStore (persisted)", () => {
 
   it("persists chip selections but never the search text", () => {
     const store = createCourseFiltersStore({ persistKey: KEY });
-    store.getState().toggleType("core");
+    store.getState().toggleWorkload("4");
     store.getState().setSearch("algebra");
 
     const persisted = JSON.parse(localStorage.getItem(KEY) as string);
-    expect(persisted.state.filters.types).toEqual(["core"]);
+    expect(persisted.state.filters.workload).toEqual(["4"]);
     expect(persisted.state.filters.search).toBe("");
   });
 });

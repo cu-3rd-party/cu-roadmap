@@ -25,8 +25,11 @@ export interface Course {
   // 0 = not fixed (normal flow); 1-8 = course is pinned to that semester
   fixedSemester?: SemesterNumber | 0;
   workload: number;
+  lecturesWeek?: number;
+  seminarsWeek?: number;
   prerequisites?: CoursePrerequisite[];
   corequisites?: UUID[];
   postrequisites?: UUID[];
   specializations?: UUID[];
+  mandatorySpecializations?: UUID[];
 }

@@ -27,5 +27,6 @@ export const normalizeSpecializationMatch = (
     completedIds: dto.completed_ids,
     canCoverIds: dto.can_cover_ids,
     cannotCoverIds: dto.cannot_cover_ids,
+    mandatoryIds: dto.mandatory_ids,
   };
 };

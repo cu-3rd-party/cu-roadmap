@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { GreetingModal } from "@/features/settings";
+import { GreetingModal, useResyncMajor } from "@/features/settings";
 import { CourseDetailsDrawer } from "@/widgets/CourseDetailsDrawer";
 import { Navbar } from "@/widgets/Navbar";
 
@@ -9,6 +9,10 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
+  // Re-anchor the persisted major id if the backend regenerated it.
+  // ATTENTION
+  useResyncMajor();
+
   return (
     <div className="flex h-screen flex-col">
       <Navbar />

@@ -100,4 +100,44 @@ describe("filterCatalog", () => {
     expect(result).toHaveLength(1);
     expect(result[0].courses.map((c) => c.id)).toEqual(["b"]);
   });
+
+  it("filters by available semester", () => {
+    const cats: CatalogCategory[] = [
+      {
+        option: coreOption,
+        courses: [
+          course({ id: "a", availableSemesters: [1, 3] }),
+          course({ id: "b", availableSemesters: [2] }),
+        ],
+      },
+    ];
+    const result = filterCatalog(cats, filters({ availableSemesters: ["3"] }));
+    expect(result[0].courses.map((c) => c.id)).toEqual(["a"]);
+  });
+
+  it("filters by exact workload for 1-3 and treats 4 as 4+", () => {
+    const cats: CatalogCategory[] = [
+      {
+        option: coreOption,
+        courses: [
+          course({ id: "w2", workload: 2 }),
+          course({ id: "w4", workload: 4 }),
+          course({ id: "w5", workload: 5 }),
+        ],
+      },
+    ];
+
+    expect(
+      filterCatalog(cats, filters({ workload: ["2"] }))[0].courses.map(
+        (c) => c.id,
+      ),
+    ).toEqual(["w2"]);
+
+    // "4" is a 4+ bucket: matches workload 4 and 5, not 2.
+    expect(
+      filterCatalog(cats, filters({ workload: ["4"] }))[0].courses.map(
+        (c) => c.id,
+      ),
+    ).toEqual(["w4", "w5"]);
+  });
 });

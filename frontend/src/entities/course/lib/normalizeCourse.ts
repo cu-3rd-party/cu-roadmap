@@ -32,11 +32,14 @@ export const normalizeCourse = (dto: CourseDto): Course => {
     recommendedSemester: dto.recommended_semester,
     fixedSemester: dto.fixed_semester ?? 0,
     workload: dto.workload,
+    lecturesWeek: dto.lectures_week,
+    seminarsWeek: dto.seminars_week,
     prerequisites: dto.prerequisites
       ?.map((prereq) => normalizePrerequisite(prereq))
       .sort((item1, item2) => item1.courses.length - item2.courses.length),
     corequisites: dto.corequisites,
     postrequisites: dto.postrequisites,
     specializations: dto.specializations,
+    mandatorySpecializations: dto.mandatory_specializations,
   };
 };

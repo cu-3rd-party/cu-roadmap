@@ -27,8 +27,15 @@ import {
 const CatalogPage = () => {
   const isMobile = useMediaQuery("md");
   const { admissionYear, majorId } = useSettingsStore();
-  const { filters, toggleType, toggleSemester, setGroup, setSub, setSearch } =
-    useCatalogFiltersStore();
+  const {
+    filters,
+    toggleAvailableSemester,
+    toggleSemester,
+    toggleWorkload,
+    setGroup,
+    setSub,
+    setSearch,
+  } = useCatalogFiltersStore();
 
   const {
     data: courses,
@@ -91,8 +98,9 @@ const CatalogPage = () => {
             value={filters}
             subOptions={subOptions}
             loading={coursesLoading}
-            onToggleType={toggleType}
+            onToggleAvailableSemester={toggleAvailableSemester}
             onToggleSemester={toggleSemester}
+            onToggleWorkload={toggleWorkload}
             onGroupChange={setGroup}
             onSubChange={setSub}
             onSearchChange={setSearch}

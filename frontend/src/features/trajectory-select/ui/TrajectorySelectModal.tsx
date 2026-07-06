@@ -91,6 +91,7 @@ export const TrajectorySelectModal = ({
           onMaxLoadChange={onMaxLoadChange}
           scope={scope}
           onScopeChange={onScopeChange}
+          isMobile={isMobile}
         />
 
         <CourseTab

@@ -9,6 +9,7 @@ beforeEach(() => {
     admissionYear: null,
     hideCompletedSemesters: false,
     majorId: null,
+    majorType: null,
   });
 });
 
@@ -25,11 +26,13 @@ describe("useSettingsStore", () => {
     expect(useSettingsStore.getState().admissionYear).toBe(2024);
   });
 
-  it("setMajorId sets and clears the major id", () => {
-    useSettingsStore.getState().setMajorId("m1");
+  it("setMajor sets and clears the major id and type together", () => {
+    useSettingsStore.getState().setMajor("m1", "swe");
     expect(useSettingsStore.getState().majorId).toBe("m1");
-    useSettingsStore.getState().setMajorId(null);
+    expect(useSettingsStore.getState().majorType).toBe("swe");
+    useSettingsStore.getState().setMajor(null, null);
     expect(useSettingsStore.getState().majorId).toBeNull();
+    expect(useSettingsStore.getState().majorType).toBeNull();
   });
 
   it("setHideCompletedSemesters toggles the flag", () => {
@@ -39,7 +42,7 @@ describe("useSettingsStore", () => {
 
   it("persists the data fields (not the actions)", () => {
     useSettingsStore.getState().completeGreeting(2026);
-    useSettingsStore.getState().setMajorId("m2");
+    useSettingsStore.getState().setMajor("m2", "ai");
     useSettingsStore.getState().setHideCompletedSemesters(true);
 
     const persisted = JSON.parse(localStorage.getItem("settings") as string);
@@ -47,6 +50,7 @@ describe("useSettingsStore", () => {
       hasSeenGreeting: true,
       admissionYear: 2026,
       majorId: "m2",
+      majorType: "ai",
       hideCompletedSemesters: true,
     });
   });

@@ -21,6 +21,7 @@ export interface SpecializationMatchDto {
   completed_ids: UUID[];
   can_cover_ids: UUID[];
   cannot_cover_ids: UUID[];
+  mandatory_ids: UUID[];
 }
 
 // Request body for POST majors/identify-specializations/{year}.
