@@ -59,10 +59,10 @@ export const Navbar = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <>
-      <header className="relative hidden sm:flex h-16 items-center justify-between border-b border-border bg-background px-6">
+      <header className="relative hidden md:flex h-16 items-center justify-between border-b border-border bg-background px-6">
         <img src="/favicon.svg" width={36} height={36} alt="ЦУ" />
 
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 grid-flow-col auto-cols-fr items-center gap-4 rounded-full p-1 sm:grid">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 rounded-full p-1 md:flex">
           {NAV_ITEMS.map((item) => (
             <Button
               key={item.label}
@@ -70,14 +70,14 @@ export const Navbar = () => {
               variant={isPathActive(item.path) ? "navActive" : "navInactive"}
               size="sm"
               icon={item.icon}
-              className="w-full rounded-full"
+              className="rounded-full"
             >
               {item.label}
             </Button>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="hidden items-center gap-2 md:flex">
           {themeToggleEnabled && (
             <Button
               onClick={toggleTheme}
@@ -100,7 +100,7 @@ export const Navbar = () => {
         </div>
       </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border bg-background py-2 sm:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border bg-background py-2 md:hidden">
         {NAV_ITEMS.map((item) => (
           <BottomNavItem
             key={item.label}

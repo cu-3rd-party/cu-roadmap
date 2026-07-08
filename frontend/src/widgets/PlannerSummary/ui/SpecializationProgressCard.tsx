@@ -130,7 +130,7 @@ export const SpecializationProgressCard = ({
 }: SpecializationProgress) => {
   return (
     <div className="flex flex-col gap-3 p-3 sm:p-5 sm:py-3">
-      <span className="line-clamp-1 text-sm font-semibold text-fg-secondary">
+      <span className="flex min-h-[2lh] items-center justify-center text-center text-sm font-semibold text-fg-secondary">
         {title}
       </span>
 

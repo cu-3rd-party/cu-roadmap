@@ -131,10 +131,13 @@ export const PlannerSummary = ({
         </div>
 
         <div
-          className="grid grid-cols-1 sm:grid-cols-[repeat(var(--spec-cols),minmax(0,1fr))] [&>*:not(:last-child)]:border-b sm:[&>*:not(:last-child)]:border-b-0 sm:[&>*:not(:last-child)]:border-r"
+          className="grid grid-cols-1 sm:grid-cols-[repeat(var(--spec-cols-md),minmax(0,1fr))] lg:grid-cols-[repeat(var(--spec-cols),minmax(0,1fr))] -mr-px -mb-px [&>*]:border-b [&>*]:border-r [&>*]:border-border"
           style={
             {
               "--spec-cols": loading ? 5 : Math.max(specializations.length, 1),
+              "--spec-cols-md": loading
+                ? 3
+                : Math.max(Math.ceil(specializations.length / 2), 1),
             } as CSSProperties
           }
         >
