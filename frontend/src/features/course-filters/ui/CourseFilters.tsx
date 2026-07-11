@@ -40,7 +40,10 @@ export const CourseFilters = ({
     <div className="flex flex-col gap-1">
       {/* Static options — rendered immediately, no loading skeleton. */}
       <div className="grid gap-1 sm:grid-cols-3">
-        <FilterCard label="Доступные семестры">
+        <FilterCard
+          label="Доступные семестры"
+          hint="Семестры, в которые курс можно взять"
+        >
           <div className="flex flex-wrap gap-2">
             {semesters.map((semester) => (
               <Chip
@@ -57,7 +60,10 @@ export const CourseFilters = ({
           </div>
         </FilterCard>
 
-        <FilterCard label="Рекомендованный семестр">
+        <FilterCard
+          label="Рекомендованный семестр"
+          hint="Семестр, в который командой методистов рекомендуется (но не всегда обязательно) курс пройти"
+        >
           <div className="flex flex-wrap gap-2">
             {semesters.map((semester) => (
               <Chip
@@ -74,7 +80,10 @@ export const CourseFilters = ({
           </div>
         </FilterCard>
 
-        <FilterCard label="Нагрузка в парах в неделю">
+        <FilterCard
+          label="Нагрузка в парах в неделю"
+          hint="Сколько пар у курса в неделю (для курсов со сдвоенными парами и другими видами проведения считается среднее количество в неделю)"
+        >
           <div className="flex flex-wrap gap-2">
             {WORKLOAD_OPTIONS.map((workload) => (
               <Chip

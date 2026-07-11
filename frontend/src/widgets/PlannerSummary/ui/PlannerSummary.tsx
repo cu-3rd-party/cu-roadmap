@@ -6,7 +6,6 @@ import { usePlannerStore } from "@/entities/roadmap";
 import { ResetConfirmModal } from "@/features/planner-reset";
 import { useSettingsStore } from "@/features/settings";
 import { TrajectorySelectModal } from "@/features/trajectory-select";
-import { plannerStatsLabels } from "@/pages/planner/model";
 import { admissionYearToSemester } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
 import { Button, Chip, Label, Panel, Switch } from "@/shared/ui";
@@ -15,21 +14,15 @@ import {
   type SpecializationProgress,
   SpecializationProgressCard,
 } from "./SpecializationProgressCard";
-import {
-  SpecializationProgressCardSkeleton,
-  SummaryStatCardSkeleton,
-} from "./SummarySkeletons";
-import { type SummaryStat, SummaryStatCard } from "./SummaryStatCard";
+import { SpecializationProgressCardSkeleton } from "./SummarySkeletons";
 
 interface PlannerSummaryProps {
-  stats: SummaryStat[];
   specializations: SpecializationProgress[];
   loading?: boolean;
   identifying?: boolean;
 }
 
 export const PlannerSummary = ({
-  stats,
   specializations,
   loading,
   identifying,
@@ -117,19 +110,6 @@ export const PlannerSummary = ({
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border">
-        <div className="grid grid-cols-3 border-b [&>*:not(:nth-child(3n))]:border-r">
-          {loading
-            ? plannerStatsLabels.map((label) => (
-                <SummaryStatCardSkeleton
-                  key={`stat-skeleton-${label}`}
-                  label={label}
-                />
-              ))
-            : stats.map((stat) => (
-                <SummaryStatCard key={stat.label} {...stat} />
-              ))}
-        </div>
-
         <div
           className="grid grid-cols-1 sm:grid-cols-[repeat(var(--spec-cols-md),minmax(0,1fr))] lg:grid-cols-[repeat(var(--spec-cols),minmax(0,1fr))] -mr-px -mb-px [&>*]:border-b [&>*]:border-r [&>*]:border-border"
           style={

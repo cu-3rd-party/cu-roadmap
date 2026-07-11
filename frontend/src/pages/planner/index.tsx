@@ -17,7 +17,6 @@ import { SemesterSection } from "@/widgets/SemesterSection";
 import {
   beforeIdentifyMajorsDelay,
   beforeValidateRoadmapDelay,
-  buildPlannerStats,
   buildSemesters,
 } from "./model";
 
@@ -29,7 +28,7 @@ const sameIds = (a: string[], b: string[]) => {
 
 const PlannerPage = () => {
   const { admissionYear, majorId } = useSettingsStore();
-  const { selections, validation, resyncSelections } = usePlannerStore();
+  const { selections, resyncSelections } = usePlannerStore();
   const {
     data: courses,
     isLoading,
@@ -137,36 +136,11 @@ const PlannerPage = () => {
     });
   }, [identifyQuery.data, titleMap]);
 
-  // Conflicts are error/warning validation messages across all semesters.
-  const conflictCount = useMemo(
-    () => validation.reduce((sum, sem) => sum + sem.messages.length, 0),
-    [validation],
-  );
-
-  // Real academic load: sum the workload of every placed course, looked up from
-  // the catalog (selection entries don't carry workload themselves).
-  const totalWorkload = useMemo(() => {
-    const workloadById = new Map(
-      (courses ?? []).map((c) => [c.id, c.workload]),
-    );
-    return selectedCourseIds.reduce(
-      (sum, id) => sum + (workloadById.get(id) ?? 0),
-      0,
-    );
-  }, [courses, selectedCourseIds]);
-
-  const stats = useMemo(
-    () =>
-      buildPlannerStats(selectedCourseIds.length, conflictCount, totalWorkload),
-    [selectedCourseIds.length, conflictCount, totalWorkload],
-  );
-
   const semesters = useMemo(() => buildSemesters(), [admissionYear]);
 
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
       <PlannerSummary
-        stats={stats}
         specializations={plannerSpecializations}
         loading={summaryLoading}
         identifying={identifying}

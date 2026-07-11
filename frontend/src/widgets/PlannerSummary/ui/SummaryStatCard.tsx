@@ -1,3 +1,5 @@
+// DELETABLE: The summary stat cards were removed from the Planner because they
+// weren't useful for now.
 import { AnimatedNumber } from "@/shared/ui";
 
 export interface SummaryStat {

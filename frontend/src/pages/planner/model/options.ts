@@ -2,25 +2,9 @@ import { TOTAL_SEMESTERS } from "@/shared/constants";
 import type { SummaryStat } from "@/widgets/PlannerSummary";
 import type { SemesterSectionProps } from "@/widgets/SemesterSection";
 
-export const plannerStatsLabels = [
-  "Курсов выбрано",
-  "Конфликты",
-  "Средняя нагрузка",
-];
-
-export const buildPlannerStats = (
-  selectedCount: number,
-  conflicts: number,
-  totalWorkload: number,
-): SummaryStat[] => [
-  { label: "Курсов выбрано", value: selectedCount },
-  { label: "Конфликты", value: conflicts },
-  {
-    label: "Средняя нагрузка",
-    value: totalWorkload / TOTAL_SEMESTERS,
-    decimals: 1,
-  },
-];
+// DELETABLE: The summary stat cards were removed from the Planner because they
+// weren't useful for now.
+export const buildPlannerStats = (): SummaryStat[] => [];
 
 // Per-semester static metadata; runtime course data is injected by PlannerPage.
 // Date ranges are derived from the admission year.

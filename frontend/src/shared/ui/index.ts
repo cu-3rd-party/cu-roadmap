@@ -1,4 +1,5 @@
 export * from "./animated-number";
+export * from "./hint-button";
 export * from "./kit";
 export * from "./panel";
 export * from "./reveal-image";

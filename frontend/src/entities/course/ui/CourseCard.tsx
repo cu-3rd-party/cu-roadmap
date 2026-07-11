@@ -57,6 +57,9 @@ interface CourseCardProps {
   // course is pinned to its semester: select/planned actions (deselect, move,
   // delete) are disabled. Drag-reordering stays allowed (lives on the wrapper).
   fixed?: boolean;
+  // select variant only: card is shown but not actionable here (course lives in
+  // another semester, or is fixed). Renders dimmed + non-clickable.
+  disabled?: boolean;
   onSelect?: () => void;
   onRemove?: () => void;
   onMove?: (toSemester: number) => void;
@@ -110,6 +113,7 @@ export const CourseCard = ({
   conflict = false,
   generated = false,
   fixed = false,
+  disabled = false,
   onSelect,
   onRemove,
   onMove,
@@ -122,14 +126,14 @@ export const CourseCard = ({
     return (
       <button
         type="button"
-        onClick={fixed ? undefined : onSelect}
-        disabled={fixed}
+        onClick={disabled ? undefined : onSelect}
+        disabled={disabled}
         aria-pressed={selected}
         className={cn(
-          "relative flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-2 px-2 sm:py-4 sm:px-3 text-left transition-colors duration-(--std-duration) ",
+          "relative flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-2 px-2 sm:py-4 sm:px-4 text-left transition-colors duration-(--std-duration) ",
           "cursor-pointer hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           selected && "border-accent/80",
-          fixed && "cursor-default hover:bg-background",
+          disabled && "opacity-60 cursor-default hover:bg-background",
         )}
       >
         <div
@@ -171,7 +175,7 @@ export const CourseCard = ({
           type="button"
           onClick={openDetails}
           className={cn(
-            "relative flex h-full w-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
+            "relative flex h-full w-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-2 sm:px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
             "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             selected && "border-accent/80",
           )}
@@ -180,7 +184,7 @@ export const CourseCard = ({
             title={title}
             className={cn(
               "min-h-[2lh] text-sm leading-snug font-medium text-fg-primary",
-              showMenu && "pr-5 sm:pr-5",
+              showMenu && "pr-6",
             )}
           >
             {title}
@@ -210,7 +214,7 @@ export const CourseCard = ({
               aria-label={
                 isSelected ? "Действия с курсом" : "Добавить в семестр"
               }
-              className="absolute top-2 right-2 grid size-6 cursor-pointer place-items-center rounded-md text-fg-secondary transition-colors duration-(--std-duration) hover:bg-accent-pale-hover hover:text-fg-primary focus-visible:ring-0 focus-visible:outline-none"
+              className="absolute top-1 sm:top-3 right-1 grid size-6 cursor-pointer place-items-center rounded-md text-fg-secondary transition-colors duration-(--std-duration) hover:bg-accent-pale-hover hover:text-fg-primary focus-visible:ring-0 focus-visible:outline-none"
             >
               {isSelected ? (
                 <Ellipsis className="size-4" aria-hidden />
@@ -248,7 +252,7 @@ export const CourseCard = ({
   return (
     <div
       className={cn(
-        "relative border-2 border-transparent transition-colors animate-[border-pulse-in_300ms_ease] flex h-full flex-col gap-3 rounded-xl bg-background p-2 sm:p-4",
+        "relative border-2 border-transparent transition-colors animate-[border-pulse-in_300ms_ease] flex h-full flex-col gap-3 rounded-xl bg-background p-2 sm:py-4 sm:pl-4",
         generated && "border-expert-blue",
         conflict && "border-negative",
       )}
@@ -257,8 +261,8 @@ export const CourseCard = ({
         <div
           title={title}
           className={cn(
-            "min-h-[2lh] text-xs sm:text-sm leading-snug font-medium text-fg-primary",
-            showMoveMenu && "pr-5 sm:pr-5",
+            "h-[3lh] line-clamp-3 text-xs sm:text-sm leading-snug font-medium text-fg-primary",
+            showMoveMenu && "pr-6",
           )}
         >
           {title}
@@ -276,7 +280,7 @@ export const CourseCard = ({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Перенести в семестр"
-            className="absolute top-2 right-2 grid size-6 cursor-pointer place-items-center rounded-md text-fg-secondary transition-colors duration-(--std-duration) hover:bg-accent-pale-hover hover:text-fg-primary focus-visible:ring-0 focus-visible:outline-none"
+            className="absolute top-1 sm:top-3 right-1 grid size-6 cursor-pointer place-items-center rounded-md text-fg-secondary transition-colors duration-(--std-duration) hover:bg-accent-pale-hover hover:text-fg-primary focus-visible:ring-0 focus-visible:outline-none"
           >
             <ArrowRightLeft className="size-4" aria-hidden />
           </DropdownMenuTrigger>

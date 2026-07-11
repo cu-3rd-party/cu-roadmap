@@ -230,7 +230,7 @@ export const SemesterSection = ({
 
               <DragOverlay>
                 {activeCourse ? (
-                  <div>
+                  <div className="h-full cursor-grabbing rounded-xl">
                     <CourseCard
                       variant="planned"
                       courseId={activeCourse.id}

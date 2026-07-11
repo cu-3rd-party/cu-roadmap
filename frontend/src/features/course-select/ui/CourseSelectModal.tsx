@@ -101,12 +101,13 @@ export const CourseSelectModal = ({
   );
 
   const handleCourseSelect = (
-    isFixed: boolean,
+    isDisabled: boolean,
     course: Course,
     selectedSemester?: SemesterNumber,
   ) => {
-    if (isFixed) return;
+    if (isDisabled) return;
     if (selectedSemester !== undefined) {
+      // only reached when the course is in this modal's semester
       removeCourse(selectedSemester, course.id);
     } else {
       addCourse(semester, {
@@ -132,6 +133,7 @@ export const CourseSelectModal = ({
             subOptions={subOptions}
             onGroupChange={setGroup}
             onSubChange={setSub}
+            showLabel={false}
           />
         </div>
       </div>
@@ -159,6 +161,10 @@ export const CourseSelectModal = ({
               ) as SemesterNumber;
               const isSelected = selectedSemester !== undefined;
               const isFixed = fixedCourseIds.has(course.id);
+              const isOtherSemester =
+                isSelected && selectedSemester !== semester;
+              // dimmed + non-clickable: pinned, or placed in another semester
+              const isDisabled = isFixed || isOtherSemester;
               return (
                 <CourseCard
                   key={course.id}
@@ -168,9 +174,9 @@ export const CourseSelectModal = ({
                   type={course.type}
                   selected={isSelected}
                   selectedSemester={selectedSemester}
-                  fixed={isFixed}
+                  disabled={isDisabled}
                   onSelect={() =>
-                    handleCourseSelect(isFixed, course, selectedSemester)
+                    handleCourseSelect(isDisabled, course, selectedSemester)
                   }
                 />
               );
