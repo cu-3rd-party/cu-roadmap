@@ -21,6 +21,7 @@ import { useMemo, useState } from "react";
 import { CourseCard, StatusPanel, type Course } from "@/entities/course";
 import { isSemesterCompleted, usePlannerStore } from "@/entities/roadmap";
 import { CourseSelectModal } from "@/features/course-select";
+import { ResetConfirmModal } from "@/features/planner-reset";
 import { useSettingsStore } from "@/features/settings";
 import { pluralizeRu, useMediaQuery } from "@/shared/lib";
 import { Badge, Button, CollapsiblePanel, Panel } from "@/shared/ui";
@@ -46,6 +47,7 @@ export const SemesterSection = ({
   const isMobile = useMediaQuery("sm");
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const {
     selections,
@@ -58,6 +60,7 @@ export const SemesterSection = ({
   } = usePlannerStore();
   const { admissionYear, hideCompletedSemesters } = useSettingsStore();
   const courses = selections[index] ?? [];
+  const hasResettableCourses = courses.some((c) => !c.fixed);
 
   const courseById = useMemo(
     () => new Map(catalogCourses.map((course) => [course.id, course])),
@@ -133,7 +136,7 @@ export const SemesterSection = ({
 
   return (
     <Panel className="relative px-2 sm:px-4 lg:p-6 lg:pt-4">
-      <div className="mb-4 flex items-center gap-2.5 px-1">
+      <div className="mb-4 flex min-h-10 items-center gap-2.5 px-1">
         <div className="flex flex-col sm:flex-row gap-1 sm:gap-4 sm:items-center">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-fg-primary">
@@ -160,13 +163,13 @@ export const SemesterSection = ({
           </div>
         </div>
         <div className="ml-auto flex items-center gap-4">
-          {courses.length > 0 && (
+          {hasResettableCourses && (
             <Button
               variant="outline"
               size="sm"
               className={`text-negative hover:text-fg-negative ${isMobile && "border-0"}`}
               icon={isMobile ? <Trash /> : undefined}
-              onClick={() => clearSemester(index)}
+              onClick={() => setResetOpen(true)}
             >
               {isMobile ? undefined : "Сбросить курсы"}
             </Button>
@@ -256,6 +259,14 @@ export const SemesterSection = ({
         isError={coursesError}
         open={modalOpen}
         onOpenChange={setModalOpen}
+      />
+
+      <ResetConfirmModal
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        title="Сбросить курсы в семестре"
+        showKeepCompleted={false}
+        onConfirm={() => clearSemester(index)}
       />
     </Panel>
   );

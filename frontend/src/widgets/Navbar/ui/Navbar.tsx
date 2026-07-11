@@ -62,7 +62,7 @@ export const Navbar = () => {
       <header className="relative hidden md:flex h-16 items-center justify-between border-b border-border bg-background px-6">
         <img src="/favicon.svg" width={36} height={36} alt="ЦУ" />
 
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 rounded-full p-1 md:flex">
+        <nav className="absolute left-1/2 hidden w-max -translate-x-1/2 auto-cols-fr grid-flow-col items-center gap-4 rounded-full p-1 md:grid">
           {NAV_ITEMS.map((item) => (
             <Button
               key={item.label}
@@ -70,7 +70,7 @@ export const Navbar = () => {
               variant={isPathActive(item.path) ? "navActive" : "navInactive"}
               size="sm"
               icon={item.icon}
-              className="rounded-full"
+              className="w-full rounded-full"
             >
               {item.label}
             </Button>

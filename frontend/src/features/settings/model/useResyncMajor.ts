@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import { type Major, useMajorsQuery } from "@/entities/major";
+import { usePlannerStore } from "@/entities/roadmap";
 import type { MajorType, UUID } from "@/shared/model";
 
 import { useSettingsStore } from "./store";
@@ -27,15 +28,22 @@ export const resolveMajorId = (
 /*
   Self-healing for the persisted major selection: once the cohort's majors
   load, if a major of the saved type exists under a different id (backend
-  regenerated it), adopt the fresh id. Selections are left untouched — it's the
-  same major, only the id changed. Mount once, globally.
+  regenerated it), adopt the fresh id. Because a regenerated major reissues all
+  its course ids, the persisted selections now reference stale courses — so an
+  id change wipes every selection (including fixed/mandatory), mirroring the
+  full wipe a manual major switch does in SettingsModal. When the id is
+  unchanged, `resolveMajorId` returns null and selections persist. Mount once,
+  globally.
 */
 export const useResyncMajor = () => {
   const { admissionYear, majorId, majorType, setMajor } = useSettingsStore();
+  const { reset } = usePlannerStore();
   const { data: majors } = useMajorsQuery(admissionYear);
 
   useEffect(() => {
     const resolved = resolveMajorId(majors, majorType, majorId);
-    if (resolved) setMajor(resolved, majorType);
-  }, [majors, majorType, majorId, setMajor]);
+    if (!resolved) return;
+    reset(undefined, false);
+    setMajor(resolved, majorType);
+  }, [majors, majorType, majorId, setMajor, reset]);
 };

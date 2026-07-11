@@ -27,12 +27,44 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       DEV_ENABLE_HTTPS && basicSsl(),
       VitePWA({
-        registerType: "autoUpdate",
+        // "prompt": we surface an "update available" toast and apply the update
+        // on user action via updateSW(true). Do NOT set workbox.skipWaiting here
+        // — skip-waiting must stay user-triggered so we never reload mid-action.
+        registerType: "prompt",
         includeAssets: ["favicon.ico"],
         manifest: manifest,
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
           navigateFallbackDenylist: [/^\/admin(?:\/|$)/, /^\/grafana(?:\/|$)/],
+          clientsClaim: true,
+          cleanupOutdatedCaches: true,
+          runtimeCaching: [
+            {
+              // External resources (CDN fonts, libraries)
+              urlPattern: ({ url }) => url.origin !== self.location.origin,
+              handler: "StaleWhileRevalidate",
+              options: {
+                cacheName: "external-resources",
+                expiration: {
+                  maxEntries: 50,
+                  maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+                },
+              },
+            },
+            {
+              // API requests: use the network, fall back to cache when offline
+              urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "api-cache",
+                networkTimeoutSeconds: 5,
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 10 * 60, // 10 minutes
+                },
+              },
+            },
+          ],
         },
         devOptions: {
           enabled: DEV_ENABLE_PWA,

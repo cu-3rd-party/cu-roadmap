@@ -18,6 +18,8 @@ import {
 import { wrapLabel } from "../lib";
 import { MAX_LOAD, MIN_LOAD } from "../model";
 
+import { FieldLabel } from "./FieldLabel";
+
 interface SpecializationTabProps {
   specializations: Specialization[] | undefined;
   specializationId: string;
@@ -111,9 +113,21 @@ export const SpecializationTab = ({
         </Tabs>
       )}
 
-      <p className="text-xs sm:text-sm text-fg-secondary self-center">
-        Какие курсы учитывать при построении траектории
-      </p>
+      <FieldLabel
+        label="Какие курсы учитывать при построении траектории"
+        hint={
+          <>
+            <span className="font-medium">Только пройденные</span> — алгоритм
+            будет строить траекторию только исходя из курсов пройденных
+            семестров.
+            <br />
+            <br />
+            <span className="font-medium">Все добавленные</span> — алгоритм
+            подберет курсы в траекторию, учитывая добавленные вами в еще не
+            пройденных семестрах курсы.
+          </>
+        }
+      />
       <Tabs value={scope} onValueChange={onScopeChange} className="gap-4">
         <TabsList className="grid grid-flow-col auto-cols-fr self-center">
           <TabsTrigger value="passed">Только пройденные</TabsTrigger>
@@ -121,9 +135,10 @@ export const SpecializationTab = ({
         </TabsList>
       </Tabs>
 
-      <p className="text-xs sm:text-sm text-fg-secondary self-center">
-        Максимальная нагрузка в парах в неделю
-      </p>
+      <FieldLabel
+        label="Максимальная нагрузка в парах в неделю"
+        hint="Алгоритм выберет курсы так, чтобы ни в одном семестре не превышать выставленную нагрузку в неделю."
+      />
       <div className="flex items-center gap-4 self-center">
         <Slider
           min={MIN_LOAD}

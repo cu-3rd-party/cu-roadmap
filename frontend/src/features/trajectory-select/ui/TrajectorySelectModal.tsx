@@ -18,6 +18,7 @@ import {
 import { useTrajectorySelect } from "../model";
 
 import { CourseTab } from "./CourseTab";
+import { FieldLabel } from "./FieldLabel";
 import { SpecializationTab } from "./SpecializationTab";
 
 interface TrajectorySelectModalProps {
@@ -63,20 +64,20 @@ export const TrajectorySelectModal = ({
   const content = (
     <>
       <Tabs value={tab} onValueChange={onTabChange} className="gap-4">
-        <div className="text-sm text-fg-secondary">
-          <p>Выберите тип построения траектории:</p>
-          <ol className="mt-1 flex list-decimal flex-col gap-1 pl-5">
-            <li>
-              <span className="font-medium text-fg-primary">Специализация</span>{" "}
-              - алгоритм соберет траекторию для выбранной вами специализации
-            </li>
-            <li>
-              <span className="font-medium text-fg-primary">Курс</span> -
-              алгоритм добавит все пререквизиты и кореквизиты выбранного курса
-              так, чтобы пройти его в выбранном семестре
-            </li>
-          </ol>
-        </div>
+        <FieldLabel
+          label="Тип построения траектории"
+          hint={
+            <>
+              <span className="font-medium">Специализация</span> — алгоритм
+              соберет траекторию для выбранной вами специализации.
+              <br />
+              <br />
+              <span className="font-medium">Курс</span> — алгоритм добавит все
+              пререквизиты и кореквизиты выбранного курса так, чтобы пройти его
+              в выбранном семестре.
+            </>
+          }
+        />
 
         <TabsList className="grid grid-flow-col auto-cols-fr self-center">
           <TabsTrigger value="major">Специализация</TabsTrigger>
@@ -142,6 +143,7 @@ export const TrajectorySelectModal = ({
         <SheetContent
           side="bottom"
           aria-describedby={undefined}
+          onOpenAutoFocus={(e) => e.preventDefault()}
           className="gap-0 overflow-hidden rounded-t-3xl bg-expert-blue-pale p-0"
         >
           <SheetHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">
@@ -168,6 +170,7 @@ export const TrajectorySelectModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
+        onOpenAutoFocus={(e) => e.preventDefault()}
         className={cn(
           "flex w-[calc(100%-2rem)] sm:max-w-5xl flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0",
         )}

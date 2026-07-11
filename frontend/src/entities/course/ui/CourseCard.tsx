@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Info, Trash2 } from "lucide-react";
+import { ArrowRightLeft, Ellipsis, Info, Plus, Trash2 } from "lucide-react";
 
 import { SemesterNumber } from "@/shared/constants";
 import { cn, useMediaQuery } from "@/shared/lib";
@@ -17,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Separator,
 } from "@/shared/ui/kit";
@@ -45,7 +46,8 @@ interface CourseCardProps {
   // select variant only: semester (1-8) this course is currently placed in.
   // Shown as a corner counter; selection is tracked across all semesters.
   selectedSemester?: SemesterNumber;
-  // planned variant only: semesters offered in the "move to" menu (already excludes current)
+  // semesters offered in the card menu. planned/selected-catalog: "move to"
+  // targets (already excludes current). unselected-catalog: "add to" targets.
   moveTargets?: number[];
   // planned variant only: renders a negative ring when the course has a validation conflict
   conflict?: boolean;
@@ -158,40 +160,85 @@ export const CourseCard = ({
   }
 
   if (variant === "catalog") {
+    const isSelected = selectedSemester !== undefined;
+    const menuTargets = moveTargets ?? [];
+    // selected courses always get a menu (delete is always available); unselected
+    // ones only when there's at least one semester to add to. fixed = no menu.
+    const showMenu = !fixed && (isSelected || menuTargets.length > 0);
     return (
-      <button
-        type="button"
-        onClick={openDetails}
-        className={cn(
-          "relative flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
-          "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-          selected && "border-accent/80",
-        )}
-      >
-        <div
-          title={title}
-          className="min-h-[2lh] text-sm leading-snug font-medium text-fg-primary"
+      <div className="relative h-full">
+        <button
+          type="button"
+          onClick={openDetails}
+          className={cn(
+            "relative flex h-full w-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-4 px-3 text-left transition-colors duration-(--std-duration) cursor-pointer",
+            "hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            selected && "border-accent/80",
+          )}
         >
-          {title}
-        </div>
-        <CourseBadges
-          variant="catalog"
-          category={category}
-          type={type}
-          recommendedSemester={recommendedSemester}
-          isMobile={isMobile}
-          className={cn("mt-auto", selectedSemester !== undefined && "pr-8")}
-        />
-        {selectedSemester !== undefined && (
-          <Counter
-            variant="primary"
-            size="xxs"
-            className="absolute right-2 bottom-2"
+          <div
+            title={title}
+            className={cn(
+              "min-h-[2lh] text-sm leading-snug font-medium text-fg-primary",
+              showMenu && "pr-5 sm:pr-5",
+            )}
           >
-            {selectedSemester}
-          </Counter>
+            {title}
+          </div>
+          <CourseBadges
+            variant="catalog"
+            category={category}
+            type={type}
+            recommendedSemester={recommendedSemester}
+            isMobile={isMobile}
+            className={cn("mt-auto", selectedSemester !== undefined && "pr-8")}
+          />
+          {selectedSemester !== undefined && (
+            <Counter
+              variant="primary"
+              size="xxs"
+              className="absolute right-2 bottom-2"
+            >
+              {selectedSemester}
+            </Counter>
+          )}
+        </button>
+
+        {showMenu && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label={
+                isSelected ? "Действия с курсом" : "Добавить в семестр"
+              }
+              className="absolute top-2 right-2 grid size-6 cursor-pointer place-items-center rounded-md text-fg-secondary transition-colors duration-(--std-duration) hover:bg-accent-pale-hover hover:text-fg-primary focus-visible:ring-0 focus-visible:outline-none"
+            >
+              {isSelected ? (
+                <Ellipsis className="size-4" aria-hidden />
+              ) : (
+                <Plus className="size-4" aria-hidden />
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {menuTargets.map((n) => (
+                <DropdownMenuItem key={n} onSelect={() => onMove?.(n)}>
+                  {n} семестр
+                </DropdownMenuItem>
+              ))}
+              {isSelected && menuTargets.length > 0 && (
+                <DropdownMenuSeparator />
+              )}
+              {isSelected && (
+                <DropdownMenuItem
+                  className="text-negative"
+                  onSelect={() => onRemove?.()}
+                >
+                  Удалить
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
-      </button>
+      </div>
     );
   }
 
@@ -211,7 +258,7 @@ export const CourseCard = ({
           title={title}
           className={cn(
             "min-h-[2lh] text-xs sm:text-sm leading-snug font-medium text-fg-primary",
-            showMoveMenu && "pr-5 sm:pr-7",
+            showMoveMenu && "pr-5 sm:pr-5",
           )}
         >
           {title}

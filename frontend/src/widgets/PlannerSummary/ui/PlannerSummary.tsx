@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 
 import { usePlannerStore } from "@/entities/roadmap";
+import { ResetConfirmModal } from "@/features/planner-reset";
 import { useSettingsStore } from "@/features/settings";
 import { TrajectorySelectModal } from "@/features/trajectory-select";
 import { plannerStatsLabels } from "@/pages/planner/model";
@@ -10,7 +11,6 @@ import { admissionYearToSemester } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
 import { Button, Chip, Label, Panel, Switch } from "@/shared/ui";
 
-import { ResetConfirmModal } from "./ResetConfirmModal";
 import {
   type SpecializationProgress,
   SpecializationProgressCard,

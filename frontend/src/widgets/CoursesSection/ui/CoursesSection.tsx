@@ -16,7 +16,7 @@ export const CoursesSection = ({
   courses,
   panelTitle,
 }: CourseCategorySectionProps) => {
-  const { selections } = usePlannerStore();
+  const { selections, addCourse, moveCourse, removeCourse } = usePlannerStore();
 
   // Selection is tracked across ALL semesters
   const semesterByCourseId = useMemo(() => {
@@ -39,6 +39,11 @@ export const CoursesSection = ({
             const selectedSemester = semesterByCourseId.get(course.id) as
               | SemesterNumber
               | undefined;
+            const isSelected = selectedSemester !== undefined;
+            // add: any semester the course is offered in. move: same, minus current.
+            const menuTargets = isSelected
+              ? course.availableSemesters.filter((n) => n !== selectedSemester)
+              : course.availableSemesters;
             return (
               <CourseCard
                 key={course.id}
@@ -48,8 +53,23 @@ export const CoursesSection = ({
                 recommendedSemester={course.recommendedSemester}
                 category={course.category}
                 type={course.type}
-                selected={selectedSemester !== undefined}
+                selected={isSelected}
                 selectedSemester={selectedSemester}
+                fixed={(course.fixedSemester ?? 0) >= 1}
+                moveTargets={menuTargets}
+                onMove={(to) =>
+                  isSelected
+                    ? moveCourse(selectedSemester, to, course.id)
+                    : addCourse(to, {
+                        id: course.id,
+                        title: course.title,
+                        category: course.category,
+                        type: course.type,
+                      })
+                }
+                onRemove={() =>
+                  isSelected && removeCourse(selectedSemester, course.id)
+                }
               />
             );
           })}

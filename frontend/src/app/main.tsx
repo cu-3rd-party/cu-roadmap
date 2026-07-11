@@ -4,8 +4,10 @@ import { BrowserRouter } from "react-router-dom";
 
 import "./styles/index.css";
 import { QueryProvider, ThemeProvider } from "@/app/providers";
+import { Toaster } from "@/shared/ui/kit";
 
 import { enableMocking } from "./mocks/browser";
+import { PwaUpdater } from "./pwa/PwaUpdater";
 import { AppRouter } from "./router";
 
 enableMocking().then(() => {
@@ -16,6 +18,8 @@ enableMocking().then(() => {
           <BrowserRouter>
             <AppRouter />
           </BrowserRouter>
+          <Toaster />
+          <PwaUpdater />
         </ThemeProvider>
       </QueryProvider>
     </StrictMode>,
