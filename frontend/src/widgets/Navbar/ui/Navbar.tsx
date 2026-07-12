@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   CircleQuestionMark,
   Compass,
   Map,
@@ -11,6 +12,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useTheme } from "@/app/providers";
+import { AboutModal } from "@/features/about";
 import { SettingsModal } from "@/features/settings";
 import { cn, isPathActive } from "@/shared/lib";
 import { Button } from "@/shared/ui";
@@ -48,7 +50,7 @@ const BottomNavItem = ({
 );
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Глоссарий", icon: <CircleQuestionMark />, path: "/glossary" },
+  { label: "Глоссарий", icon: <BookOpen />, path: "/glossary" },
   { label: "Планировщик", icon: <Map />, path: "/planner" },
   { label: "Каталог", icon: <Compass />, path: "/catalog" },
 ] as const;
@@ -57,12 +59,13 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   return (
     <>
       <header className="relative hidden md:flex h-16 items-center justify-between border-b border-border bg-background px-6">
         <img src="/favicon.svg" width={36} height={36} alt="ЦУ" />
 
-        <nav className="absolute left-1/2 hidden w-max -translate-x-1/2 auto-cols-fr grid-flow-col items-center gap-4 rounded-full p-1 md:grid">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 auto-cols-[minmax(min-content,1fr)] grid-flow-col items-center gap-4 rounded-full p-1 md:grid">
           {NAV_ITEMS.map((item) => (
             <Button
               key={item.label}
@@ -90,6 +93,15 @@ export const Navbar = () => {
           )}
 
           <Button
+            onClick={() => setAboutOpen(true)}
+            variant="navInactive"
+            size="sm"
+            icon={<CircleQuestionMark />}
+            className="rounded-full"
+            aria-label="О проекте"
+          />
+
+          <Button
             onClick={() => setSettingsOpen(true)}
             variant="navInactive"
             size="sm"
@@ -101,6 +113,12 @@ export const Navbar = () => {
       </header>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border bg-background py-2 md:hidden">
+        <BottomNavItem
+          label="О проекте"
+          icon={<CircleQuestionMark />}
+          onClick={() => setAboutOpen(true)}
+        />
+
         {NAV_ITEMS.map((item) => (
           <BottomNavItem
             key={item.label}
@@ -119,6 +137,7 @@ export const Navbar = () => {
       </nav>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <AboutModal open={aboutOpen} onOpenChange={setAboutOpen} />
     </>
   );
 };

@@ -6,6 +6,7 @@ import {
   motion,
   type PanInfo,
   type Transition,
+  useDragControls,
 } from "framer-motion";
 import { XIcon } from "lucide-react";
 import { Dialog as SheetPrimitive } from "radix-ui";
@@ -23,6 +24,12 @@ const SheetContext = React.createContext<SheetContextValue>({
   open: false,
   requestClose: () => {},
 });
+
+// Lets a header/grabber inside SheetContent initiate the close drag when the
+// sheet is in "handle-only" mode (body scrolls, only the handle drags).
+const SheetHandleContext = React.createContext<{
+  startDrag?: (e: React.PointerEvent) => void;
+}>({});
 
 function Sheet({
   open,
@@ -157,16 +164,25 @@ function SheetContent({
   side = "right",
   showCloseButton = true,
   swipeToClose = false,
+  dragHandleOnly = false,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> &
   VariantProps<typeof sheetVariants> & {
     showCloseButton?: boolean;
     swipeToClose?: boolean;
+    dragHandleOnly?: boolean;
   }) {
   const { open, requestClose } = React.useContext(SheetContext);
   const resolvedSide = side ?? "right";
   const offscreen = SHEET_OFFSCREEN[resolvedSide];
   const swipe = SWIPE_CONFIG[resolvedSide];
+  const dragControls = useDragControls();
+  const showGrabber =
+    swipeToClose && (resolvedSide === "bottom" || resolvedSide === "top");
+  const startDrag =
+    swipeToClose && dragHandleOnly
+      ? (e: React.PointerEvent) => dragControls.start(e)
+      : undefined;
 
   return (
     <AnimatePresence>
@@ -209,9 +225,27 @@ function SheetContent({
                 onDragEnd: (_e, info: PanInfo) => {
                   if (swipe.shouldClose(info)) requestClose();
                 },
+                ...(dragHandleOnly && {
+                  dragListener: false,
+                  dragControls,
+                }),
               })}
             >
-              {children}
+              {showGrabber && (
+                <div
+                  aria-hidden
+                  onPointerDown={startDrag}
+                  className={cn(
+                    "absolute top-1 left-1/2 z-10 -translate-x-1/2 px-8 py-2",
+                    startDrag && "cursor-grab touch-none",
+                  )}
+                >
+                  <div className="h-1 w-8 rounded-full bg-fg-tertiary/40" />
+                </div>
+              )}
+              <SheetHandleContext.Provider value={{ startDrag }}>
+                {children}
+              </SheetHandleContext.Provider>
               {showCloseButton && (
                 <SheetPrimitive.Close data-slot="sheet-close" asChild>
                   <Button
@@ -232,10 +266,16 @@ function SheetContent({
 }
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+  const { startDrag } = React.useContext(SheetHandleContext);
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-col gap-1.5 p-4", className)}
+      onPointerDown={startDrag}
+      className={cn(
+        "flex flex-col gap-1.5 p-4",
+        startDrag && "cursor-grab touch-none select-none",
+        className,
+      )}
       {...props}
     />
   );

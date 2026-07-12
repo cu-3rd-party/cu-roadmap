@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+
 import { Chip } from "@/shared/ui";
 
 import {
@@ -17,6 +19,9 @@ interface CourseFiltersProps {
   onToggleAvailableSemester: (semester: string) => void;
   onToggleSemester: (semester: string) => void;
   onToggleWorkload: (workload: string) => void;
+  onClearAvailableSemesters: () => void;
+  onClearSemesters: () => void;
+  onClearWorkload: () => void;
   onGroupChange: (group: FilterGroup) => void;
   onSubChange: (sub: string) => void;
   onSearchChange: (search: string) => void;
@@ -24,12 +29,29 @@ interface CourseFiltersProps {
   loading?: boolean;
 }
 
+// Round pale-red button shown at the end of a card's chip row to clear that
+// card's selection. Sized to match the option chips (`rounded-full size-8`).
+const ClearChip = ({ onClick }: { onClick: () => void }) => (
+  <Chip
+    variant="red"
+    size="xs"
+    onClick={onClick}
+    aria-label="Очистить"
+    className="rounded-full size-8 cursor-pointer hover:opacity-80 hover:text-fg-negative"
+  >
+    <X />
+  </Chip>
+);
+
 export const CourseFilters = ({
   value,
   subOptions,
   onToggleAvailableSemester,
   onToggleSemester,
   onToggleWorkload,
+  onClearAvailableSemesters,
+  onClearSemesters,
+  onClearWorkload,
   onGroupChange,
   onSubChange,
   onSearchChange,
@@ -57,6 +79,9 @@ export const CourseFilters = ({
                 {semester}
               </Chip>
             ))}
+            {value.availableSemesters.length > 0 && (
+              <ClearChip onClick={onClearAvailableSemesters} />
+            )}
           </div>
         </FilterCard>
 
@@ -77,6 +102,9 @@ export const CourseFilters = ({
                 {semester}
               </Chip>
             ))}
+            {value.semesters.length > 0 && (
+              <ClearChip onClick={onClearSemesters} />
+            )}
           </div>
         </FilterCard>
 
@@ -97,6 +125,9 @@ export const CourseFilters = ({
                 {workload === "4" ? "4+" : workload}
               </Chip>
             ))}
+            {value.workload.length > 0 && (
+              <ClearChip onClick={onClearWorkload} />
+            )}
           </div>
         </FilterCard>
       </div>

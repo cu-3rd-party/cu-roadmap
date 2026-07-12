@@ -1,4 +1,4 @@
-import { CircleQuestionMark } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -69,7 +69,7 @@ const GlossaryPage = () => {
         <div className="mb-4 flex flex-col gap-3 px-1">
           <div className="flex w-full gap-4 h-10 items-center">
             <Chip variant="blue" size={isMobile ? "xs" : "sm"}>
-              <CircleQuestionMark />
+              <BookOpen />
             </Chip>
             <h1 className="text-2xl font-bold text-fg-primary">Глоссарий</h1>
           </div>

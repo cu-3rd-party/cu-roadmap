@@ -116,6 +116,7 @@ export const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
+          swipeToClose
           className="gap-0 overflow-hidden rounded-t-3xl bg-education-green-pale p-0"
         >
           <SheetHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">

@@ -45,7 +45,7 @@ const LinkedCourseRow = (course: LinkedCourse) => {
 
   return (
     <li className="flex items-start gap-2 text-xs sm:text-sm text-fg-secondary">
-      <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+      <span className="sm:mt-0.5 flex size-4 shrink-0 items-center justify-center">
         {course.status === "completed" ? (
           <Check className="size-4 text-positive" />
         ) : course.status === "unavailable" ? (

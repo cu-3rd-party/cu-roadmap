@@ -6,6 +6,8 @@ export {
   courseToDetails,
 } from "./lib";
 export { CourseCard } from "./ui/CourseCard";
+export { CourseCatalogCard } from "./ui/CourseCatalogCard";
+export { CourseSelectCard } from "./ui/CourseSelectCard";
 export { CourseCardSkeleton } from "./ui/CourseCardSkeleton";
 export { DetailsDrawer } from "./ui/DetailsDrawer";
 export { StatusPanel } from "./ui/StatusPanel";

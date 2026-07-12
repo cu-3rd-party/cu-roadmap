@@ -39,6 +39,25 @@ describe("createCourseFiltersStore (transient)", () => {
     expect(store.getState().filters.semesters).toEqual(["2"]);
   });
 
+  it("clear actions empty their own dimension and leave others untouched", () => {
+    const store = createCourseFiltersStore();
+    store.getState().toggleAvailableSemester("1");
+    store.getState().toggleSemester("2");
+    store.getState().toggleWorkload("4");
+
+    store.getState().clearWorkload();
+    expect(store.getState().filters.workload).toEqual([]);
+    expect(store.getState().filters.availableSemesters).toEqual(["1"]);
+    expect(store.getState().filters.semesters).toEqual(["2"]);
+
+    store.getState().clearAvailableSemesters();
+    expect(store.getState().filters.availableSemesters).toEqual([]);
+    expect(store.getState().filters.semesters).toEqual(["2"]);
+
+    store.getState().clearSemesters();
+    expect(store.getState().filters.semesters).toEqual([]);
+  });
+
   it("setGroup changes the group and resets the sub-selection to all", () => {
     const store = createCourseFiltersStore();
     store.getState().setSub("s1");
@@ -104,5 +123,14 @@ describe("createCourseFiltersStore (persisted)", () => {
     const persisted = JSON.parse(localStorage.getItem(KEY) as string);
     expect(persisted.state.filters.workload).toEqual(["4"]);
     expect(persisted.state.filters.search).toBe("");
+  });
+
+  it("clear action persists the emptied dimension", () => {
+    const store = createCourseFiltersStore({ persistKey: KEY });
+    store.getState().toggleWorkload("4");
+    store.getState().clearWorkload();
+
+    const persisted = JSON.parse(localStorage.getItem(KEY) as string);
+    expect(persisted.state.filters.workload).toEqual([]);
   });
 });

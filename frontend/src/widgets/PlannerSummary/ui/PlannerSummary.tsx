@@ -92,6 +92,11 @@ export const PlannerSummary = ({
           <p className="text-sm text-fg-secondary">
             Карточки в одном семестре можно менять местами через перетягивание.
           </p>
+          {/* TODO */}
+          <p className="font-bold text-sm">
+            Возможны неточности при заполнении, некоторая информация еще будет
+            добавлена.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">

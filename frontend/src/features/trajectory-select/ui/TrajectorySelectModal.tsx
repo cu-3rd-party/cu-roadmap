@@ -63,6 +63,10 @@ export const TrajectorySelectModal = ({
 
   const content = (
     <>
+      <p className="text-xs sm:text-sm font-bold">
+        Пока что не все детали отражаются в подобранной траектории, алгоритм
+        дорабатывается.
+      </p>
       <Tabs value={tab} onValueChange={onTabChange} className="gap-4">
         <FieldLabel
           label="Тип построения траектории"
@@ -142,6 +146,7 @@ export const TrajectorySelectModal = ({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
+          swipeToClose
           aria-describedby={undefined}
           onOpenAutoFocus={(e) => e.preventDefault()}
           className="gap-0 overflow-hidden rounded-t-3xl bg-expert-blue-pale p-0"

@@ -104,7 +104,7 @@ export const SpecializationTab = ({
                 <TabsTrigger
                   key={specialization.id}
                   value={specialization.id}
-                  className="whitespace-pre-line text-center leading-tight"
+                  className="whitespace-pre-line text-center"
                 >
                   {wrapLabel(specialization.title)}
                 </TabsTrigger>

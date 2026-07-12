@@ -92,6 +92,7 @@ export const ResetConfirmModal = ({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
+          swipeToClose
           showCloseButton={false}
           aria-describedby={undefined}
           className="gap-3 overflow-hidden rounded-t-3xl bg-background p-6"

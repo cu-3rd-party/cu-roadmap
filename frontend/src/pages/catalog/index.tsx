@@ -1,5 +1,5 @@
 import { Compass } from "lucide-react";
-import { useMemo } from "react";
+import { useDeferredValue, useMemo } from "react";
 
 import { useCoursesQuery } from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
@@ -10,7 +10,7 @@ import {
   CourseFilters,
 } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
-import { useMediaQuery } from "@/shared/lib";
+import { cn, useMediaQuery } from "@/shared/lib";
 import { Chip, CollapsiblePanel, Panel } from "@/shared/ui";
 import {
   CoursesSection,
@@ -32,6 +32,9 @@ const CatalogPage = () => {
     toggleAvailableSemester,
     toggleSemester,
     toggleWorkload,
+    clearAvailableSemesters,
+    clearSemesters,
+    clearWorkload,
     setGroup,
     setSub,
     setSearch,
@@ -71,6 +74,12 @@ const CatalogPage = () => {
     [categories, filters],
   );
 
+  // Render the (potentially large) course grid at a lower priority so switching
+  // the type filter — e.g. to "все" — updates the chips immediately instead of
+  // blocking the click. The grid dims while it catches up.
+  const deferredCategories = useDeferredValue(visibleCategories);
+  const isStale = deferredCategories !== visibleCategories;
+
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
       <Panel className="flex flex-col gap-4 px-2 sm:px-4 lg:px-6">
@@ -101,6 +110,9 @@ const CatalogPage = () => {
             onToggleAvailableSemester={toggleAvailableSemester}
             onToggleSemester={toggleSemester}
             onToggleWorkload={toggleWorkload}
+            onClearAvailableSemesters={clearAvailableSemesters}
+            onClearSemesters={clearSemesters}
+            onClearWorkload={clearWorkload}
             onGroupChange={setGroup}
             onSubChange={setSub}
             onSearchChange={setSearch}
@@ -122,16 +134,23 @@ const CatalogPage = () => {
         </Panel>
       )}
 
-      {!coursesLoading &&
-        !isError &&
-        visibleCategories.map((category) => (
-          <CoursesSection
-            key={category.option.id}
-            title={category.option.label}
-            courses={category.courses}
-            panelTitle={optionDescription(category.option)}
-          />
-        ))}
+      {!coursesLoading && !isError && (
+        <div
+          className={cn(
+            "flex flex-col gap-2 transition-opacity",
+            isStale && "opacity-60",
+          )}
+        >
+          {deferredCategories.map((category) => (
+            <CoursesSection
+              key={category.option.id}
+              title={category.option.label}
+              courses={category.courses}
+              panelTitle={optionDescription(category.option)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

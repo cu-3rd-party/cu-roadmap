@@ -17,6 +17,9 @@ interface CourseFiltersStore {
   toggleAvailableSemester: (semester: string) => void;
   toggleSemester: (semester: string) => void;
   toggleWorkload: (workload: string) => void;
+  clearAvailableSemesters: () => void;
+  clearSemesters: () => void;
+  clearWorkload: () => void;
   setGroup: (group: FilterGroup) => void;
   setSub: (sub: string) => void;
   setSearch: (search: string) => void;
@@ -62,6 +65,14 @@ export const createCourseFiltersStore = ({
           workload: toggle(state.filters.workload, workload),
         },
       })),
+    clearAvailableSemesters: () =>
+      set((state) => ({
+        filters: { ...state.filters, availableSemesters: [] },
+      })),
+    clearSemesters: () =>
+      set((state) => ({ filters: { ...state.filters, semesters: [] } })),
+    clearWorkload: () =>
+      set((state) => ({ filters: { ...state.filters, workload: [] } })),
     setGroup: (group) =>
       set((state) => ({
         // Switching the top-level group resets the sub-selection to "all".

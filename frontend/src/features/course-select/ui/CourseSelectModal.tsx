@@ -1,6 +1,10 @@
-import { useMemo } from "react";
+import { useCallback, useDeferredValue, useMemo } from "react";
 
-import { CourseCard, CourseCardSkeleton, type Course } from "@/entities/course";
+import {
+  CourseCardSkeleton,
+  CourseSelectCard,
+  type Course,
+} from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
 import { usePlannerStore } from "@/entities/roadmap";
 import { useSpecializationsQuery } from "@/entities/specialization";
@@ -12,7 +16,7 @@ import {
 } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
 import type { SemesterNumber } from "@/shared/constants";
-import { useMediaQuery } from "@/shared/lib";
+import { cn, useMediaQuery } from "@/shared/lib";
 import {
   Dialog,
   DialogContent,
@@ -100,24 +104,28 @@ export const CourseSelectModal = ({
     [semesterCourses, filters, options],
   );
 
-  const handleCourseSelect = (
-    isDisabled: boolean,
-    course: Course,
-    selectedSemester?: SemesterNumber,
-  ) => {
-    if (isDisabled) return;
-    if (selectedSemester !== undefined) {
-      // only reached when the course is in this modal's semester
-      removeCourse(selectedSemester, course.id);
-    } else {
-      addCourse(semester, {
-        id: course.id,
-        title: course.title,
-        category: course.category,
-        type: course.type,
-      });
-    }
-  };
+  // Render the grid at lower priority so changing a filter keeps the chips /
+  // search input responsive while the (memoized) cards re-filter.
+  const deferredCourses = useDeferredValue(visibleCourses);
+  const isStale = deferredCourses !== visibleCourses;
+
+  // Stable across selection
+  const handleCourseSelect = useCallback(
+    (course: Course, selectedSemester?: SemesterNumber) => {
+      if (selectedSemester !== undefined) {
+        // only reached when the course is in this modal's semester
+        removeCourse(selectedSemester, course.id);
+      } else {
+        addCourse(semester, {
+          id: course.id,
+          title: course.title,
+          category: course.category,
+          type: course.type,
+        });
+      }
+    },
+    [addCourse, removeCourse, semester],
+  );
 
   const content = (
     <>
@@ -149,13 +157,13 @@ export const CourseSelectModal = ({
           <p className="px-1 py-4 text-sm text-fg-negative">
             Не удалось загрузить курсы. Попробуйте обновить страницу.
           </p>
-        ) : visibleCourses.length === 0 ? (
+        ) : deferredCourses.length === 0 ? (
           <div className="flex w-full items-center justify-center rounded-2xl bg-background px-4 py-10 text-sm text-fg-secondary">
             Нет курсов, доступных в этом семестре.
           </div>
         ) : (
-          <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
-            {visibleCourses.map((course) => {
+          <div className={cn("grid gap-1 grid-cols-2 lg:grid-cols-5")}>
+            {deferredCourses.map((course) => {
               const selectedSemester = semesterByCourseId.get(
                 course.id,
               ) as SemesterNumber;
@@ -166,18 +174,13 @@ export const CourseSelectModal = ({
               // dimmed + non-clickable: pinned, or placed in another semester
               const isDisabled = isFixed || isOtherSemester;
               return (
-                <CourseCard
+                <CourseSelectCard
                   key={course.id}
-                  title={course.title}
-                  variant="select"
-                  category={course.category}
-                  type={course.type}
+                  course={course}
                   selected={isSelected}
                   selectedSemester={selectedSemester}
                   disabled={isDisabled}
-                  onSelect={() =>
-                    handleCourseSelect(isDisabled, course, selectedSemester)
-                  }
+                  onSelect={handleCourseSelect}
                 />
               );
             })}
@@ -192,6 +195,8 @@ export const CourseSelectModal = ({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
+          swipeToClose
+          dragHandleOnly
           aria-describedby={undefined}
           onOpenAutoFocus={(e) => e.preventDefault()}
           className="flex h-[90vh] flex-col gap-0 overflow-hidden rounded-t-3xl bg-expert-blue-pale p-0"
