@@ -27,9 +27,10 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       DEV_ENABLE_HTTPS && basicSsl(),
       VitePWA({
-        // "prompt": we surface an "update available" toast and apply the update
-        // on user action via updateSW(true). Do NOT set workbox.skipWaiting here
-        // — skip-waiting must stay user-triggered so we never reload mid-action.
+        // "prompt": a new build parks in "waiting"; PwaUpdater applies it
+        // silently and reloads at a safe moment (tab hidden / foreground-idle)
+        // instead of prompting. Do NOT set workbox.skipWaiting here — skip-
+        // waiting must stay app-triggered so we never reload mid-action.
         registerType: "prompt",
         includeAssets: ["favicon.ico"],
         manifest: manifest,
