@@ -99,11 +99,16 @@ export const CourseSelectModal = ({
     [courses, semester],
   );
 
-  const deferredFilters = useDeferredValue(filters);
+  // Defer only the search term — chip filters apply immediately.
+  const deferredSearch = useDeferredValue(filters.search);
+  const listFilters = useMemo(
+    () => ({ ...filters, search: deferredSearch }),
+    [filters, deferredSearch],
+  );
 
   const visibleCourses = useMemo(
-    () => filterAvailableCourses(semesterCourses, deferredFilters, options),
-    [semesterCourses, deferredFilters, options],
+    () => filterAvailableCourses(semesterCourses, listFilters, options),
+    [semesterCourses, listFilters, options],
   );
 
   const deferredCourses = visibleCourses;

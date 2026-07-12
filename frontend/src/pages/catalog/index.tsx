@@ -69,15 +69,20 @@ const CatalogPage = () => {
     [courses, options],
   );
 
-  const deferredFilters = useDeferredValue(filters);
+  // Defer only the search term — chip filters apply immediately.
+  const deferredSearch = useDeferredValue(filters.search);
+  const listFilters = useMemo(
+    () => ({ ...filters, search: deferredSearch }),
+    [filters, deferredSearch],
+  );
 
   const visibleCategories = useMemo(
-    () => filterCatalog(categories, deferredFilters),
-    [categories, deferredFilters],
+    () => filterCatalog(categories, listFilters),
+    [categories, listFilters],
   );
 
   const deferredCategories = visibleCategories;
-  const isStale = filters !== deferredFilters;
+  const isStale = filters.search !== deferredSearch;
 
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
