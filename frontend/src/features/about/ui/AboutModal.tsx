@@ -24,7 +24,7 @@ export const AboutModal = ({ open, onOpenChange }: AboutModalProps) => {
       поэтому перепроверяйте важную информацию.
       <br />
       <br />
-      Если вы нашли ошибку и хотите о ней сообщить нам,{" "}
+      Если вы нашли ошибку и хотите сообщить о ней нам,{" "}
       <a
         href="https://forms.gle/jMbeQvE64YB8KP1c9"
         target="_blank"
