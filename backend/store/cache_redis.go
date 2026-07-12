@@ -26,9 +26,16 @@ func (s *RedisCacheStore) DeleteAuthToken(token uuid.UUID) error {
 }
 
 func (s *RedisCacheStore) Ready() bool {
+	if s == nil || s.client == nil {
+		return false
+	}
+
 	status := s.client.Ping(context.Background())
-	slog.Error("failed to ping redis with", "error", status.Err().Error())
-	return status.Err() == nil
+	if err := status.Err(); err != nil {
+		slog.Error("failed to ping redis", "error", err)
+		return false
+	}
+	return true
 }
 
 func NewRedisCacheStore(redisURL string) *RedisCacheStore {
