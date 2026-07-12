@@ -7,9 +7,7 @@ import { Button } from "@/shared/ui/kit";
 
 // Poll for a fresh build every hour so long-lived tabs notice new deploys
 // without needing a manual reload.
-// const UPDATE_INTERVAL_MS = 60 * 60 * 1000;
-// ATTENTION: test
-const UPDATE_INTERVAL_MS = 60;
+const UPDATE_INTERVAL_MS = 60 * 60 * 1000;
 
 // The "update available" toast. Rendered via toast.custom so we control the
 // whole surface — plain white card, bold title, default-color body, no icon —
