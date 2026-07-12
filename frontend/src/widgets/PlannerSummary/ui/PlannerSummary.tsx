@@ -49,7 +49,7 @@ export const PlannerSummary = ({
 
   return (
     <Panel className="flex flex-col gap-4 px-2 sm:px-4 lg:px-6">
-      <div className="mb-4 flex flex-col gap-3 px-1">
+      <div className="flex flex-col gap-3 px-1">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Chip variant="blue" size={isMobile ? "xs" : "sm"}>

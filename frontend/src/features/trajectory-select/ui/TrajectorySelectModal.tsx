@@ -64,8 +64,8 @@ export const TrajectorySelectModal = ({
   const content = (
     <>
       <p className="text-xs sm:text-sm font-bold">
-        Пока что не все детали отражаются в подобранной траектории, алгоритм
-        дорабатывается.
+        Пока что не все детали из реальной траектории могут быть отражены,
+        алгоритм дорабатывается.
       </p>
       <Tabs value={tab} onValueChange={onTabChange} className="gap-4">
         <FieldLabel

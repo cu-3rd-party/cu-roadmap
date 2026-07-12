@@ -87,7 +87,7 @@ const CatalogPage = () => {
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
       <Panel className="flex flex-col gap-4 px-2 sm:px-4 lg:px-6">
-        <div className="mb-4 flex flex-col gap-3 px-1">
+        <div className="flex flex-col gap-3 px-1">
           <div className="flex w-full gap-4 h-10 items-center">
             <Chip variant="blue" size={isMobile ? "xs" : "sm"}>
               <Compass />
@@ -96,7 +96,7 @@ const CatalogPage = () => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <div className="text-sm text-fg-secondary flex flex-col gap-2">
+            <div className="text-sm text-fg-secondary flex flex-col gap-1">
               <p>Исследуй все доступные тебе курсы!</p>
               <p>
                 На карточки можно кликать, чтобы получить дополнительную

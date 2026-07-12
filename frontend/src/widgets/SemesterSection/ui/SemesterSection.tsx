@@ -154,6 +154,12 @@ export const SemesterSection = ({
                 {isMobile ? "" : "в неделю"}
               </Badge>
             )}
+            {isCompleted && (
+              <Badge variant="green" size="xxs" aria-label="Семестр пройден">
+                <Check className="size-3" strokeWidth={3} />
+                Пройден
+              </Badge>
+            )}
             {identifying && (
               <Loader2
                 className="size-4 animate-spin text-fg-secondary"
@@ -173,11 +179,6 @@ export const SemesterSection = ({
             >
               {isMobile ? undefined : "Сбросить курсы"}
             </Button>
-          )}
-          {isCompleted && (
-            <span className="ml-auto flex size-6 items-center justify-center rounded-full bg-positive text-fg-primary-on_dark">
-              <Check className="size-4" strokeWidth={3} />
-            </span>
           )}
         </div>
       </div>
