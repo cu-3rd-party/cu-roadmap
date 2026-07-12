@@ -19,7 +19,7 @@ const showUpdateToast = (onApply: () => void) =>
         <div className="flex flex-col gap-1">
           <p className="font-bold text-fg-primary">Доступна новая версия</p>
           <p className="text-sm text-fg-primary">
-            Вышло новое обновление, пожалуйста, обновите страницу.
+            Вышло новое обновление! Нажмите на кнопку «Обновить».
           </p>
         </div>
         <Button

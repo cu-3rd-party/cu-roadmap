@@ -99,15 +99,14 @@ export const CourseSelectModal = ({
     [courses, semester],
   );
 
+  const deferredFilters = useDeferredValue(filters);
+
   const visibleCourses = useMemo(
-    () => filterAvailableCourses(semesterCourses, filters, options),
-    [semesterCourses, filters, options],
+    () => filterAvailableCourses(semesterCourses, deferredFilters, options),
+    [semesterCourses, deferredFilters, options],
   );
 
-  // Render the grid at lower priority so changing a filter keeps the chips /
-  // search input responsive while the (memoized) cards re-filter.
-  const deferredCourses = useDeferredValue(visibleCourses);
-  const isStale = deferredCourses !== visibleCourses;
+  const deferredCourses = visibleCourses;
 
   // Stable across selection
   const handleCourseSelect = useCallback(

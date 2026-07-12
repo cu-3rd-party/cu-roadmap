@@ -69,16 +69,15 @@ const CatalogPage = () => {
     [courses, options],
   );
 
+  const deferredFilters = useDeferredValue(filters);
+
   const visibleCategories = useMemo(
-    () => filterCatalog(categories, filters),
-    [categories, filters],
+    () => filterCatalog(categories, deferredFilters),
+    [categories, deferredFilters],
   );
 
-  // Render the (potentially large) course grid at a lower priority so switching
-  // the type filter — e.g. to "все" — updates the chips immediately instead of
-  // blocking the click. The grid dims while it catches up.
-  const deferredCategories = useDeferredValue(visibleCategories);
-  const isStale = deferredCategories !== visibleCategories;
+  const deferredCategories = visibleCategories;
+  const isStale = filters !== deferredFilters;
 
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
