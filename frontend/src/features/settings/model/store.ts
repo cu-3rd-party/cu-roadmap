@@ -8,12 +8,14 @@ interface SettingsState {
   hasSeenGreeting: boolean;
   admissionYear: AdmissionYear | null;
   hideCompletedSemesters: boolean;
+  hideSpecializationCards: boolean;
   majorId: UUID | null;
   majorType: MajorType | null;
   completeGreeting: (admissionYear: AdmissionYear) => void;
   setAdmissionYear: (admissionYear: AdmissionYear) => void;
   setMajor: (majorId: UUID | null, majorType: MajorType | null) => void;
   setHideCompletedSemesters: (hide: boolean) => void;
+  setHideSpecializationCards: (hide: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -22,6 +24,7 @@ export const useSettingsStore = create<SettingsState>()(
       hasSeenGreeting: false,
       admissionYear: null,
       hideCompletedSemesters: false,
+      hideSpecializationCards: false,
       majorId: null,
       majorType: null,
       completeGreeting: (admissionYear) =>
@@ -31,6 +34,8 @@ export const useSettingsStore = create<SettingsState>()(
       setMajor: (majorId, majorType) => set({ majorId, majorType }),
       setHideCompletedSemesters: (hide) =>
         set({ hideCompletedSemesters: hide }),
+      setHideSpecializationCards: (hide) =>
+        set({ hideSpecializationCards: hide }),
     }),
     {
       name: "settings",
@@ -41,6 +46,7 @@ export const useSettingsStore = create<SettingsState>()(
         majorId: state.majorId,
         majorType: state.majorType,
         hideCompletedSemesters: state.hideCompletedSemesters,
+        hideSpecializationCards: state.hideSpecializationCards,
       }),
     },
   ),

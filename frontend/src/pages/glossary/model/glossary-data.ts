@@ -1,6 +1,8 @@
+import type { GlossaryId } from "@/shared/model";
+
 export interface GlossaryEntry {
   // used as the URL hash, e.g. "minor" -> /glossary#minor
-  id: string;
+  id: GlossaryId;
   // shown as the panel header
   term: string;
   /*

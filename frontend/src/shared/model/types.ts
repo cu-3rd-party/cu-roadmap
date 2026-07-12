@@ -67,3 +67,23 @@ export const OTHER_CATEGORIES: CourseCategory[] = [
   "stem",
   "soft",
 ];
+
+// Ids of the glossary entries (GLOSSARY_ENTRIES). Used as the URL hash the
+// glossary page opens from (e.g. /glossary#core) and to type GlossaryLink.
+export const GLOSSARY_IDS = [
+  "fundamentals",
+  "major",
+  "core",
+  "specialization",
+  "choice",
+  "soft",
+  "stem",
+  "minor",
+  "electives",
+  "prerequisites",
+  "corequisites",
+  "postrequisites",
+  "fast-track",
+] as const;
+
+export type GlossaryId = (typeof GLOSSARY_IDS)[number];

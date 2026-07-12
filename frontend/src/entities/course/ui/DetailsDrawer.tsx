@@ -4,6 +4,7 @@ import { useMediaQuery } from "@/shared/lib";
 import type { UUID } from "@/shared/model";
 import {
   Badge,
+  GlossaryLink,
   RevealImage,
   Sheet,
   SheetContent,
@@ -18,6 +19,22 @@ import type { CourseDetails } from "../model";
 import { DetailField } from "./DetailField";
 import { RequisiteList } from "./RequisiteList";
 import { SyllabusCard } from "./SyllabusCard";
+
+// Each course-type name links to its glossary entry (the three majors —
+// Business / AI / SWE — all point at the shared "major" article).
+const CATEGORY_HINT = (
+  <p>
+    <GlossaryLink id="fundamentals">Fundamentals</GlossaryLink>,{" "}
+    <GlossaryLink id="major">Business</GlossaryLink>,{" "}
+    <GlossaryLink id="major">AI</GlossaryLink>,{" "}
+    <GlossaryLink id="major">SWE</GlossaryLink>,{" "}
+    <GlossaryLink id="stem">STEM</GlossaryLink> или{" "}
+    <GlossaryLink id="soft">Soft</GlossaryLink> курс.
+  </p>
+);
+
+const REQUISITE_HINT =
+  "Нажми на курс в данной категории, чтобы посмотреть его характеристику!";
 
 interface DetailsDrawerProps {
   course: CourseDetails | undefined;
@@ -81,11 +98,14 @@ export const DetailsDrawer = ({
               </DetailField>
             )}
 
-            <DetailField label="Год поступления">
+            <DetailField
+              label="Год поступления"
+              hint="В каком году студент должен поступить в университет, чтобы пройти этот курс"
+            >
               <p className="text-fg-primary">{course.admissionYears}</p>
             </DetailField>
 
-            <DetailField label="Тип курса">
+            <DetailField label="Тип курса" hint={CATEGORY_HINT}>
               <Badge variant="orange" size="xs">
                 {course.category}
               </Badge>
@@ -168,7 +188,7 @@ export const DetailsDrawer = ({
               </DetailField>
             )}
 
-            <DetailField label="Пререквизиты">
+            <DetailField label="Пререквизиты" hint={REQUISITE_HINT}>
               <RequisiteList
                 type="pre"
                 groups={course.prerequisites}
@@ -177,7 +197,7 @@ export const DetailsDrawer = ({
               />
             </DetailField>
 
-            <DetailField label="Постреквизиты">
+            <DetailField label="Постреквизиты" hint={REQUISITE_HINT}>
               <RequisiteList
                 type="post"
                 items={course.postrequisites}
@@ -186,7 +206,7 @@ export const DetailsDrawer = ({
               />
             </DetailField>
 
-            <DetailField label="Кореквизиты">
+            <DetailField label="Кореквизиты" hint={REQUISITE_HINT}>
               <RequisiteList
                 type="co"
                 items={course.corequisites}

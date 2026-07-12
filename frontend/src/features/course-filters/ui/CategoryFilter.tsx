@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
 
 import { useMediaQuery } from "@/shared/lib";
-import { Chip, HintButton, ScrollRail } from "@/shared/ui";
+import { Chip, GlossaryLink, HintButton, ScrollRail } from "@/shared/ui";
 
 import { FILTER_GROUPS, type FilterGroup } from "../model";
 
@@ -18,23 +17,6 @@ interface CategoryFilterProps {
   // The "Тип курса" label + hint. Hidden in the course-select modal.
   showLabel?: boolean;
 }
-
-// Course-type mentions in the hint link to the matching glossary entry, which
-// the glossary page opens from the URL hash (e.g. /glossary#core).
-const GlossaryLink = ({
-  id,
-  children,
-}: {
-  id: string;
-  children: ReactNode;
-}) => (
-  <Link
-    to={`/glossary#${id}`}
-    className="underline underline-offset-2 hover:opacity-80"
-  >
-    {children}
-  </Link>
-);
 
 const CategoryHint = (
   <div className="flex flex-col gap-2">

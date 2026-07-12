@@ -24,9 +24,9 @@ export const AboutModal = ({ open, onOpenChange }: AboutModalProps) => {
       поэтому перепроверяйте важную информацию.
       <br />
       <br />
-      Если хочется поделиться отзывом/найденными ошибками/другими пожеланиями,{" "}
+      Если вы нашли ошибку (любого вида) и хотите о ней сообщить,{" "}
       <a
-        href="https://my.centraluniversity.ru"
+        href="https://forms.gle/jMbeQvE64YB8KP1c9"
         target="_blank"
         rel="noopener noreferrer"
         className="text-fg-sure-blue underline"

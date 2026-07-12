@@ -34,7 +34,9 @@ const showUpdateToast = (onApply: () => void) =>
         </Button>
       </div>
     ),
-    { duration: Infinity },
+    // Stable id: if a toast is already showing, repeated onNeedRefresh calls
+    // (e.g. from the hourly update poll) reuse it instead of stacking new ones.
+    { duration: Infinity, id: "pwa-update" },
   );
 
 /*

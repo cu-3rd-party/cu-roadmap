@@ -8,6 +8,7 @@ beforeEach(() => {
     hasSeenGreeting: false,
     admissionYear: null,
     hideCompletedSemesters: false,
+    hideSpecializationCards: false,
     majorId: null,
     majorType: null,
   });
@@ -40,10 +41,17 @@ describe("useSettingsStore", () => {
     expect(useSettingsStore.getState().hideCompletedSemesters).toBe(true);
   });
 
+  it("setHideSpecializationCards toggles the flag", () => {
+    expect(useSettingsStore.getState().hideSpecializationCards).toBe(false);
+    useSettingsStore.getState().setHideSpecializationCards(true);
+    expect(useSettingsStore.getState().hideSpecializationCards).toBe(true);
+  });
+
   it("persists the data fields (not the actions)", () => {
     useSettingsStore.getState().completeGreeting(2026);
     useSettingsStore.getState().setMajor("m2", "ai");
     useSettingsStore.getState().setHideCompletedSemesters(true);
+    useSettingsStore.getState().setHideSpecializationCards(true);
 
     const persisted = JSON.parse(localStorage.getItem("settings") as string);
     expect(persisted.state).toEqual({
@@ -52,6 +60,7 @@ describe("useSettingsStore", () => {
       majorId: "m2",
       majorType: "ai",
       hideCompletedSemesters: true,
+      hideSpecializationCards: true,
     });
   });
 });

@@ -29,8 +29,13 @@ export const PlannerSummary = ({
 }: PlannerSummaryProps) => {
   const { reset } = usePlannerStore();
   const isMobile = useMediaQuery("md");
-  const { admissionYear, hideCompletedSemesters, setHideCompletedSemesters } =
-    useSettingsStore();
+  const {
+    admissionYear,
+    hideCompletedSemesters,
+    setHideCompletedSemesters,
+    hideSpecializationCards,
+    setHideSpecializationCards,
+  } = useSettingsStore();
   const [trajectoryOpen, setTrajectoryOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
 
@@ -112,31 +117,49 @@ export const PlannerSummary = ({
             Скрыть пройденные семестры
           </Label>
         </div>
-      </div>
 
-      <div className="overflow-hidden rounded-xl border border-border">
-        <div
-          className="grid grid-cols-1 sm:grid-cols-[repeat(var(--spec-cols-md),minmax(0,1fr))] lg:grid-cols-[repeat(var(--spec-cols),minmax(0,1fr))] -mr-px -mb-px [&>*]:border-b [&>*]:border-r [&>*]:border-border"
-          style={
-            {
-              "--spec-cols": loading ? 5 : Math.max(specializations.length, 1),
-              "--spec-cols-md": loading
-                ? 3
-                : Math.max(Math.ceil(specializations.length / 2), 1),
-            } as CSSProperties
-          }
-        >
-          {loading
-            ? Array.from({ length: 5 }).map((_, i) => (
-                <SpecializationProgressCardSkeleton
-                  key={`spec-skeleton-${i}`}
-                />
-              ))
-            : specializations.map((spec) => (
-                <SpecializationProgressCard key={spec.title} {...spec} />
-              ))}
+        <div className="flex items-center gap-2">
+          <Switch
+            id="hide-specialization-cards"
+            checked={hideSpecializationCards}
+            onCheckedChange={setHideSpecializationCards}
+          />
+          <Label
+            htmlFor="hide-specialization-cards"
+            className="cursor-pointer text-sm font-normal text-fg-secondary"
+          >
+            Скрыть карточки прогресса специализаций
+          </Label>
         </div>
       </div>
+
+      {!hideSpecializationCards && (
+        <div className="overflow-hidden rounded-xl border border-border">
+          <div
+            className="grid grid-cols-1 sm:grid-cols-[repeat(var(--spec-cols-md),minmax(0,1fr))] lg:grid-cols-[repeat(var(--spec-cols),minmax(0,1fr))] -mr-px -mb-px [&>*]:border-b [&>*]:border-r [&>*]:border-border"
+            style={
+              {
+                "--spec-cols": loading
+                  ? 5
+                  : Math.max(specializations.length, 1),
+                "--spec-cols-md": loading
+                  ? 3
+                  : Math.max(Math.ceil(specializations.length / 2), 1),
+              } as CSSProperties
+            }
+          >
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <SpecializationProgressCardSkeleton
+                    key={`spec-skeleton-${i}`}
+                  />
+                ))
+              : specializations.map((spec) => (
+                  <SpecializationProgressCard key={spec.title} {...spec} />
+                ))}
+          </div>
+        </div>
+      )}
 
       <TrajectorySelectModal
         open={trajectoryOpen}
