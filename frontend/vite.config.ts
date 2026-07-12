@@ -27,17 +27,21 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       DEV_ENABLE_HTTPS && basicSsl(),
       VitePWA({
-        // "prompt": a new build parks in "waiting"; PwaUpdater applies it
-        // silently and reloads at a safe moment (tab hidden / foreground-idle)
-        // instead of prompting. Do NOT set workbox.skipWaiting here — skip-
-        // waiting must stay app-triggered so we never reload mid-action.
-        registerType: "prompt",
+        // "autoUpdate": a new build activates and reloads automatically so users
+        // always land on the latest version. skipWaiting + clientsClaim (below)
+        // are what let the new SW take over immediately instead of parking in
+        // "waiting". PwaUpdater still polls hourly so long-lived tabs notice new
+        // deploys.
+        registerType: "autoUpdate",
         includeAssets: ["favicon.ico"],
         manifest: manifest,
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
           navigateFallbackDenylist: [/^\/admin(?:\/|$)/, /^\/grafana(?:\/|$)/],
           clientsClaim: true,
+          // Activate a new SW immediately (paired with registerType autoUpdate)
+          // so updates apply without waiting for every tab to close.
+          skipWaiting: true,
           cleanupOutdatedCaches: true,
           runtimeCaching: [
             {
