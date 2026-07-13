@@ -1,4 +1,11 @@
-import { useCallback, useDeferredValue, useMemo } from "react";
+import { Loader2 } from "lucide-react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   CourseCardSkeleton,
@@ -113,6 +120,24 @@ export const CourseSelectModal = ({
 
   const deferredCourses = visibleCourses;
 
+  // ATTENTION
+  // On mobile the Sheet's 0.5s slide stutters when all cards mount in the same
+  // commit, so defer the (heavy) grid until the entrance settles. Desktop's
+  // Dialog opens fine, so it renders the cards immediately.
+  const [listReady, setListReady] = useState(false);
+  useEffect(() => {
+    if (!isMobile) {
+      setListReady(true);
+      return;
+    }
+    if (!open) {
+      setListReady(false);
+      return;
+    }
+    const t = setTimeout(() => setListReady(true), 520); // slightly > Sheet 500ms
+    return () => clearTimeout(t);
+  }, [open, isMobile]);
+
   // Stable across selection
   const handleCourseSelect = useCallback(
     (course: Course, selectedSemester?: SemesterNumber) => {
@@ -151,12 +176,21 @@ export const CourseSelectModal = ({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto bg-expert-blue-pale pl-4 pr-3 pb-3 scrollbar-gutter-stable">
-        {isLoading ? (
-          <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
-            {Array.from({ length: 10 }).map((_, index) => (
-              <CourseCardSkeleton key={index} />
-            ))}
-          </div>
+        {isLoading || !listReady ? (
+          isMobile ? (
+            <div className="flex w-full items-center justify-center py-16">
+              <Loader2
+                className="size-8 animate-spin text-fg-secondary"
+                aria-label="Загрузка…"
+              />
+            </div>
+          ) : (
+            <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
+              {Array.from({ length: 10 }).map((_, index) => (
+                <CourseCardSkeleton key={index} />
+              ))}
+            </div>
+          )
         ) : isError ? (
           <p className="px-1 py-4 text-sm text-fg-negative">
             Не удалось загрузить курсы. Попробуйте обновить страницу.

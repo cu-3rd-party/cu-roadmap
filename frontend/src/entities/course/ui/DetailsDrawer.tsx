@@ -23,14 +23,7 @@ import { SyllabusCard } from "./SyllabusCard";
 // Each course-type name links to its glossary entry (the three majors —
 // Business / AI / SWE — all point at the shared "major" article).
 const CATEGORY_HINT = (
-  <p>
-    <GlossaryLink id="fundamentals">Fundamentals</GlossaryLink>,{" "}
-    <GlossaryLink id="major">Business</GlossaryLink>,{" "}
-    <GlossaryLink id="major">AI</GlossaryLink>,{" "}
-    <GlossaryLink id="major">SWE</GlossaryLink>,{" "}
-    <GlossaryLink id="stem">STEM</GlossaryLink> или{" "}
-    <GlossaryLink id="soft">Soft</GlossaryLink> курс.
-  </p>
+  <p>Fundamentals, Business, AI, SWE, STEM или Soft курс.</p>
 );
 
 const REQUISITE_HINT =
