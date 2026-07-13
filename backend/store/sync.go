@@ -82,6 +82,12 @@ func SetSheetsConfig(spreadsheetID, credentialsJSON string, sheetNames []string)
 	}
 }
 
+func IsTestSheetTitle(title string) bool {
+	lower := strings.ToLower(title)
+	noSpaces := strings.ReplaceAll(lower, " ", "")
+	return strings.Contains(noSpaces, "(test)") || strings.Contains(noSpaces, "(тест)")
+}
+
 func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 	if m, ok := SheetToMajor[title]; ok {
 		return m, true
@@ -184,6 +190,10 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 	var allRows []rowEntry
 
 	for sheetName, rows := range sheetsData {
+		if IsTestSheetTitle(sheetName) {
+			slog.Info("skipping test sheet in SyncFromSheetData", "sheet", sheetName)
+			continue
+		}
 		mapping, ok := sheetMapping[sheetName]
 		if !ok {
 			slog.Warn("unknown sheet, skipping", "sheet", sheetName)
@@ -519,6 +529,10 @@ func syncWithSheets(s interfaces.StoreBase) error {
 	sheetNames := make([]string, 0, len(spreadsheet.Sheets))
 	for _, sheet := range spreadsheet.Sheets {
 		title := sheet.Properties.Title
+		if IsTestSheetTitle(title) {
+			slog.Info("skipping test sheet discovery", "sheet", title)
+			continue
+		}
 		sheetNames = append(sheetNames, title)
 		if mapping, ok := guessSheetMapping(title); ok {
 			sheetMapping[title] = mapping
@@ -554,6 +568,9 @@ func syncWithSheets(s interfaces.StoreBase) error {
 		}
 		var filteredNames []string
 		for _, sn := range sheetNames {
+			if IsTestSheetTitle(sn) {
+				continue
+			}
 			snNorm := norm(sn)
 			for _, w := range wanted {
 				if strings.Contains(snNorm, w) {

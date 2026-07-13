@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/cu-3rd-party/cu-roadmap/backend/store"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -48,7 +49,7 @@ func (s *Settings) GoogleSheetsSyncSheetNames() []string {
 	out := make([]string, 0, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
-		if p != "" {
+		if p != "" && !store.IsTestSheetTitle(p) {
 			out = append(out, p)
 		}
 	}
