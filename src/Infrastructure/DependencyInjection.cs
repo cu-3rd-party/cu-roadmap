@@ -41,6 +41,9 @@ public static class DependencyInjection
             })
             .AddIdentityCookies();
 
+        builder.Services.AddAuthentication()
+            .AddBearerToken(IdentityConstants.BearerScheme);
+
         builder.Services.AddAuthorizationBuilder();
 
         builder.Services
