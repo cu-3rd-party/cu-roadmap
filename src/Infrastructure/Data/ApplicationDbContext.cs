@@ -13,9 +13,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
 
     public DbSet<TodoList> TodoLists => Set<TodoList>();
     public DbSet<TodoItem> TodoItems => Set<TodoItem>();
+    public DbSet<ShortenedUrl> ShortenedUrls => Set<ShortenedUrl>();
 
     IQueryable<TodoList> IApplicationDbContext.TodoLists => TodoLists;
     IQueryable<TodoItem> IApplicationDbContext.TodoItems => TodoItems;
+    IQueryable<ShortenedUrl> IApplicationDbContext.ShortenedUrls => ShortenedUrls;
 
     void IApplicationDbContext.Add(object entity) => Add(entity);
     void IApplicationDbContext.Remove(object entity) => Remove(entity);

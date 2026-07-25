@@ -6,6 +6,7 @@ public interface IApplicationDbContext
 {
     IQueryable<TodoList> TodoLists { get; }
     IQueryable<TodoItem> TodoItems { get; }
+    IQueryable<ShortenedUrl> ShortenedUrls { get; }
 
     void Add(object entity);
     void Remove(object entity);

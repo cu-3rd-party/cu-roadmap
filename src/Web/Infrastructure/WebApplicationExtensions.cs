@@ -18,6 +18,11 @@ public static class WebApplicationExtensions
         var weather = app.MapGroup("/api/WeatherForecasts").WithTags("WeatherForecasts");
         WeatherForecasts.Map(weather);
 
+        var shortenedUrls = app.MapGroup("/api/ShortenedUrls").WithTags("ShortenedUrls");
+        ShortenedUrls.Map(shortenedUrls);
+
+        app.MapGet("/{code}", ShortenedUrls.RedirectUrl);
+
         return app;
     }
 }
