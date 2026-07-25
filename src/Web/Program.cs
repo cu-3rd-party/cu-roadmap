@@ -31,6 +31,9 @@ app.MapScalarApiReference();
 
 app.UseExceptionHandler(options => { });
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapEndpoints();
 
 app.MapFallbackToFile("index.html");

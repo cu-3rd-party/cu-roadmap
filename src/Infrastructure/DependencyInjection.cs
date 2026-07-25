@@ -36,8 +36,18 @@ public static class DependencyInjection
 
         builder.Services.AddAuthentication(options =>
             {
-                options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultScheme = "Identity.ApplicationOrBearer";
                 options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            })
+            .AddPolicyScheme("Identity.ApplicationOrBearer", null, options =>
+            {
+                options.ForwardDefaultSelector = ctx =>
+                {
+                    var auth = ctx.Request.Headers.Authorization.FirstOrDefault();
+                    return !string.IsNullOrEmpty(auth) && auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                        ? IdentityConstants.BearerScheme
+                        : IdentityConstants.ApplicationScheme;
+                };
             })
             .AddIdentityCookies();
 
