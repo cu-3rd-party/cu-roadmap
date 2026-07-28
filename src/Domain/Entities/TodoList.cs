@@ -1,4 +1,5 @@
 ﻿using CuRoadmap.Domain.Common;
+using CuRoadmap.Domain.Records;
 
 namespace CuRoadmap.Domain.Entities;
 

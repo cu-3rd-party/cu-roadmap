@@ -1,6 +1,6 @@
 ﻿using CuRoadmap.Application.TodoLists;
 using CuRoadmap.Domain.Entities;
-using CuRoadmap.Domain.ValueObjects;
+using CuRoadmap.Domain.Records;
 
 namespace CuRoadmap.Application.FunctionalTests.TodoLists.Queries;
 

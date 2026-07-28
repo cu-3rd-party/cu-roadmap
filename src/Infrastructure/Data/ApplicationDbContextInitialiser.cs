@@ -1,6 +1,6 @@
 ﻿using CuRoadmap.Domain.Constants;
 using CuRoadmap.Domain.Entities;
-using CuRoadmap.Domain.ValueObjects;
+using CuRoadmap.Domain.Records;
 using CuRoadmap.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;

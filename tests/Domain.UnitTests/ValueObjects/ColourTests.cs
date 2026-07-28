@@ -1,5 +1,5 @@
 using CuRoadmap.Domain.Exceptions;
-using CuRoadmap.Domain.ValueObjects;
+using CuRoadmap.Domain.Records;
 using NUnit.Framework;
 using Shouldly;
 

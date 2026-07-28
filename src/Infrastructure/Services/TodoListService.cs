@@ -4,7 +4,7 @@ using CuRoadmap.Application.TodoLists;
 using CuRoadmap.Application.TodoLists.Queries.GetTodos;
 using CuRoadmap.Domain.Entities;
 using CuRoadmap.Domain.Enums;
-using CuRoadmap.Domain.ValueObjects;
+using CuRoadmap.Domain.Records;
 using Microsoft.EntityFrameworkCore;
 
 namespace CuRoadmap.Infrastructure.Services;

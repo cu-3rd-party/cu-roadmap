@@ -1,4 +1,4 @@
-namespace CuRoadmap.Domain.ValueObjects;
+namespace CuRoadmap.Domain.Records;
 
 public sealed record Colour
 {
