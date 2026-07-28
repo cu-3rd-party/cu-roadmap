@@ -1,4 +1,5 @@
 using CuRoadmap.Web.Endpoints;
+using CuRoadmap.Web.Infrastructure;
 
 namespace CuRoadmap.Web.Infrastructure;
 
@@ -9,19 +10,26 @@ public static class WebApplicationExtensions
         var users = app.MapGroup("/api/Users").WithTags("Users");
         Users.Map(users);
 
-        var todoLists = app.MapGroup("/api/TodoLists").WithTags("TodoLists");
-        TodoLists.Map(todoLists);
+        // CU Roadmap endpoints
+        var health = app.MapGroup("/api/health").WithTags("Health");
+        Health.Map(health);
 
-        var todoItems = app.MapGroup("/api/TodoItems").WithTags("TodoItems");
-        TodoItems.Map(todoItems);
+        var v1 = app.MapGroup("/api/v1");
 
-        var weather = app.MapGroup("/api/WeatherForecasts").WithTags("WeatherForecasts");
-        WeatherForecasts.Map(weather);
+        var auth = v1.MapGroup("/auth").WithTags("Auth");
+        Auth.Map(auth);
 
-        var shortenedUrls = app.MapGroup("/api/ShortenedUrls").WithTags("ShortenedUrls");
-        ShortenedUrls.Map(shortenedUrls);
+        var courses = v1.MapGroup("/courses").WithTags("Courses");
+        Courses.Map(courses);
 
-        app.MapGet("/{code}", ShortenedUrls.RedirectUrl);
+        var majors = v1.MapGroup("/majors").WithTags("Majors");
+        Majors.Map(majors);
+
+        var graph = v1.MapGroup("/graph").WithTags("Graph");
+        Graph.Map(graph);
+
+        var planner = v1.MapGroup("/planner").WithTags("Planner");
+        Planner.Map(planner);
 
         return app;
     }

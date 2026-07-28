@@ -1,6 +1,4 @@
 ﻿using CuRoadmap.Application.Common.Interfaces;
-using CuRoadmap.Application.TodoItems;
-using CuRoadmap.Application.TodoLists;
 using CuRoadmap.Infrastructure.Data;
 using CuRoadmap.Infrastructure.Data.Interceptors;
 using CuRoadmap.Infrastructure.Identity;
@@ -21,7 +19,6 @@ public static class DependencyInjection
         Guard.Against.Null(connectionString, message: $"Connection string '{Services.Database}' not found.");
 
         builder.Services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
-        builder.Services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
 
         builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
@@ -47,7 +44,11 @@ public static class DependencyInjection
             .AddDefaultTokenProviders()
             .AddApiEndpoints();
 
-        builder.Services.AddScoped<ITodoItemService, TodoItemService>();
-        builder.Services.AddScoped<ITodoListService, TodoListService>();
+        // Core services
+        builder.Services.AddSingleton<ICacheService, CacheService>();
+        builder.Services.AddMemoryCache();
+
+        // Background services
+        builder.Services.AddHostedService<GoogleSheetsSyncService>();
     }
 }

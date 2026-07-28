@@ -31,6 +31,11 @@ app.MapScalarApiReference();
 
 app.UseExceptionHandler(options => { });
 
+// Custom middleware
+app.UseMiddleware<MetricsMiddleware>();
+app.UseMiddleware<RateLimitingMiddleware>();
+app.UseMiddleware<AuthMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -11,15 +11,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplica
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-    public DbSet<TodoList> TodoLists => Set<TodoList>();
-    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
-    public DbSet<ShortenedUrl> ShortenedUrls => Set<ShortenedUrl>();
-    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<Course> Courses => Set<Course>();
+    public DbSet<CourseDependency> CourseDependencies => Set<CourseDependency>();
+    public DbSet<Major> Majors => Set<Major>();
+    public DbSet<Specialization> Specializations => Set<Specialization>();
+    public DbSet<Box> Boxes => Set<Box>();
+    public DbSet<BoxEdge> BoxEdges => Set<BoxEdge>();
+    public DbSet<Student> Students => Set<Student>();
 
-    IQueryable<TodoList> IApplicationDbContext.TodoLists => TodoLists;
-    IQueryable<TodoItem> IApplicationDbContext.TodoItems => TodoItems;
-    IQueryable<ShortenedUrl> IApplicationDbContext.ShortenedUrls => ShortenedUrls;
-    IQueryable<OutboxMessage> IApplicationDbContext.OutboxMessages => OutboxMessages;
+    IQueryable<Course> IApplicationDbContext.Courses => Courses;
+    IQueryable<CourseDependency> IApplicationDbContext.CourseDependencies => CourseDependencies;
+    IQueryable<Major> IApplicationDbContext.Majors => Majors;
+    IQueryable<Specialization> IApplicationDbContext.Specializations => Specializations;
+    IQueryable<Box> IApplicationDbContext.Boxes => Boxes;
+    IQueryable<BoxEdge> IApplicationDbContext.BoxEdges => BoxEdges;
+    IQueryable<Student> IApplicationDbContext.Students => Students;
 
     void IApplicationDbContext.Add(object entity) => Add(entity);
     void IApplicationDbContext.Remove(object entity) => Remove(entity);
