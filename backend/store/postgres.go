@@ -73,6 +73,7 @@ func (s *PostgresStore) Init(password string) error {
 		&models.BoxEdge{},
 		&models.Major{},
 		&models.Specialization{},
+		&models.CourseRestriction{},
 		&models.CourseDependency{},
 		&models.Student{},
 	)
@@ -676,4 +677,89 @@ func (s *PostgresStore) CreateSpecialization(spec interfaces.SpecializationData)
 
 func (s *PostgresStore) DeleteSpecializations(majorID uuid.UUID) error {
 	return s.db.Where("major_id = ?", majorID).Delete(&models.Specialization{}).Error
+}
+
+func (s *PostgresStore) UpdateSpecialization(spec interfaces.SpecializationData) (interfaces.SpecializationData, error) {
+	sModel := helpers.ToSpecializationModel(spec)
+	if err := s.db.Save(&sModel).Error; err != nil {
+		return spec, err
+	}
+	return spec, nil
+}
+
+func (s *PostgresStore) CreateCourseRestriction(restriction interfaces.CourseRestrictionData) (interfaces.CourseRestrictionData, error) {
+	rModel := models.CourseRestriction{
+		ID:                restriction.ID,
+		SpecializationID:  restriction.SpecializationID,
+		Semester:          restriction.Semester,
+		Category:          restriction.Category,
+		MinCourses:        restriction.MinCourses,
+		MaxCourses:        restriction.MaxCourses,
+		InternalDescription: restriction.InternalDescription,
+	}
+	if rModel.ID == uuid.Nil {
+		rModel.ID = uuid.New()
+	}
+	if err := s.db.Create(&rModel).Error; err != nil {
+		return restriction, err
+	}
+	restriction.ID = rModel.ID
+	return restriction, nil
+}
+
+func (s *PostgresStore) UpdateCourseRestriction(restriction interfaces.CourseRestrictionData) (interfaces.CourseRestrictionData, error) {
+	rModel := models.CourseRestriction{
+		ID:                restriction.ID,
+		SpecializationID:  restriction.SpecializationID,
+		Semester:          restriction.Semester,
+		Category:          restriction.Category,
+		MinCourses:        restriction.MinCourses,
+		MaxCourses:        restriction.MaxCourses,
+		InternalDescription: restriction.InternalDescription,
+	}
+	if err := s.db.Save(&rModel).Error; err != nil {
+		return restriction, err
+	}
+	return restriction, nil
+}
+
+func (s *PostgresStore) DeleteCourseRestriction(restrictionID uuid.UUID) error {
+	return s.db.Where("id = ?", restrictionID).Delete(&models.CourseRestriction{}).Error
+}
+
+func (s *PostgresStore) GetCourseRestrictionByID(restrictionID uuid.UUID) (*interfaces.CourseRestrictionData, error) {
+	var r models.CourseRestriction
+	if err := s.db.First(&r, "id = ?", restrictionID).Error; err != nil {
+		return nil, err
+	}
+	result := &interfaces.CourseRestrictionData{
+		ID:                r.ID,
+		SpecializationID:  r.SpecializationID,
+		Semester:          r.Semester,
+		Category:          r.Category,
+		MinCourses:        r.MinCourses,
+		MaxCourses:        r.MaxCourses,
+		InternalDescription: r.InternalDescription,
+	}
+	return result, nil
+}
+
+func (s *PostgresStore) GetCourseRestrictionsBySpecialization(specializationID uuid.UUID) ([]interfaces.CourseRestrictionData, error) {
+	var restrictions []models.CourseRestriction
+	if err := s.db.Where("specialization_id = ?", specializationID).Order("semester, category").Find(&restrictions).Error; err != nil {
+		return nil, err
+	}
+	out := make([]interfaces.CourseRestrictionData, len(restrictions))
+	for i, r := range restrictions {
+		out[i] = interfaces.CourseRestrictionData{
+			ID:                r.ID,
+			SpecializationID:  r.SpecializationID,
+			Semester:          r.Semester,
+			Category:          r.Category,
+			MinCourses:        r.MinCourses,
+			MaxCourses:        r.MaxCourses,
+			InternalDescription: r.InternalDescription,
+		}
+	}
+	return out, nil
 }

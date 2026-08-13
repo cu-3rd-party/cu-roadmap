@@ -51,7 +51,14 @@ type StoreBase interface {
 
 	GetSpecializationsByMajor(majorID uuid.UUID) ([]SpecializationData, error)
 	CreateSpecialization(spec SpecializationData) (SpecializationData, error)
+	UpdateSpecialization(spec SpecializationData) (SpecializationData, error)
 	DeleteSpecializations(majorID uuid.UUID) error
+
+	CreateCourseRestriction(restriction CourseRestrictionData) (CourseRestrictionData, error)
+	UpdateCourseRestriction(restriction CourseRestrictionData) (CourseRestrictionData, error)
+	DeleteCourseRestriction(restrictionID uuid.UUID) error
+	GetCourseRestrictionByID(restrictionID uuid.UUID) (*CourseRestrictionData, error)
+	GetCourseRestrictionsBySpecialization(specializationID uuid.UUID) ([]CourseRestrictionData, error)
 
 	CreateCourseDependency(dep CourseDependencyData) (CourseDependencyData, error)
 	DeleteCourseDependencies(courseID uuid.UUID) error

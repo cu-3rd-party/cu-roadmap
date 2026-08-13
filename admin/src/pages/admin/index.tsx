@@ -7,12 +7,14 @@ import {
   Lock,
   ArrowLeft,
   Loader2,
+  Settings,
 } from "lucide-react";
 import { useState, type FormEvent, type ChangeEvent, useEffect } from "react";
 
 import { api } from "@/shared/config";
-import type { Course } from "@/shared/config";
+import type { Course, Major, Specialization } from "@/shared/config";
 import { Button } from "@/shared/ui/kit/button";
+import { RestrictionsManager } from "./RestrictionsManager";
 
 interface Major {
   id: string;
@@ -31,9 +33,12 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
   const [loginLoading, setLoginLoading] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [majors, setMajors] = useState<Major[]>([]);
+  const [specializations, setSpecializations] = useState<Specialization[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
-  const [activeTab, setActiveTab] = useState<"courses" | "majors">("courses");
+  const [activeTab, setActiveTab] = useState<"courses" | "majors" | "specializations">("courses");
+  const [managingRestrictionsFor, setManagingRestrictionsFor] = useState<Specialization | null>(null);
+  const [selectedMajorId, setSelectedMajorId] = useState<string>("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -62,6 +67,16 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
         return;
       }
       setError(err.message ?? "Unknown error");
+    }
+  };
+
+  const loadSpecializations = async (majorId: string) => {
+    try {
+      const res = await api.admin.getSpecializations(majorId);
+      setSpecializations(res.data);
+    } catch (e: unknown) {
+      const err = e as { response?: { status: number }; message?: string };
+      setError(err.message ?? "Failed to load specializations");
     }
   };
 
@@ -254,6 +269,15 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
     );
   }
 
+  if (managingRestrictionsFor) {
+    return (
+      <RestrictionsManager
+        specialization={managingRestrictionsFor}
+        onBack={() => setManagingRestrictionsFor(null)}
+      />
+    );
+  }
+
   return (
     <div
       className="flex flex-col h-screen overflow-y-auto p-10"
@@ -288,6 +312,23 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
           >
             Направления (Мейджоры)
           </button>
+          <button
+            onClick={() => {
+              setActiveTab("specializations");
+              if (majors.length > 0 && !selectedMajorId) {
+                setSelectedMajorId(majors[0].id);
+                loadSpecializations(majors[0].id);
+              }
+            }}
+            className={`py-2 px-4 font-semibold border-b-2 transition-colors ${activeTab === "specializations" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+            style={{
+              borderColor:
+                activeTab === "specializations" ? "var(--color-primary)" : "transparent",
+              color: activeTab === "specializations" ? "var(--color-primary)" : "",
+            }}
+          >
+            Специализации
+          </button>
         </div>
       </div>
 
@@ -295,7 +336,9 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
         <h1 className="text-xl font-bold">
           {activeTab === "courses"
             ? "Управление курсами"
-            : "Управление направлениями"}
+            : activeTab === "majors"
+            ? "Управление направлениями"
+            : "Управление специализациями"}
         </h1>
         {activeTab === "courses" ? (
           <button
@@ -317,6 +360,28 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
             style={{ backgroundColor: "var(--color-primary)" }}
           >
             <Plus size={18} /> Добавить курс
+          </button>
+        ) : activeTab === "specializations" ? (
+          <button
+            onClick={async () => {
+              if (!selectedMajorId) {
+                alert("Выберите мейджор");
+                return;
+              }
+              const title = prompt("Введите название специализации:");
+              if (!title) return;
+              try {
+                await api.admin.createSpecialization(selectedMajorId, title);
+                await loadSpecializations(selectedMajorId);
+              } catch (e: unknown) {
+                const err = e as { message?: string };
+                alert(err.message ?? "Failed to create specialization");
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium cursor-pointer"
+            style={{ backgroundColor: "var(--color-primary)" }}
+          >
+            <Plus size={18} /> Добавить специализацию
           </button>
         ) : (
           <button
@@ -482,7 +547,92 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
               ))}
             </tbody>
           </table>
-        )}
+        ) : activeTab === "specializations" ? (
+          <div>
+            <div className="mb-4 flex items-center gap-4">
+              <label className="text-sm font-medium text-gray-400">
+                Мейджор:
+                <select
+                  value={selectedMajorId}
+                  onChange={(e) => {
+                    setSelectedMajorId(e.target.value);
+                    loadSpecializations(e.target.value);
+                  }}
+                  className="ml-2 px-3 py-1.5 rounded-lg border bg-transparent text-base"
+                  style={{
+                    borderColor: "var(--color-border)",
+                    color: "var(--color-text-main)",
+                  }}
+                >
+                  {majors.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.title} ({m.cohort_year})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {specializations.length === 0 ? (
+              <div
+                className="p-8 rounded-xl border text-center text-gray-500"
+                style={{ borderColor: "var(--color-border)" }}
+              >
+                Нет специализаций для этого мейджора
+              </div>
+            ) : (
+              <div
+                className="rounded-xl border overflow-hidden"
+                style={{ borderColor: "var(--color-border)" }}
+              >
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr
+                      className="border-b"
+                      style={{
+                        borderColor: "var(--color-border)",
+                        backgroundColor: "var(--color-bg-card)",
+                      }}
+                    >
+                      <th className="p-4 font-semibold">Название</th>
+                      <th className="p-4 font-semibold">Мейджор</th>
+                      <th className="p-4 font-semibold">Ограничения</th>
+                      <th className="p-4 font-semibold w-16">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {specializations.map((s) => (
+                      <tr
+                        key={s.id}
+                        className="border-b last:border-0 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                        style={{ borderColor: "var(--color-border)" }}
+                      >
+                        <td className="p-4">{s.title}</td>
+                        <td className="p-4 text-gray-500">
+                          {majors.find((m) => m.id === s.major_id)?.title || "—"}
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm text-gray-500">
+                            {s.course_restrictions?.length ?? 0} правил
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <button
+                            onClick={() => setManagingRestrictionsFor(s)}
+                            className="p-2 rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer text-gray-500"
+                            title="Управление ограничениями"
+                          >
+                            <Settings size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );

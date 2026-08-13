@@ -3,11 +3,14 @@ import axios from "axios";
 import type {
   Course,
   Major,
+  Specialization,
   RoadmapResponse,
   MajorResult,
   ValidationResult,
   SemesterData,
   GraphData,
+  CourseRestriction,
+  CourseRestrictionInput,
 } from "./types";
 
 const client = axios.create({
@@ -57,6 +60,10 @@ export const api = {
   admin: {
     getCourses: () => client.get<Course[]>("/courses/"),
     getMajors: () => client.get<Major[]>("/majors/"),
+    getSpecializations: (majorId: string) =>
+      client.get<Specialization[]>(`/majors/specializations/${majorId}`),
+    createSpecialization: (majorId: string, title: string) =>
+      client.post<Specialization>("/majors/specializations", { major_id: majorId, title }),
     createCourse: (course: Partial<Course>) =>
       client.post<Course>("/courses/", course),
     updateCourse: (id: string, course: Partial<Course>) =>
@@ -66,5 +73,15 @@ export const api = {
       client.post("/majors/", major),
     updateMajor: (id: string, major: Record<string, unknown>) =>
       client.put(`/majors/${id}`, major),
+    
+    // Course restrictions
+    getRestrictions: (specializationId: string) =>
+      client.get<CourseRestriction[]>(`/majors/specializations/${specializationId}/restrictions`),
+    createRestriction: (specializationId: string, restriction: CourseRestrictionInput) =>
+      client.post<CourseRestriction>(`/majors/specializations/${specializationId}/restrictions`, restriction),
+    updateRestriction: (id: string, restriction: CourseRestrictionInput) =>
+      client.put<CourseRestriction>(`/majors/restrictions/${id}`, restriction),
+    deleteRestriction: (id: string) =>
+      client.delete(`/majors/restrictions/${id}`),
   },
 };

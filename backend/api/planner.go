@@ -96,7 +96,13 @@ func validateSemester(c *gin.Context) {
 		passedIDs[id] = true
 	}
 
-	result := validator.ValidateSemester(courses, passedIDs, req.CurrentSemester, req.MaxLoad)
+	// Fetch restrictions for the specialization if provided
+	var restrictions []interfaces.CourseRestrictionData
+	if req.SpecializationID != nil {
+		restrictions, _ = s.GetCourseRestrictionsBySpecialization(*req.SpecializationID)
+	}
+
+	result := validator.ValidateSemester(courses, passedIDs, req.CurrentSemester, req.MaxLoad, restrictions)
 	c.JSON(http.StatusOK, result)
 }
 
@@ -175,7 +181,13 @@ func validateRoadmap(c *gin.Context) {
 		}
 	}
 
-	results := validator.ValidateFullRoadmap(roadmapData, initialPassed, req.MaxLoad, requiredCourseIDs)
+	// Fetch restrictions for the specialization if provided
+	var restrictions []interfaces.CourseRestrictionData
+	if req.SpecializationID != nil {
+		restrictions, _ = s.GetCourseRestrictionsBySpecialization(*req.SpecializationID)
+	}
+
+	results := validator.ValidateFullRoadmap(roadmapData, initialPassed, req.MaxLoad, requiredCourseIDs, restrictions)
 	c.JSON(http.StatusOK, gin.H{"validation_results": results})
 }
 

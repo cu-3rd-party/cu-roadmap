@@ -27,6 +27,13 @@ func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 	admin.Use(middleware.AuthMiddleware())
 	admin.POST("/", createMajor)
 	admin.PUT("/:id", updateMajor)
+	admin.POST("/specializations", createSpecialization)
+
+	// Course restrictions management
+	admin.POST("/specializations/:id/restrictions", createCourseRestriction)
+	admin.PUT("/restrictions/:id", updateCourseRestriction)
+	admin.DELETE("/restrictions/:id", deleteCourseRestriction)
+	admin.GET("/specializations/:id/restrictions", getCourseRestrictions)
 }
 
 func getMajors(c *gin.Context) {
@@ -366,4 +373,187 @@ func createMajor(c *gin.Context) {
 	invalidateCachePrefixes("majors:")
 
 	c.JSON(http.StatusOK, gin.H{"id": created.ID})
+}
+
+// Course Restriction Handlers
+
+type CourseRestrictionRequest struct {
+	Semester          int    `json:"semester" binding:"required,min=1"`
+	Category          string `json:"category" binding:"required"`
+	MinCourses        int    `json:"min_courses" binding:"min=0"`
+	MaxCourses        int    `json:"max_courses" binding:"min=0"`
+	InternalDescription string `json:"internal_description"`
+}
+
+func createCourseRestriction(c *gin.Context) {
+	specIDStr := c.Param("id")
+	specID, err := uuid.Parse(specIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid specialization id"})
+		return
+	}
+
+	var req CourseRestrictionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	s := store.GetStore()
+	if s == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+
+	restriction := interfaces.CourseRestrictionData{
+		ID:                uuid.New(),
+		SpecializationID:  specID,
+		Semester:          req.Semester,
+		Category:          enums.CourseCategory(req.Category),
+		MinCourses:        req.MinCourses,
+		MaxCourses:        req.MaxCourses,
+		InternalDescription: req.InternalDescription,
+	}
+
+	created, err := s.CreateCourseRestriction(restriction)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, created)
+}
+
+func updateCourseRestriction(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid restriction id"})
+		return
+	}
+
+	var req CourseRestrictionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	s := store.GetStore()
+	if s == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+
+	// Get existing to preserve specialization_id
+	existing, err := s.GetCourseRestrictionByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if existing == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "restriction not found"})
+		return
+	}
+
+	restriction := interfaces.CourseRestrictionData{
+		ID:                id,
+		SpecializationID:  existing.SpecializationID,
+		Semester:          req.Semester,
+		Category:          enums.CourseCategory(req.Category),
+		MinCourses:        req.MinCourses,
+		MaxCourses:        req.MaxCourses,
+		InternalDescription: req.InternalDescription,
+	}
+
+	updated, err := s.UpdateCourseRestriction(restriction)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
+}
+
+func deleteCourseRestriction(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid restriction id"})
+		return
+	}
+
+	s := store.GetStore()
+	if s == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+
+	if err := s.DeleteCourseRestriction(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
+}
+
+func getCourseRestrictions(c *gin.Context) {
+	specIDStr := c.Param("id")
+	specID, err := uuid.Parse(specIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid specialization id"})
+		return
+	}
+
+	s := store.GetStore()
+	if s == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+
+	restrictions, err := s.GetCourseRestrictionsBySpecialization(specID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, restrictions)
+}
+
+type CreateSpecializationRequest struct {
+	MajorID string `json:"major_id" binding:"required"`
+	Title   string `json:"title" binding:"required"`
+}
+
+func createSpecialization(c *gin.Context) {
+	var req CreateSpecializationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	s := store.GetStore()
+	if s == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+
+	majorID, err := uuid.Parse(req.MajorID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid major id"})
+		return
+	}
+
+	spec := interfaces.SpecializationData{
+		ID:       uuid.New(),
+		MajorID:  majorID,
+		Title:    req.Title,
+	}
+
+	created, err := s.CreateSpecialization(spec)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, created)
 }

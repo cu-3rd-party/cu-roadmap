@@ -22,6 +22,7 @@ type MemoryStore struct {
 	boxEdges           []interfaces.BoxEdgeData
 	courseDependencies []interfaces.CourseDependencyData
 	specializations    []interfaces.SpecializationData
+	courseRestrictions []interfaces.CourseRestrictionData
 	students           map[uuid.UUID]interfaces.StudentData
 	coursesByTitle     map[string]uuid.UUID
 	majorsByTitle      map[string]uuid.UUID
@@ -67,6 +68,7 @@ func (s *MemoryStore) ClearAll() error {
 	s.boxEdges = nil
 	s.courseDependencies = nil
 	s.specializations = nil
+	s.courseRestrictions = nil
 	s.courses = make(map[uuid.UUID]interfaces.CourseData)
 	s.majors = make(map[uuid.UUID]interfaces.MajorData)
 	s.boxes = make(map[uuid.UUID]interfaces.BoxData)
@@ -367,6 +369,76 @@ func (s *MemoryStore) DeleteSpecializations(majorID uuid.UUID) error {
 	}
 	s.specializations = newSpecs
 	return nil
+}
+
+func (s *MemoryStore) UpdateSpecialization(spec interfaces.SpecializationData) (interfaces.SpecializationData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i, existing := range s.specializations {
+		if existing.ID == spec.ID {
+			s.specializations[i] = spec
+			return spec, nil
+		}
+	}
+	return spec, nil
+}
+
+func (s *MemoryStore) CreateCourseRestriction(restriction interfaces.CourseRestrictionData) (interfaces.CourseRestrictionData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if restriction.ID == uuid.Nil {
+		restriction.ID = uuid.New()
+	}
+	s.courseRestrictions = append(s.courseRestrictions, restriction)
+	return restriction, nil
+}
+
+func (s *MemoryStore) UpdateCourseRestriction(restriction interfaces.CourseRestrictionData) (interfaces.CourseRestrictionData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i, existing := range s.courseRestrictions {
+		if existing.ID == restriction.ID {
+			s.courseRestrictions[i] = restriction
+			return restriction, nil
+		}
+	}
+	return restriction, nil
+}
+
+func (s *MemoryStore) DeleteCourseRestriction(restrictionID uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var newRestrictions []interfaces.CourseRestrictionData
+	for _, r := range s.courseRestrictions {
+		if r.ID != restrictionID {
+			newRestrictions = append(newRestrictions, r)
+		}
+	}
+	s.courseRestrictions = newRestrictions
+	return nil
+}
+
+func (s *MemoryStore) GetCourseRestrictionByID(restrictionID uuid.UUID) (*interfaces.CourseRestrictionData, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, r := range s.courseRestrictions {
+		if r.ID == restrictionID {
+			return &r, nil
+		}
+	}
+	return nil, nil
+}
+
+func (s *MemoryStore) GetCourseRestrictionsBySpecialization(specializationID uuid.UUID) ([]interfaces.CourseRestrictionData, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var out []interfaces.CourseRestrictionData
+	for _, r := range s.courseRestrictions {
+		if r.SpecializationID == specializationID {
+			out = append(out, r)
+		}
+	}
+	return out, nil
 }
 
 func (s *MemoryStore) CreateCourseDependency(dep interfaces.CourseDependencyData) (interfaces.CourseDependencyData, error) {

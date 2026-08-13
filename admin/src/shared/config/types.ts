@@ -24,6 +24,13 @@ export interface Major {
   cohort_year?: number;
 }
 
+export interface Specialization {
+  id: string;
+  major_id: string;
+  title: string;
+  course_restrictions?: CourseRestriction[];
+}
+
 export interface CourseBasic {
   id: string;
   title: string;
@@ -83,4 +90,22 @@ export interface GraphEdge {
 export interface GraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
+}
+
+export interface CourseRestriction {
+  id: string;
+  specialization_id: string;
+  semester: number;
+  category: string;
+  min_courses: number;
+  max_courses: number;
+  internal_description?: string;
+}
+
+export interface CourseRestrictionInput {
+  semester: number;
+  category: string;
+  min_courses: number;
+  max_courses: number;
+  internal_description?: string;
 }

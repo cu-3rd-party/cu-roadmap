@@ -51,6 +51,7 @@ func (v *RoadmapValidator) ValidateSemester(
 	previouslyPassedIDs map[uuid.UUID]bool,
 	currentSemNum int,
 	maxLoad float64,
+	restrictions []interfaces.CourseRestrictionData,
 ) schemas.ValidationResult {
 	var messages []schemas.ValidationMessage
 	totalLoad := 0.0
@@ -270,6 +271,17 @@ func (v *RoadmapValidator) ValidateSemester(
 		}
 	}
 
+	// Validate restrictions
+	if len(restrictions) > 0 {
+		restrictionMsgs := v.ValidateRestrictions(coursesInSem, currentSemNum, restrictions)
+		messages = append(messages, restrictionMsgs...)
+		for _, m := range restrictionMsgs {
+			if m.Level == "error" {
+				isValid = false
+			}
+		}
+	}
+
 	return schemas.ValidationResult{
 		IsValid:   isValid,
 		Messages:  messages,
@@ -277,11 +289,57 @@ func (v *RoadmapValidator) ValidateSemester(
 	}
 }
 
+// ValidateRestrictions checks if the courses in a semester satisfy the min/max restrictions
+// for each course category for a given specialization.
+func (v *RoadmapValidator) ValidateRestrictions(
+	coursesInSem []interfaces.CourseData,
+	currentSemNum int,
+	restrictions []interfaces.CourseRestrictionData,
+) []schemas.ValidationMessage {
+	var messages []schemas.ValidationMessage
+
+	// Count courses by category in this semester
+	categoryCounts := make(map[enums.CourseCategory]int)
+	for _, c := range coursesInSem {
+		categoryCounts[c.Category]++
+	}
+
+	// Check each restriction for this semester
+	for _, r := range restrictions {
+		if r.Semester != currentSemNum {
+			continue
+		}
+
+		count := categoryCounts[r.Category]
+		
+		// Check minimum
+		if count < r.MinCourses {
+			messages = append(messages, schemas.ValidationMessage{
+				Level:   "error",
+				Message: fmt.Sprintf("В %d-м семестре необходимо выбрать минимум %d курсов категории '%s' (выбрано: %d)", 
+					currentSemNum, r.MinCourses, r.Category, count),
+			})
+		}
+
+		// Check maximum
+		if count > r.MaxCourses {
+			messages = append(messages, schemas.ValidationMessage{
+				Level:   "error",
+				Message: fmt.Sprintf("В %d-м семестре можно выбрать максимум %d курсов категории '%s' (выбрано: %d)", 
+					currentSemNum, r.MaxCourses, r.Category, count),
+			})
+		}
+	}
+
+	return messages
+}
+
 func (v *RoadmapValidator) ValidateFullRoadmap(
 	roadmapData []map[string]interface{},
 	initialPassedIDs map[uuid.UUID]bool,
 	maxLoad float64,
 	requiredCourseIDs map[uuid.UUID]bool,
+	restrictions []interfaces.CourseRestrictionData,
 ) []map[string]interface{} {
 	var results []map[string]interface{}
 	currentPassed := make(map[uuid.UUID]bool)
@@ -300,7 +358,7 @@ func (v *RoadmapValidator) ValidateFullRoadmap(
 			}
 		}
 
-		res := v.ValidateSemester(courses, currentPassed, semNum, maxLoad)
+		res := v.ValidateSemester(courses, currentPassed, semNum, maxLoad, restrictions)
 
 		var msgs []map[string]interface{}
 		for _, m := range res.Messages {
