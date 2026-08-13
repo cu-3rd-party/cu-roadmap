@@ -12,10 +12,21 @@ import { useValidateRoadmapMutation } from "./useValidateRoadmapMutation";
 export const useValidatePlan = () => {
   const { mutate } = useValidateRoadmapMutation();
   return useCallback(
-    (admissionYear: AdmissionYear | null) => {
+    (
+      admissionYear: AdmissionYear | null,
+      majorId?: string | null,
+      specializationId?: string | null,
+    ) => {
       if (admissionYear == null) return;
       const { selections } = usePlannerStore.getState();
-      mutate(buildValidateRoadmapRequest(selections, admissionYear));
+      mutate(
+        buildValidateRoadmapRequest(
+          selections,
+          admissionYear,
+          majorId,
+          specializationId,
+        ),
+      );
     },
     [mutate],
   );

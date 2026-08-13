@@ -12,6 +12,7 @@ type SemesterValidationRequest struct {
 	PassedCourseIDs  []uuid.UUID  `json:"passed_course_ids" binding:"required"`
 	MaxLoad          float64      `json:"max_load" default:"60.0"`
 	SpecializationID *uuid.UUID   `json:"specialization_id"`
+	MajorID          *uuid.UUID   `json:"major_id"`
 }
 
 func (s *SemesterValidationRequest) Validate() error {

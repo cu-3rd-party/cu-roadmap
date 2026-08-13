@@ -37,7 +37,7 @@ export function RestrictionsManager({ specialization, onBack }: RestrictionsMana
     try {
       setLoading(true);
       const res = await api.admin.getRestrictions(specialization.id);
-      setRestrictions(res.data);
+      setRestrictions(res.data || []);
     } catch (e: unknown) {
       const err = e as { response?: { status: number }; message?: string };
       setError(err.message ?? "Failed to load restrictions");

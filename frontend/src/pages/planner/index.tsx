@@ -59,10 +59,7 @@ const PlannerPage = () => {
     selections,
     beforeValidateRoadmapDelay,
   );
-  useEffect(() => {
-    if (admissionYear == null) return;
-    validate(admissionYear);
-  }, [debouncedSelections, admissionYear, validate]);
+
 
   // Identify specializations from every course placed in the planner.
   const selectedCourseIds = useMemo(
@@ -81,6 +78,11 @@ const PlannerPage = () => {
     admissionYear,
     majorId,
   );
+
+  useEffect(() => {
+    if (admissionYear == null) return;
+    validate(admissionYear, majorId);
+  }, [debouncedSelections, admissionYear, majorId, validate]);
 
   // Show the spinner from the moment the plan changes
   const identifying =

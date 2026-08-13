@@ -467,7 +467,7 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
               ))}
             </tbody>
           </table>
-        ) : (
+        ) : activeTab === "majors" ? (
           <table className="w-full text-left border-collapse">
             <thead>
               <tr

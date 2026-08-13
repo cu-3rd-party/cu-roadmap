@@ -73,6 +73,8 @@ export interface ValidateSemesterResponseDto {
 // POST /api/v1/planner/validate-roadmap/
 
 export interface ValidateRoadmapRequestDto {
+  major_id?: UUID;
+  specialization_id?: UUID;
   max_load?: number;
   roadmap: {
     semester: number;

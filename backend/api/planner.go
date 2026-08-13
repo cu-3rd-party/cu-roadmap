@@ -96,13 +96,19 @@ func validateSemester(c *gin.Context) {
 		passedIDs[id] = true
 	}
 
-	// Fetch restrictions for the specialization if provided
-	var restrictions []interfaces.CourseRestrictionData
-	if req.SpecializationID != nil {
-		restrictions, _ = s.GetCourseRestrictionsBySpecialization(*req.SpecializationID)
+	// Fetch restrictions for all specializations of the major (since students don't pick one explicitly)
+	restrictionsMap := make(map[string][]interfaces.CourseRestrictionData)
+	if req.MajorID != nil {
+		specs, _ := s.GetSpecializationsByMajor(*req.MajorID)
+		for _, spec := range specs {
+			restrs, _ := s.GetCourseRestrictionsBySpecialization(spec.ID)
+			if len(restrs) > 0 {
+				restrictionsMap[spec.Title] = restrs
+			}
+		}
 	}
 
-	result := validator.ValidateSemester(courses, passedIDs, req.CurrentSemester, req.MaxLoad, restrictions)
+	result := validator.ValidateSemester(courses, passedIDs, req.CurrentSemester, req.MaxLoad, restrictionsMap)
 	c.JSON(http.StatusOK, result)
 }
 
@@ -181,13 +187,19 @@ func validateRoadmap(c *gin.Context) {
 		}
 	}
 
-	// Fetch restrictions for the specialization if provided
-	var restrictions []interfaces.CourseRestrictionData
-	if req.SpecializationID != nil {
-		restrictions, _ = s.GetCourseRestrictionsBySpecialization(*req.SpecializationID)
+	// Fetch restrictions for all specializations of the major
+	restrictionsMap := make(map[string][]interfaces.CourseRestrictionData)
+	if req.MajorID != nil {
+		specs, _ := s.GetSpecializationsByMajor(*req.MajorID)
+		for _, spec := range specs {
+			restrs, _ := s.GetCourseRestrictionsBySpecialization(spec.ID)
+			if len(restrs) > 0 {
+				restrictionsMap[spec.Title] = restrs
+			}
+		}
 	}
 
-	results := validator.ValidateFullRoadmap(roadmapData, initialPassed, req.MaxLoad, requiredCourseIDs, restrictions)
+	results := validator.ValidateFullRoadmap(roadmapData, initialPassed, req.MaxLoad, requiredCourseIDs, restrictionsMap)
 	c.JSON(http.StatusOK, gin.H{"validation_results": results})
 }
 

@@ -12,6 +12,8 @@ import type { PlannedCourse } from "../model";
 export const buildValidateRoadmapRequest = (
   selections: Record<number, PlannedCourse[]>,
   admissionYear: AdmissionYear,
+  majorId?: string | null,
+  specializationId?: string | null,
 ): ValidateRoadmapRequestDto => {
   const roadmap: ValidateRoadmapRequestDto["roadmap"] = [];
 
@@ -29,6 +31,8 @@ export const buildValidateRoadmapRequest = (
   const max_load = 999;
 
   return {
+    major_id: majorId ?? undefined,
+    specialization_id: specializationId ?? undefined,
     roadmap,
     max_load,
     current_semester: admissionYearToSemester[admissionYear],

@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -84,6 +85,7 @@ func main() {
 	origins := make([]string, 0, 2)
 	origins = append(origins, "https://roadmap.cu3rd.ru")
 	if gin.IsDebugging() {
+		// allow common local dev hosts; additionally allow any http://localhost:* via AllowOriginFunc
 		origins = append(origins, "http://localhost:5173", "http://localhost:5174")
 	}
 	router.Use(cors.New(cors.Config{
@@ -91,6 +93,15 @@ func main() {
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Cookie"},
 		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			if gin.IsDebugging() {
+				// allow any localhost origin on dev machine (different vite ports, etc.)
+				if strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "http://127.0.0.1") {
+					return true
+				}
+			}
+			return origin == "https://roadmap.cu3rd.ru"
+		},
 	}))
 	router.Use(middleware.MetricsMiddleware())
 
