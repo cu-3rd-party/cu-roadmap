@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, X, Save } from "lucide-react";
 
 import { api } from "@/shared/config";
-import type { CourseRestriction, CourseRestrictionInput, Specialization } from "@/shared/config/types";
+import type {
+  CourseRestriction,
+  CourseRestrictionInput,
+  Specialization,
+} from "@/shared/config/types";
 import { Button } from "@/shared/ui/kit/button";
 
 const CATEGORIES = [
@@ -23,9 +27,13 @@ interface RestrictionsManagerProps {
   onBack: () => void;
 }
 
-export function RestrictionsManager({ specialization, onBack }: RestrictionsManagerProps) {
+export function RestrictionsManager({
+  specialization,
+  onBack,
+}: RestrictionsManagerProps) {
   const [restrictions, setRestrictions] = useState<CourseRestriction[]>([]);
-  const [editingRestriction, setEditingRestriction] = useState<CourseRestriction | null>(null);
+  const [editingRestriction, setEditingRestriction] =
+    useState<CourseRestriction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -108,9 +116,12 @@ export function RestrictionsManager({ specialization, onBack }: RestrictionsMana
               <X size={20} />
             </button>
             <div>
-              <h1 className="text-xl font-bold">Ограничения: {specialization.title}</h1>
+              <h1 className="text-xl font-bold">
+                Ограничения: {specialization.title}
+              </h1>
               <p className="text-sm text-gray-500">
-                Настройка мин/макс количества курсов по категориям в каждом семестре
+                Настройка мин/макс количества курсов по категориям в каждом
+                семестре
               </p>
             </div>
           </div>
@@ -170,7 +181,11 @@ export function RestrictionsManager({ specialization, onBack }: RestrictionsMana
               </thead>
               <tbody>
                 {restrictions
-                  .sort((a, b) => a.semester - b.semester || a.category.localeCompare(b.category))
+                  .sort(
+                    (a, b) =>
+                      a.semester - b.semester ||
+                      a.category.localeCompare(b.category),
+                  )
                   .map((r) => (
                     <tr
                       key={r.id}
@@ -228,7 +243,11 @@ interface RestrictionEditorProps {
   onCancel: () => void;
 }
 
-function RestrictionEditor({ restriction, onSave, onCancel }: RestrictionEditorProps) {
+function RestrictionEditor({
+  restriction,
+  onSave,
+  onCancel,
+}: RestrictionEditorProps) {
   const [formData, setFormData] = useState<CourseRestrictionInput>({
     semester: restriction.semester,
     category: restriction.category,
@@ -271,7 +290,10 @@ function RestrictionEditor({ restriction, onSave, onCancel }: RestrictionEditorP
               name="semester"
               value={formData.semester}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, semester: parseInt(e.target.value) }))
+                setFormData((prev) => ({
+                  ...prev,
+                  semester: parseInt(e.target.value),
+                }))
               }
               className="px-3 py-2 rounded-lg border bg-transparent text-base"
               style={{
@@ -321,7 +343,10 @@ function RestrictionEditor({ restriction, onSave, onCancel }: RestrictionEditorP
               name="min_courses"
               value={formData.min_courses}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, min_courses: parseInt(e.target.value) || 0 }))
+                setFormData((prev) => ({
+                  ...prev,
+                  min_courses: parseInt(e.target.value) || 0,
+                }))
               }
               className="px-3 py-2 rounded-lg border bg-transparent text-base"
               style={{
@@ -340,7 +365,10 @@ function RestrictionEditor({ restriction, onSave, onCancel }: RestrictionEditorP
               name="max_courses"
               value={formData.max_courses}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, max_courses: parseInt(e.target.value) || 999 }))
+                setFormData((prev) => ({
+                  ...prev,
+                  max_courses: parseInt(e.target.value) || 999,
+                }))
               }
               className="px-3 py-2 rounded-lg border bg-transparent text-base"
               style={{
@@ -357,7 +385,10 @@ function RestrictionEditor({ restriction, onSave, onCancel }: RestrictionEditorP
             name="internal_description"
             value={formData.internal_description}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, internal_description: e.target.value }))
+              setFormData((prev) => ({
+                ...prev,
+                internal_description: e.target.value,
+              }))
             }
             rows={3}
             className="px-3 py-2 rounded-lg border bg-transparent text-base resize-none"

@@ -36,8 +36,11 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
   const [specializations, setSpecializations] = useState<Specialization[]>([]);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
-  const [activeTab, setActiveTab] = useState<"courses" | "majors" | "specializations">("courses");
-  const [managingRestrictionsFor, setManagingRestrictionsFor] = useState<Specialization | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "courses" | "majors" | "specializations"
+  >("courses");
+  const [managingRestrictionsFor, setManagingRestrictionsFor] =
+    useState<Specialization | null>(null);
   const [selectedMajorId, setSelectedMajorId] = useState<string>("");
   const [error, setError] = useState("");
 
@@ -323,8 +326,11 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
             className={`py-2 px-4 font-semibold border-b-2 transition-colors ${activeTab === "specializations" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-300"}`}
             style={{
               borderColor:
-                activeTab === "specializations" ? "var(--color-primary)" : "transparent",
-              color: activeTab === "specializations" ? "var(--color-primary)" : "",
+                activeTab === "specializations"
+                  ? "var(--color-primary)"
+                  : "transparent",
+              color:
+                activeTab === "specializations" ? "var(--color-primary)" : "",
             }}
           >
             Специализации
@@ -337,8 +343,8 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
           {activeTab === "courses"
             ? "Управление курсами"
             : activeTab === "majors"
-            ? "Управление направлениями"
-            : "Управление специализациями"}
+              ? "Управление направлениями"
+              : "Управление специализациями"}
         </h1>
         {activeTab === "courses" ? (
           <button
@@ -609,7 +615,8 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
                       >
                         <td className="p-4">{s.title}</td>
                         <td className="p-4 text-gray-500">
-                          {majors.find((m) => m.id === s.major_id)?.title || "—"}
+                          {majors.find((m) => m.id === s.major_id)?.title ||
+                            "—"}
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-gray-500">
