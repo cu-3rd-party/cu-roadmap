@@ -3,6 +3,9 @@ import type { SemesterData } from "./types";
 export type {
   Course,
   Major,
+  Specialization,
+  CourseRestriction,
+  CourseRestrictionInput,
   CourseBasic,
   SemesterData,
   RoadmapResponse,

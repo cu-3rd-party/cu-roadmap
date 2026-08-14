@@ -12,7 +12,7 @@ import {
 import { useState, type FormEvent, type ChangeEvent, useEffect } from "react";
 
 import { api } from "@/shared/config";
-import type { Course, Major, Specialization } from "@/shared/config";
+import type { Course, Specialization } from "@/shared/config";
 import { Button } from "@/shared/ui/kit/button";
 import { RestrictionsManager } from "./RestrictionsManager";
 
