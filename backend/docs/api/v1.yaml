@@ -351,6 +351,117 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
 
+  /api/v1/majors/specializations:
+    post:
+      description: создает специализацию для мейджора
+      security:
+        - AdminCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [major_id, title]
+              properties:
+                major_id:
+                  type: string
+                  format: uuid
+                title:
+                  type: string
+      responses:
+        '201':
+          description: создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Specialization'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/majors/specializations/{id}/restrictions:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      description: возвращает ограничения (restrictions) для конкретной специализации
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: список ограничений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseRestriction'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      description: создает ограничение (restriction) для специализации
+      security:
+        - AdminCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseRestrictionRequest'
+      responses:
+        '201':
+          description: создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseRestriction'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/majors/restrictions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    put:
+      description: обновляет ограничение (restriction)
+      security:
+        - AdminCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseRestrictionRequest'
+      responses:
+        '200':
+          description: обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseRestriction'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: удаляет ограничение (restriction)
+      security:
+        - AdminCookie: []
+      responses:
+        '204':
+          description: удалено
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
   /api/v1/majors/{id}:
     parameters:
       - $ref: '#/components/parameters/ResourceId'
@@ -1314,6 +1425,60 @@ components:
           items:
             $ref: '#/components/schemas/GraphEdge'
 
+    Specialization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        major_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+
+    CourseRestrictionRequest:
+      type: object
+      required:
+        - semester
+        - category
+      properties:
+        semester:
+          type: integer
+        category:
+          type: string
+        min_courses:
+          type: integer
+          default: 0
+        max_courses:
+          type: integer
+          default: 0
+        internal_description:
+          type: string
+          nullable: true
+
+    CourseRestriction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        specialization_id:
+          type: string
+          format: uuid
+        semester:
+          type: integer
+        category:
+          type: string
+        min_courses:
+          type: integer
+        max_courses:
+          type: integer
+        internal_description:
+          type: string
+          nullable: true
+
+
     PlannerGenerateRequest:
       type: object
       required:
@@ -1468,6 +1633,14 @@ components:
         max_load:
           type: number
           default: 12.0
+        major_id:
+          type: string
+          format: uuid
+          nullable: true
+        specialization_id:
+          type: string
+          format: uuid
+          nullable: true
 
     SemesterValidationResponse:
       type: object
