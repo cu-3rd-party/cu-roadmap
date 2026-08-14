@@ -23,7 +23,12 @@ describe("buildValidateRoadmapRequest", () => {
   });
 
   it("sets current_semester from the admission year", () => {
-    const req = buildValidateRoadmapRequest({ 1: [course("a")] }, 2024, "m1", "s1");
+    const req = buildValidateRoadmapRequest(
+      { 1: [course("a")] },
+      2024,
+      "m1",
+      "s1",
+    );
     // admissionYear 2024 → current semester 5
     expect(req.current_semester).toBe(5);
   });

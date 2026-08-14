@@ -60,7 +60,6 @@ const PlannerPage = () => {
     beforeValidateRoadmapDelay,
   );
 
-
   // Identify specializations from every course placed in the planner.
   const selectedCourseIds = useMemo(
     () => Object.values(selections).flatMap((list) => list.map((c) => c.id)),

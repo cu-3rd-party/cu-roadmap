@@ -310,6 +310,7 @@ func TestMultipleAnalogGroups(t *testing.T) {
 		passed,
 		3,
 		10.0,
+		nil,
 	)
 
 	// Since blue course has both groups, it should satisfy the prerequisites of both!
