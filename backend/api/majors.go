@@ -378,10 +378,10 @@ func createMajor(c *gin.Context) {
 // Course Restriction Handlers
 
 type CourseRestrictionRequest struct {
-	Semester          int    `json:"semester" binding:"required,min=1"`
-	Category          string `json:"category" binding:"required"`
-	MinCourses        int    `json:"min_courses" binding:"min=0"`
-	MaxCourses        int    `json:"max_courses" binding:"min=0"`
+	Semester            int    `json:"semester" binding:"required,min=1"`
+	Category            string `json:"category" binding:"required"`
+	MinCourses          int    `json:"min_courses" binding:"min=0"`
+	MaxCourses          int    `json:"max_courses" binding:"min=0"`
 	InternalDescription string `json:"internal_description"`
 }
 
@@ -406,12 +406,12 @@ func createCourseRestriction(c *gin.Context) {
 	}
 
 	restriction := interfaces.CourseRestrictionData{
-		ID:                uuid.New(),
-		SpecializationID:  specID,
-		Semester:          req.Semester,
-		Category:          enums.CourseCategory(req.Category),
-		MinCourses:        req.MinCourses,
-		MaxCourses:        req.MaxCourses,
+		ID:                  uuid.New(),
+		SpecializationID:    specID,
+		Semester:            req.Semester,
+		Category:            enums.CourseCategory(req.Category),
+		MinCourses:          req.MinCourses,
+		MaxCourses:          req.MaxCourses,
 		InternalDescription: req.InternalDescription,
 	}
 
@@ -456,12 +456,12 @@ func updateCourseRestriction(c *gin.Context) {
 	}
 
 	restriction := interfaces.CourseRestrictionData{
-		ID:                id,
-		SpecializationID:  existing.SpecializationID,
-		Semester:          req.Semester,
-		Category:          enums.CourseCategory(req.Category),
-		MinCourses:        req.MinCourses,
-		MaxCourses:        req.MaxCourses,
+		ID:                  id,
+		SpecializationID:    existing.SpecializationID,
+		Semester:            req.Semester,
+		Category:            enums.CourseCategory(req.Category),
+		MinCourses:          req.MinCourses,
+		MaxCourses:          req.MaxCourses,
 		InternalDescription: req.InternalDescription,
 	}
 
@@ -544,9 +544,9 @@ func createSpecialization(c *gin.Context) {
 	}
 
 	spec := interfaces.SpecializationData{
-		ID:       uuid.New(),
-		MajorID:  majorID,
-		Title:    req.Title,
+		ID:      uuid.New(),
+		MajorID: majorID,
+		Title:   req.Title,
 	}
 
 	created, err := s.CreateSpecialization(spec)

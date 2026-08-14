@@ -6,12 +6,12 @@ import (
 )
 
 type Specialization struct {
-	ID                uuid.UUID         `gorm:"type:uuid;primaryKey"`
-	MajorID           uuid.UUID         `gorm:"type:uuid;not null;index"`
-	Title             string            `gorm:"type:varchar(255);not null"`
-	RequirementsBoxID *uuid.UUID        `gorm:"type:uuid;index"`
-	Major             *Major            `gorm:"foreignKey:MajorID"`
-	RequirementsBox   *Box              `gorm:"foreignKey:RequirementsBoxID"`
+	ID                 uuid.UUID           `gorm:"type:uuid;primaryKey"`
+	MajorID            uuid.UUID           `gorm:"type:uuid;not null;index"`
+	Title              string              `gorm:"type:varchar(255);not null"`
+	RequirementsBoxID  *uuid.UUID          `gorm:"type:uuid;index"`
+	Major              *Major              `gorm:"foreignKey:MajorID"`
+	RequirementsBox    *Box                `gorm:"foreignKey:RequirementsBoxID"`
 	CourseRestrictions []CourseRestriction `gorm:"foreignKey:SpecializationID"`
 }
 

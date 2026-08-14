@@ -689,12 +689,12 @@ func (s *PostgresStore) UpdateSpecialization(spec interfaces.SpecializationData)
 
 func (s *PostgresStore) CreateCourseRestriction(restriction interfaces.CourseRestrictionData) (interfaces.CourseRestrictionData, error) {
 	rModel := models.CourseRestriction{
-		ID:                restriction.ID,
-		SpecializationID:  restriction.SpecializationID,
-		Semester:          restriction.Semester,
-		Category:          restriction.Category,
-		MinCourses:        restriction.MinCourses,
-		MaxCourses:        restriction.MaxCourses,
+		ID:                  restriction.ID,
+		SpecializationID:    restriction.SpecializationID,
+		Semester:            restriction.Semester,
+		Category:            restriction.Category,
+		MinCourses:          restriction.MinCourses,
+		MaxCourses:          restriction.MaxCourses,
 		InternalDescription: restriction.InternalDescription,
 	}
 	if rModel.ID == uuid.Nil {
@@ -709,12 +709,12 @@ func (s *PostgresStore) CreateCourseRestriction(restriction interfaces.CourseRes
 
 func (s *PostgresStore) UpdateCourseRestriction(restriction interfaces.CourseRestrictionData) (interfaces.CourseRestrictionData, error) {
 	rModel := models.CourseRestriction{
-		ID:                restriction.ID,
-		SpecializationID:  restriction.SpecializationID,
-		Semester:          restriction.Semester,
-		Category:          restriction.Category,
-		MinCourses:        restriction.MinCourses,
-		MaxCourses:        restriction.MaxCourses,
+		ID:                  restriction.ID,
+		SpecializationID:    restriction.SpecializationID,
+		Semester:            restriction.Semester,
+		Category:            restriction.Category,
+		MinCourses:          restriction.MinCourses,
+		MaxCourses:          restriction.MaxCourses,
 		InternalDescription: restriction.InternalDescription,
 	}
 	if err := s.db.Save(&rModel).Error; err != nil {
@@ -733,12 +733,12 @@ func (s *PostgresStore) GetCourseRestrictionByID(restrictionID uuid.UUID) (*inte
 		return nil, err
 	}
 	result := &interfaces.CourseRestrictionData{
-		ID:                r.ID,
-		SpecializationID:  r.SpecializationID,
-		Semester:          r.Semester,
-		Category:          r.Category,
-		MinCourses:        r.MinCourses,
-		MaxCourses:        r.MaxCourses,
+		ID:                  r.ID,
+		SpecializationID:    r.SpecializationID,
+		Semester:            r.Semester,
+		Category:            r.Category,
+		MinCourses:          r.MinCourses,
+		MaxCourses:          r.MaxCourses,
 		InternalDescription: r.InternalDescription,
 	}
 	return result, nil
@@ -752,12 +752,12 @@ func (s *PostgresStore) GetCourseRestrictionsBySpecialization(specializationID u
 	out := make([]interfaces.CourseRestrictionData, len(restrictions))
 	for i, r := range restrictions {
 		out[i] = interfaces.CourseRestrictionData{
-			ID:                r.ID,
-			SpecializationID:  r.SpecializationID,
-			Semester:          r.Semester,
-			Category:          r.Category,
-			MinCourses:        r.MinCourses,
-			MaxCourses:        r.MaxCourses,
+			ID:                  r.ID,
+			SpecializationID:    r.SpecializationID,
+			Semester:            r.Semester,
+			Category:            r.Category,
+			MinCourses:          r.MinCourses,
+			MaxCourses:          r.MaxCourses,
 			InternalDescription: r.InternalDescription,
 		}
 	}

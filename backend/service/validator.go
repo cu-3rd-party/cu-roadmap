@@ -312,12 +312,12 @@ func (v *RoadmapValidator) ValidateRestrictions(
 			}
 
 			count := categoryCounts[r.Category]
-			
+
 			// Check minimum
 			if count < r.MinCourses {
 				messages = append(messages, schemas.ValidationMessage{
-					Level:   "error",
-					Message: fmt.Sprintf("[%s] В %d-м семестре необходимо выбрать минимум %d курсов категории '%s' (выбрано: %d)", 
+					Level: "error",
+					Message: fmt.Sprintf("[%s] В %d-м семестре необходимо выбрать минимум %d курсов категории '%s' (выбрано: %d)",
 						specTitle, currentSemNum, r.MinCourses, r.Category, count),
 				})
 			}
@@ -325,8 +325,8 @@ func (v *RoadmapValidator) ValidateRestrictions(
 			// Check maximum
 			if count > r.MaxCourses {
 				messages = append(messages, schemas.ValidationMessage{
-					Level:   "error",
-					Message: fmt.Sprintf("[%s] В %d-м семестре можно выбрать максимум %d курсов категории '%s' (выбрано: %d)", 
+					Level: "error",
+					Message: fmt.Sprintf("[%s] В %d-м семестре можно выбрать максимум %d курсов категории '%s' (выбрано: %d)",
 						specTitle, currentSemNum, r.MaxCourses, r.Category, count),
 				})
 			}

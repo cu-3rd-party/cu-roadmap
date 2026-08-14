@@ -9,13 +9,13 @@ import (
 // CourseRestriction represents a constraint on how many courses from a specific category
 // can be taken in a given semester for a specialization.
 type CourseRestriction struct {
-	ID              uuid.UUID              `gorm:"type:uuid;primaryKey"`
-	SpecializationID uuid.UUID             `gorm:"type:uuid;not null;index"`
-	Semester        int                    `gorm:"not null;index"`
-	Category        enums.CourseCategory   `gorm:"type:varchar(20);not null"`
-	MinCourses      int                    `gorm:"not null;default:0"`
-	MaxCourses      int                    `gorm:"not null;default:999"`
-	InternalDescription string             `gorm:"type:text"`
+	ID                  uuid.UUID            `gorm:"type:uuid;primaryKey"`
+	SpecializationID    uuid.UUID            `gorm:"type:uuid;not null;index"`
+	Semester            int                  `gorm:"not null;index"`
+	Category            enums.CourseCategory `gorm:"type:varchar(20);not null"`
+	MinCourses          int                  `gorm:"not null;default:0"`
+	MaxCourses          int                  `gorm:"not null;default:999"`
+	InternalDescription string               `gorm:"type:text"`
 
 	// Navigation
 	Specialization *Specialization `gorm:"foreignKey:SpecializationID"`
