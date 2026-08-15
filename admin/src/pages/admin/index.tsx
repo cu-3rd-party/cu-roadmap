@@ -15,6 +15,8 @@ import { api } from "@/shared/config";
 import type { Course, Specialization } from "@/shared/config";
 import { Button } from "@/shared/ui/kit/button";
 import { RestrictionsManager } from "./RestrictionsManager";
+import { DisciplineGroupsManager } from "./DisciplineGroupsManager";
+import { SpecializationBoxManager } from "./SpecializationBoxManager";
 
 interface Major {
   id: string;
@@ -37,9 +39,11 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingMajor, setEditingMajor] = useState<Major | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "courses" | "majors" | "specializations"
+    "courses" | "majors" | "specializations" | "discipline_groups"
   >("courses");
   const [managingRestrictionsFor, setManagingRestrictionsFor] =
+    useState<Specialization | null>(null);
+  const [managingBoxesFor, setManagingBoxesFor] =
     useState<Specialization | null>(null);
   const [selectedMajorId, setSelectedMajorId] = useState<string>("");
   const [error, setError] = useState("");
@@ -281,6 +285,15 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
     );
   }
 
+  if (managingBoxesFor) {
+    return (
+      <SpecializationBoxManager
+        specialization={managingBoxesFor}
+        onClose={() => setManagingBoxesFor(null)}
+      />
+    );
+  }
+
   return (
     <div
       className="flex flex-col h-screen overflow-y-auto p-10"
@@ -335,6 +348,20 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
           >
             Специализации
           </button>
+          <button
+            onClick={() => setActiveTab("discipline_groups")}
+            className={`py-2 px-4 font-semibold border-b-2 transition-colors ${activeTab === "discipline_groups" ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-300"}`}
+            style={{
+              borderColor:
+                activeTab === "discipline_groups"
+                  ? "var(--color-primary)"
+                  : "transparent",
+              color:
+                activeTab === "discipline_groups" ? "var(--color-primary)" : "",
+            }}
+          >
+            Коробки
+          </button>
         </div>
       </div>
 
@@ -344,7 +371,9 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
             ? "Управление курсами"
             : activeTab === "majors"
               ? "Управление направлениями"
-              : "Управление специализациями"}
+              : activeTab === "specializations"
+                ? "Управление специализациями"
+                : "Управление коробками"}
         </h1>
         {activeTab === "courses" ? (
           <button
@@ -389,7 +418,7 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
           >
             <Plus size={18} /> Добавить специализацию
           </button>
-        ) : (
+        ) : activeTab === "majors" ? (
           <button
             onClick={() =>
               setEditingMajor({
@@ -405,7 +434,7 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
           >
             <Plus size={18} /> Добавить направление
           </button>
-        )}
+        ) : null}
       </div>
 
       <div
@@ -623,13 +652,20 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
                             {s.course_restrictions?.length ?? 0} правил
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-4 flex gap-2">
                           <button
                             onClick={() => setManagingRestrictionsFor(s)}
                             className="p-2 rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer text-gray-500"
                             title="Управление ограничениями"
                           >
                             <Settings size={18} />
+                          </button>
+                          <button
+                            onClick={() => setManagingBoxesFor(s)}
+                            className="px-3 py-1.5 rounded-md hover:bg-indigo-500 hover:text-white transition-colors cursor-pointer text-indigo-500 border border-indigo-500 text-sm font-medium"
+                            title="Привязать коробку"
+                          >
+                            Коробки
                           </button>
                         </td>
                       </tr>
@@ -639,6 +675,8 @@ export function AdminPage({ onBack }: { onBack?: () => void }) {
               </div>
             )}
           </div>
+        ) : activeTab === "discipline_groups" ? (
+          <DisciplineGroupsManager />
         ) : null}
       </div>
     </div>

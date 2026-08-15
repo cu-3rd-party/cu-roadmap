@@ -76,6 +76,7 @@ func (s *PostgresStore) Init(password string) error {
 		&models.CourseRestriction{},
 		&models.CourseDependency{},
 		&models.Student{},
+		&models.DisciplineGroup{},
 	)
 	if err != nil {
 		return err
@@ -543,6 +544,10 @@ func (s *PostgresStore) DeleteBoxEdgesByParent(parentBoxID uuid.UUID) error {
 
 func (s *PostgresStore) DeleteBoxEdgesByChild(childBoxID uuid.UUID) error {
 	return s.db.Where("child_box_id = ?", childBoxID).Delete(&models.BoxEdge{}).Error
+}
+
+func (s *PostgresStore) DeleteBoxEdge(id uuid.UUID) error {
+	return s.db.Where("id = ?", id).Delete(&models.BoxEdge{}).Error
 }
 
 func (s *PostgresStore) CreateCourseDependency(dep interfaces.CourseDependencyData) (interfaces.CourseDependencyData, error) {

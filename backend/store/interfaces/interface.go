@@ -48,6 +48,7 @@ type StoreBase interface {
 	CreateBoxEdge(edge BoxEdgeData) (BoxEdgeData, error)
 	DeleteBoxEdgesByParent(parentBoxID uuid.UUID) error
 	DeleteBoxEdgesByChild(childBoxID uuid.UUID) error
+	DeleteBoxEdge(id uuid.UUID) error
 
 	GetSpecializationsByMajor(majorID uuid.UUID) ([]SpecializationData, error)
 	CreateSpecialization(spec SpecializationData) (SpecializationData, error)
@@ -59,6 +60,12 @@ type StoreBase interface {
 	DeleteCourseRestriction(restrictionID uuid.UUID) error
 	GetCourseRestrictionByID(restrictionID uuid.UUID) (*CourseRestrictionData, error)
 	GetCourseRestrictionsBySpecialization(specializationID uuid.UUID) ([]CourseRestrictionData, error)
+
+	CreateDisciplineGroup(group DisciplineGroupData) (DisciplineGroupData, error)
+	UpdateDisciplineGroup(group DisciplineGroupData) (DisciplineGroupData, error)
+	GetDisciplineGroupByID(id uuid.UUID) (*DisciplineGroupData, error)
+	GetAllDisciplineGroups() ([]DisciplineGroupData, error)
+	DeleteDisciplineGroup(id uuid.UUID) error
 
 	CreateCourseDependency(dep CourseDependencyData) (CourseDependencyData, error)
 	DeleteCourseDependencies(courseID uuid.UUID) error

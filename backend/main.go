@@ -121,6 +121,7 @@ func main() {
 		api.RegisterCoursesRoutes(apiV1.Group("/courses"))
 		api.RegisterPlannerRoutes(apiV1.Group("/planner"))
 		api.RegisterAuthRoutes(apiV1.Group("/auth"))
+		api.RegisterDisciplineGroupRoutes(apiV1.Group("/discipline-groups"))
 	}
 
 	router.GET("/", func(c *gin.Context) {

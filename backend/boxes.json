@@ -1,0 +1,496 @@
+﻿{
+    "value":  [
+                  {
+                      "id":  "ac9353d5-c671-5413-ba3e-094f7cbc5606",
+                      "title":  "ОБЯЗ:Оба1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "2026b851-a147-41fd-9448-8f9bd1082a1b",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "aa449e82-fb58-413f-8ecf-671c79f1bb04",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "c3b58763-6c68-55fe-a35e-7776912fed14"
+                  },
+                  {
+                      "id":  "e54590a2-effb-5404-8d57-d48add4203d2",
+                      "title":  "ОБЯЗ: ГосФизра2",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "a0a44f2e-1db1-4389-9bd7-e567d288e54f",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "9b00dae1-76ad-5ff2-a41e-c9dee4ed28d3"
+                  },
+                  {
+                      "id":  "37260038-09a6-588f-8601-a12314813324",
+                      "title":  "ОБЯЗ:Интеллект1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "f285d5b7-46ff-4bf7-89f1-907304b98be1",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "d93aeff3-ece5-4b85-a3de-ba6d745e5af2",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "cfda50c4-e6ee-5d35-b083-0048d2317f1e"
+                  },
+                  {
+                      "id":  "30253014-e691-506d-a5c5-1ed47bb789ce",
+                      "title":  "ОБЯЗ: ГосФизра3",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "71a71ff4-8168-4d54-b593-ee8ca955da03",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "92447f5c-12e4-5e0d-b670-9e755f331bcb"
+                  },
+                  {
+                      "id":  "c88d8df5-01d9-5fbf-86e3-abbe8c5742e4",
+                      "title":  "ОБЯЗ: ГосФизра4",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "e61e955c-84f0-43b1-bfec-e465b7bd7e83",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "c4a1893a-1a68-5924-9c45-5046b9ab5ba7"
+                  },
+                  {
+                      "id":  "77bf35b2-8cc5-5a18-8d03-45a50582599f",
+                      "title":  "ОБЯЗ: ГосФилософия",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "6b0f0740-902e-435b-b4a5-0506e8fc7692",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "bc21f5ac-a23c-5493-8a14-de6f2fa04aea"
+                  },
+                  {
+                      "id":  "64f90c07-e286-5b11-bf17-c424fc4ded56",
+                      "title":  "ОБЯЗ\u0026ВРУЧНУЮ:НаучнаяСтудияПервыеДваГодаОбучения",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "22d32862-fc4d-46d3-9389-c31c7ed5e468",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "90c2fc72-245a-4c3e-b97b-d70ded8539fa",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "ba66e80e-6b2a-464d-ae48-8bd7a3fd72a1",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "b0bb75af-64f3-4013-b308-67856844d633",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "59829604-110a-46c4-b95f-594be96c35f2",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "77d3f4e6-0993-455f-aeba-c40a07883e51",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "37f39e11-40c6-4d44-8adc-ac0f2a4d029e",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "f2d734b1-78d9-423a-a8c4-28ec9ed7d325",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "792a01c1-f3fc-4a0b-9fe4-44ab824c9131",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "e32bc5f0-5134-5c1f-9f06-7f779d23b726"
+                  },
+                  {
+                      "id":  "125b51b0-d5c6-5eab-a038-e5d362f33ead",
+                      "title":  "ОБЯЗ:Матан1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "a9e2051f-54f9-45d1-a0ca-b98bacacfeb3",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "dbd0012c-d6a2-4cd0-a37e-e3142941162d",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "847a33b5-f58d-443e-aa34-1f5c0f143160",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "97a98f99-6f47-574b-b853-006c9e83bd63"
+                  },
+                  {
+                      "id":  "d4c1e18d-5ec1-5a0c-9056-3fc367e863e5",
+                      "title":  "ОБЯЗ: ГосАнгл4",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "c60d61fe-e8f0-46b0-8f7a-f06e6ed91635",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "872a054d-de51-57cc-9d7c-bf5c5dac8bdc"
+                  },
+                  {
+                      "id":  "968f4cbb-437a-5f8e-a594-b50a4750a793",
+                      "title":  "ОБЯЗ: ГосФизра1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "f9e3623b-3158-4303-b098-b185011c05c3",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "ea3d5525-b5e2-59cd-b532-71cd74039aff"
+                  },
+                  {
+                      "id":  "97e94845-961a-5dc5-97e4-ce970f147924",
+                      "title":  "ОБЯЗ: ГосАнгл3",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "aac74f26-db9c-4df5-9a37-efff03f8b315",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "288b8f02-d4f4-540b-9679-f27dd697fd04"
+                  },
+                  {
+                      "id":  "57f67b83-31f0-5d9e-98d7-fb0197e63b2d",
+                      "title":  "ОБЯЗ:Линал2",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "42779851-8947-4dab-a1c6-a74762cd0b64",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "62d7ff53-f18d-4702-a862-4003d4c6dc4e",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "34a1dc2d-e5b4-4361-a2f7-ccfcaba15f61",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "34bba4e8-1260-50ae-8bf7-1900aafecc9d"
+                  },
+                  {
+                      "id":  "6d56b272-e3ef-5228-90b7-ea023ed04902",
+                      "title":  "ОБЯЗ: ГосАнгл1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "1d6fd4d9-62ab-4543-a483-ecdd9b3d6ada",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "6065b907-d881-5a93-90a6-fb2f82ee0b27"
+                  },
+                  {
+                      "id":  "51319555-8bdf-5e9b-987c-3164997e70b3",
+                      "title":  "ОБЯЗ:PythonGo1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "20359c88-7035-438d-b003-89001c5274ab",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "879d683a-97c2-4f25-b701-7805bf86ad76",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "c9fc0084-6312-4b0f-8d79-f663c389b4f6",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "11eb1d7c-345d-42dd-8439-742ea2af2e60",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "d81f5121-f7aa-5a39-aa37-80f30c8beafe"
+                  },
+                  {
+                      "id":  "d1756abd-246e-557d-a227-059eaf4b046a",
+                      "title":  "ОБЯЗ: ГосОРГ",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "fabe1c0c-28b6-49e3-903c-4eb08e6f6b44",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "a55911ef-2562-594d-8e46-715ce54bcfb7"
+                  },
+                  {
+                      "id":  "638a86c2-39a8-5d58-83fa-db986d2755be",
+                      "title":  "ОБЯЗ: ГосИстория",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "86eb3e33-425f-44e5-ad48-d97dc55fdcee",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "29eed38e-9b38-588e-b7a9-d115a3213e44"
+                  },
+                  {
+                      "id":  "7c2d079e-ca0a-54f4-a0a7-911cf1cc37b7",
+                      "title":  "ОБЯЗ:Стата1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "b8b590d0-dd8b-48c0-89ce-b3dbc99c7d84",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "d253199f-5200-4ef2-91c9-1880b893d5ce",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "6306a714-376c-5cae-9a63-f97a4ac005ed"
+                  },
+                  {
+                      "id":  "12e094d2-6de4-54d5-8296-531313783692",
+                      "title":  "ОБЯЗ:Матан2",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "7736df38-14a4-43c7-9396-32ab680f25c7",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "42779851-8947-4dab-a1c6-a74762cd0b64",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "73ae0196-c66f-4c2e-9c63-fab4a3d08d0d",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "f8b04af8-f542-5f1f-a95c-12b3450288e8"
+                  },
+                  {
+                      "id":  "1f944680-eceb-5f49-87a1-f0c7d62ea304",
+                      "title":  "ОБЯЗ: ГосАнгл2",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "386dd8eb-1413-4316-9c68-dc87d211af2d",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "467ddea2-88ab-561a-8429-1c19bfcbe3d4"
+                  },
+                  {
+                      "id":  "81b8fe0f-c14f-5dc5-b9ac-d8fe192c4c1f",
+                      "title":  "ОБЯЗ: ГосБЖД",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "b2bec836-1ae0-4290-9f9f-1441688b276c",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "89b7ffdb-1173-50b7-a26e-383308106756"
+                  },
+                  {
+                      "id":  "caac66ce-695b-5bb6-ad80-36a22338932d",
+                      "title":  "ОБЯЗ: Экон1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "6a3da133-7aa7-4aa3-ba7b-114f140d7493",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "c88a5390-80e2-47e7-a891-40c9ab4da8c6",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "4510784d-3ea2-4146-bb75-399802bb0d95",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "3c98e528-802a-4d97-9df6-2755cca59cd9",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "2ead68c0-f953-505f-87d6-456b0959710c"
+                  },
+                  {
+                      "id":  "33d2853f-d9a7-5939-adbd-7472417fd336",
+                      "title":  "ОБЯЗ:БизнесСтудияПервыеДваГодаОбучения",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "67bbadf3-ec5f-4eaf-aad8-9ec68fe5fe76",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "517fdd5a-f80e-5afd-9155-1817b8416d8e"
+                  },
+                  {
+                      "id":  "062d5e98-5dc1-5771-8898-b7f23ed90620",
+                      "title":  "ОБЯЗ:Линал1",
+                      "category":  "analog_group",
+                      "math_expression":  {
+                                              "children":  [
+                                                               {
+                                                                   "course_id":  "a9e2051f-54f9-45d1-a0ca-b98bacacfeb3",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "6f365e28-5577-45fe-b4af-9d10da3d75e4",
+                                                                   "type":  "course"
+                                                               },
+                                                               {
+                                                                   "course_id":  "89098642-8146-44d1-a3f9-24a3b9009e1c",
+                                                                   "type":  "course"
+                                                               }
+                                                           ],
+                                              "logical_op":  "OR",
+                                              "required_count":  1,
+                                              "type":  "logical"
+                                          },
+                      "root_box_id":  "95808cdd-a432-525a-ab3b-2bdfbde8de0e"
+                  }
+              ],
+    "Count":  23
+}

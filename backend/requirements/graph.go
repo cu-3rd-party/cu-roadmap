@@ -396,7 +396,7 @@ func (g *Graph) resolveBox(
 		if len(children) == 0 {
 			return nil
 		}
-		return g.resolveOptional(children[0].ChildBoxID, box.RequiredCount, passedCourseIDs, plannedCourseIDs, cohort, depth+1, selected)
+		return g.resolveOptional(children[0].ChildBoxID, box.MinCount, box.MaxCount, passedCourseIDs, plannedCourseIDs, cohort, depth+1, selected)
 	default:
 		return nil
 	}
@@ -404,7 +404,8 @@ func (g *Graph) resolveBox(
 
 func (g *Graph) resolveOptional(
 	childBoxID uuid.UUID,
-	requiredCount int,
+	minCount int,
+	maxCount *int,
 	passedCourseIDs map[uuid.UUID]bool,
 	plannedCourseIDs map[uuid.UUID]bool,
 	cohort int,
@@ -428,7 +429,7 @@ func (g *Graph) resolveOptional(
 		}
 		unsatisfied = append(unsatisfied, option)
 	}
-	need := requiredCount - satisfied
+	need := minCount - satisfied
 	if need <= 0 {
 		return nil
 	}

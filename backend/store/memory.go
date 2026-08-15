@@ -24,6 +24,7 @@ type MemoryStore struct {
 	specializations    []interfaces.SpecializationData
 	courseRestrictions []interfaces.CourseRestrictionData
 	students           map[uuid.UUID]interfaces.StudentData
+	disciplineGroups   map[uuid.UUID]interfaces.DisciplineGroupData
 	coursesByTitle     map[string]uuid.UUID
 	majorsByTitle      map[string]uuid.UUID
 	adminPassword      [32]byte
@@ -47,12 +48,13 @@ func (s *MemoryStore) SetAdminPassword(password string) {
 
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
-		courses:        make(map[uuid.UUID]interfaces.CourseData),
-		majors:         make(map[uuid.UUID]interfaces.MajorData),
-		boxes:          make(map[uuid.UUID]interfaces.BoxData),
-		students:       make(map[uuid.UUID]interfaces.StudentData),
-		coursesByTitle: make(map[string]uuid.UUID),
-		majorsByTitle:  make(map[string]uuid.UUID),
+		courses:          make(map[uuid.UUID]interfaces.CourseData),
+		majors:           make(map[uuid.UUID]interfaces.MajorData),
+		boxes:            make(map[uuid.UUID]interfaces.BoxData),
+		students:         make(map[uuid.UUID]interfaces.StudentData),
+		disciplineGroups: make(map[uuid.UUID]interfaces.DisciplineGroupData),
+		coursesByTitle:   make(map[string]uuid.UUID),
+		majorsByTitle:    make(map[string]uuid.UUID),
 	}
 }
 
@@ -72,6 +74,7 @@ func (s *MemoryStore) ClearAll() error {
 	s.courses = make(map[uuid.UUID]interfaces.CourseData)
 	s.majors = make(map[uuid.UUID]interfaces.MajorData)
 	s.boxes = make(map[uuid.UUID]interfaces.BoxData)
+	s.disciplineGroups = make(map[uuid.UUID]interfaces.DisciplineGroupData)
 	s.coursesByTitle = make(map[string]uuid.UUID)
 	s.majorsByTitle = make(map[string]uuid.UUID)
 	for id, student := range s.students {
@@ -848,4 +851,58 @@ func calculateRecommendedSemesters(coursesPath, depsPath string) map[string]int 
 		recommended[cid] = rec
 	}
 	return recommended
+}
+
+func (s *MemoryStore) CreateDisciplineGroup(group interfaces.DisciplineGroupData) (interfaces.DisciplineGroupData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.disciplineGroups[group.ID] = group
+	return group, nil
+}
+
+func (s *MemoryStore) UpdateDisciplineGroup(group interfaces.DisciplineGroupData) (interfaces.DisciplineGroupData, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.disciplineGroups[group.ID] = group
+	return group, nil
+}
+
+func (s *MemoryStore) GetDisciplineGroupByID(id uuid.UUID) (*interfaces.DisciplineGroupData, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	g, ok := s.disciplineGroups[id]
+	if !ok {
+		return nil, nil
+	}
+	return &g, nil
+}
+
+func (s *MemoryStore) GetAllDisciplineGroups() ([]interfaces.DisciplineGroupData, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]interfaces.DisciplineGroupData, 0, len(s.disciplineGroups))
+	for _, g := range s.disciplineGroups {
+		out = append(out, g)
+	}
+	return out, nil
+}
+
+func (s *MemoryStore) DeleteDisciplineGroup(id uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.disciplineGroups, id)
+	return nil
+}
+
+func (s *MemoryStore) DeleteBoxEdge(id uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	filtered := s.boxEdges[:0]
+	for _, edge := range s.boxEdges {
+		if edge.ID != id {
+			filtered = append(filtered, edge)
+		}
+	}
+	s.boxEdges = append([]interfaces.BoxEdgeData(nil), filtered...)
+	return nil
 }

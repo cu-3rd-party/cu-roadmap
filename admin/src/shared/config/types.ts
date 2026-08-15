@@ -109,3 +109,17 @@ export interface CourseRestrictionInput {
   max_courses: number;
   internal_description?: string;
 }
+
+export interface DisciplineGroup {
+  id: string;
+  title: string;
+  category: string;
+  math_expression: Record<string, any>;
+  root_box_id: string;
+}
+
+export interface DisciplineGroupInput {
+  title: string;
+  category: string;
+  math_expression: Record<string, any>;
+}

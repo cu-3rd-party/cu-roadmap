@@ -8,12 +8,13 @@ import (
 )
 
 type Box struct {
-	ID                       uuid.UUID              `gorm:"type:uuid;primaryKey"`
-	Kind                     enums.BoxKind          `gorm:"type:varchar(20);not null;index"`
-	Title                    string                 `gorm:"type:varchar(255)"`
-	CourseID                 *uuid.UUID             `gorm:"type:uuid;index"`
-	LogicalOp                *enums.LogicalOp       `gorm:"type:varchar(10)"`
-	RequiredCount            int                    `gorm:"not null;default:0"`
+	ID                       uuid.UUID        `gorm:"type:uuid;primaryKey"`
+	Kind                     enums.BoxKind    `gorm:"type:varchar(20);not null;index"`
+	Title                    string           `gorm:"type:varchar(255)"`
+	CourseID                 *uuid.UUID       `gorm:"type:uuid;index"`
+	LogicalOp                *enums.LogicalOp `gorm:"type:varchar(10)"`
+	MinCount                 int              `gorm:"not null;default:0"`
+	MaxCount                 *int
 	RequirementType          *enums.RequirementType `gorm:"type:varchar(20)"`
 	Specializations          pq.StringArray         `gorm:"type:text[]"`
 	MandatorySpecializations pq.StringArray         `gorm:"type:text[]"`

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"regexp"
@@ -496,6 +497,10 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 		}
 	}
 
+	if err := generateDisciplineGroups(s, courseMap); err != nil {
+		slog.Warn("failed to generate discipline groups", "error", err)
+	}
+
 	return SyncResult{
 		Courses:           len(courseMap),
 		Majors:            len(majorsByTitle),
@@ -961,4 +966,107 @@ func mergeAnalogGroups(existing, newGroup string) (string, bool) {
 	}
 
 	return strings.Join(ordered, ","), modified
+}
+
+func generateDisciplineGroups(s interfaces.StoreBase, courseMap map[string]interfaces.CourseData) error {
+	groups := make(map[string][]uuid.UUID)
+	for _, c := range courseMap {
+		if c.AnalogGroup == "" {
+			continue
+		}
+		parts := strings.Split(c.AnalogGroup, ",")
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			groups[p] = append(groups[p], c.ID)
+		}
+	}
+
+	for groupName, courseIDs := range groups {
+		uniqueIDs := make(map[uuid.UUID]bool)
+		var cleanIDs []uuid.UUID
+		for _, id := range courseIDs {
+			if !uniqueIDs[id] {
+				uniqueIDs[id] = true
+				cleanIDs = append(cleanIDs, id)
+			}
+		}
+
+		children := make([]map[string]interface{}, 0, len(cleanIDs))
+		for _, id := range cleanIDs {
+			children = append(children, map[string]interface{}{
+				"type":      "course",
+				"course_id": id.String(),
+			})
+		}
+		mathExprMap := map[string]interface{}{
+			"type":       "logical",
+			"logical_op": "OR",
+			"min_count":  1,
+			"max_count":  1,
+			"children":   children,
+		}
+		mathExprBytes, err := json.Marshal(mathExprMap)
+		if err != nil {
+			continue
+		}
+
+		id := uuid.NewSHA1(uuid.NameSpaceOID, []byte("discipline-group-"+groupName))
+		rootBoxID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("discipline-group-root-"+groupName))
+
+		op := enums.LogicalOpOr
+		_, _ = s.CreateBox(interfaces.BoxData{
+			ID:        rootBoxID,
+			Kind:      enums.BoxKindLogical,
+			Title:     groupName,
+			LogicalOp: &op,
+			MinCount:  1,
+			MaxCount:  func() *int { i := 1; return &i }(),
+		})
+
+		_ = s.DeleteBoxEdgesByParent(rootBoxID)
+
+		for _, cid := range cleanIDs {
+			childBoxID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("discipline-group-child-"+groupName+"-"+cid.String()))
+			copyCid := cid
+			_, _ = s.CreateBox(interfaces.BoxData{
+				ID:       childBoxID,
+				Kind:     enums.BoxKindCourse,
+				CourseID: &copyCid,
+			})
+			edgeID := uuid.NewSHA1(uuid.NameSpaceOID, []byte(rootBoxID.String()+"|"+childBoxID.String()))
+			_, _ = s.CreateBoxEdge(interfaces.BoxEdgeData{
+				ID:          edgeID,
+				ParentBoxID: rootBoxID,
+				ChildBoxID:  childBoxID,
+			})
+		}
+
+		_, _ = s.CreateDisciplineGroup(interfaces.DisciplineGroupData{
+			ID:             id,
+			Title:          groupName,
+			Category:       "analog_group",
+			MathExpression: mathExprBytes,
+			RootBoxID:      rootBoxID,
+		})
+
+		majors, _ := s.GetAllMajors()
+		for majorID := range majors {
+			specs, _ := s.GetSpecializationsByMajor(majorID)
+			for _, sp := range specs {
+				if sp.RequirementsBoxID != nil {
+					edgeID := uuid.NewSHA1(uuid.NameSpaceOID, []byte(sp.RequirementsBoxID.String()+"|"+rootBoxID.String()))
+					_, _ = s.CreateBoxEdge(interfaces.BoxEdgeData{
+						ID:          edgeID,
+						ParentBoxID: *sp.RequirementsBoxID,
+						ChildBoxID:  rootBoxID,
+					})
+				}
+			}
+		}
+	}
+
+	return nil
 }

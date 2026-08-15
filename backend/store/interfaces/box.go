@@ -11,7 +11,8 @@ type BoxData struct {
 	Title                    string
 	CourseID                 *uuid.UUID
 	LogicalOp                *enums.LogicalOp
-	RequiredCount            int
+	MinCount                 int
+	MaxCount                 *int
 	RequirementType          *enums.RequirementType
 	Specializations          []string
 	MandatorySpecializations []string

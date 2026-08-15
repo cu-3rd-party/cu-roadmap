@@ -11,6 +11,8 @@ import type {
   GraphData,
   CourseRestriction,
   CourseRestrictionInput,
+  DisciplineGroup,
+  DisciplineGroupInput,
 } from "./types";
 
 const client = axios.create({
@@ -94,5 +96,27 @@ export const api = {
       client.put<CourseRestriction>(`/majors/restrictions/${id}`, restriction),
     deleteRestriction: (id: string) =>
       client.delete(`/majors/restrictions/${id}`),
+
+    // Discipline groups
+    getDisciplineGroups: () =>
+      client.get<DisciplineGroup[]>("/discipline-groups"),
+    createDisciplineGroup: (group: DisciplineGroupInput) =>
+      client.post<DisciplineGroup>("/discipline-groups", group),
+    updateDisciplineGroup: (id: string, group: DisciplineGroupInput) =>
+      client.put<DisciplineGroup>(`/discipline-groups/${id}`, group),
+    deleteDisciplineGroup: (id: string) =>
+      client.delete(`/discipline-groups/${id}`),
+    attachDisciplineGroup: (id: string, specializationId: string) =>
+      client.post(`/discipline-groups/${id}/attach`, {
+        specialization_id: specializationId,
+      }),
+    detachDisciplineGroup: (id: string, specializationId: string) =>
+      client.post(`/discipline-groups/${id}/detach`, {
+        specialization_id: specializationId,
+      }),
+    getAttachedDisciplineGroups: (specializationId: string) =>
+      client.get<string[]>(
+        `/discipline-groups/specialization/${specializationId}`,
+      ),
   },
 };
