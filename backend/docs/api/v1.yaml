@@ -819,6 +819,110 @@ paths:
         '503':
           $ref: '#/components/responses/ServiceUnavailableError'
 
+  /api/v1/discipline-groups:
+    get:
+      description: получить все коробки
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DisciplineGroup'
+    post:
+      description: создать коробку
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisciplineGroupWriteRequest'
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdResponse'
+
+  /api/v1/discipline-groups/{id}:
+    put:
+      description: обновить коробку
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisciplineGroupWriteRequest'
+      responses:
+        '200':
+          description: ok
+    delete:
+      description: удалить коробку
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '204':
+          description: ok
+
+  /api/v1/discipline-groups/specialization/{id}:
+    get:
+      description: получить список ID коробок, привязанных к специализации
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+
+  /api/v1/discipline-groups/{id}/attach:
+    post:
+      description: привязать коробку к специализации
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                specialization_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: ok
+
+  /api/v1/discipline-groups/{id}/detach:
+    post:
+      description: отвязать коробку от специализации
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                specialization_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: ok
+
 components:
   securitySchemes:
     AdminCookie:
@@ -1747,3 +1851,60 @@ components:
           description: если чето пойдет не так при генерации тут будет ошибка
         roadmap:
           $ref: '#/components/schemas/GoalPathRoadmap'
+
+    DisciplineGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        category:
+          type: string
+        root_box_id:
+          type: string
+          format: uuid
+        math_expression:
+          $ref: '#/components/schemas/MathExpressionNode'
+
+    DisciplineGroupWriteRequest:
+      type: object
+      required:
+        - title
+        - category
+        - math_expression
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+        math_expression:
+          $ref: '#/components/schemas/MathExpressionNode'
+
+    MathExpressionNode:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [logical, optional, course]
+        logical_op:
+          type: string
+          enum: [AND, OR, XOR]
+          nullable: true
+        min_count:
+          type: integer
+          default: 0
+        max_count:
+          type: integer
+          nullable: true
+        course_id:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/MathExpressionNode'
