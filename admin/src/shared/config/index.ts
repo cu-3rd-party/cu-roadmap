@@ -16,6 +16,8 @@ export type {
   GraphNode,
   GraphEdge,
   GraphData,
+  DisciplineGroup,
+  DisciplineGroupInput,
 } from "./types";
 export { api } from "./api";
 
