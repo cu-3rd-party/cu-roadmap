@@ -25,13 +25,13 @@ const HarnessLayout = () => (
 export const AppRouter = () => (
   <Routes>
     <Route element={<HarnessLayout />}>
-      <Route path="/" element={<Navigate to="/planner" replace />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       {sidebarRoutes.map(({ path, element }) => (
         <Route key={path} path={path} element={element} />
       ))}
+      {fallbackRoutes.map(({ path, element }) => (
+        <Route key={path} path={path} element={element} />
+      ))}
     </Route>
-    {fallbackRoutes.map(({ path, element }) => (
-      <Route key={path} path={path} element={element} />
-    ))}
   </Routes>
 );

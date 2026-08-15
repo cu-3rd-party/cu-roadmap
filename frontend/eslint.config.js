@@ -31,8 +31,12 @@ export default defineConfig({
       version: "detect",
       runtime: "automatic",
     },
+    // Points at tsconfig.app.json, not tsconfig.json: the latter declares
+    // `references`, which puts the resolver in solution-style mode where it
+    // only looks through referenced projects. tsconfig.node.json holds just the
+    // config files, so every `@/*` import under src/ came back unresolved.
     "import/resolver": {
-      typescript: { project: `${import.meta.dirname}/tsconfig.json` },
+      typescript: { project: `${import.meta.dirname}/tsconfig.app.json` },
     },
     "import/core-modules": ["uuid"],
   },

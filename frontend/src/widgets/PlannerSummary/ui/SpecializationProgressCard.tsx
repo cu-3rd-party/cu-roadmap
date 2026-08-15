@@ -3,10 +3,9 @@ import { Check, ChevronUp, X } from "lucide-react";
 import { useState } from "react";
 
 import { useCourseDrawerStore } from "@/entities/course";
-import { cn } from "@/shared/lib/cn";
+import { cn } from "@/shared/lib";
 import type { UUID } from "@/shared/model";
-import { AnimatedNumber } from "@/shared/ui/animated-number";
-import { SegmentedProgress } from "@/shared/ui/segmented-progress";
+import { AnimatedNumber, SegmentedProgress } from "@/shared/ui";
 
 export type LinkedCourseStatus = "available" | "completed" | "unavailable";
 

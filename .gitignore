@@ -45,6 +45,9 @@ deploy.env
 *.swo
 .DS_Store
 
+# Agent tooling
+.nessy/
+
 # DB
 *.sqlite
 *.db

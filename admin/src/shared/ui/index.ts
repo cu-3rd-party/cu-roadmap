@@ -1,6 +1,5 @@
-export * from "./animated-number";
-export * from "./kit";
-export * from "./CourseInfoModal";
-export * from "./panel";
-export * from "./reveal-image";
-export * from "./segmented-progress";
+export * from "@cu/ui/kit";
+export * from "@cu/ui/primitives";
+
+// Admin-only shared UI.
+export * from "./page-placeholder";

@@ -1,5 +1,4 @@
-import { Skeleton } from "@/shared/ui";
-import { Panel } from "@/shared/ui/panel";
+import { Skeleton, Panel } from "@/shared/ui";
 
 const CourseCardSkeleton = () => (
   <div className="flex h-full flex-col gap-2 rounded-xl bg-background px-3 py-4">

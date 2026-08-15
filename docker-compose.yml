@@ -41,7 +41,11 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD}\" ]; then REDISCLI_AUTH=\"$${REDIS_PASSWORD}\" redis-cli --no-auth-warning ping; else redis-cli ping; fi | grep -q PONG || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          'if [ -n "$${REDIS_PASSWORD}" ]; then REDISCLI_AUTH="$${REDIS_PASSWORD}" redis-cli --no-auth-warning ping; else redis-cli ping; fi | grep -q PONG || exit 1',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -61,10 +65,12 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Context is the repo root: pnpm workspace builds need the root lockfile and
+  # packages/ui alongside the app itself.
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
     env_file:
@@ -73,8 +79,8 @@ services:
 
   admin:
     build:
-      context: ./admin
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: admin/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
     env_file:
@@ -100,7 +106,7 @@ services:
     environment:
       GF_SERVER_ROOT_URL: https://roadmap.cu3rd.ru/grafana/
       GF_SERVER_DOMAIN: roadmap.cu3rd.ru
-      GF_SERVER_SERVE_FROM_SUB_PATH: 'true'
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:

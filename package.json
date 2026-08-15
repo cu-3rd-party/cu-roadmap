@@ -1,0 +1,22 @@
+{
+  "name": "cu-roadmap",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@11.1.2",
+  "scripts": {
+    "dev": "pnpm --filter cu-roadmap-frontend dev",
+    "dev:admin": "pnpm --filter cu-roadmap-frontend-admin dev",
+    "build": "pnpm --filter cu-roadmap-frontend build",
+    "build:admin": "pnpm --filter cu-roadmap-frontend-admin build",
+    "build:all": "pnpm --recursive --filter \"./frontend\" --filter \"./admin\" build",
+    "test": "pnpm --recursive test",
+    "lint:ts": "pnpm --recursive lint:ts",
+    "lint:eslint": "pnpm --recursive lint:eslint",
+    "format:check": "prettier --check \"**/*.{json,js,ts,tsx,html,yaml,css}\"",
+    "format:prettier": "prettier \"**/*.{json,js,ts,tsx,html,yaml,css}\" --write"
+  },
+  "devDependencies": {
+    "prettier": "^3.1.0"
+  }
+}

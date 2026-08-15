@@ -1,4 +1,4 @@
-import { RevealImage } from "@/shared/ui/reveal-image";
+import { RevealImage } from "@/shared/ui";
 
 interface SyllabusCardProps {
   link: string;

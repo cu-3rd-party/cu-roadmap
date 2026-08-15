@@ -33,8 +33,8 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  RevealImage,
 } from "@/shared/ui";
-import { RevealImage } from "@/shared/ui/reveal-image";
 
 import { filterAvailableCourses, useCourseSelectFiltersStore } from "../model";
 

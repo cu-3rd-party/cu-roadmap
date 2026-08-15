@@ -2,7 +2,6 @@ import { lingui } from "@lingui/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react";
-/// <reference types="vitest" />
 import { defineConfig, loadEnv } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -21,12 +20,8 @@ export default defineConfig(({ mode }) => {
     env.VITE_API_PROXY_TARGET || "https://roadmap.cu3rd.ru";
 
   return {
+    // Served behind nginx at /admin/; the router uses the matching basename.
     base: "/admin/",
-    test: {
-      globals: true,
-      environment: "jsdom",
-      setupFiles: ["./src/test/setup.ts"],
-    },
     plugins: [
       react(),
       tsconfigPaths(),
@@ -39,6 +34,9 @@ export default defineConfig(({ mode }) => {
         manifest: manifest,
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+          clientsClaim: true,
+          skipWaiting: true,
+          cleanupOutdatedCaches: true,
         },
         devOptions: {
           enabled: DEV_ENABLE_PWA,
@@ -57,6 +55,9 @@ export default defineConfig(({ mode }) => {
     build: {
       target: "esnext",
     },
+    // Port intentionally unset: nginx proxies to admin:5173 in the container,
+    // and the Dockerfile CMD passes --port. Dev uses 5174 (see server.port) so
+    // both apps can run side by side locally.
     preview: {
       allowedHosts: ["roadmap.cu3rd.ru"],
     },

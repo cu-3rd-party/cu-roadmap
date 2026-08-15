@@ -1,0 +1,17 @@
+# Generated / vendored
+pnpm-lock.yaml
+**/node_modules
+**/dist
+**/public/mockServiceWorker.js
+**/playwright-report
+**/test-results
+**/*.tsbuildinfo
+
+# Not owned by the frontend workspace
+backend/
+metrics/
+.nessy/
+.idea/
+
+# Generated API schemas
+**/docs/v1.yaml

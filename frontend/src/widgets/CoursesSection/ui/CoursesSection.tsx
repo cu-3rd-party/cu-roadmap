@@ -7,7 +7,7 @@ import {
 } from "@/entities/course";
 import { usePlannerStore } from "@/entities/roadmap";
 import type { SemesterNumber } from "@/shared/constants";
-import { CollapsiblePanel, Panel } from "@/shared/ui/panel";
+import { CollapsiblePanel, Panel } from "@/shared/ui";
 
 interface CourseCategorySectionProps {
   title: string;

@@ -1,6 +1,6 @@
 import { lazy } from "react";
 
-import { AppRoute } from "../types";
+import type { AppRoute } from "../types";
 
 const LazyNotFoundPage = lazy(() => import("@/pages/not-found"));
 

@@ -20,13 +20,7 @@ export const typeSlugToShortName: Record<CourseType, string> = {
 */
 
 export type CourseCategory =
-  | "fundamentals"
-  | "ai"
-  | "stem"
-  | "soft"
-  | "business"
-  | "swe"
-  | "design";
+  "fundamentals" | "ai" | "stem" | "soft" | "business" | "swe" | "design";
 
 export const categorySlugToName: Record<CourseCategory, string> = {
   fundamentals: "Fundamentals",

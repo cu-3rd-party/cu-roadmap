@@ -1,1 +1,0 @@
-export { SemesterCard } from "./ui/SemesterCard";

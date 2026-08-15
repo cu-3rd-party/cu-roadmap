@@ -1,8 +1,5 @@
-export * from "./animated-number";
+export * from "@cu/ui/kit";
+export * from "@cu/ui/primitives";
+
+// Frontend-only: links into this app's /glossary route.
 export * from "./glossary-link";
-export * from "./hint-button";
-export * from "./kit";
-export * from "./panel";
-export * from "./reveal-image";
-export * from "./scroll-rail";
-export * from "./segmented-progress";
