@@ -37,7 +37,9 @@ export default defineConfig(({ mode }) => {
         manifest: manifest,
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-          navigateFallbackDenylist: [/^\/admin(?:\/|$)/, /^\/grafana(?:\/|$)/],
+          // /admin/* is part of this SPA now, so it must keep the navigate
+          // fallback. Grafana is a separate upstream and must not get it.
+          navigateFallbackDenylist: [/^\/grafana(?:\/|$)/],
           clientsClaim: true,
           // Activate a new SW immediately (paired with registerType autoUpdate)
           // so updates apply without waiting for every tab to close.

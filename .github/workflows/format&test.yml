@@ -13,7 +13,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version: '1.26'
           cache-dependency-path: backend/go.sum
 
       - name: Check go mod tidy
@@ -46,14 +46,17 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
-      # One install for the whole workspace (frontend + admin + packages/ui).
-      - name: Install workspace dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: pnpm format:check
+      - name: Format/Check frontend formatting
+        run: |
+          cd frontend
+          pnpm format:check
 
   test-backend:
     needs: format
@@ -68,7 +71,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version: '1.26'
           cache-dependency-path: backend/go.sum
 
       - name: Run tests
@@ -112,7 +115,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version: '1.26'
           cache-dependency-path: backend/go.sum
 
       - name: Run full backend tests
@@ -124,6 +127,9 @@ jobs:
   test-frontend:
     needs: format
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -138,25 +144,16 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck design system
-        run: pnpm --filter @cu/ui lint:ts
-
-      - name: Test design system
-        run: pnpm --filter @cu/ui test
-
-      - name: Typecheck frontend
-        run: pnpm --filter cu-roadmap-frontend lint:ts
-
       - name: Build frontend
-        run: pnpm --filter cu-roadmap-frontend build
+        run: pnpm build
 
       - name: Test frontend
-        run: pnpm --filter cu-roadmap-frontend exec vitest run
+        run: pnpm test
 
   # test-e2e:
   #   needs: format
@@ -221,33 +218,3 @@ jobs:
   #       if: always()
   #       run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
 
-  test-admin-frontend:
-    needs: format
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11.1.2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck admin
-        run: pnpm --filter cu-roadmap-frontend-admin lint:ts
-
-      - name: Build admin
-        run: pnpm --filter cu-roadmap-frontend-admin build
-
-      - name: Test admin
-        run: pnpm --filter cu-roadmap-frontend-admin test

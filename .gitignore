@@ -45,9 +45,6 @@ deploy.env
 *.swo
 .DS_Store
 
-# Agent tooling
-.nessy/
-
 # DB
 *.sqlite
 *.db
@@ -55,3 +52,6 @@ deploy.env
 # bins
 *.exe
 backend/out.log
+
+# Agent tooling
+.nessy/

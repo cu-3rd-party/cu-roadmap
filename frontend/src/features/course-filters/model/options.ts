@@ -21,7 +21,12 @@ export interface CategoryFilterOption {
 }
 
 export type FilterGroup =
-  "all" | "core" | "choice" | "elective" | "fundamentals" | "flex";
+  | "all"
+  | "core"
+  | "choice"
+  | "elective"
+  | "fundamentals"
+  | "flex";
 
 // Top-level (row 1) chips, single-select, in display order.
 export const FILTER_GROUPS: { id: FilterGroup; label: string }[] = [
@@ -62,13 +67,15 @@ export const buildCategorySections = (
   const options: CategoryFilterOption[] = [
     // Core
     { id: "core", type: "core", label: typeSlugToName.core },
-    ...specializations.map((spec): CategoryFilterOption => ({
-      id: `choice:${spec.id}`,
-      type: "choice",
-      label: spec.title,
-      category: majorType ?? undefined,
-      specializationId: spec.id,
-    })),
+    ...specializations.map(
+      (spec): CategoryFilterOption => ({
+        id: `choice:${spec.id}`,
+        type: "choice",
+        label: spec.title,
+        category: majorType ?? undefined,
+        specializationId: spec.id,
+      }),
+    ),
   ];
 
   // Elective for the selected major type (first elective card)
@@ -83,12 +90,14 @@ export const buildCategorySections = (
 
   // Elective for the remaining major types — labeled with the major-type name
   options.push(
-    ...otherMajorCategories.map((category): CategoryFilterOption => ({
-      id: `elective:${category}`,
-      type: "elective",
-      label: categorySlugToName[category],
-      category,
-    })),
+    ...otherMajorCategories.map(
+      (category): CategoryFilterOption => ({
+        id: `elective:${category}`,
+        type: "elective",
+        label: categorySlugToName[category],
+        category,
+      }),
+    ),
   );
 
   // Fundamentals split into mandatory (type other) and elective (type elective)

@@ -65,7 +65,7 @@ export const CourseCard = ({
   return (
     <div
       className={cn(
-        "relative border-2 border-transparent transition-colors animate-[border-pulse-in_300ms_ease] flex h-full flex-col gap-3 rounded-xl bg-background p-2 sm:py-4 sm:pl-4",
+        "relative border-2 border-transparent transition-colors animate-[border-pulse-in_300ms_ease] flex h-full flex-col gap-3 rounded-xl bg-background p-2 sm:py-4 sm:px-3",
         generated && "border-expert-blue",
         conflict && "border-negative",
       )}

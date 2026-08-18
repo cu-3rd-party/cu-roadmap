@@ -1,3 +1,21 @@
-// The kit now lives in @cu/ui, shared with admin. Re-exported here so the
-// existing `@/shared/ui/kit` import sites keep working.
-export * from "@cu/ui/kit";
+export * from "./badge";
+export * from "./button";
+export * from "./card";
+export * from "./checkbox";
+export * from "./command";
+export * from "./counter";
+export * from "./chip";
+export * from "./dialog";
+export * from "./dropdown-menu";
+export * from "./input";
+export * from "./label";
+export * from "./popover";
+export * from "./select";
+export * from "./separator";
+export * from "./sheet";
+export * from "./slider";
+export * from "./skeleton";
+export * from "./sonner";
+export * from "./switch";
+export * from "./tabs";
+export * from "./tooltip";
