@@ -20,7 +20,7 @@ func TestValidateRoadmapPrereqInSameSemester(t *testing.T) {
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
-			ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID,
+			ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID,
 			DependencyType: enums.DependencyTypePrerequisite,
 		})
 	})
@@ -55,7 +55,7 @@ func TestValidateRoadmapPrereqAfterCourse(t *testing.T) {
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
-			ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID,
+			ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID,
 			DependencyType: enums.DependencyTypePrerequisite,
 		})
 	})
@@ -93,7 +93,7 @@ func TestValidateRoadmapCoreqsInDifferentSemesters(t *testing.T) {
 		s.CreateCourse(c1)
 		s.CreateCourse(c4)
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
-			ID: uuid.New(), CourseID: c4.ID, RequiredCourseID: c1.ID,
+			ID: uuid.New(), CourseID: c4.ID, RequiredCourseID: &c1.ID,
 			DependencyType: enums.DependencyTypeCorequisite,
 		})
 	})
@@ -133,7 +133,7 @@ func TestValidateRoadmapWithCurrentSemester(t *testing.T) {
 		s.CreateCourse(c2)
 		s.CreateCourse(c3)
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
-			ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID,
+			ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID,
 			DependencyType: enums.DependencyTypePrerequisite,
 		})
 	})

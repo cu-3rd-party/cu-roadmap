@@ -114,8 +114,8 @@ func (s *MemoryStore) GetCourses(filter interfaces.CourseFilter) ([]interfaces.C
 func (s *MemoryStore) getPrereqsLocked(courseID uuid.UUID) []uuid.UUID {
 	var prereqs []uuid.UUID
 	for _, dep := range s.courseDependencies {
-		if dep.CourseID == courseID && dep.DependencyType == enums.DependencyTypePrerequisite {
-			prereqs = append(prereqs, dep.RequiredCourseID)
+		if dep.CourseID == courseID && dep.DependencyType == enums.DependencyTypePrerequisite && dep.RequiredCourseID != nil {
+			prereqs = append(prereqs, *dep.RequiredCourseID)
 		}
 	}
 	return prereqs
@@ -124,8 +124,8 @@ func (s *MemoryStore) getPrereqsLocked(courseID uuid.UUID) []uuid.UUID {
 func (s *MemoryStore) getCoreqsLocked(courseID uuid.UUID) []uuid.UUID {
 	var coreqs []uuid.UUID
 	for _, dep := range s.courseDependencies {
-		if dep.CourseID == courseID && dep.DependencyType == enums.DependencyTypeCorequisite {
-			coreqs = append(coreqs, dep.RequiredCourseID)
+		if dep.CourseID == courseID && dep.DependencyType == enums.DependencyTypeCorequisite && dep.RequiredCourseID != nil {
+			coreqs = append(coreqs, *dep.RequiredCourseID)
 		}
 	}
 	return coreqs
@@ -134,7 +134,7 @@ func (s *MemoryStore) getCoreqsLocked(courseID uuid.UUID) []uuid.UUID {
 func (s *MemoryStore) getPostrequisitesLocked(courseID uuid.UUID) []uuid.UUID {
 	var postrequisites []uuid.UUID
 	for _, dep := range s.courseDependencies {
-		if dep.RequiredCourseID == courseID && dep.DependencyType == enums.DependencyTypePrerequisite {
+		if dep.RequiredCourseID != nil && *dep.RequiredCourseID == courseID && dep.DependencyType == enums.DependencyTypePrerequisite {
 			postrequisites = append(postrequisites, dep.CourseID)
 		}
 	}
@@ -592,7 +592,7 @@ func (s *MemoryStore) LoadCoursesFromCSV(coursesCSVPath, depsCSVPath, majorsCSVP
 		s.courseDependencies = append(s.courseDependencies, interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         cid,
-			RequiredCourseID: rid,
+			RequiredCourseID: &rid,
 			DependencyType:   enums.DependencyType(row[2]),
 		})
 	}

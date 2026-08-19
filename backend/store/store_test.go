@@ -73,7 +73,7 @@ func (s *MemoryStoreTestSuite) TestGetCoursesIncludesPostrequisites() {
 	_, err := s.s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         advanced.ID,
-		RequiredCourseID: base.ID,
+		RequiredCourseID: &base.ID,
 		DependencyType:   enums.DependencyTypePrerequisite,
 	})
 	assert.NoError(s.T(), err)
@@ -81,7 +81,7 @@ func (s *MemoryStoreTestSuite) TestGetCoursesIncludesPostrequisites() {
 	_, err = s.s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         coreqOnly.ID,
-		RequiredCourseID: base.ID,
+		RequiredCourseID: &base.ID,
 		DependencyType:   enums.DependencyTypeCorequisite,
 	})
 	assert.NoError(s.T(), err)
@@ -132,7 +132,7 @@ func (s *MemoryStoreTestSuite) TestCreateAndGetCourseDependency() {
 	s.s.CreateCourse(c1)
 	s.s.CreateCourse(c2)
 
-	dep := interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite}
+	dep := interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID, DependencyType: enums.DependencyTypePrerequisite}
 	_, err := s.s.CreateCourseDependency(dep)
 	assert.NoError(s.T(), err)
 
@@ -214,7 +214,7 @@ func (s *MemoryStoreTestSuite) TestClearAll() {
 	major := interfaces.MajorData{ID: uuid.New(), Title: "Test Major", School: "Tech"}
 	s.s.CreateMajor(major)
 	_ = requirements.AddFlatRequirement(s.s, major.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: course.ID})
-	s.s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: course.ID, RequiredCourseID: course.ID})
+	s.s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: course.ID, RequiredCourseID: &course.ID})
 
 	courses, _ := s.s.GetAllCourses()
 	assert.Len(s.T(), courses, 1)

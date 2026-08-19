@@ -202,25 +202,31 @@ func newRoadmapPlanningContext(
 	for _, dep := range allDeps {
 		switch dep.DependencyType {
 		case enums.DependencyTypePrerequisite:
+			if dep.RequiredCourseID == nil {
+				continue
+			}
 			if prereqGroups[dep.CourseID] == nil {
 				prereqGroups[dep.CourseID] = make(map[int][]uuid.UUID)
 			}
 			prereqGroups[dep.CourseID][dep.AlternativeGroup] = append(
-				prereqGroups[dep.CourseID][dep.AlternativeGroup], dep.RequiredCourseID,
+				prereqGroups[dep.CourseID][dep.AlternativeGroup], *dep.RequiredCourseID,
 			)
 			if dep.AlternativeGroup == 0 {
-				mandatoryReqs[dep.RequiredCourseID] = true
+				mandatoryReqs[*dep.RequiredCourseID] = true
 			}
-			unlocksCount[dep.RequiredCourseID]++
+			unlocksCount[*dep.RequiredCourseID]++
 		case enums.DependencyTypeCorequisite:
+			if dep.RequiredCourseID == nil {
+				continue
+			}
 			if coreqs[dep.CourseID] == nil {
 				coreqs[dep.CourseID] = make(map[int][]uuid.UUID)
 			}
 			coreqs[dep.CourseID][dep.AlternativeGroup] = append(
-				coreqs[dep.CourseID][dep.AlternativeGroup], dep.RequiredCourseID,
+				coreqs[dep.CourseID][dep.AlternativeGroup], *dep.RequiredCourseID,
 			)
 			if dep.AlternativeGroup == 0 {
-				mandatoryReqs[dep.RequiredCourseID] = true
+				mandatoryReqs[*dep.RequiredCourseID] = true
 			}
 		}
 	}

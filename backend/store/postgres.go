@@ -307,8 +307,8 @@ func buildPostrequisitesFromCourses(courses []models.Course) map[uuid.UUID][]uui
 	m := make(map[uuid.UUID][]uuid.UUID)
 	for _, c := range courses {
 		for _, dep := range c.CourseDependencies {
-			if dep.DependencyType == enums.DependencyTypePrerequisite {
-				m[dep.RequiredCourseID] = append(m[dep.RequiredCourseID], c.ID)
+			if dep.DependencyType == enums.DependencyTypePrerequisite && dep.RequiredCourseID != nil {
+				m[*dep.RequiredCourseID] = append(m[*dep.RequiredCourseID], c.ID)
 			}
 		}
 	}
@@ -474,6 +474,10 @@ func (s *PostgresStore) UpdateMajor(major interfaces.MajorData) (interfaces.Majo
 		return major, err
 	}
 	return major, nil
+}
+
+func (s *PostgresStore) DeleteMajor(majorID uuid.UUID) error {
+	return s.db.Delete(&models.Major{}, majorID).Error
 }
 
 func (s *PostgresStore) GetAllBoxes() (map[uuid.UUID]interfaces.BoxData, error) {

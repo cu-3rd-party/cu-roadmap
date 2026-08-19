@@ -60,7 +60,7 @@ func newTestData() (interfaces.StoreBase, *interfaces.CourseData, *interfaces.Co
 	s.CreateCourse(c2)
 	s.CreateCourse(c3)
 
-	dep := interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite}
+	dep := interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID, DependencyType: enums.DependencyTypePrerequisite}
 	s.CreateCourseDependency(dep)
 
 	return s, &c1, &c2, &c3
@@ -132,7 +132,7 @@ func TestGenerateRoadmapForcesFundamentalsObyazCourseIntoExclusiveSemester(t *te
 		_, _ = s.CreateCourse(forced)
 
 		majorID := createMajorWithRequirements(s, forced.ID)
-		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: forced.ID, RequiredCourseID: prereq.ID, DependencyType: enums.DependencyTypePrerequisite})
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: forced.ID, RequiredCourseID: &prereq.ID, DependencyType: enums.DependencyTypePrerequisite})
 
 		planner := createPlannerForTest(t, factory.kind, s)
 		roadmap, err := planner.GenerateRoadmap([]uuid.UUID{}, nil, majorID, nil, 1, 12.0, 0)
@@ -208,8 +208,8 @@ func TestGenerateRoadmapAllowsSequentialPrereqAndCoreqPair(t *testing.T) {
 		dependent := interfaces.CourseData{ID: uuid.New(), Title: "Dependent", AvailableSemesters: []int{1, 2}, Workload: 3.0, Category: enums.CourseCategorySTEM}
 		_, _ = s.CreateCourse(base)
 		_, _ = s.CreateCourse(dependent)
-		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: dependent.ID, RequiredCourseID: base.ID, DependencyType: enums.DependencyTypePrerequisite})
-		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: dependent.ID, RequiredCourseID: base.ID, DependencyType: enums.DependencyTypeCorequisite})
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: dependent.ID, RequiredCourseID: &base.ID, DependencyType: enums.DependencyTypePrerequisite})
+		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: dependent.ID, RequiredCourseID: &base.ID, DependencyType: enums.DependencyTypeCorequisite})
 
 		majorID := createMajorWithRequirements(s, dependent.ID)
 		planner := createPlannerForTest(t, factory.kind, s)
@@ -401,7 +401,7 @@ func TestGenerateRoadmapRepeatsOddEvenAvailabilityBeyondSemesterEight(t *testing
 			s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         course.ID,
-				RequiredCourseID: courseIDs[i-1],
+				RequiredCourseID: &courseIDs[i-1],
 				DependencyType:   enums.DependencyTypePrerequisite,
 			})
 		}
@@ -419,7 +419,7 @@ func TestGenerateRoadmapRepeatsOddEvenAvailabilityBeyondSemesterEight(t *testing
 	s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         target.ID,
-		RequiredCourseID: courseIDs[len(courseIDs)-1],
+		RequiredCourseID: &courseIDs[len(courseIDs)-1],
 		DependencyType:   enums.DependencyTypePrerequisite,
 	})
 
@@ -461,7 +461,7 @@ func newSequentialPlannerData(courseCount int) (interfaces.StoreBase, uuid.UUID)
 			s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               uuid.New(),
 				CourseID:         course.ID,
-				RequiredCourseID: courseIDs[i-1],
+				RequiredCourseID: &courseIDs[i-1],
 				DependencyType:   enums.DependencyTypePrerequisite,
 			})
 		}
@@ -490,7 +490,7 @@ func newOptimizationTradeoffData() (interfaces.StoreBase, uuid.UUID) {
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         unlockCourse.ID,
-			RequiredCourseID: heavy.ID,
+			RequiredCourseID: &heavy.ID,
 			DependencyType:   enums.DependencyTypePrerequisite,
 		})
 	}
@@ -501,7 +501,7 @@ func newOptimizationTradeoffData() (interfaces.StoreBase, uuid.UUID) {
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         unlockCourse.ID,
-			RequiredCourseID: mediumA.ID,
+			RequiredCourseID: &mediumA.ID,
 			DependencyType:   enums.DependencyTypePrerequisite,
 		})
 	}
@@ -512,7 +512,7 @@ func newOptimizationTradeoffData() (interfaces.StoreBase, uuid.UUID) {
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         unlockCourse.ID,
-			RequiredCourseID: mediumB.ID,
+			RequiredCourseID: &mediumB.ID,
 			DependencyType:   enums.DependencyTypePrerequisite,
 		})
 	}
@@ -535,8 +535,8 @@ func TestGenerateRoadmapWithPlannedSemesters(t *testing.T) {
 		s.CreateCourse(c3)
 
 		// c1 -> c2 -> c3
-		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite})
-		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c3.ID, RequiredCourseID: c2.ID, DependencyType: enums.DependencyTypePrerequisite})
+		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID, DependencyType: enums.DependencyTypePrerequisite})
+		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c3.ID, RequiredCourseID: &c2.ID, DependencyType: enums.DependencyTypePrerequisite})
 
 		majorID := createMajorWithRequirements(s, c1.ID, c2.ID, c3.ID)
 		planner := createPlannerForTest(t, factory.kind, s)

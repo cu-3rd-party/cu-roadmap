@@ -256,6 +256,23 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/majors/structure:
+    description: возвращает структуру школ, годов, мейджоров и специализаций
+    get:
+      responses:
+        '200':
+          description: ок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SchoolDTO'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
   /api/v1/majors/:
     description: возвращает все мейджоры с требованиями
     get:
@@ -488,6 +505,23 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '404':
           $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: удаляет мейджор
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: мейджор удален
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -1147,10 +1181,56 @@ components:
           type: string
         school:
           type: string
+        cohort_year:
+          type: integer
         requirements:
           type: array
           items:
             $ref: '#/components/schemas/MajorRequirementWrite'
+
+    SpecDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+
+    MajorDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        internal_name:
+          type: string
+        specializations:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecDTO'
+
+    YearDTO:
+      type: object
+      properties:
+        year:
+          type: integer
+        majors:
+          type: array
+          items:
+            $ref: '#/components/schemas/MajorDTO'
+
+    SchoolDTO:
+      type: object
+      properties:
+        school:
+          type: string
+        cohort_years:
+          type: array
+          items:
+            $ref: '#/components/schemas/YearDTO'
 
     MajorMatchResult:
       type: object

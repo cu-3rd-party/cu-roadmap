@@ -16,6 +16,7 @@ import (
 
 func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 	rg.GET("/", getMajors)
+	rg.GET("/structure", getStructure)
 	rg.GET("/:cohort_year", getMajors)
 	rg.GET("/specializations/:id", getSpecializations)
 	rg.POST("/identify", identifyMajor)
@@ -27,6 +28,7 @@ func RegisterMajorsRoutes(rg *gin.RouterGroup) {
 	admin.Use(middleware.AuthMiddleware())
 	admin.POST("/", createMajor)
 	admin.PUT("/:id", updateMajor)
+	admin.DELETE("/:id", deleteMajor)
 	admin.POST("/specializations", createSpecialization)
 
 	// Course restrictions management
@@ -98,6 +100,100 @@ func getMajors(c *gin.Context) {
 		})
 	}
 	writeCachedJSON(c, majorsCacheKey(c), res)
+}
+
+func getStructure(c *gin.Context) {
+	s := store.GetStore()
+	if s == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+	cacheKey := "structure_all"
+	if tryWriteCachedJSON(c, cacheKey) {
+		return
+	}
+	majors, err := s.GetAllMajors()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	type SpecDTO struct {
+		ID    string `json:"id"`
+		Title string `json:"title"`
+	}
+
+	type MajorDTO struct {
+		ID              string    `json:"id"`
+		Title           string    `json:"title"`
+		InternalName    string    `json:"internal_name"`
+		Specializations []SpecDTO `json:"specializations"`
+	}
+
+	type YearDTO struct {
+		Year   int        `json:"year"`
+		Majors []MajorDTO `json:"majors"`
+	}
+
+	type SchoolDTO struct {
+		School      string    `json:"school"`
+		CohortYears []YearDTO `json:"cohort_years"`
+	}
+
+	schoolsMap := make(map[string]map[int][]MajorDTO)
+
+	for _, m := range majors {
+		internalName := ""
+		switch m.Title {
+		case "Искусственный интеллект":
+			internalName = "ai"
+		case "Разработка":
+			internalName = "swe"
+		case "Бизнес и аналитика":
+			internalName = "business"
+		}
+
+		if schoolsMap[m.School] == nil {
+			schoolsMap[m.School] = make(map[int][]MajorDTO)
+		}
+
+		specs, err := s.GetSpecializationsByMajor(m.ID)
+		specDTOs := []SpecDTO{}
+		if err == nil {
+			for _, sp := range specs {
+				specDTOs = append(specDTOs, SpecDTO{
+					ID:    sp.ID.String(),
+					Title: sp.Title,
+				})
+			}
+		}
+
+		majorDTO := MajorDTO{
+			ID:              m.ID.String(),
+			Title:           m.Title,
+			InternalName:    internalName,
+			Specializations: specDTOs,
+		}
+
+		schoolsMap[m.School][m.CohortYear] = append(schoolsMap[m.School][m.CohortYear], majorDTO)
+	}
+
+	var res []SchoolDTO
+	for schoolName, yearsMap := range schoolsMap {
+		var yearDTOs []YearDTO
+		for year, majorsList := range yearsMap {
+			yearDTOs = append(yearDTOs, YearDTO{
+				Year:   year,
+				Majors: majorsList,
+			})
+		}
+		res = append(res, SchoolDTO{
+			School:      schoolName,
+			CohortYears: yearDTOs,
+		})
+	}
+
+	writeCachedJSON(c, cacheKey, res)
 }
 
 func getSpecializations(c *gin.Context) {
@@ -293,6 +389,7 @@ func updateMajor(c *gin.Context) {
 	var req struct {
 		Title        string `json:"title" binding:"required"`
 		School       string `json:"school"`
+		CohortYear   int    `json:"cohort_year"`
 		Requirements []struct {
 			CourseID string `json:"course_id"`
 			Type     string `json:"type"`
@@ -311,6 +408,9 @@ func updateMajor(c *gin.Context) {
 
 	existing.Title = req.Title
 	existing.School = req.School
+	if req.CohortYear != 0 {
+		existing.CohortYear = req.CohortYear
+	}
 
 	updated, err := s.UpdateMajor(*existing)
 	if err != nil {
@@ -331,9 +431,28 @@ func updateMajor(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	invalidateCachePrefixes("majors:", "courses:")
+	invalidateCachePrefixes("majors:", "courses:", "structure_all")
 
 	c.JSON(http.StatusOK, gin.H{"id": updated.ID.String()})
+}
+
+func deleteMajor(c *gin.Context) {
+	idParam := c.Param("id")
+	majorID, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid major id"})
+		return
+	}
+
+	s := store.GetStore()
+	if err := s.DeleteMajor(majorID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	invalidateCachePrefixes("majors:", "structure_all")
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
 func createMajor(c *gin.Context) {
@@ -341,6 +460,7 @@ func createMajor(c *gin.Context) {
 	var req struct {
 		Title        string `json:"title" binding:"required"`
 		School       string `json:"school"`
+		CohortYear   int    `json:"cohort_year"`
 		Requirements []struct {
 			CourseID string `json:"course_id"`
 			Type     string `json:"type"`
@@ -351,11 +471,15 @@ func createMajor(c *gin.Context) {
 		return
 	}
 
+	year := 2025
+	if req.CohortYear != 0 {
+		year = req.CohortYear
+	}
 	newMajor := interfaces.MajorData{
 		ID:         uuid.New(),
 		Title:      req.Title,
 		School:     req.School,
-		CohortYear: 2025, // default fallback
+		CohortYear: year,
 	}
 
 	created, err := s.CreateMajor(newMajor)
@@ -370,7 +494,7 @@ func createMajor(c *gin.Context) {
 			_ = requirements.AddFlatRequirement(s, created.ID, requirements.FlatRequirementInput{ID: uuid.New(), CourseID: parsedCourseID, RequirementType: enums.RequirementType(r.Type)})
 		}
 	}
-	invalidateCachePrefixes("majors:")
+	invalidateCachePrefixes("majors:", "structure_all")
 
 	c.JSON(http.StatusOK, gin.H{"id": created.ID})
 }

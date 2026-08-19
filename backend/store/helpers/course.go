@@ -35,6 +35,7 @@ func CourseToResponse(course interfaces.CourseData, deps []interfaces.CourseDepe
 		"workload":             workload,
 		"seminars_week":        seminarsWeek,
 		"lectures_week":        lecturesWeek,
+		"display_mode":         string(course.DisplayMode),
 		"analog_group":         course.AnalogGroup,
 		"fixed_semester":       inferFixedSemester(course, analogGroupSizes),
 		"prerequisites":        buildPrerequisiteGroups(course, deps),
@@ -80,7 +81,7 @@ func buildPrerequisiteGroups(course interfaces.CourseData, deps []interfaces.Cou
 	groupIndexByAlt := make(map[int]int)
 
 	for _, dep := range deps {
-		if dep.DependencyType != enums.DependencyTypePrerequisite || dep.CourseID != course.ID {
+		if dep.DependencyType != enums.DependencyTypePrerequisite || dep.CourseID != course.ID || dep.RequiredCourseID == nil {
 			continue
 		}
 
@@ -91,11 +92,11 @@ func buildPrerequisiteGroups(course interfaces.CourseData, deps []interfaces.Cou
 				groupIndexByAlt[dep.AlternativeGroup] = idx
 				prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{})
 			}
-			prerequisiteGroups[idx].courseIDs = append(prerequisiteGroups[idx].courseIDs, dep.RequiredCourseID)
+			prerequisiteGroups[idx].courseIDs = append(prerequisiteGroups[idx].courseIDs, *dep.RequiredCourseID)
 			continue
 		}
 
-		prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{courseIDs: []uuid.UUID{dep.RequiredCourseID}})
+		prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{courseIDs: []uuid.UUID{*dep.RequiredCourseID}})
 	}
 
 	if len(prerequisiteGroups) == 0 && len(course.Prerequisites) > 0 {
@@ -166,6 +167,7 @@ func ToCourseModel(course interfaces.CourseData) models.Course {
 		LecturesWeek:        lecturesWeek,
 		AnalogGroup:         course.AnalogGroup,
 		CsatMetric:          course.CsatMetric,
+		DisplayMode:         course.DisplayMode,
 	}
 }
 
@@ -185,14 +187,15 @@ func ToCourseData(c *models.Course) interfaces.CourseData {
 		LecturesWeek:        c.LecturesWeek,
 		AnalogGroup:         c.AnalogGroup,
 		CsatMetric:          c.CsatMetric,
+		DisplayMode:         c.DisplayMode,
 	}
 	for _, dep := range c.CourseDependencies {
-		if dep.DependencyType == enums.DependencyTypePrerequisite && dep.RequiredCourseID == c.ID {
+		if dep.DependencyType == enums.DependencyTypePrerequisite && dep.RequiredCourseID != nil && *dep.RequiredCourseID == c.ID {
 			cd.Postrequisites = append(cd.Postrequisites, dep.CourseID)
-		} else if dep.DependencyType == enums.DependencyTypePrerequisite && dep.CourseID == c.ID {
-			cd.Prerequisites = append(cd.Prerequisites, dep.RequiredCourseID)
-		} else if dep.DependencyType == enums.DependencyTypeCorequisite {
-			cd.Corequisites = append(cd.Corequisites, dep.RequiredCourseID)
+		} else if dep.DependencyType == enums.DependencyTypePrerequisite && dep.CourseID == c.ID && dep.RequiredCourseID != nil {
+			cd.Prerequisites = append(cd.Prerequisites, *dep.RequiredCourseID)
+		} else if dep.DependencyType == enums.DependencyTypeCorequisite && dep.RequiredCourseID != nil {
+			cd.Corequisites = append(cd.Corequisites, *dep.RequiredCourseID)
 		}
 	}
 	return cd

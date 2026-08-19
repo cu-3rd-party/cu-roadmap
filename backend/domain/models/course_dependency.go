@@ -9,11 +9,13 @@ import (
 type CourseDependency struct {
 	ID               uuid.UUID            `gorm:"type:uuid;primaryKey"`
 	CourseID         uuid.UUID            `gorm:"type:uuid;not null;index"`
-	RequiredCourseID uuid.UUID            `gorm:"type:uuid;not null;index"`
+	RequiredCourseID *uuid.UUID           `gorm:"type:uuid;index"`
+	RequiredGroupID  *uuid.UUID           `gorm:"type:uuid;index"`
 	DependencyType   enums.DependencyType `gorm:"type:varchar(20);not null"`
 	AlternativeGroup int                  `gorm:"not null;default:0"`
 	Course           *Course              `gorm:"foreignKey:CourseID"`
 	RequiredCourse   *Course              `gorm:"foreignKey:RequiredCourseID"`
+	RequiredGroup    *DisciplineGroup     `gorm:"foreignKey:RequiredGroupID"`
 }
 
 func (d *CourseDependency) BeforeCreate(tx *gorm.DB) error {

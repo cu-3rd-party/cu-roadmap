@@ -173,7 +173,7 @@ func TestGetCoursesReturnsPostrequisites(t *testing.T) {
 		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         advancedID,
-			RequiredCourseID: baseID,
+			RequiredCourseID: &baseID,
 			DependencyType:   enums.DependencyTypePrerequisite,
 		})
 	})
@@ -217,21 +217,21 @@ func TestGetCoursesReturnsPrerequisiteGroups(t *testing.T) {
 		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         advancedID,
-			RequiredCourseID: baseID,
+			RequiredCourseID: &baseID,
 			DependencyType:   enums.DependencyTypePrerequisite,
 			AlternativeGroup: 42,
 		})
 		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         advancedID,
-			RequiredCourseID: alternativeID,
+			RequiredCourseID: &alternativeID,
 			DependencyType:   enums.DependencyTypePrerequisite,
 			AlternativeGroup: 99,
 		})
 		_, _ = s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         advancedID,
-			RequiredCourseID: alternativeID2,
+			RequiredCourseID: &alternativeID2,
 			DependencyType:   enums.DependencyTypePrerequisite,
 			AlternativeGroup: 99,
 		})
@@ -579,7 +579,7 @@ func TestGetGraphDataWithData(t *testing.T) {
 		c2 := interfaces.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{1}, Workload: 3.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
-		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite})
+		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID, DependencyType: enums.DependencyTypePrerequisite})
 	})
 
 	w := httptest.NewRecorder()
@@ -642,7 +642,7 @@ func TestIdentifyMajorWithCohortYear(t *testing.T) {
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         c3.ID,
-			RequiredCourseID: c1.ID,
+			RequiredCourseID: &c1.ID,
 			DependencyType:   enums.DependencyTypePrerequisite,
 		})
 
@@ -901,13 +901,13 @@ func TestIdentifySpecializationsTreatsPrereqAndCoreqPairAsSameSemesterOption(t *
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         dependentCourseID,
-			RequiredCourseID: baseCourseID,
+			RequiredCourseID: &baseCourseID,
 			DependencyType:   enums.DependencyTypePrerequisite,
 		})
 		s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         dependentCourseID,
-			RequiredCourseID: baseCourseID,
+			RequiredCourseID: &baseCourseID,
 			DependencyType:   enums.DependencyTypeCorequisite,
 		})
 	})
@@ -1044,7 +1044,7 @@ func TestPlannerValidateSemester(t *testing.T) {
 		c2 := interfaces.CourseData{ID: uuid.New(), Title: "B", AvailableSemesters: []int{2}, Workload: 5.0, Category: enums.CourseCategorySTEM}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
-		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite})
+		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID, DependencyType: enums.DependencyTypePrerequisite})
 	})
 
 	courses := getCoursesList(router, t)
@@ -1092,7 +1092,7 @@ func TestPlannerGoalPath(t *testing.T) {
 		c2 := interfaces.CourseData{ID: uuid.New(), Title: "Advanced", AvailableSemesters: []int{3, 4}, Workload: 5.0}
 		s.CreateCourse(c1)
 		s.CreateCourse(c2)
-		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: c1.ID, DependencyType: enums.DependencyTypePrerequisite})
+		s.CreateCourseDependency(interfaces.CourseDependencyData{ID: uuid.New(), CourseID: c2.ID, RequiredCourseID: &c1.ID, DependencyType: enums.DependencyTypePrerequisite})
 	})
 
 	courses := getCoursesList(router, t)

@@ -399,10 +399,11 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 				if existingID, ok := existingDepByPair[depKey]; ok {
 					depID = existingID
 				}
+				tid := targetID
 				if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
 					ID:               depID,
 					CourseID:         entry.Course.ID,
-					RequiredCourseID: targetID,
+					RequiredCourseID: &tid,
 					DependencyType:   enums.DependencyTypePrerequisite,
 					AlternativeGroup: groupNum,
 				}); err != nil {
@@ -439,10 +440,11 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			if existingID, ok := existingDepByPair[depKey]; ok {
 				depID = existingID
 			}
+			tid := target.ID
 			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               depID,
 				CourseID:         entry.Course.ID,
-				RequiredCourseID: target.ID,
+				RequiredCourseID: &tid,
 				DependencyType:   enums.DependencyTypeCorequisite,
 			}); err != nil {
 				return SyncResult{}, fmt.Errorf("create coreq dependency: %w", err)

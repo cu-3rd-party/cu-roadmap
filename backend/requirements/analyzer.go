@@ -32,13 +32,16 @@ func NewDependencyAnalyzer(
 	prereqGroups := make(map[uuid.UUID]map[int][]uuid.UUID)
 	coreqMap := make(map[uuid.UUID][]uuid.UUID)
 	for _, d := range deps {
+		if d.RequiredCourseID == nil {
+			continue
+		}
 		if d.DependencyType == enums.DependencyTypePrerequisite {
 			if prereqGroups[d.CourseID] == nil {
 				prereqGroups[d.CourseID] = make(map[int][]uuid.UUID)
 			}
-			prereqGroups[d.CourseID][d.AlternativeGroup] = append(prereqGroups[d.CourseID][d.AlternativeGroup], d.RequiredCourseID)
+			prereqGroups[d.CourseID][d.AlternativeGroup] = append(prereqGroups[d.CourseID][d.AlternativeGroup], *d.RequiredCourseID)
 		} else if d.DependencyType == enums.DependencyTypeCorequisite {
-			coreqMap[d.CourseID] = append(coreqMap[d.CourseID], d.RequiredCourseID)
+			coreqMap[d.CourseID] = append(coreqMap[d.CourseID], *d.RequiredCourseID)
 		}
 	}
 	return &DependencyAnalyzer{

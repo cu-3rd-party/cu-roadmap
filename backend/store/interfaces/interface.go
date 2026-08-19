@@ -38,6 +38,7 @@ type StoreBase interface {
 	GetMajorByID(majorID uuid.UUID) (*MajorData, error)
 	CreateMajor(major MajorData) (MajorData, error)
 	UpdateMajor(major MajorData) (MajorData, error)
+	DeleteMajor(majorID uuid.UUID) error
 
 	GetAllBoxes() (map[uuid.UUID]BoxData, error)
 	GetBoxByID(boxID uuid.UUID) (*BoxData, error)

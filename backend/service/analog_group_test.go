@@ -164,7 +164,7 @@ func TestAnalogGroupDoesNotMarkVirtuallyPassedAsPassed(t *testing.T) {
 	s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         courseC.ID,
-		RequiredCourseID: courseB.ID,
+		RequiredCourseID: &courseB.ID,
 		DependencyType:   enums.DependencyTypePrerequisite,
 	})
 
@@ -283,7 +283,7 @@ func TestMultipleAnalogGroups(t *testing.T) {
 	s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         matanDepCourse.ID,
-		RequiredCourseID: redMatan.ID,
+		RequiredCourseID: &redMatan.ID,
 		DependencyType:   enums.DependencyTypePrerequisite,
 	})
 
@@ -291,7 +291,7 @@ func TestMultipleAnalogGroups(t *testing.T) {
 	s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         linnalDepCourse.ID,
-		RequiredCourseID: redLinnal.ID,
+		RequiredCourseID: &redLinnal.ID,
 		DependencyType:   enums.DependencyTypePrerequisite,
 	})
 

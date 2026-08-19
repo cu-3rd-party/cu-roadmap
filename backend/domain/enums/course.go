@@ -27,3 +27,12 @@ const (
 	CourseSourceSelected CourseSource = "selected"
 	CourseSourcePassed   CourseSource = "passed"
 )
+
+type CourseDisplayMode string
+
+const (
+	CourseDisplayModeStandard       CourseDisplayMode = "standard"
+	CourseDisplayModeDoubleLectures CourseDisplayMode = "double_lectures"
+	CourseDisplayModeDoubleSeminars CourseDisplayMode = "double_seminars"
+	CourseDisplayModeDoubleBoth     CourseDisplayMode = "double_both"
+)

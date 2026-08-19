@@ -206,10 +206,13 @@ func (v *RoadmapValidator) ValidateSemester(
 				// Group 0: each dependency is mandatory (AND)
 				for _, dep := range deps {
 					reqTitle := "Неизвестный курс"
-					if rc, ok := v.AllCourses[dep.RequiredCourseID]; ok {
+					if dep.RequiredCourseID == nil {
+						continue
+					}
+					if rc, ok := v.AllCourses[*dep.RequiredCourseID]; ok {
 						reqTitle = rc.Title
 					}
-					if !v.isCoursePassedOrPlanned(dep.RequiredCourseID, nil, previouslyPassedIDs, false, true) {
+					if !v.isCoursePassedOrPlanned(*dep.RequiredCourseID, nil, previouslyPassedIDs, false, true) {
 						messages = append(messages, schemas.ValidationMessage{
 							Level:    "error",
 							Message:  formatMissingPrereq(c.Title, reqTitle),
@@ -223,11 +226,14 @@ func (v *RoadmapValidator) ValidateSemester(
 				var altTitles []string
 				for _, dep := range deps {
 					reqTitle := "Неизвестный курс"
-					if rc, ok := v.AllCourses[dep.RequiredCourseID]; ok {
+					if dep.RequiredCourseID == nil {
+						continue
+					}
+					if rc, ok := v.AllCourses[*dep.RequiredCourseID]; ok {
 						reqTitle = rc.Title
 					}
 					altTitles = append(altTitles, reqTitle)
-					if v.isCoursePassedOrPlanned(dep.RequiredCourseID, nil, previouslyPassedIDs, false, true) {
+					if v.isCoursePassedOrPlanned(*dep.RequiredCourseID, nil, previouslyPassedIDs, false, true) {
 						anyPassed = true
 					}
 				}
@@ -243,14 +249,17 @@ func (v *RoadmapValidator) ValidateSemester(
 
 		// Validate corequisites
 		for _, dep := range coreqDeps {
+			if dep.RequiredCourseID == nil {
+				continue
+			}
 			reqTitle := "Неизвестный курс"
-			if rc, ok := v.AllCourses[dep.RequiredCourseID]; ok {
+			if rc, ok := v.AllCourses[*dep.RequiredCourseID]; ok {
 				reqTitle = rc.Title
 			}
 
-			satisfied := v.isCoursePassedOrPlanned(dep.RequiredCourseID, inSemIDs, nil, true, false)
-			if !satisfied && v.hasEquivalentPrerequisite(dep.CourseID, dep.RequiredCourseID) {
-				satisfied = v.isCoursePassedOrPlanned(dep.RequiredCourseID, nil, previouslyPassedIDs, false, true)
+			satisfied := v.isCoursePassedOrPlanned(*dep.RequiredCourseID, inSemIDs, nil, true, false)
+			if !satisfied && v.hasEquivalentPrerequisite(dep.CourseID, *dep.RequiredCourseID) {
+				satisfied = v.isCoursePassedOrPlanned(*dep.RequiredCourseID, nil, previouslyPassedIDs, false, true)
 			}
 
 			if !satisfied {
@@ -416,7 +425,7 @@ func (v *RoadmapValidator) ValidateFullRoadmap(
 
 func (v *RoadmapValidator) hasEquivalentPrerequisite(courseID, requiredCourseID uuid.UUID) bool {
 	for _, dep := range v.depsByCourse[courseID] {
-		if dep.DependencyType == enums.DependencyTypePrerequisite && dep.RequiredCourseID == requiredCourseID {
+		if dep.DependencyType == enums.DependencyTypePrerequisite && dep.RequiredCourseID != nil && *dep.RequiredCourseID == requiredCourseID {
 			return true
 		}
 	}

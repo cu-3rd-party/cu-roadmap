@@ -15,8 +15,8 @@ func TestBuildPrerequisiteGroupsSplitsMandatoryPrerequisitesIntoSingletonGroups(
 	secondID := uuid.New()
 	course := interfaces.CourseData{ID: courseID}
 	deps := []interfaces.CourseDependencyData{
-		{CourseID: courseID, RequiredCourseID: firstID, DependencyType: enums.DependencyTypePrerequisite, AlternativeGroup: 0},
-		{CourseID: courseID, RequiredCourseID: secondID, DependencyType: enums.DependencyTypePrerequisite, AlternativeGroup: 0},
+		{CourseID: courseID, RequiredCourseID: &firstID, DependencyType: enums.DependencyTypePrerequisite, AlternativeGroup: 0},
+		{CourseID: courseID, RequiredCourseID: &secondID, DependencyType: enums.DependencyTypePrerequisite, AlternativeGroup: 0},
 	}
 
 	groups := buildPrerequisiteGroups(course, deps)

@@ -16,7 +16,7 @@ func CreateCourseDependencies(s interfaces.StoreBase, courseID uuid.UUID, depend
 		_, err = s.CreateCourseDependency(interfaces.CourseDependencyData{
 			ID:               uuid.New(),
 			CourseID:         courseID,
-			RequiredCourseID: requiredCourseID,
+			RequiredCourseID: &requiredCourseID,
 			DependencyType:   dependencyType,
 		})
 		if err != nil {

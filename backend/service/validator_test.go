@@ -266,7 +266,7 @@ func TestValidateFullRoadmapCoreqsInDifferentSemesters(t *testing.T) {
 	s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         c4.ID,
-		RequiredCourseID: c1.ID,
+		RequiredCourseID: &c1.ID,
 		DependencyType:   enums.DependencyTypeCorequisite,
 	})
 
@@ -298,13 +298,13 @@ func TestValidateFullRoadmapAllowsSequentialWhenPrereqAndCoreqAreTheSamePair(t *
 	s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         c2.ID,
-		RequiredCourseID: c1.ID,
+		RequiredCourseID: &c1.ID,
 		DependencyType:   enums.DependencyTypePrerequisite,
 	})
 	s.CreateCourseDependency(interfaces.CourseDependencyData{
 		ID:               uuid.New(),
 		CourseID:         c2.ID,
-		RequiredCourseID: c1.ID,
+		RequiredCourseID: &c1.ID,
 		DependencyType:   enums.DependencyTypeCorequisite,
 	})
 

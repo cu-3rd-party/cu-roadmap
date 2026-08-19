@@ -20,6 +20,7 @@ type CourseData struct {
 	LecturesWeek        int
 	AnalogGroup         string
 	CsatMetric          *float64
+	DisplayMode         enums.CourseDisplayMode
 	Prerequisites       []uuid.UUID
 	Corequisites        []uuid.UUID
 	Postrequisites      []uuid.UUID
@@ -28,7 +29,8 @@ type CourseData struct {
 type CourseDependencyData struct {
 	ID               uuid.UUID
 	CourseID         uuid.UUID
-	RequiredCourseID uuid.UUID
+	RequiredCourseID *uuid.UUID
+	RequiredGroupID  *uuid.UUID
 	DependencyType   enums.DependencyType
 	AlternativeGroup int
 }
