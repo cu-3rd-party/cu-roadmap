@@ -190,7 +190,7 @@ func getCourses(c *gin.Context) {
 			item["to_major"] = gin.H{}
 		}
 
-		if majorID != uuid.Nil {
+		if majorID != uuid.Nil && course.Category != enums.CourseCategoryFundamentals {
 			if requirementType, ok := majorRequirementByCourse[course.ID]; ok {
 				switch requirementType {
 				case enums.RequirementTypeMajorCore:

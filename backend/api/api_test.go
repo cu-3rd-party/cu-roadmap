@@ -394,6 +394,7 @@ func TestGetCoursesWithMajorPathReturnsByMajorTypeAndSpecializations(t *testing.
 		_, _ = s.CreateCourse(interfaces.CourseData{ID: flexCourseID, Title: "STEM Flex Course", AvailableSemesters: []int{1}, Workload: 3.0, Category: enums.CourseCategorySTEM, CourseType: enums.CourseTypeOther})
 		addRequirement(t, s, majorID, coreCourseID, enums.RequirementTypeMajorCore, "Web")
 		addRequirement(t, s, majorID, choiceCourseID, enums.RequirementTypeMajorChoice, "Web")
+		addRequirement(t, s, majorID, fundamentalsCourseID, enums.RequirementTypeMajorCore)
 	})
 
 	w := httptest.NewRecorder()
