@@ -12,6 +12,9 @@ import {
   FileJson,
   X,
   Code,
+  Link,
+  BookOpen,
+  ArrowRight,
 } from "lucide-react";
 import { apiClient } from "@/shared/api";
 import {
@@ -29,6 +32,8 @@ import {
 interface CourseOption {
   id: string;
   title: string;
+  prerequisites?: string[];
+  corequisites?: string[];
 }
 
 interface DisciplineGroup {
@@ -37,6 +42,15 @@ interface DisciplineGroup {
   category: string;
   math_expression: any;
   root_box_id: string;
+}
+
+interface CourseDependency {
+  id: string;
+  course_id: string;
+  required_course_id?: string;
+  required_group_id?: string;
+  dependency_type: "prerequisite" | "corequisite";
+  alternative_group?: number;
 }
 
 const PRESETS = [
@@ -137,8 +151,11 @@ const RenderBoxNode = ({ node }: { node: any }) => {
 };
 
 export default function BoxesPage() {
+  const [activeTab, setActiveTab] = useState<"boxes" | "course_deps">("boxes");
+
   const [groups, setGroups] = useState<DisciplineGroup[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [dependencies, setDependencies] = useState<CourseDependency[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -157,7 +174,7 @@ export default function BoxesPage() {
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // View Raw JSON state
+  // View Raw JSON / Box Details Modal State
   const [viewJsonGroup, setViewJsonGroup] = useState<DisciplineGroup | null>(null);
 
   const fetchGroups = async () => {
@@ -172,20 +189,26 @@ export default function BoxesPage() {
     }
   };
 
-  const fetchCourses = async () => {
+  const fetchCoursesAndDeps = async () => {
     try {
-      const res = await apiClient.get("/courses");
-      if (Array.isArray(res.data)) {
-        setCourses(res.data.map((c: any) => ({ id: c.id, title: c.title })));
+      const [coursesRes, depsRes] = await Promise.all([
+        apiClient.get("/courses"),
+        apiClient.get<CourseDependency[]>("/courses/dependencies"),
+      ]);
+      if (Array.isArray(coursesRes.data)) {
+        setCourses(coursesRes.data.map((c: any) => ({ id: c.id, title: c.title })));
+      }
+      if (Array.isArray(depsRes.data)) {
+        setDependencies(depsRes.data);
       }
     } catch {
-      // optional course picker fallback
+      // Optional fallback
     }
   };
 
   useEffect(() => {
     fetchGroups();
-    fetchCourses();
+    fetchCoursesAndDeps();
   }, []);
 
   const handleSync = async () => {
@@ -195,6 +218,7 @@ export default function BoxesPage() {
       await apiClient.post("/admin/sync");
       setStatusMsg("Синхронизация успешно выполнена!");
       await fetchGroups();
+      await fetchCoursesAndDeps();
     } catch (err: any) {
       setStatusMsg("Ошибка при синхронизации: " + (err.message || String(err)));
     } finally {
@@ -259,6 +283,7 @@ export default function BoxesPage() {
 
       setIsFormOpen(false);
       fetchGroups();
+      fetchCoursesAndDeps();
     } catch (err: any) {
       setJsonError("Ошибка сохранения: " + (err.response?.data?.error || err.message));
     } finally {
@@ -272,10 +297,14 @@ export default function BoxesPage() {
       await apiClient.delete(`/discipline-groups/${id}`);
       setStatusMsg(`Коробка "${title}" удалена`);
       fetchGroups();
+      fetchCoursesAndDeps();
     } catch (err: any) {
       setStatusMsg("Ошибка удаления: " + (err.message || String(err)));
     }
   };
+
+  const courseMap = new Map<string, string>(courses.map((c) => [c.id, c.title]));
+  const groupMap = new Map<string, DisciplineGroup>(groups.map((g) => [g.id, g]));
 
   // Categories list for filter tabs
   const categories = Array.from(new Set(groups.map((g) => g.category || "без категории")));
@@ -289,6 +318,27 @@ export default function BoxesPage() {
     return matchesSearch && matchesCategory;
   });
 
+  // Group dependencies by Course ID
+  const courseDependenciesMap = new Map<string, CourseDependency[]>();
+  dependencies.forEach((dep) => {
+    if (!courseDependenciesMap.has(dep.course_id)) {
+      courseDependenciesMap.set(dep.course_id, []);
+    }
+    courseDependenciesMap.get(dep.course_id)!.push(dep);
+  });
+
+  const coursesWithDependencies = courses.filter((c) => {
+    const deps = courseDependenciesMap.get(c.id) || [];
+    if (deps.length === 0) return false;
+    if (!searchQuery) return true;
+    const matchesCourse = c.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTarget = deps.some((d) => {
+      const targetTitle = d.required_course_id ? courseMap.get(d.required_course_id) || "" : "";
+      return targetTitle.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+    return matchesCourse || matchesTarget;
+  });
+
   return (
     <div className="p-6 max-w-7xl mx-auto flex flex-col gap-6 text-fg-primary">
       {/* Header Banner */}
@@ -300,9 +350,9 @@ export default function BoxesPage() {
             </Badge>
             <span className="text-xs text-fg-secondary">Только для отладки бэкенда</span>
           </div>
-          <h1 className="text-2xl font-bold mt-2">Управление Коробками Дисциплин (Discipline Group Boxes)</h1>
+          <h1 className="text-2xl font-bold mt-2">Управление Коробками и Пререквизитами Курсов</h1>
           <p className="text-sm text-fg-secondary mt-1">
-            Просмотр, создание и редактирование стандартизированных коробок пререквизитов, кореквизитов и требований.
+            Просмотр коробок дисциплин (`DisciplineGroup`), их привязка к курсам и валидация пререквизитов/кореквизитов.
           </p>
         </div>
 
@@ -336,7 +386,34 @@ export default function BoxesPage() {
         </div>
       )}
 
-      {/* Filter and Search Bar */}
+      {/* Main View Tabs */}
+      <div className="flex items-center gap-4 border-b border-border pb-3">
+        <button
+          onClick={() => setActiveTab("boxes")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "boxes"
+              ? "bg-accent text-accent-contrast shadow-sm"
+              : "text-fg-secondary hover:text-fg-primary hover:bg-surface-alt"
+          }`}
+        >
+          <Package className="w-4 h-4" />
+          <span>Коробки Дисциплин ({groups.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("course_deps")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "course_deps"
+              ? "bg-accent text-accent-contrast shadow-sm"
+              : "text-fg-secondary hover:text-fg-primary hover:bg-surface-alt"
+          }`}
+        >
+          <Link className="w-4 h-4" />
+          <span>Курсы и Привязанные Коробки ({coursesWithDependencies.length})</span>
+        </button>
+      </div>
+
+      {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-fg-secondary" />
@@ -348,105 +425,220 @@ export default function BoxesPage() {
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
-          <button
-            onClick={() => setSelectedCategory("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedCategory === "all"
-                ? "bg-accent text-accent-contrast font-semibold"
-                : "bg-surface hover:bg-surface-alt border border-border text-fg-secondary"
-            }`}
-          >
-            Все ({groups.length})
-          </button>
-          {categories.map((cat) => (
+        {activeTab === "boxes" && (
+          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              onClick={() => setSelectedCategory("all")}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                selectedCategory === cat
+                selectedCategory === "all"
                   ? "bg-accent text-accent-contrast font-semibold"
                   : "bg-surface hover:bg-surface-alt border border-border text-fg-secondary"
               }`}
             >
-              {cat} ({groups.filter((g) => (g.category || "без категории") === cat).length})
+              Все ({groups.length})
             </button>
-          ))}
-        </div>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  selectedCategory === cat
+                    ? "bg-accent text-accent-contrast font-semibold"
+                    : "bg-surface hover:bg-surface-alt border border-border text-fg-secondary"
+                }`}
+              >
+                {cat} ({groups.filter((g) => (g.category || "без категории") === cat).length})
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Grid of Discipline Groups */}
-      {loading ? (
-        <div className="p-12 text-center text-fg-secondary flex flex-col items-center gap-3">
-          <RefreshCw className="w-6 h-6 animate-spin text-accent" />
-          <span>Загрузка коробок...</span>
-        </div>
-      ) : filteredGroups.length === 0 ? (
-        <Card className="p-12 text-center text-fg-secondary">
-          <Package className="w-12 h-12 mx-auto mb-3 opacity-40 text-accent" />
-          <p className="font-semibold text-lg">Коробки не найдены</p>
-          <p className="text-sm mt-1">Нажмите "Sync с Google Sheets" или создайте новую коробку вручную.</p>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredGroups.map((group) => (
-            <Card key={group.id} className="flex flex-col justify-between hover:border-accent/50 transition-all">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <Badge
-                    className={
-                      group.category === "prerequisite"
-                        ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                        : group.category === "corequisite"
-                        ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                        : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                    }
-                  >
-                    {group.category || "без категории"}
-                  </Badge>
-
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setViewJsonGroup(group)}
-                      title="Просмотреть Raw JSON"
-                    >
-                      <Code className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditForm(group)}
-                      title="Редактировать"
-                    >
-                      <Edit3 className="w-4 h-4 text-accent" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(group.id, group.title)}
-                      title="Удалить"
-                    >
-                      <Trash2 className="w-4 h-4 text-negative" />
-                    </Button>
-                  </div>
-                </div>
-
-                <CardTitle className="text-base font-bold line-clamp-2 mt-2">{group.title}</CardTitle>
-                <CardDescription className="text-xs font-mono text-fg-secondary">
-                  ID: {group.id}
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="pt-0 flex flex-col gap-3">
-                <div className="text-xs text-fg-secondary font-medium">Дерево требований (Box Tree):</div>
-                <div className="max-h-56 overflow-y-auto pr-1">
-                  <RenderBoxNode node={group.math_expression} />
-                </div>
-              </CardContent>
+      {/* TAB 1: DISCIPLINE GROUPS BOXES GRID */}
+      {activeTab === "boxes" && (
+        <>
+          {loading ? (
+            <div className="p-12 text-center text-fg-secondary flex flex-col items-center gap-3">
+              <RefreshCw className="w-6 h-6 animate-spin text-accent" />
+              <span>Загрузка коробок...</span>
+            </div>
+          ) : filteredGroups.length === 0 ? (
+            <Card className="p-12 text-center text-fg-secondary">
+              <Package className="w-12 h-12 mx-auto mb-3 opacity-40 text-accent" />
+              <p className="font-semibold text-lg">Коробки не найдены</p>
+              <p className="text-sm mt-1">Нажмите "Sync с Google Sheets" или создайте новую коробку вручную.</p>
             </Card>
-          ))}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredGroups.map((group) => (
+                <Card key={group.id} className="flex flex-col justify-between hover:border-accent/50 transition-all">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <Badge
+                        className={
+                          group.category === "prerequisite"
+                            ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                            : group.category === "corequisite"
+                            ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                            : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                        }
+                      >
+                        {group.category || "без категории"}
+                      </Badge>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setViewJsonGroup(group)}
+                          title="Просмотреть Raw JSON & Tree"
+                        >
+                          <Code className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditForm(group)}
+                          title="Редактировать"
+                        >
+                          <Edit3 className="w-4 h-4 text-accent" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(group.id, group.title)}
+                          title="Удалить"
+                        >
+                          <Trash2 className="w-4 h-4 text-negative" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <CardTitle className="text-base font-bold line-clamp-2 mt-2">{group.title}</CardTitle>
+                    <CardDescription className="text-xs font-mono text-fg-secondary">
+                      Group ID: {group.id}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="pt-0 flex flex-col gap-3">
+                    <div className="text-xs text-fg-secondary font-medium">Дерево требований (Box Tree):</div>
+                    <div className="max-h-56 overflow-y-auto pr-1">
+                      <RenderBoxNode node={group.math_expression} />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* TAB 2: COURSE DEPENDENCIES & BOX BINDINGS */}
+      {activeTab === "course_deps" && (
+        <div className="flex flex-col gap-4">
+          {coursesWithDependencies.length === 0 ? (
+            <Card className="p-12 text-center text-fg-secondary">
+              <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-40 text-accent" />
+              <p className="font-semibold text-lg">Зависимости курсов не найдены</p>
+              <p className="text-sm mt-1">Запустите синхронизацию с Google Sheets для загрузки всех пререквизитов.</p>
+            </Card>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {coursesWithDependencies.map((course) => {
+                const courseDeps = courseDependenciesMap.get(course.id) || [];
+                return (
+                  <Card key={course.id} className="p-5 flex flex-col gap-4 hover:border-accent/40 transition-all">
+                    <div className="flex items-center justify-between border-b border-border pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-accent/10 text-accent font-bold">
+                          <BookOpen className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{course.title}</h3>
+                          <span className="text-xs font-mono text-fg-secondary">Course ID: {course.id}</span>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {courseDeps.length} зависимостей
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {courseDeps.map((dep) => {
+                        const targetTitle = dep.required_course_id
+                          ? courseMap.get(dep.required_course_id) || "Неизвестный курс"
+                          : "Группа коробок";
+                        const boundGroup = dep.required_group_id ? groupMap.get(dep.required_group_id) : null;
+
+                        return (
+                          <div
+                            key={dep.id}
+                            className="p-3.5 rounded-xl bg-surface-alt border border-border flex flex-col justify-between gap-3"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <Badge
+                                className={
+                                  dep.dependency_type === "prerequisite"
+                                    ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                                    : "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                }
+                              >
+                                {dep.dependency_type === "prerequisite" ? "Пререквизит" : "Кореквизит"}
+                                {dep.alternative_group ? ` (Группа OR #${dep.alternative_group})` : ""}
+                              </Badge>
+
+                              {boundGroup && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setViewJsonGroup(boundGroup)}
+                                  className="text-xs text-accent flex items-center gap-1 px-2 h-7"
+                                >
+                                  <Layers className="w-3.5 h-3.5" />
+                                  <span>Коробка</span>
+                                </Button>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-semibold text-fg-primary">{targetTitle}</span>
+                              {dep.required_course_id && (
+                                <span className="text-xs font-mono text-fg-secondary">
+                                  ({dep.required_course_id.slice(0, 8)}...)
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Linked Box Info */}
+                            {dep.required_group_id ? (
+                              <div className="p-2.5 rounded-lg bg-surface border border-border/80 flex flex-col gap-1 text-xs">
+                                <div className="flex items-center justify-between text-accent font-semibold">
+                                  <div className="flex items-center gap-1.5">
+                                    <Package className="w-3.5 h-3.5" />
+                                    <span>Привязанная Коробка (`RequiredGroupID`):</span>
+                                  </div>
+                                </div>
+                                <div className="font-medium text-fg-primary truncate">
+                                  {boundGroup ? boundGroup.title : "Загрузка..."}
+                                </div>
+                                <div className="font-mono text-[10px] text-fg-secondary truncate">
+                                  {dep.required_group_id}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-xs text-fg-secondary italic">
+                                Коробка DisciplineGroup не привязана (старый формат)
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -571,10 +763,10 @@ export default function BoxesPage() {
         </div>
       )}
 
-      {/* Raw JSON View Modal */}
+      {/* Raw JSON & Tree Details Modal */}
       {viewJsonGroup && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-xl shadow-2xl flex flex-col gap-4">
+          <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-2xl shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <FileJson className="w-5 h-5 text-accent" />
@@ -588,9 +780,21 @@ export default function BoxesPage() {
               </button>
             </div>
 
-            <pre className="bg-surface-alt p-4 rounded-xl text-xs font-mono max-h-96 overflow-y-auto text-fg-primary border border-border">
-              {JSON.stringify(viewJsonGroup, null, 2)}
-            </pre>
+            <div className="flex flex-col gap-2">
+              <div className="text-xs font-semibold text-accent uppercase tracking-wider">
+                Визуальное Дерево Требований (Box Tree):
+              </div>
+              <RenderBoxNode node={viewJsonGroup.math_expression} />
+            </div>
+
+            <div className="flex flex-col gap-2 mt-2">
+              <div className="text-xs font-semibold text-fg-secondary uppercase tracking-wider">
+                Raw JSON Данные (`DisciplineGroup`):
+              </div>
+              <pre className="bg-surface-alt p-4 rounded-xl text-xs font-mono max-h-64 overflow-y-auto text-fg-primary border border-border">
+                {JSON.stringify(viewJsonGroup, null, 2)}
+              </pre>
+            </div>
 
             <div className="flex justify-end">
               <Button variant="outline" onClick={() => setViewJsonGroup(null)}>

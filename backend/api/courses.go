@@ -19,6 +19,7 @@ import (
 )
 
 func RegisterCoursesRoutes(rg *gin.RouterGroup) {
+	rg.GET("/dependencies", getCourseDependencies)
 	rg.GET("/", getCourses)
 	rg.GET("/:cohort_year", getCourses)
 	rg.GET("/:cohort_year/:major_id", getCourses)
@@ -30,6 +31,16 @@ func RegisterCoursesRoutes(rg *gin.RouterGroup) {
 	admin.DELETE("/:id", deleteCourse)
 	admin.POST("/restore", restoreDB)
 	admin.GET("/backup", backupDB)
+}
+
+func getCourseDependencies(c *gin.Context) {
+	s := store.GetStore()
+	deps, err := s.GetCourseDependencies()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, deps)
 }
 
 func getCourses(c *gin.Context) {
