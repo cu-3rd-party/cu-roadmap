@@ -121,6 +121,96 @@ func guessSheetMapping(title string) (SheetMajorMapping, bool) {
 	return SheetMajorMapping{}, false
 }
 
+func createDisciplineGroupForDependency(
+	s interfaces.StoreBase,
+	dgID uuid.UUID,
+	title string,
+	category string,
+	op enums.LogicalOp,
+	courses []interfaces.CourseData,
+) (uuid.UUID, error) {
+	rootBoxID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("root_box|"+dgID.String()))
+	rootBox := interfaces.BoxData{
+		ID:        rootBoxID,
+		Kind:      enums.BoxKindLogical,
+		Title:     title,
+		LogicalOp: &op,
+		MinCount:  1,
+	}
+	if _, err := s.CreateBox(rootBox); err != nil {
+		return uuid.Nil, err
+	}
+
+	type mathChild struct {
+		Type     enums.BoxKind `json:"type"`
+		CourseID *uuid.UUID    `json:"course_id"`
+		Title    string        `json:"title"`
+	}
+	type mathNode struct {
+		Type      enums.BoxKind   `json:"type"`
+		LogicalOp enums.LogicalOp `json:"logical_op"`
+		MinCount  int             `json:"min_count"`
+		Title     string          `json:"title"`
+		Children  []mathChild     `json:"children"`
+	}
+
+	var mathChildren []mathChild
+	for _, c := range courses {
+		cID := c.ID
+		childBoxID := uuid.NewSHA1(uuid.NameSpaceOID, []byte(dgID.String()+"|course_box|"+cID.String()))
+		childBox := interfaces.BoxData{
+			ID:       childBoxID,
+			Kind:     enums.BoxKindCourse,
+			Title:    c.Title,
+			CourseID: &cID,
+		}
+		if _, err := s.CreateBox(childBox); err != nil {
+			return uuid.Nil, err
+		}
+
+		edgeID := uuid.NewSHA1(uuid.NameSpaceOID, []byte(rootBoxID.String()+"|"+childBoxID.String()))
+		if _, err := s.CreateBoxEdge(interfaces.BoxEdgeData{
+			ID:          edgeID,
+			ParentBoxID: rootBoxID,
+			ChildBoxID:  childBoxID,
+		}); err != nil {
+			return uuid.Nil, err
+		}
+
+		mathChildren = append(mathChildren, mathChild{
+			Type:     enums.BoxKindCourse,
+			CourseID: &cID,
+			Title:    c.Title,
+		})
+	}
+
+	node := mathNode{
+		Type:      enums.BoxKindLogical,
+		LogicalOp: op,
+		MinCount:  1,
+		Title:     title,
+		Children:  mathChildren,
+	}
+	mathExpr, err := json.Marshal(node)
+	if err != nil {
+		mathExpr = json.RawMessage("{}")
+	}
+
+	group := interfaces.DisciplineGroupData{
+		ID:             dgID,
+		Title:          title,
+		Category:       category,
+		MathExpression: mathExpr,
+		RootBoxID:      rootBoxID,
+	}
+
+	if _, err := s.CreateDisciplineGroup(group); err != nil {
+		return uuid.Nil, err
+	}
+
+	return dgID, nil
+}
+
 func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[string]string, sheetMapping map[string]SheetMajorMapping) (SyncResult, error) {
 	// Load existing data to preserve UUIDs across re-syncs.
 	existingCourseByNorm := make(map[string]uuid.UUID)
@@ -363,8 +453,9 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			"Пререквизиты ",
 			"Пререквезиты ",
 		)
+		prereqGroupIdx := 0
 		for _, group := range SplitPrerequisiteGroups(rawPrereqs) {
-			var resolvedIDs []uuid.UUID
+			var resolvedCourses []interfaces.CourseData
 			for _, prereqTitle := range group {
 				normTitle := prereqTitle
 				targetKey := normTitle + "|" + strconv.Itoa(entry.SheetYear)
@@ -380,30 +471,42 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 						}
 					}
 				}
-				resolvedIDs = append(resolvedIDs, target.ID)
+				resolvedCourses = append(resolvedCourses, target)
 			}
-			if len(resolvedIDs) == 0 {
+			if len(resolvedCourses) == 0 {
 				continue
 			}
 
 			groupNum := 0
-			if len(resolvedIDs) > 1 {
-				// This is an OR-alternative group; assign a group number >= 1
+			op := enums.LogicalOpAnd
+			dgTitle := fmt.Sprintf("Пререквизит для %s: %s", entry.Course.Title, resolvedCourses[0].Title)
+			if len(resolvedCourses) > 1 {
 				prereqGroupCounter[entry.Course.ID]++
 				groupNum = prereqGroupCounter[entry.Course.ID]
+				op = enums.LogicalOpOr
+				dgTitle = fmt.Sprintf("Пререквизит (выбор 1 из %d) для %s", len(resolvedCourses), entry.Course.Title)
 			}
 
-			for _, targetID := range resolvedIDs {
+			prereqGroupIdx++
+			dgID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("prereq_group|"+entry.Course.ID.String()+"|"+strconv.Itoa(prereqGroupIdx)))
+			groupID, err := createDisciplineGroupForDependency(s, dgID, dgTitle, "prerequisite", op, resolvedCourses)
+			if err != nil {
+				return SyncResult{}, fmt.Errorf("create prereq discipline group: %w", err)
+			}
+
+			for _, targetCourse := range resolvedCourses {
 				depID := uuid.New()
-				depKey := entry.Course.ID.String() + "\x00" + targetID.String() + "\x00" + string(enums.DependencyTypePrerequisite)
+				depKey := entry.Course.ID.String() + "\x00" + targetCourse.ID.String() + "\x00" + string(enums.DependencyTypePrerequisite)
 				if existingID, ok := existingDepByPair[depKey]; ok {
 					depID = existingID
 				}
-				tid := targetID
+				tid := targetCourse.ID
+				gid := groupID
 				if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
 					ID:               depID,
 					CourseID:         entry.Course.ID,
 					RequiredCourseID: &tid,
+					RequiredGroupID:  &gid,
 					DependencyType:   enums.DependencyTypePrerequisite,
 					AlternativeGroup: groupNum,
 				}); err != nil {
@@ -421,7 +524,7 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 			"Кореквизиты (когда курс A нельзя брать без курса B в семестре, но курс B можно без курса A)",
 		)
 
-		for _, coreqTitle := range SplitSheetTitles(coreqsStr) {
+		for cIdx, coreqTitle := range SplitSheetTitles(coreqsStr) {
 			targetKey := coreqTitle + "|" + strconv.Itoa(entry.SheetYear)
 			target, exists := courseMap[targetKey]
 			if !exists {
@@ -435,16 +538,25 @@ func SyncFromSheetData(s interfaces.StoreBase, sheetsData map[string][]map[strin
 					}
 				}
 			}
+			dgID := uuid.NewSHA1(uuid.NameSpaceOID, []byte("coreq_group|"+entry.Course.ID.String()+"|"+strconv.Itoa(cIdx)))
+			dgTitle := fmt.Sprintf("Кореквизит для %s: %s", entry.Course.Title, target.Title)
+			groupID, err := createDisciplineGroupForDependency(s, dgID, dgTitle, "corequisite", enums.LogicalOpAnd, []interfaces.CourseData{target})
+			if err != nil {
+				return SyncResult{}, fmt.Errorf("create coreq discipline group: %w", err)
+			}
+
 			depID := uuid.New()
 			depKey := entry.Course.ID.String() + "\x00" + target.ID.String() + "\x00" + string(enums.DependencyTypeCorequisite)
 			if existingID, ok := existingDepByPair[depKey]; ok {
 				depID = existingID
 			}
 			tid := target.ID
+			gid := groupID
 			if _, err := s.CreateCourseDependency(interfaces.CourseDependencyData{
 				ID:               depID,
 				CourseID:         entry.Course.ID,
 				RequiredCourseID: &tid,
+				RequiredGroupID:  &gid,
 				DependencyType:   enums.DependencyTypeCorequisite,
 			}); err != nil {
 				return SyncResult{}, fmt.Errorf("create coreq dependency: %w", err)

@@ -235,6 +235,53 @@ func (s *MemoryStoreTestSuite) TestClearAll() {
 	assert.Len(s.T(), deps, 0) // Dependencies should be cleared
 }
 
+func (s *MemoryStoreTestSuite) TestSyncCreatesDisciplineGroupDependencyBoxes() {
+	sheetsData := map[string][]map[string]string{
+		"Разработка 2025": {
+			{
+				"Название курса": "Python Basics",
+				"Тип курса":      "Major Core",
+				"Поток":          "2025",
+			},
+			{
+				"Название курса": "Advanced Python",
+				"Тип курса":      "Major Core",
+				"Поток":          "2025",
+				"Пререквизиты":   "Python Basics",
+			},
+			{
+				"Название курса": "Go Basics",
+				"Тип курса":      "Major Core",
+				"Поток":          "2025",
+				"Кореквизиты":    "Python Basics",
+			},
+		},
+	}
+	sheetMapping := map[string]SheetMajorMapping{
+		"Разработка 2025": {"Разработка", "Tech", enums.CourseCategorySWE},
+	}
+
+	_, err := SyncFromSheetData(s.s, sheetsData, sheetMapping)
+	assert.NoError(s.T(), err)
+
+	deps, err := s.s.GetCourseDependencies()
+	assert.NoError(s.T(), err)
+	assert.Len(s.T(), deps, 2)
+
+	for _, dep := range deps {
+		assert.NotNil(s.T(), dep.RequiredGroupID)
+		assert.NotNil(s.T(), dep.RequiredCourseID)
+	}
+
+	groups, err := s.s.GetAllDisciplineGroups()
+	assert.NoError(s.T(), err)
+	assert.Len(s.T(), groups, 2)
+
+	categories := []string{groups[0].Category, groups[1].Category}
+	assert.Contains(s.T(), categories, "prerequisite")
+	assert.Contains(s.T(), categories, "corequisite")
+}
+
 func TestMemoryStoreSuite(t *testing.T) {
 	suite.Run(t, new(MemoryStoreTestSuite))
 }

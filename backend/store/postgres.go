@@ -394,6 +394,7 @@ func (s *PostgresStore) GetCourseDependencies() ([]interfaces.CourseDependencyDa
 			ID:               d.ID,
 			CourseID:         d.CourseID,
 			RequiredCourseID: d.RequiredCourseID,
+			RequiredGroupID:  d.RequiredGroupID,
 			DependencyType:   d.DependencyType,
 			AlternativeGroup: d.AlternativeGroup,
 		}
@@ -559,6 +560,7 @@ func (s *PostgresStore) CreateCourseDependency(dep interfaces.CourseDependencyDa
 		ID:               dep.ID,
 		CourseID:         dep.CourseID,
 		RequiredCourseID: dep.RequiredCourseID,
+		RequiredGroupID:  dep.RequiredGroupID,
 		DependencyType:   dep.DependencyType,
 		AlternativeGroup: dep.AlternativeGroup,
 	}

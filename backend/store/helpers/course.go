@@ -81,22 +81,30 @@ func buildPrerequisiteGroups(course interfaces.CourseData, deps []interfaces.Cou
 	groupIndexByAlt := make(map[int]int)
 
 	for _, dep := range deps {
-		if dep.DependencyType != enums.DependencyTypePrerequisite || dep.CourseID != course.ID || dep.RequiredCourseID == nil {
+		if dep.DependencyType != enums.DependencyTypePrerequisite || dep.CourseID != course.ID {
 			continue
 		}
 
-		if dep.AlternativeGroup > 0 {
-			idx, ok := groupIndexByAlt[dep.AlternativeGroup]
-			if !ok {
-				idx = len(prerequisiteGroups)
-				groupIndexByAlt[dep.AlternativeGroup] = idx
-				prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{})
+		var courseIDs []uuid.UUID
+		if dep.RequiredCourseID != nil {
+			courseIDs = append(courseIDs, *dep.RequiredCourseID)
+		}
+
+		for _, reqID := range courseIDs {
+			idVal := reqID
+			if dep.AlternativeGroup > 0 {
+				idx, ok := groupIndexByAlt[dep.AlternativeGroup]
+				if !ok {
+					idx = len(prerequisiteGroups)
+					groupIndexByAlt[dep.AlternativeGroup] = idx
+					prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{})
+				}
+				prerequisiteGroups[idx].courseIDs = append(prerequisiteGroups[idx].courseIDs, idVal)
+				continue
 			}
-			prerequisiteGroups[idx].courseIDs = append(prerequisiteGroups[idx].courseIDs, *dep.RequiredCourseID)
-			continue
-		}
 
-		prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{courseIDs: []uuid.UUID{*dep.RequiredCourseID}})
+			prerequisiteGroups = append(prerequisiteGroups, prerequisiteGroup{courseIDs: []uuid.UUID{idVal}})
+		}
 	}
 
 	if len(prerequisiteGroups) == 0 && len(course.Prerequisites) > 0 {
