@@ -256,6 +256,36 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/v1/courses/dependencies:
+    get:
+      description: возвращает сырые зависимости курсов с привязанными коробками дисциплин (RequiredGroupID)
+      responses:
+        '200':
+          description: список зависимостей курсов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseDependency'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/admin/sync:
+    post:
+      description: запускает ручную синхронизацию с Google Таблицами
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: синхронизация успешно выполнена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /api/v1/majors/structure:
     description: возвращает структуру школ, годов, мейджоров и специализаций
     get:
@@ -1098,6 +1128,35 @@ components:
           type: string
         timestamp:
           type: string
+
+    CourseDependency:
+      type: object
+      required:
+        - id
+        - course_id
+        - dependency_type
+      properties:
+        id:
+          type: string
+          format: uuid
+        course_id:
+          type: string
+          format: uuid
+        required_course_id:
+          type: string
+          format: uuid
+          nullable: true
+        required_group_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID привязанной коробки пререквизитов/кореквизитов (DisciplineGroup)
+        dependency_type:
+          type: string
+          enum: [prerequisite, corequisite]
+        alternative_group:
+          type: integer
+          description: номер альтернативной группы (для OR выбора)
           format: date-time
 
     MajorRequirement:
