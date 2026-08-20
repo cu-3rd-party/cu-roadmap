@@ -27,10 +27,10 @@ type CourseData struct {
 }
 
 type CourseDependencyData struct {
-	ID               uuid.UUID
-	CourseID         uuid.UUID
-	RequiredCourseID *uuid.UUID
-	RequiredGroupID  *uuid.UUID
-	DependencyType   enums.DependencyType
-	AlternativeGroup int
+	ID               uuid.UUID            `json:"id"`
+	CourseID         uuid.UUID            `json:"course_id"`
+	RequiredCourseID *uuid.UUID           `json:"required_course_id,omitempty"`
+	RequiredGroupID  *uuid.UUID           `json:"required_group_id,omitempty"`
+	DependencyType   enums.DependencyType `json:"dependency_type"`
+	AlternativeGroup int                  `json:"alternative_group"`
 }

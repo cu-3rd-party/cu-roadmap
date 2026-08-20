@@ -104,3 +104,13 @@ func RestoreDB(c *gin.Context) {
 	invalidateCachePrefixes("courses:", "majors:")
 	c.JSON(http.StatusOK, gin.H{"status": "restored"})
 }
+
+func SyncGoogleSheetsHandler(c *gin.Context) {
+	s := store.GetStore()
+	if err := s.SyncGoogleSheetsData(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	invalidateCachePrefixes("courses:", "majors:")
+	c.JSON(http.StatusOK, gin.H{"status": "synced"})
+}

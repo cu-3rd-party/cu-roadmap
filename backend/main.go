@@ -122,6 +122,8 @@ func main() {
 		api.RegisterPlannerRoutes(apiV1.Group("/planner"))
 		api.RegisterAuthRoutes(apiV1.Group("/auth"))
 		api.RegisterDisciplineGroupRoutes(apiV1.Group("/discipline-groups"))
+		apiV1.POST("/admin/sync", api.SyncGoogleSheetsHandler)
+		apiV1.POST("/sync", api.SyncGoogleSheetsHandler)
 	}
 
 	router.GET("/", func(c *gin.Context) {

@@ -193,13 +193,21 @@ export default function BoxesPage() {
     try {
       const [coursesRes, depsRes] = await Promise.all([
         apiClient.get("/courses"),
-        apiClient.get<CourseDependency[]>("/courses/dependencies"),
+        apiClient.get<any[]>("/courses/dependencies"),
       ]);
       if (Array.isArray(coursesRes.data)) {
         setCourses(coursesRes.data.map((c: any) => ({ id: c.id, title: c.title })));
       }
       if (Array.isArray(depsRes.data)) {
-        setDependencies(depsRes.data);
+        const normalized: CourseDependency[] = depsRes.data.map((d: any) => ({
+          id: d.id || d.ID,
+          course_id: d.course_id || d.CourseID,
+          required_course_id: d.required_course_id || d.RequiredCourseID,
+          required_group_id: d.required_group_id || d.RequiredGroupID,
+          dependency_type: d.dependency_type || d.DependencyType,
+          alternative_group: d.alternative_group || d.AlternativeGroup,
+        }));
+        setDependencies(normalized);
       }
     } catch {
       // Optional fallback
