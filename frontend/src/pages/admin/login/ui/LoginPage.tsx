@@ -78,11 +78,9 @@ export default function LoginPage() {
                 {loginErrorMessage(error)}
               </p>
             )}
-
             <Button
-              type="submit"
-              size="md"
-              className="w-full"
+              variant="outline"
+              size="sm"
               loading={isPending}
               disabled={!password}
             >

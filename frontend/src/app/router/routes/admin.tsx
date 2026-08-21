@@ -18,7 +18,7 @@ export interface AdminRoute extends AppRoute {
 export const adminRoutes: AdminRoute[] = [
   {
     path: "admin/trajectories",
-    label: "Траектории",
+    label: "Специализации",
     icon: <RouteIcon />,
     element: <LazyTrajectoriesPage />,
     protected: true,

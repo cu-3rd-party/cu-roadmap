@@ -1,6 +1,8 @@
 export { CourseFilters } from "./ui/CourseFilters";
 export { CourseSearchFilter } from "./ui/CourseSearchFilter";
 export { CategoryFilter } from "./ui/CategoryFilter";
+export { FilterCard } from "./ui/FilterCard";
+export { ClearChip } from "./ui/ClearChip";
 export { createCourseFiltersStore } from "./model";
 export {
   buildCategorySections,
