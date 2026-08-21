@@ -577,6 +577,10 @@ func (s *PostgresStore) DeleteCourseDependencies(courseID uuid.UUID) error {
 	return s.db.Where("course_id = ?", courseID).Delete(&models.CourseDependency{}).Error
 }
 
+func (s *PostgresStore) DeleteCourseDependency(id uuid.UUID) error {
+	return s.db.Where("id = ?", id).Delete(&models.CourseDependency{}).Error
+}
+
 func (s *PostgresStore) GetAllStudents() (map[uuid.UUID]interfaces.StudentData, error) {
 	var students []models.Student
 	if err := s.db.Preload("PassedCourses").Find(&students).Error; err != nil {

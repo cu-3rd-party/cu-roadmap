@@ -217,16 +217,23 @@ func attachDisciplineGroup(c *gin.Context) {
 	}
 
 	var req struct {
-		SpecializationID uuid.UUID `json:"specialization_id" binding:"required"`
+		SpecializationID *uuid.UUID           `json:"specialization_id"`
+		CourseID         *uuid.UUID           `json:"course_id"`
+		DependencyType   enums.DependencyType `json:"dependency_type"`
+		AlternativeGroup int                  `json:"alternative_group"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	if req.SpecializationID == nil && req.CourseID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "must specify specialization_id or course_id"})
+		return
+	}
+
 	s := store.GetStore()
 
-	// Get discipline group
 	dg, err := s.GetDisciplineGroupByID(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -237,14 +244,34 @@ func attachDisciplineGroup(c *gin.Context) {
 		return
 	}
 
-	// Find the specialization to get its RequirementsBoxID
-	// Let's implement finding spec
+	if req.CourseID != nil {
+		depType := req.DependencyType
+		if depType == "" {
+			depType = enums.DependencyTypePrerequisite
+		}
+		gid := id
+		depData := interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         *req.CourseID,
+			RequiredGroupID:  &gid,
+			DependencyType:   depType,
+			AlternativeGroup: req.AlternativeGroup,
+		}
+		_, err = s.CreateCourseDependency(depData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "attached"})
+		return
+	}
+
 	majors, _ := s.GetAllMajors()
 	var specBoxID *uuid.UUID
 	for mID := range majors {
 		mspecs, _ := s.GetSpecializationsByMajor(mID)
 		for _, sp := range mspecs {
-			if sp.ID == req.SpecializationID {
+			if sp.ID == *req.SpecializationID {
 				specBoxID = sp.RequirementsBoxID
 				break
 			}
@@ -256,7 +283,6 @@ func attachDisciplineGroup(c *gin.Context) {
 		return
 	}
 
-	// Create edge
 	edgeID := uuid.NewSHA1(uuid.NameSpaceOID, []byte((*specBoxID).String()+"|"+dg.RootBoxID.String()))
 	_, err = s.CreateBoxEdge(interfaces.BoxEdgeData{
 		ID:          edgeID,
@@ -279,10 +305,16 @@ func detachDisciplineGroup(c *gin.Context) {
 	}
 
 	var req struct {
-		SpecializationID uuid.UUID `json:"specialization_id" binding:"required"`
+		SpecializationID *uuid.UUID `json:"specialization_id"`
+		CourseID         *uuid.UUID `json:"course_id"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.SpecializationID == nil && req.CourseID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "must specify specialization_id or course_id"})
 		return
 	}
 
@@ -293,12 +325,27 @@ func detachDisciplineGroup(c *gin.Context) {
 		return
 	}
 
+	if req.CourseID != nil {
+		allDeps, err := s.GetCourseDependencies()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		for _, dep := range allDeps {
+			if dep.CourseID == *req.CourseID && dep.RequiredGroupID != nil && *dep.RequiredGroupID == id {
+				_ = s.DeleteCourseDependency(dep.ID)
+			}
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "detached"})
+		return
+	}
+
 	majors, _ := s.GetAllMajors()
 	var specBoxID *uuid.UUID
 	for mID := range majors {
 		mspecs, _ := s.GetSpecializationsByMajor(mID)
 		for _, sp := range mspecs {
-			if sp.ID == req.SpecializationID {
+			if sp.ID == *req.SpecializationID {
 				specBoxID = sp.RequirementsBoxID
 				break
 			}
@@ -309,7 +356,6 @@ func detachDisciplineGroup(c *gin.Context) {
 		return
 	}
 
-	// Edge ID is deterministic
 	edgeID := uuid.NewSHA1(uuid.NameSpaceOID, []byte((*specBoxID).String()+"|"+dg.RootBoxID.String()))
 	if err := s.DeleteBoxEdge(edgeID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

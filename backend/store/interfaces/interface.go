@@ -70,6 +70,7 @@ type StoreBase interface {
 
 	CreateCourseDependency(dep CourseDependencyData) (CourseDependencyData, error)
 	DeleteCourseDependencies(courseID uuid.UUID) error
+	DeleteCourseDependency(id uuid.UUID) error
 
 	GetAllStudents() (map[uuid.UUID]StudentData, error)
 	GetStudentByID(studentID uuid.UUID) (*StudentData, error)

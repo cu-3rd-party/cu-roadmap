@@ -48,6 +48,7 @@ func setupRouter(t *testing.T, seed func(s interfaces.StoreBase)) *gin.RouterGro
 	RegisterMajorsRoutes(apiV1.Group("/majors"))
 	RegisterCoursesRoutes(apiV1.Group("/courses"))
 	RegisterPlannerRoutes(apiV1.Group("/planner"))
+	RegisterDisciplineGroupRoutes(apiV1.Group("/discipline-groups"))
 	router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
@@ -72,6 +73,7 @@ func setupRouterRoot(t *testing.T, seed func(s interfaces.StoreBase)) *gin.Engin
 	RegisterMajorsRoutes(apiV1.Group("/majors"))
 	RegisterCoursesRoutes(apiV1.Group("/courses"))
 	RegisterPlannerRoutes(apiV1.Group("/planner"))
+	RegisterDisciplineGroupRoutes(apiV1.Group("/discipline-groups"))
 	router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})

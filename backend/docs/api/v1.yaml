@@ -268,6 +268,127 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CourseDependency'
+
+  /api/v1/courses/{id}/dependencies:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      description: возвращает зависимости конкретного курса
+      responses:
+        '200':
+          description: список зависимостей курса
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseDependency'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      description: привязывает курс или коробку (DisciplineGroup) к курсу как пререквизит/кореквизит
+      security:
+        - AdminCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dependency_type
+              properties:
+                required_course_id:
+                  type: string
+                  format: uuid
+                required_group_id:
+                  type: string
+                  format: uuid
+                dependency_type:
+                  type: string
+                  enum: [prerequisite, corequisite]
+                alternative_group:
+                  type: integer
+      responses:
+        '201':
+          description: зависимость создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDependency'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      description: перезаписывает все зависимости курса
+      security:
+        - AdminCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required:
+                  - dependency_type
+                properties:
+                  required_course_id:
+                    type: string
+                    format: uuid
+                  required_group_id:
+                    type: string
+                    format: uuid
+                  dependency_type:
+                    type: string
+                    enum: [prerequisite, corequisite]
+                  alternative_group:
+                    type: integer
+      responses:
+        '200':
+          description: зависимости обновлены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseDependency'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/courses/dependencies/{dep_id}:
+    parameters:
+      - name: dep_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      description: удаляет конкретную зависимость курса по её id
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: зависимость удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -951,7 +1072,7 @@ paths:
 
   /api/v1/discipline-groups/{id}/attach:
     post:
-      description: привязать коробку к специализации
+      description: привязать коробку к специализации или к курсу
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -964,13 +1085,24 @@ paths:
                 specialization_id:
                   type: string
                   format: uuid
+                  description: UUID специализации (для добавления коробки в требования специализации)
+                course_id:
+                  type: string
+                  format: uuid
+                  description: UUID курса (для привязки коробки как пререквизит/кореквизит)
+                dependency_type:
+                  type: string
+                  enum: [prerequisite, corequisite]
+                  default: prerequisite
+                alternative_group:
+                  type: integer
       responses:
         '200':
           description: ok
 
   /api/v1/discipline-groups/{id}/detach:
     post:
-      description: отвязать коробку от специализации
+      description: отвязать коробку от специализации или курса
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -981,6 +1113,9 @@ paths:
               type: object
               properties:
                 specialization_id:
+                  type: string
+                  format: uuid
+                course_id:
                   type: string
                   format: uuid
       responses:
@@ -1604,6 +1739,18 @@ components:
                   format: uuid
         corequisites:
           type: array
+          items:
+            type: string
+            format: uuid
+        prerequisite_group_ids:
+          type: array
+          description: список UUID коробок дисциплин (DisciplineGroup), являющихся пререквизитами
+          items:
+            type: string
+            format: uuid
+        corequisite_group_ids:
+          type: array
+          description: список UUID коробок дисциплин (DisciplineGroup), являющихся кореквизитами
           items:
             type: string
             format: uuid

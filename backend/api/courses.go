@@ -20,15 +20,20 @@ import (
 
 func RegisterCoursesRoutes(rg *gin.RouterGroup) {
 	rg.GET("/dependencies", getCourseDependencies)
+	rg.GET("/:id/dependencies", getDependenciesByCourseID)
 	rg.GET("/", getCourses)
-	rg.GET("/:cohort_year", getCourses)
-	rg.GET("/:cohort_year/:major_id", getCourses)
+	rg.GET("/:id", getCourses)
+	rg.GET("/:id/:major_id", getCourses)
 
 	admin := rg.Group("/")
 	admin.Use(middleware.AuthMiddleware())
 	admin.POST("/", createCourse)
 	admin.PUT("/:id", updateCourse)
 	admin.DELETE("/:id", deleteCourse)
+	admin.POST("/:id/dependencies", addCourseDependency)
+	admin.PUT("/:id/dependencies", replaceCourseDependenciesHandler)
+	admin.DELETE("/:id/dependencies/:dep_id", deleteCourseDependency)
+	admin.DELETE("/dependencies/:dep_id", deleteCourseDependency)
 	admin.POST("/restore", restoreDB)
 	admin.GET("/backup", backupDB)
 }
@@ -55,7 +60,11 @@ func getCourses(c *gin.Context) {
 	f := parseCourseFilter(c)
 
 	var majorID uuid.UUID
-	if cohortStr := c.Param("cohort_year"); cohortStr != "" {
+	cohortStr := c.Param("cohort_year")
+	if cohortStr == "" {
+		cohortStr = c.Param("id")
+	}
+	if cohortStr != "" {
 		if parsedMajorID, err := uuid.Parse(cohortStr); err == nil {
 			majorID = parsedMajorID
 		} else {
@@ -316,7 +325,7 @@ func createCourse(c *gin.Context) {
 		return
 	}
 
-	if err := helpers.SaveCourseDependencies(s, created.ID, req.Prerequisites, req.Corequisites); err != nil {
+	if err := helpers.SaveCourseDependencies(s, created.ID, req.Prerequisites, req.Corequisites, req.PrerequisiteGroupIDs, req.CorequisiteGroupIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -373,7 +382,7 @@ func updateCourse(c *gin.Context) {
 		return
 	}
 
-	if err := helpers.ReplaceCourseDependencies(s, updated.ID, req.Prerequisites, req.Corequisites); err != nil {
+	if err := helpers.ReplaceCourseDependencies(s, updated.ID, req.Prerequisites, req.Corequisites, req.PrerequisiteGroupIDs, req.CorequisiteGroupIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -510,4 +519,141 @@ func restoreDB(c *gin.Context) {
 	}
 	invalidateCachePrefixes("courses:", "majors:")
 	c.JSON(http.StatusOK, gin.H{"status": "restored"})
+}
+
+type createCourseDependencyReq struct {
+	RequiredCourseID *uuid.UUID           `json:"required_course_id"`
+	RequiredGroupID  *uuid.UUID           `json:"required_group_id"`
+	DependencyType   enums.DependencyType `json:"dependency_type" binding:"required"`
+	AlternativeGroup int                  `json:"alternative_group"`
+}
+
+func getDependenciesByCourseID(c *gin.Context) {
+	courseID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid course id"})
+		return
+	}
+	s := store.GetStore()
+	allDeps, err := s.GetCourseDependencies()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var courseDeps []interfaces.CourseDependencyData
+	for _, dep := range allDeps {
+		if dep.CourseID == courseID {
+			courseDeps = append(courseDeps, dep)
+		}
+	}
+	if courseDeps == nil {
+		courseDeps = []interfaces.CourseDependencyData{}
+	}
+	c.JSON(http.StatusOK, courseDeps)
+}
+
+func addCourseDependency(c *gin.Context) {
+	courseID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid course id"})
+		return
+	}
+	var req createCourseDependencyReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.RequiredCourseID == nil && req.RequiredGroupID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "must specify required_course_id or required_group_id"})
+		return
+	}
+	if req.DependencyType != enums.DependencyTypePrerequisite && req.DependencyType != enums.DependencyTypeCorequisite {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid dependency_type"})
+		return
+	}
+
+	s := store.GetStore()
+	existing, err := s.GetCourseByID(courseID)
+	if err != nil || existing == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "course not found"})
+		return
+	}
+
+	depData := interfaces.CourseDependencyData{
+		ID:               uuid.New(),
+		CourseID:         courseID,
+		RequiredCourseID: req.RequiredCourseID,
+		RequiredGroupID:  req.RequiredGroupID,
+		DependencyType:   req.DependencyType,
+		AlternativeGroup: req.AlternativeGroup,
+	}
+
+	created, err := s.CreateCourseDependency(depData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	invalidateCachePrefixes("courses:", "majors:")
+	c.JSON(http.StatusCreated, created)
+}
+
+func replaceCourseDependenciesHandler(c *gin.Context) {
+	courseID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid course id"})
+		return
+	}
+	var reqs []createCourseDependencyReq
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	s := store.GetStore()
+	existing, err := s.GetCourseByID(courseID)
+	if err != nil || existing == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "course not found"})
+		return
+	}
+
+	if err := s.DeleteCourseDependencies(courseID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	createdDeps := make([]interfaces.CourseDependencyData, 0, len(reqs))
+	for _, req := range reqs {
+		if req.RequiredCourseID == nil && req.RequiredGroupID == nil {
+			continue
+		}
+		depData := interfaces.CourseDependencyData{
+			ID:               uuid.New(),
+			CourseID:         courseID,
+			RequiredCourseID: req.RequiredCourseID,
+			RequiredGroupID:  req.RequiredGroupID,
+			DependencyType:   req.DependencyType,
+			AlternativeGroup: req.AlternativeGroup,
+		}
+		created, err := s.CreateCourseDependency(depData)
+		if err == nil {
+			createdDeps = append(createdDeps, created)
+		}
+	}
+	invalidateCachePrefixes("courses:", "majors:")
+	c.JSON(http.StatusOK, createdDeps)
+}
+
+func deleteCourseDependency(c *gin.Context) {
+	depIDParam := c.Param("dep_id")
+	depID, err := uuid.Parse(depIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid dependency id"})
+		return
+	}
+	s := store.GetStore()
+	if err := s.DeleteCourseDependency(depID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	invalidateCachePrefixes("courses:", "majors:")
+	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }

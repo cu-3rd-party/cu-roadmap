@@ -15,19 +15,21 @@ const (
 var HandbookLinkRegexp = regexp.MustCompile("^https?://.*$")
 
 type CreateCourseRequest struct {
-	Title               string               `json:"title" binding:"required"`
-	Description         *string              `json:"description"`
-	HandbookLink        *string              `json:"handbook_link"`
-	CourseType          enums.CourseType     `json:"course_type"`
-	Category            enums.CourseCategory `json:"category"`
-	AllowedCohorts      []int                `json:"allowed_cohorts"`
-	AvailableSemesters  []int                `json:"available_semesters"`
-	RecommendedSemester *int                 `json:"recommended_semester"`
-	Workload            float64              `json:"workload"`
-	SeminarsWeek        int                  `json:"seminars_week"`
-	LecturesWeek        int                  `json:"lectures_week"`
-	Prerequisites       []string             `json:"prerequisites"`
-	Corequisites        []string             `json:"corequisites"`
+	Title                string               `json:"title" binding:"required"`
+	Description          *string              `json:"description"`
+	HandbookLink         *string              `json:"handbook_link"`
+	CourseType           enums.CourseType     `json:"course_type"`
+	Category             enums.CourseCategory `json:"category"`
+	AllowedCohorts       []int                `json:"allowed_cohorts"`
+	AvailableSemesters   []int                `json:"available_semesters"`
+	RecommendedSemester  *int                 `json:"recommended_semester"`
+	Workload             float64              `json:"workload"`
+	SeminarsWeek         int                  `json:"seminars_week"`
+	LecturesWeek         int                  `json:"lectures_week"`
+	Prerequisites        []string             `json:"prerequisites"`
+	Corequisites         []string             `json:"corequisites"`
+	PrerequisiteGroupIDs []string             `json:"prerequisite_group_ids"`
+	CorequisiteGroupIDs  []string             `json:"corequisite_group_ids"`
 }
 
 func (c *CreateCourseRequest) Validate() error {
@@ -54,19 +56,21 @@ func (c *CreateCourseRequest) Validate() error {
 }
 
 type UpdateCourseRequest struct {
-	Title               string               `json:"title" binding:"required"`
-	Description         *string              `json:"description"`
-	HandbookLink        *string              `json:"handbook_link"`
-	CourseType          enums.CourseType     `json:"course_type"`
-	Category            enums.CourseCategory `json:"category"`
-	AllowedCohorts      []int                `json:"allowed_cohorts"`
-	AvailableSemesters  []int                `json:"available_semesters"`
-	RecommendedSemester *int                 `json:"recommended_semester"`
-	Workload            float64              `json:"workload"`
-	SeminarsWeek        int                  `json:"seminars_week"`
-	LecturesWeek        int                  `json:"lectures_week"`
-	Prerequisites       []string             `json:"prerequisites"`
-	Corequisites        []string             `json:"corequisites"`
+	Title                string               `json:"title" binding:"required"`
+	Description          *string              `json:"description"`
+	HandbookLink         *string              `json:"handbook_link"`
+	CourseType           enums.CourseType     `json:"course_type"`
+	Category             enums.CourseCategory `json:"category"`
+	AllowedCohorts       []int                `json:"allowed_cohorts"`
+	AvailableSemesters   []int                `json:"available_semesters"`
+	RecommendedSemester  *int                 `json:"recommended_semester"`
+	Workload             float64              `json:"workload"`
+	SeminarsWeek         int                  `json:"seminars_week"`
+	LecturesWeek         int                  `json:"lectures_week"`
+	Prerequisites        []string             `json:"prerequisites"`
+	Corequisites         []string             `json:"corequisites"`
+	PrerequisiteGroupIDs []string             `json:"prerequisite_group_ids"`
+	CorequisiteGroupIDs  []string             `json:"corequisite_group_ids"`
 }
 
 func (c *UpdateCourseRequest) Validate() error {

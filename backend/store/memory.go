@@ -465,6 +465,20 @@ func (s *MemoryStore) DeleteCourseDependencies(courseID uuid.UUID) error {
 	return nil
 }
 
+func (s *MemoryStore) DeleteCourseDependency(id uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var newDeps []interfaces.CourseDependencyData
+	for _, d := range s.courseDependencies {
+		if d.ID != id {
+			newDeps = append(newDeps, d)
+		}
+	}
+	s.courseDependencies = newDeps
+	return nil
+}
+
 func (s *MemoryStore) GetAllStudents() (map[uuid.UUID]interfaces.StudentData, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
