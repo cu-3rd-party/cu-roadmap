@@ -16,11 +16,15 @@ func ToDisciplineGroupData(m *models.DisciplineGroup) interfaces.DisciplineGroup
 }
 
 func ToDisciplineGroupModel(d interfaces.DisciplineGroupData) models.DisciplineGroup {
+	mathExpr := d.MathExpression
+	if len(mathExpr) == 0 {
+		mathExpr = []byte("{}")
+	}
 	return models.DisciplineGroup{
 		ID:             d.ID,
 		Title:          d.Title,
 		Category:       d.Category,
-		MathExpression: d.MathExpression,
+		MathExpression: mathExpr,
 		RootBoxID:      d.RootBoxID,
 	}
 }

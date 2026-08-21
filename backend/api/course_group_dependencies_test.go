@@ -32,9 +32,10 @@ func TestAddAndGetCourseDependencyGroup(t *testing.T) {
 			LogicalOp: &rootOp,
 		})
 		_, _ = s.CreateDisciplineGroup(interfaces.DisciplineGroupData{
-			ID:        groupID,
-			Title:     "Go Prerequisites Group",
-			RootBoxID: box.ID,
+			ID:             groupID,
+			Title:          "Go Prerequisites Group",
+			MathExpression: json.RawMessage("{}"),
+			RootBoxID:      box.ID,
 		})
 	})
 
@@ -109,9 +110,10 @@ func TestAttachDisciplineGroupToCourse(t *testing.T) {
 			LogicalOp: &rootOp,
 		})
 		_, _ = s.CreateDisciplineGroup(interfaces.DisciplineGroupData{
-			ID:        groupID,
-			Title:     "ML Math Prerequisites",
-			RootBoxID: box.ID,
+			ID:             groupID,
+			Title:          "ML Math Prerequisites",
+			MathExpression: json.RawMessage("{}"),
+			RootBoxID:      box.ID,
 		})
 	})
 
@@ -173,9 +175,10 @@ func TestCreateCourseWithGroupIDs(t *testing.T) {
 			LogicalOp: &rootOp,
 		})
 		_, _ = s.CreateDisciplineGroup(interfaces.DisciplineGroupData{
-			ID:        groupID,
-			Title:     "Python Prereq Group",
-			RootBoxID: box.ID,
+			ID:             groupID,
+			Title:          "Python Prereq Group",
+			MathExpression: json.RawMessage("{}"),
+			RootBoxID:      box.ID,
 		})
 	})
 
