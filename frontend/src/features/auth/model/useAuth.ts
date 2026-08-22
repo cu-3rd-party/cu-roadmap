@@ -16,12 +16,18 @@ export const useAuthStatus = () =>
     refetchOnWindowFocus: true,
   });
 
+/* Both mutations write the new session state straight into the cache instead of
+   invalidating it. While the login screen is up nothing observes the auth query,
+   and invalidation only refetches *active* queries — so an invalidation would
+   leave the cached `false` in place, RequireAuth would read it on the very next
+   render and bounce you back to the login screen. That is what used to make the
+   password have to be typed twice. Logout has the mirror-image problem. */
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: login,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: authStatusKey }),
+    onSuccess: () => queryClient.setQueryData(authStatusKey, true),
   });
 };
 
@@ -30,6 +36,6 @@ export const useLogoutMutation = () => {
 
   return useMutation({
     mutationFn: logout,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: authStatusKey }),
+    onSuccess: () => queryClient.setQueryData(authStatusKey, false),
   });
 };

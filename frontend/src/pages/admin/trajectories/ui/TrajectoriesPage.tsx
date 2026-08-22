@@ -6,7 +6,7 @@ import {
   MOCK_SPECIALIZATIONS,
   SpecializationList,
   TrajectoryFilters,
-} from "@/features/admin-trajectories";
+} from "@/features/admin-specializations";
 import { ADMISSION_YEARS, type AdmissionYear } from "@/shared/constants";
 import { useMediaQuery } from "@/shared/lib";
 import { Chip, Panel } from "@/shared/ui";

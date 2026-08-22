@@ -4,7 +4,7 @@ import { lazy, type ReactNode } from "react";
 import type { AppRoute } from "../types";
 
 const LazyTrajectoriesPage = lazy(() => import("@/pages/admin/trajectories"));
-const LazyBoxesPage = lazy(() => import("@/pages/admin/boxes"));
+const LazyBoxesPage = lazy(() => import("@/pages/admin/groups"));
 const LazyCoursesPage = lazy(() => import("@/pages/admin/courses"));
 
 // Single source of truth for both the router and the admin navbar — add a route
