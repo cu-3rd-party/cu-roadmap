@@ -8,6 +8,7 @@ const LazyBoxesPage = lazy(() => import("@/pages/admin/groups"));
 const LazyCoursesPage = lazy(() => import("@/pages/admin/courses"));
 const LazyRestrictionsPage = lazy(() => import("@/pages/admin/restrictions"));
 const LazyCourseEditPage = lazy(() => import("@/pages/admin/course"));
+const LazyGroupEditPage = lazy(() => import("@/pages/admin/group"));
 
 // Single source of truth for both the router and the admin navbar — add a route
 // here and it appears in the admin shell automatically. `protected` is what puts
@@ -48,6 +49,11 @@ export const adminDetailRoutes: AppRoute[] = [
   {
     path: "admin/courses/:courseId",
     element: <LazyCourseEditPage />,
+    protected: true,
+  },
+  {
+    path: "admin/boxes/:groupId",
+    element: <LazyGroupEditPage />,
     protected: true,
   },
   {

@@ -1,42 +1,56 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { buildCourseTitleMap, useCourseByIdQuery } from "@/entities/course";
 import {
+  useCourseByIdQuery,
+  useCourseDependenciesQuery,
+  type CourseDependency,
+  type DependencyType,
+} from "@/entities/course";
+import { useDisciplineGroupsQuery } from "@/entities/disciplineGroup";
+import {
+  addRequisite,
+  buildRequisiteCards,
+  CATEGORY_FILTER_OPTIONS,
+  courseToEditorFields,
   CourseEditHeader,
   CourseRequisitesPanel,
   CourseSettingsPanel,
+  editorSnapshotKey,
+  parseRequisiteKey,
+  removeRequisiteCard,
   RequisiteSelectModal,
+  requisiteKey,
   useAdminCoursesQuery,
-  useRequisiteSelection,
-  CATEGORY_FILTER_OPTIONS,
-  type RequisiteEntry,
+  type RequisiteCardModel,
+  type RequisiteKey,
 } from "@/features/admin-courses";
 import { ADMISSION_YEARS } from "@/shared/constants";
-import type { UUID } from "@/shared/model";
 import { Panel } from "@/shared/ui";
-
-/* Requisites arrive as bare UUIDs, so titles come from the catalog list — the same
-   buildCourseTitleMap approach the planner and the details drawer already use. */
-const titleFor = (map: Map<UUID, string>, id: UUID) => map.get(id) ?? "Курс";
 
 const CourseEditPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
 
   const { data: course, isLoading } = useCourseByIdQuery(courseId);
+  const { data: serverDependencies, isLoading: dependenciesLoading } =
+    useCourseDependenciesQuery(courseId);
 
-  /* Only needed to resolve requisite ids to titles; the header and the settings block
-     come from the single-course request above. */
-  const { data: allCourses, isLoading: titlesLoading } = useAdminCoursesQuery(
-    {},
-  );
-  const titleMap = useMemo(
-    () => buildCourseTitleMap(allCourses ?? []),
+  /* Both lists put a title and badges on a requisite card. The picker runs the
+     same queries, so react-query serves them once. */
+  const { data: allCourses } = useAdminCoursesQuery({});
+  const { data: allGroups } = useDisciplineGroupsQuery();
+
+  const coursesById = useMemo(
+    () => new Map((allCourses ?? []).map((item) => [item.id, item])),
     [allCourses],
   );
+  const groupsById = useMemo(
+    () => new Map((allGroups ?? []).map((item) => [item.id, item])),
+    [allGroups],
+  );
 
-  /* Год and Тип deliberately start at their first option rather than tracking the
-     course — unlike the controls below, which seed from it. */
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [year, setYear] = useState(String(ADMISSION_YEARS[0]));
   const [courseType, setCourseType] = useState<string>(
     CATEGORY_FILTER_OPTIONS[0],
@@ -44,59 +58,105 @@ const CourseEditPage = () => {
   const [allowedSemesters, setAllowedSemesters] = useState<string[]>([]);
   const [lecturesWeek, setLecturesWeek] = useState("0");
   const [seminarsWeek, setSeminarsWeek] = useState("0");
+  const [dependencies, setDependencies] = useState<CourseDependency[]>([]);
 
-  /* Seed the controls once the course lands. They are local-only for now — nothing
-     here is sent back. */
+  const [prereqOpen, setPrereqOpen] = useState(false);
+  const [coreqOpen, setCoreqOpen] = useState(false);
+
   useEffect(() => {
     if (!course) return;
-    setAllowedSemesters(course.availableSemesters?.map(String) ?? []);
-    setLecturesWeek(String(course.lecturesWeek ?? 0));
-    setSeminarsWeek(String(course.seminarsWeek ?? 0));
+    const fields = courseToEditorFields(course);
+    setTitle(fields.title);
+    setDescription(fields.description);
+    setYear(fields.year);
+    setCourseType(fields.courseType);
+    setAllowedSemesters(fields.semesters);
+    setLecturesWeek(fields.lecturesWeek);
+    setSeminarsWeek(fields.seminarsWeek);
   }, [course]);
 
-  /* One per panel, so the two pickers keep separate search and selection. The
-     picked sets are intentionally NOT linked to the cards below: a card comes from
-     course.prerequisites, whose group ids are course-prerequisite groups rather
-     than discipline-group ids, so the two cannot be reconciled until the save
-     endpoint defines that payload. */
-  const prereq = useRequisiteSelection();
-  const coreq = useRequisiteSelection();
+  useEffect(() => {
+    if (serverDependencies) setDependencies(serverDependencies);
+  }, [serverDependencies]);
 
-  const prerequisites = useMemo<RequisiteEntry[]>(
-    () =>
-      (course?.prerequisites ?? []).map((group) => ({
-        key: group.groupId,
-        // A group of alternatives is a "коробка": one card, any of them satisfies it.
-        title: group.courses.map((id) => titleFor(titleMap, id)).join(" / "),
-        courseId: group.courses.length === 1 ? group.courses[0] : undefined,
-      })),
-    [course, titleMap],
+  const currentKey = editorSnapshotKey(
+    {
+      title,
+      description,
+      year,
+      courseType,
+      semesters: allowedSemesters,
+      lecturesWeek,
+      seminarsWeek,
+    },
+    dependencies,
   );
 
-  const corequisites = useMemo<RequisiteEntry[]>(
+  /* Derived from the fetched data rather than captured from state on load: the
+     seeding effects above run in the same commit that would capture a baseline,
+     so a captured one would snapshot the pre-seed values and read as dirty
+     immediately. */
+  const loadedKey = useMemo(
     () =>
-      (course?.corequisites ?? []).map((id) => ({
-        key: id,
-        title: titleFor(titleMap, id),
-        courseId: id,
-      })),
-    [course, titleMap],
+      course && serverDependencies
+        ? editorSnapshotKey(courseToEditorFields(course), serverDependencies)
+        : null,
+    [course, serverDependencies],
   );
+
+  const dirty = loadedKey !== null && currentKey !== loadedKey;
+
+  const prerequisiteCards = useMemo(
+    () => buildRequisiteCards(dependencies, "prerequisite"),
+    [dependencies],
+  );
+  const corequisiteCards = useMemo(
+    () => buildRequisiteCards(dependencies, "corequisite"),
+    [dependencies],
+  );
+
+  const selectedKeys = (cards: RequisiteCardModel[]) =>
+    new Set(cards.map((card) => requisiteKey(card.kind, card.id)));
+
+  /* Selection in the picker IS the panel's contents: picking adds a card,
+     unpicking removes it, so the two can never disagree. */
+  const toggleRequisite = (
+    type: DependencyType,
+    cards: RequisiteCardModel[],
+    key: RequisiteKey,
+  ) => {
+    const { kind, id } = parseRequisiteKey(key);
+    const existing = cards.find((card) => card.kind === kind && card.id === id);
+
+    setDependencies((rows) =>
+      existing
+        ? removeRequisiteCard(rows, existing)
+        : addRequisite(rows, courseId!, type, { kind, id }),
+    );
+  };
+
+  const removeCard = (card: RequisiteCardModel) =>
+    setDependencies((rows) => removeRequisiteCard(rows, card));
 
   const toggleSemester = (semester: string) =>
-    setAllowedSemesters((current) =>
-      current.includes(semester)
-        ? current.filter((item) => item !== semester)
-        : [...current, semester],
+    setAllowedSemesters((selected) =>
+      selected.includes(semester)
+        ? selected.filter((item) => item !== semester)
+        : [...selected, semester],
     );
+
+  const requisitesLoading = isLoading || dependenciesLoading;
 
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
       <Panel className="flex flex-col gap-4 px-2 sm:px-4 lg:px-6">
         <CourseEditHeader
-          title={course?.title}
-          description={course?.description}
+          title={title}
+          description={description}
           loading={isLoading}
+          onTitleChange={setTitle}
+          onDescriptionChange={setDescription}
+          dirty={dirty}
         />
 
         <CourseSettingsPanel
@@ -115,33 +175,43 @@ const CourseEditPage = () => {
 
         <CourseRequisitesPanel
           title="Пререквизиты (курсы или коробки)"
-          entries={prerequisites}
-          loading={isLoading || titlesLoading}
-          onAdd={() => prereq.setOpen(true)}
+          cards={prerequisiteCards}
+          coursesById={coursesById}
+          groupsById={groupsById}
+          loading={requisitesLoading}
+          onAdd={() => setPrereqOpen(true)}
+          onRemove={removeCard}
         />
 
         <CourseRequisitesPanel
           title="Кореквизиты (курсы или коробки)"
-          entries={corequisites}
-          loading={isLoading || titlesLoading}
-          onAdd={() => coreq.setOpen(true)}
+          cards={corequisiteCards}
+          coursesById={coursesById}
+          groupsById={groupsById}
+          loading={requisitesLoading}
+          onAdd={() => setCoreqOpen(true)}
+          onRemove={removeCard}
         />
       </Panel>
 
       <RequisiteSelectModal
-        open={prereq.open}
-        onOpenChange={prereq.setOpen}
+        open={prereqOpen}
+        onOpenChange={setPrereqOpen}
         excludeCourseId={courseId}
-        selectedKeys={prereq.selectedKeys}
-        onToggle={prereq.toggle}
+        selectedKeys={selectedKeys(prerequisiteCards)}
+        onToggle={(key) =>
+          toggleRequisite("prerequisite", prerequisiteCards, key)
+        }
       />
 
       <RequisiteSelectModal
-        open={coreq.open}
-        onOpenChange={coreq.setOpen}
+        open={coreqOpen}
+        onOpenChange={setCoreqOpen}
         excludeCourseId={courseId}
-        selectedKeys={coreq.selectedKeys}
-        onToggle={coreq.toggle}
+        selectedKeys={selectedKeys(corequisiteCards)}
+        onToggle={(key) =>
+          toggleRequisite("corequisite", corequisiteCards, key)
+        }
       />
     </div>
   );

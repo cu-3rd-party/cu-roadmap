@@ -22,3 +22,13 @@ export interface DisciplineGroupDto {
   math_expression: MathExpressionNodeDto | null;
   root_box_id: UUID;
 }
+
+/* Body for POST/PUT. `math_expression` is `binding:"required"` on the Go side,
+   so an omitted field is a 400 — an empty tree must be sent as an explicit `{}`.
+   `category` is a free-form varchar; values in the wild are "prerequisite",
+   "corequisite" and "analog_group". */
+export interface DisciplineGroupRequestDto {
+  title: string;
+  category?: string;
+  math_expression: MathExpressionNodeDto | Record<string, never>;
+}

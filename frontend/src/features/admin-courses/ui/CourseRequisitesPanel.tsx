@@ -1,21 +1,27 @@
-import { CourseCard, CourseCardSkeleton } from "@/entities/course";
+import {
+  CourseBadges,
+  CourseCardSkeleton,
+  type Course,
+} from "@/entities/course";
+import {
+  DisciplineGroupBadges,
+  type DisciplineGroup,
+} from "@/entities/disciplineGroup";
 import type { UUID } from "@/shared/model";
 import { AddCourseButton, CollapsiblePanel } from "@/shared/ui";
 
-/* One card in a requisites panel. A prerequisite group holding several courses is a
-   "коробка" — any one of them satisfies it — so it collapses to a single card with no
-   courseId, which leaves its "О курсе" button inert. */
-export interface RequisiteEntry {
-  key: string;
-  title: string;
-  courseId?: UUID;
-}
+import type { RequisiteCardModel } from "../model";
+
+import { RequisiteCard } from "./RequisiteCard";
 
 interface CourseRequisitesPanelProps {
   title: string;
-  entries: RequisiteEntry[];
+  cards: RequisiteCardModel[];
+  coursesById: Map<UUID, Course>;
+  groupsById: Map<UUID, DisciplineGroup>;
   loading?: boolean;
   onAdd?: () => void;
+  onRemove: (card: RequisiteCardModel) => void;
 }
 
 const GRID_CLASS =
@@ -23,9 +29,12 @@ const GRID_CLASS =
 
 export const CourseRequisitesPanel = ({
   title,
-  entries,
+  cards,
+  coursesById,
+  groupsById,
   loading = false,
   onAdd,
+  onRemove,
 }: CourseRequisitesPanelProps) => (
   <CollapsiblePanel title={title}>
     <div className="flex flex-col gap-1">
@@ -35,16 +44,39 @@ export const CourseRequisitesPanel = ({
             <CourseCardSkeleton key={`requisite-skeleton-${index}`} />
           ))}
         </div>
-      ) : entries.length > 0 ? (
+      ) : cards.length > 0 ? (
         <div className={GRID_CLASS}>
-          {entries.map((entry) => (
-            <CourseCard
-              key={entry.key}
-              variant="select"
-              courseId={entry.courseId}
-              title={entry.title}
-            />
-          ))}
+          {cards.map((card) => {
+            const course =
+              card.kind === "course" ? coursesById.get(card.id) : undefined;
+            const group =
+              card.kind === "group" ? groupsById.get(card.id) : undefined;
+
+            return (
+              <RequisiteCard
+                key={card.key}
+                title={
+                  course?.title ??
+                  group?.title ??
+                  (card.kind === "group" ? "Коробка" : "Курс")
+                }
+                badges={
+                  course ? (
+                    <CourseBadges
+                      variant="select"
+                      category={course.category}
+                      type={course.type}
+                      isMobile={false}
+                      className="mt-auto"
+                    />
+                  ) : group ? (
+                    <DisciplineGroupBadges group={group} className="mt-auto" />
+                  ) : undefined
+                }
+                onRemove={() => onRemove(card)}
+              />
+            );
+          })}
           <AddCourseButton
             variant="card"
             label="Курс/коробка"

@@ -7,12 +7,17 @@ interface CourseSearchFilterProps {
   search?: string;
   onSearchChange?: (search: string) => void;
   loading?: boolean;
+  /* Defaults to the catalog wording. Discipline groups carry no description, so
+     the Коробки grid passes a narrower one rather than promising a match it
+     cannot make. */
+  placeholder?: string;
 }
 
 export const CourseSearchFilter = ({
   search,
   onSearchChange,
   loading = false,
+  placeholder = "Поиск по названию или описанию",
 }: CourseSearchFilterProps) => {
   const [localSearch, setLocalSearch] = useState("");
 
@@ -28,7 +33,7 @@ export const CourseSearchFilter = ({
   return (
     <Input
       icon={<Search />}
-      placeholder="Поиск по названию или описанию"
+      placeholder={placeholder}
       value={searchValue}
       onChange={(event) => handleSearchChange(event.target.value)}
     />

@@ -39,3 +39,17 @@ export interface CreateCourseRequestDto {
   allowed_cohorts?: number[];
   available_semesters?: number[];
 }
+
+export type DependencyType = "prerequisite" | "corequisite";
+
+/* Raw row from GET /api/v1/courses/{id}/dependencies. Exactly one of
+   required_course_id / required_group_id identifies the requisite, except for
+   rows written by the sheet sync, which set both. */
+export interface CourseDependencyDto {
+  id: UUID;
+  course_id: UUID;
+  required_course_id?: UUID | null;
+  required_group_id?: UUID | null;
+  dependency_type: DependencyType;
+  alternative_group: number;
+}

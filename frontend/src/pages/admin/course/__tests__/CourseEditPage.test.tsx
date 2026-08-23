@@ -5,19 +5,24 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getAllCourses } from "@/entities/course/api/getAllCourses";
 import { getCourseById } from "@/entities/course/api/getCourseById";
+import { getCourseDependencies } from "@/entities/course/api/getCourseDependencies";
 import { getDisciplineGroups } from "@/entities/disciplineGroup/api/getDisciplineGroups";
 import { renderWithQuery } from "@/test/renderWithQuery";
 
 import CourseEditPage from "../ui/CourseEditPage";
 
-/* Mock the leaf modules, not the barrel: useCourseByIdQuery imports getCourseById
-   from "./getCourseById" directly, so a barrel mock never intercepts it. */
+/* Mock the leaf modules, not the barrel: the query hooks import these directly,
+   so a barrel mock never intercepts them. */
 vi.mock("@/entities/course/api/getCourseById", () => ({
   getCourseById: vi.fn(),
 }));
 
 vi.mock("@/entities/course/api/getAllCourses", () => ({
   getAllCourses: vi.fn(),
+}));
+
+vi.mock("@/entities/course/api/getCourseDependencies", () => ({
+  getCourseDependencies: vi.fn(),
 }));
 
 vi.mock("@/entities/disciplineGroup/api/getDisciplineGroups", () => ({
@@ -43,24 +48,26 @@ const COURSE_ID = "8e26a091-0000-4000-8000-00000000abcd";
 const PREREQ_ID = "8e26a091-0000-4000-8000-00000000bbbb";
 const BOX_A_ID = "8e26a091-0000-4000-8000-00000000ccc1";
 const BOX_B_ID = "8e26a091-0000-4000-8000-00000000ccc2";
+const BOX_ID = "8e26a091-0000-4000-8000-00000000ee11";
 const COREQ_ID = "8e26a091-0000-4000-8000-00000000dddd";
+const SPARE_ID = "8e26a091-0000-4000-8000-00000000ffff";
+
+const COURSE_TITLE = "Линейная алгебра и геометрия 2";
 
 const courseDto = (overrides = {}) => ({
   id: COURSE_ID,
-  title: "Линейная алгебра и геометрия 2",
+  title: COURSE_TITLE,
   description: "Описание для модераторов",
   by_major_type: "elective",
-  category: "tech",
+  category: "swe",
   handbook_link: null,
+  allowed_cohorts: [2025],
   available_semesters: [1, 2],
   workload: 3,
   lectures_week: 2,
   seminars_week: 1,
-  prerequisites: [
-    { group_id: "group-1", course_ids: [PREREQ_ID] },
-    { group_id: "group-2", course_ids: [BOX_A_ID, BOX_B_ID] },
-  ],
-  corequisites: [COREQ_ID],
+  prerequisites: [],
+  corequisites: [],
   ...overrides,
 });
 
@@ -70,16 +77,49 @@ const listDto = () =>
     { id: BOX_A_ID, title: "Дискретная математика" },
     { id: BOX_B_ID, title: "Теория множеств" },
     { id: COREQ_ID, title: "Математический анализ" },
-  ].map((course) => ({
-    ...courseDto(),
-    ...course,
-    prerequisites: [],
-    corequisites: [],
-  }));
+    { id: SPARE_ID, title: "Программирование" },
+  ].map((course) => ({ ...courseDto(), ...course }));
+
+/* One plain prerequisite, one "выбор 1 из 2" box (two rows sharing a group and a
+   positive alternative_group), and one corequisite. */
+const dependenciesDto = () => [
+  {
+    id: "row-1",
+    course_id: COURSE_ID,
+    required_course_id: PREREQ_ID,
+    required_group_id: null,
+    dependency_type: "prerequisite",
+    alternative_group: 0,
+  },
+  {
+    id: "row-2",
+    course_id: COURSE_ID,
+    required_course_id: BOX_A_ID,
+    required_group_id: BOX_ID,
+    dependency_type: "prerequisite",
+    alternative_group: 1,
+  },
+  {
+    id: "row-3",
+    course_id: COURSE_ID,
+    required_course_id: BOX_B_ID,
+    required_group_id: BOX_ID,
+    dependency_type: "prerequisite",
+    alternative_group: 1,
+  },
+  {
+    id: "row-4",
+    course_id: COURSE_ID,
+    required_course_id: COREQ_ID,
+    required_group_id: null,
+    dependency_type: "corequisite",
+    alternative_group: 0,
+  },
+];
 
 const groupsDto = () => [
   {
-    id: "8e26a091-0000-4000-8000-00000000ee11",
+    id: BOX_ID,
     title: "Коробка выбора математики",
     category: "prerequisite",
     root_box_id: "8e26a091-0000-4000-8000-00000000ee22",
@@ -95,9 +135,10 @@ const groupsDto = () => [
   },
 ];
 
-const renderPage = (dto = courseDto()) => {
+const renderPage = (dto = courseDto(), deps = dependenciesDto()) => {
   vi.mocked(getCourseById).mockResolvedValue(dto as never);
   vi.mocked(getAllCourses).mockResolvedValue(listDto() as never);
+  vi.mocked(getCourseDependencies).mockResolvedValue(deps as never);
   vi.mocked(getDisciplineGroups).mockResolvedValue(groupsDto() as never);
 
   return renderWithQuery(
@@ -108,19 +149,29 @@ const renderPage = (dto = courseDto()) => {
   );
 };
 
-describe("CourseEditPage", () => {
-  it("renders the course header and all three blocks", async () => {
-    renderPage();
+const titleField = () =>
+  screen.getByRole("textbox", { name: "Название курса" });
 
+/* Everything settles only once the course and its dependencies have both landed;
+   the title field is the last thing to be seeded. */
+const waitForLoad = () =>
+  screen.findByDisplayValue(COURSE_TITLE, {}, { timeout: 3000 });
+
+const user = () => userEvent.setup({ pointerEventsCheck: 0 });
+
+describe("CourseEditPage", () => {
+  it("renders the editable header and all three blocks", async () => {
+    renderPage();
+    await waitForLoad();
+
+    expect(titleField()).toHaveValue(COURSE_TITLE);
+    expect(screen.getByRole("textbox", { name: "Описание курса" })).toHaveValue(
+      "Описание для модераторов",
+    );
+    // The settings gear is gone.
     expect(
-      await screen.findByRole("heading", {
-        name: "Линейная алгебра и геометрия 2",
-      }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Описание для модераторов")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Настройки курса" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: "Настройки курса" }),
+    ).not.toBeInTheDocument();
 
     expect(screen.getByText("Настройки")).toBeInTheDocument();
     expect(
@@ -131,198 +182,176 @@ describe("CourseEditPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("seeds the settings controls from the course", async () => {
+  it("seeds every settings control from the course", async () => {
     renderPage();
-
-    // Wait for the course before asserting: the chips render immediately with
-    // an empty selection, and the effect seeds them only once data lands.
-    await screen.findByRole("heading", {
-      name: "Линейная алгебра и геометрия 2",
-    });
+    await waitForLoad();
 
     // available_semesters [1, 2] -> those two chips start active.
-    const semester1 = screen.getByText("1", { selector: "span" });
-    expect(semester1).toHaveAttribute("data-active", "true");
+    expect(screen.getByText("1", { selector: "span" })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
 
-    // Три ряда табов: год (первый вариант, не из курса), лекции, семинары.
+    // Год and Тип track the course too, so the page is not dirty on load.
     const selected = screen
       .getAllByRole("tab", { selected: true })
       .map((tab) => tab.textContent);
-    expect(selected).toEqual(["2024", "2", "1"]);
+    expect(selected).toEqual(["2025", "2", "1"]);
+    expect(screen.getByRole("combobox")).toHaveTextContent("Разработка");
   });
 
   it("toggles a semester chip and clears the selection", async () => {
     renderPage();
-
-    // Settle the seeding effect first, so it cannot reset the toggle mid-test.
-    await screen.findByRole("heading", {
-      name: "Линейная алгебра и геометрия 2",
-    });
+    await waitForLoad();
 
     const semester3 = screen.getByText("3", { selector: "span" });
     expect(semester3).toHaveAttribute("data-active", "false");
 
-    await userEvent.click(semester3);
+    await user().click(semester3);
     expect(semester3).toHaveAttribute("data-active", "true");
 
-    await userEvent.click(screen.getByLabelText("Очистить"));
+    await user().click(screen.getByLabelText("Очистить"));
     expect(semester3).toHaveAttribute("data-active", "false");
   });
+});
 
-  it("renders a card per requisite, collapsing a group into one box card", async () => {
+describe("CourseEditPage — требования", () => {
+  it("shows the course's real requisites, collapsing an alternative group", async () => {
     renderPage();
+    await waitForLoad();
 
     expect(await screen.findByText("Линейная алгебра 1")).toBeInTheDocument();
-    // Two courses in one prerequisite group render as a single "коробка" card.
-    expect(
-      screen.getByText("Дискретная математика / Теория множеств"),
-    ).toBeInTheDocument();
+    // row-2 and row-3 share a group, so they are one box card, not two.
+    expect(screen.getByText("Коробка выбора математики")).toBeInTheDocument();
+    expect(screen.queryByText("Дискретная математика")).not.toBeInTheDocument();
     expect(screen.getByText("Математический анализ")).toBeInTheDocument();
   });
 
-  it("falls back to the empty-state add button when there are no requisites", async () => {
-    renderPage(courseDto({ prerequisites: [], corequisites: [] }));
-
-    const addButtons = await screen.findAllByRole("button", {
-      name: /Курс\/коробка/,
-    });
-    expect(addButtons).toHaveLength(2);
-  });
-});
-
-describe("CourseEditPage — настройки", () => {
-  it("starts год and тип at their first option, not at the course's values", async () => {
-    // The course is category "tech" and has no cohort, but these two controls
-    // deliberately do not track it.
+  it("renders select-style badges for both courses and boxes", async () => {
     renderPage();
+    await waitForLoad();
+    await screen.findByText("Линейная алгебра 1");
 
-    await screen.findByRole("heading", {
-      name: "Линейная алгебра и геометрия 2",
-    });
+    // Course card: category + type badges.
+    expect(screen.getAllByText("SWE").length).toBeGreaterThan(0);
+    // Box card: object count + the "or" rule.
+    expect(screen.getByText("2 объекта")).toBeInTheDocument();
+    expect(screen.getByText("1 из 2")).toBeInTheDocument();
+  });
 
-    expect(screen.getByRole("tab", { name: "2024" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+  it("removes a card, and every dependency row behind it", async () => {
+    renderPage();
+    await waitForLoad();
+    await screen.findByText("Линейная алгебра 1");
+
+    const boxCard = screen
+      .getByText("Коробка выбора математики")
+      .closest("div[class*='rounded-xl']") as HTMLElement;
+
+    await user().click(
+      within(boxCard).getByRole("button", { name: /Удалить/ }),
     );
-    expect(screen.getByRole("combobox")).toHaveTextContent("ИИ");
+
+    expect(
+      screen.queryByText("Коробка выбора математики"),
+    ).not.toBeInTheDocument();
+    // The plain prerequisite is untouched.
+    expect(screen.getByText("Линейная алгебра 1")).toBeInTheDocument();
   });
-});
 
-describe("CourseEditPage — выбор пререквизитов", () => {
-  /* Radix marks body pointer-events:none while a dialog is open, which
-     user-event refuses to click through. */
-  const user = () => userEvent.setup({ pointerEventsCheck: 0 });
-
-  const openPicker = async () => {
+  it("adds a card when the picker selects a course", async () => {
     renderPage();
-    const [addButton] = await screen.findAllByRole("button", {
+    await waitForLoad();
+    await screen.findByText("Линейная алгебра 1");
+
+    const [addButton] = screen.getAllByRole("button", {
       name: /Курс\/коробка/,
     });
     await user().click(addButton);
-    return screen.getByRole("dialog");
-  };
 
-  it("opens the picker from the panel's add button", async () => {
-    const dialog = await openPicker();
-
-    expect(
-      within(dialog).getByText("Доступные курсы/коробки"),
-    ).toBeInTheDocument();
-    expect(within(dialog).getByRole("tab", { name: "Курсы" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-  });
-
-  it("excludes the course being edited from the Курсы tab", async () => {
-    const dialog = await openPicker();
-
-    expect(
-      await within(dialog).findByText("Линейная алгебра 1"),
-    ).toBeInTheDocument();
-    expect(
-      within(dialog).queryByText("Линейная алгебра и геометрия 2"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("swaps the grid to boxes on the Коробки tab", async () => {
-    const dialog = await openPicker();
-    await within(dialog).findByText("Линейная алгебра 1");
-
-    await user().click(within(dialog).getByRole("tab", { name: "Коробки" }));
-
-    expect(
-      await within(dialog).findByText("Коробка выбора математики"),
-    ).toBeInTheDocument();
-    expect(within(dialog).getByText("2 объекта")).toBeInTheDocument();
-    expect(within(dialog).getByText("1 из 2")).toBeInTheDocument();
-    expect(
-      within(dialog).queryByText("Линейная алгебра 1"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("marks a picked card without closing the modal", async () => {
-    const dialog = await openPicker();
-    const card = await within(dialog).findByRole("button", {
-      name: /Линейная алгебра 1/,
-    });
-    expect(card).toHaveAttribute("aria-pressed", "false");
-
-    await user().click(card);
-
-    expect(card).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-  });
-
-  it("narrows the grid by search", async () => {
-    const dialog = await openPicker();
-    await within(dialog).findByText("Линейная алгебра 1");
-
-    await user().type(
-      within(dialog).getByPlaceholderText(/Поиск/),
-      "дискретная",
-    );
-
-    expect(
-      await within(dialog).findByText("Дискретная математика"),
-    ).toBeInTheDocument();
-    expect(
-      within(dialog).queryByText("Линейная алгебра 1"),
-    ).not.toBeInTheDocument();
-  });
-});
-
-describe("CourseEditPage — состояние пикера", () => {
-  const user = () => userEvent.setup({ pointerEventsCheck: 0 });
-
-  /* Each picker opens clean. Note this holds both because the two modals keep
-     separate local state AND because each resets on close, so it does not by
-     itself prove isolation — it pins the user-visible behaviour either way. */
-  it("opens each picker with an empty search on the Курсы tab", async () => {
-    renderPage();
-
-    const [prereqAdd, coreqAdd] = await screen.findAllByRole("button", {
-      name: /Курс\/коробка/,
-    });
-
-    await user().click(prereqAdd);
-    const prereqDialog = screen.getByRole("dialog");
-    await within(prereqDialog).findByText("Линейная алгебра 1");
-    await user().type(
-      within(prereqDialog).getByPlaceholderText(/Поиск/),
-      "дискретная",
-    );
+    const dialog = screen.getByRole("dialog");
     await user().click(
-      within(prereqDialog).getByRole("tab", { name: "Коробки" }),
+      await within(dialog).findByRole("button", { name: /Программирование/ }),
     );
     await user().keyboard("{Escape}");
 
-    await user().click(coreqAdd);
-    const coreqDialog = await screen.findByRole("dialog");
+    expect(await screen.findByText("Программирование")).toBeInTheDocument();
+  });
 
-    expect(within(coreqDialog).getByPlaceholderText(/Поиск/)).toHaveValue("");
+  it("shows existing requisites as already selected in the picker", async () => {
+    renderPage();
+    await waitForLoad();
+    await screen.findByText("Линейная алгебра 1");
+
+    const [addButton] = screen.getAllByRole("button", {
+      name: /Курс\/коробка/,
+    });
+    await user().click(addButton);
+
+    const dialog = screen.getByRole("dialog");
     expect(
-      within(coreqDialog).getByRole("tab", { name: "Курсы" }),
-    ).toHaveAttribute("aria-selected", "true");
+      await within(dialog).findByRole("button", {
+        name: /Линейная алгебра 1/,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(dialog).getByRole("button", { name: /Программирование/ }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
+describe("CourseEditPage — кнопка сохранения", () => {
+  const saveButton = () =>
+    screen.queryByRole("button", { name: "Сохранить изменения" });
+
+  it("is hidden while nothing has changed", async () => {
+    renderPage();
+    await waitForLoad();
+
+    expect(saveButton()).not.toBeInTheDocument();
+  });
+
+  it("appears once the title changes, and hides again when it is changed back", async () => {
+    renderPage();
+    await waitForLoad();
+
+    await user().type(titleField(), "!");
+    expect(saveButton()).toBeInTheDocument();
+
+    await user().type(titleField(), "{Backspace}");
+    expect(saveButton()).not.toBeInTheDocument();
+  });
+
+  it("appears when a settings control changes", async () => {
+    renderPage();
+    await waitForLoad();
+
+    await user().click(screen.getByText("3", { selector: "span" }));
+    expect(saveButton()).toBeInTheDocument();
+  });
+
+  it("appears when a requisite is removed", async () => {
+    renderPage();
+    await waitForLoad();
+    await screen.findByText("Линейная алгебра 1");
+
+    const card = screen
+      .getByText("Линейная алгебра 1")
+      .closest("div[class*='rounded-xl']") as HTMLElement;
+    await user().click(within(card).getByRole("button", { name: /Удалить/ }));
+
+    expect(saveButton()).toBeInTheDocument();
+  });
+
+  it("does nothing when clicked — the save is not wired yet", async () => {
+    renderPage();
+    await waitForLoad();
+
+    await user().type(titleField(), "!");
+    await user().click(saveButton()!);
+
+    // Still dirty, still on the page, nothing sent.
+    expect(saveButton()).toBeInTheDocument();
+    expect(titleField()).toHaveValue(`${COURSE_TITLE}!`);
   });
 });

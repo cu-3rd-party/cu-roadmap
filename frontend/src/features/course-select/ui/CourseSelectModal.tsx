@@ -154,7 +154,7 @@ export const CourseSelectModal = ({
         const isSelected = selectedSemester !== undefined;
         const isFixed = fixedCourseIds.has(course.id);
         const isOtherSemester = isSelected && selectedSemester !== semester;
-        // dimmed + non-clickable: pinned, or placed in another semester
+        // dimmed - non-clickable: pinned, or placed in another semester
         const isDisabled = isFixed || isOtherSemester;
         return (
           <CourseSelectCard

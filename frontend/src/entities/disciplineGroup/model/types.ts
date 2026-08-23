@@ -15,7 +15,7 @@ export interface DisciplineGroup {
   id: UUID;
   title: string;
   /* Free-form on the backend (plain varchar, no enum) — values seen so far are
-     "prerequisite"/"corequisite". Deliberately not typed as CourseCategory. */
+    "prerequisite"/"corequisite". Deliberately not typed as CourseCategory. */
   category: string;
   expression: DisciplineGroupNode;
   rootBoxId: UUID;

@@ -5,3 +5,4 @@ export {
   semestersToSeasons,
   courseToDetails,
 } from "./courseToDetails";
+export { normalizeCourseDependency } from "./normalizeCourseDependency";
