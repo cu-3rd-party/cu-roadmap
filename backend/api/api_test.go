@@ -1312,3 +1312,83 @@ func TestValidateRoadmapNoMaxLoad(t *testing.T) {
 
 	assert.Equal(t, 200, w.Code)
 }
+
+func TestGetCourseByID(t *testing.T) {
+	courseID := uuid.New()
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		s.CreateCourse(interfaces.CourseData{
+			ID:                 courseID,
+			Title:              "Линейная алгебра",
+			Category:           enums.CourseCategoryTech,
+			AvailableSemesters: []int{1, 2},
+			LecturesWeek:       2,
+			SeminarsWeek:       1,
+			Workload:           3.0,
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/byId/"+courseID.String(), nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+
+	var course map[string]interface{}
+	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &course))
+	// A single object, not a list, and shaped like one element of GET /courses/.
+	assert.Equal(t, courseID.String(), course["id"])
+	assert.Equal(t, "Линейная алгебра", course["title"])
+	assert.Equal(t, float64(2), course["lectures_week"])
+	assert.Equal(t, float64(1), course["seminars_week"])
+	assert.Contains(t, course, "available_semesters")
+	assert.Contains(t, course, "prerequisites")
+	assert.Contains(t, course, "corequisites")
+	// normalizeCourse on the frontend maps this to Course.type; CourseToResponse
+	// alone does not emit it.
+	assert.Equal(t, "elective", course["by_major_type"])
+}
+
+func TestGetCourseByIDInvalidUUID(t *testing.T) {
+	router := setupRouterRoot(t, nil)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/byId/not-a-uuid", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 400, w.Code)
+}
+
+func TestGetCourseByIDNotFound(t *testing.T) {
+	router := setupRouterRoot(t, nil)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/byId/"+uuid.New().String(), nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 404, w.Code)
+}
+
+// The `byId/` static segment shares a tree level with the `/:id` wildcard, where `:id`
+// means a cohort year or major UUID. Guards against a future route change making
+// /courses/byId/... fall through to getCourses (which answers with a list).
+func TestGetCourseByIDDoesNotShadowCohortRoute(t *testing.T) {
+	router := setupRouterRoot(t, func(s interfaces.StoreBase) {
+		s.CreateCourse(interfaces.CourseData{
+			ID:                 uuid.New(),
+			Title:              "Python",
+			Category:           enums.CourseCategoryTech,
+			AvailableSemesters: []int{1},
+			AllowedCohorts:     []int{2025},
+			Workload:           2.0,
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/v1/courses/2025", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, 200, w.Code)
+	var courses []map[string]interface{}
+	assert.NoError(t, json.Unmarshal(w.Body.Bytes(), &courses))
+	assert.Len(t, courses, 1)
+}

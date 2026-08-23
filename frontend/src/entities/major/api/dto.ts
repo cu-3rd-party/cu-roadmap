@@ -30,3 +30,31 @@ export type IdentifyMajorsRequestDto = {
   passed_course_ids: UUID[];
   current_semester: SemesterNumber;
 };
+
+/* GET /api/v1/majors/structure — the school -> cohort year -> majors ->
+   specializations tree. Shapes are declared inline in the Go handler, so they
+   are separate from MajorDto rather than an extension of it. */
+
+export interface StructureSpecializationDto {
+  id: UUID;
+  title: string;
+}
+
+export interface StructureMajorDto {
+  id: UUID;
+  title: string;
+  // Derived server-side from a hardcoded switch on the Russian title, so it is
+  // "" for every major outside the three known ones — not a MajorType.
+  internal_name: string;
+  specializations: StructureSpecializationDto[];
+}
+
+export interface StructureYearDto {
+  year: number;
+  majors: StructureMajorDto[];
+}
+
+export interface StructureSchoolDto {
+  school: string;
+  cohort_years: StructureYearDto[];
+}

@@ -2,16 +2,23 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { checkAuth, login, logout } from "../api/auth";
 
+import { AUTH_BYPASSED } from "./devBypass";
+
 export const authStatusKey = ["auth", "status"] as const;
 
 /* The session cookie is HttpOnly, so the server is the only one who can answer
    "am I logged in". Refetching on focus (the QueryProvider default is off) means
    a session that lapses while a tab sits idle is noticed on return rather than
-   on the next click. */
+   on the next click.
+
+   Under `pnpm dev:noauth` the answer is hardcoded instead, which is the whole of
+   the bypass: RequireAuth reads this query and nothing else, so a cache entry
+   that is never `false` can never bounce anyone to the login screen — and the
+   focus refetch stops firing a /auth/check nobody is listening to. */
 export const useAuthStatus = () =>
   useQuery({
     queryKey: authStatusKey,
-    queryFn: checkAuth,
+    queryFn: AUTH_BYPASSED ? async () => true : checkAuth,
     retry: false,
     refetchOnWindowFocus: true,
   });

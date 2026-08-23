@@ -29,3 +29,13 @@ export interface CourseDto {
   specializations?: UUID[];
   mandatory_specializations?: UUID[];
 }
+
+/* Body of POST /api/v1/courses/. Only `title` is enforced by the backend binding
+   — it fills seminars_week/workload itself and leaves the rest at its zero value
+   — so everything else is optional and a stub course is legal. */
+export interface CreateCourseRequestDto {
+  title: string;
+  category?: CourseCategory;
+  allowed_cohorts?: number[];
+  available_semesters?: number[];
+}

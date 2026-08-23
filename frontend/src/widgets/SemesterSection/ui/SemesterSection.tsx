@@ -24,9 +24,14 @@ import { CourseSelectModal } from "@/features/course-select";
 import { ResetConfirmModal } from "@/features/planner-reset";
 import { useSettingsStore } from "@/features/settings";
 import { pluralizeRu, useMediaQuery } from "@/shared/lib";
-import { Badge, Button, CollapsiblePanel, Panel } from "@/shared/ui";
+import {
+  AddCourseButton,
+  Badge,
+  Button,
+  CollapsiblePanel,
+  Panel,
+} from "@/shared/ui";
 
-import { AddCourseButton } from "./AddCourseButton";
 import { SortableCourseCard } from "./SortableCourseCard";
 
 export interface SemesterSectionProps {

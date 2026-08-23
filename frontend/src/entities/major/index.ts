@@ -1,8 +1,11 @@
 export {
   getMajors,
+  getStructure,
   useMajorsQuery,
   useAllMajorsQuery,
   majorsQueryKey,
+  useStructureQuery,
+  structureQueryKey,
   identifyMajors,
   useIdentifyMajorsQuery,
   identifyMajorsQueryKey,
@@ -12,6 +15,16 @@ export type {
   MajorRequirementDto,
   MajorMatchDto,
   IdentifyMajorsRequestDto,
+  StructureSpecializationDto,
+  StructureMajorDto,
+  StructureYearDto,
+  StructureSchoolDto,
 } from "./api";
-export type { Major, MajorMatch } from "./model/types";
-export { normalizeMajor, normalizeMajorMatch } from "./lib";
+export type {
+  Major,
+  MajorMatch,
+  StructureSpecialization,
+  StructureMajor,
+  StructureYear,
+} from "./model/types";
+export { normalizeMajor, normalizeMajorMatch, normalizeStructure } from "./lib";

@@ -2,7 +2,7 @@ import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { adminRoutes } from "@/app/router/routes/admin";
-import { useLogoutMutation } from "@/features/auth";
+import { AUTH_BYPASSED, useLogoutMutation } from "@/features/auth";
 import { Button } from "@/shared/ui";
 
 import { NavItem } from "../model";
@@ -30,6 +30,11 @@ export const AdminNavbar = () => {
       onSettled: () => navigate("/admin/login", { replace: true }),
     });
   };
+
+  /* Nothing to log out of when the session was never there: under dev:noauth the
+     button would only clear the auth cache and drop you on a login screen the
+     guard no longer sends anyone to. */
+  if (AUTH_BYPASSED) return <Navbar items={NAV_ITEMS} />;
 
   return (
     <Navbar

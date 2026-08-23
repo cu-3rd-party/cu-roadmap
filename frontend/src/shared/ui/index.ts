@@ -1,4 +1,7 @@
+export * from "./add-course-button";
 export * from "./animated-number";
+export * from "./card-skeleton";
+export * from "./confirm-modal";
 export * from "./glossary-link";
 export * from "./hint-button";
 export * from "./kit";
@@ -7,4 +10,6 @@ export * from "./page-placeholder";
 export * from "./panel";
 export * from "./reveal-image";
 export * from "./scroll-rail";
+export * from "./select-grid-modal";
+export * from "./select-tile";
 export * from "./segmented-progress";

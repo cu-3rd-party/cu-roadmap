@@ -9,11 +9,14 @@ interface AddCourseButtonProps {
    - card: course-card-sized tile, used as the last cell in a populated grid.
   **/
   variant?: "full" | "card";
+  /* Defaults to the planner's wording; the admin course editor adds boxes too. */
+  label?: string;
 }
 
 export const AddCourseButton = ({
   onClick,
   variant = "full",
+  label = "Курс",
 }: AddCourseButtonProps) => {
   return (
     <button
@@ -28,7 +31,7 @@ export const AddCourseButton = ({
       )}
     >
       <Plus className={cn(variant === "full" ? "size-5" : "size-6")} />
-      Курс
+      {label}
     </button>
   );
 };

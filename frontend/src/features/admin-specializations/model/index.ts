@@ -1,2 +1,4 @@
-export * from "./mock";
-export * from "./types";
+export {
+  useCreateSpecializationMutation,
+  NEW_SPECIALIZATION_TITLE,
+} from "./useCreateSpecializationMutation";

@@ -1,8 +1,8 @@
 import axios from "axios";
 import { useState, type FormEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
-import { useLoginMutation } from "@/features/auth";
+import { AUTH_BYPASSED, useLoginMutation } from "@/features/auth";
 import { getErrorMessage } from "@/shared/api";
 import {
   Button,
@@ -15,7 +15,7 @@ import {
   Label,
 } from "@/shared/ui";
 
-const FALLBACK_REDIRECT = "/admin/trajectories";
+const FALLBACK_REDIRECT = "/admin/specializations";
 
 /* A 401 here means "wrong password", not "you need to log in" — which is what
    the shared getStatusMessage would say, and would read as nonsense on the
@@ -28,13 +28,18 @@ const loginErrorMessage = (error: unknown) => {
   return getErrorMessage(error);
 };
 
-export default function LoginPage() {
+const LoginPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const { mutate, isPending, error, reset } = useLoginMutation();
 
   const from = (location.state as { from?: string } | null)?.from;
+
+  /* Under dev:noauth the form is dead weight — the guard lets everything through
+     anyway — so a stray /admin/login (a bookmark, a typed URL) goes straight on
+     to where it was headed instead of asking for a password nobody needs. */
+  if (AUTH_BYPASSED) return <Navigate to={from ?? FALLBACK_REDIRECT} replace />;
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -91,4 +96,6 @@ export default function LoginPage() {
       </Card>
     </div>
   );
-}
+};
+
+export default LoginPage;

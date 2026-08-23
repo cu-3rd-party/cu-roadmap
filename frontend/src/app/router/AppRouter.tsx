@@ -5,7 +5,7 @@ import { AdminLayout, MainLayout } from "@/app/layouts";
 import { RequireAuth } from "@/features/auth";
 import { PageLoader } from "@/shared/ui";
 
-import { adminRoutes } from "./routes/admin";
+import { adminDetailRoutes, adminRoutes } from "./routes/admin";
 import { fallbackRoutes } from "./routes/not-found";
 import { publicRoutes } from "./routes/public";
 import { sidebarRoutes } from "./routes/sidebar";
@@ -47,9 +47,12 @@ export const AppRouter = () => (
       <Route element={<AdminHarnessLayout />}>
         <Route
           path="/admin"
-          element={<Navigate to="/admin/trajectories" replace />}
+          element={<Navigate to="/admin/specializations" replace />}
         />
         {guardedRoutes.map(({ path, element }) => (
+          <Route key={path} path={path} element={element} />
+        ))}
+        {adminDetailRoutes.map(({ path, element }) => (
           <Route key={path} path={path} element={element} />
         ))}
       </Route>

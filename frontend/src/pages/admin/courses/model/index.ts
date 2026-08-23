@@ -1,1 +1,0 @@
-export { CATEGORY_FILTER_LABELS, CATEGORY_FILTER_OPTIONS } from "./options";

@@ -11,9 +11,23 @@ export { CourseSelectCard } from "./ui/CourseSelectCard";
 export { CourseCardSkeleton } from "./ui/CourseCardSkeleton";
 export { DetailsDrawer } from "./ui/DetailsDrawer";
 export { StatusPanel } from "./ui/StatusPanel";
-export { getCourses, useCoursesQuery, coursesQueryKey } from "./api";
-export type { CourseDto } from "./api";
-export type { Course } from "./model/types";
+export {
+  getCourses,
+  getAllCourses,
+  createCourse,
+  deleteCourse,
+  useCoursesQuery,
+  useCourseByIdQuery,
+  courseByIdQueryKey,
+  getCourseById,
+  coursesQueryKey,
+} from "./api";
+export type {
+  CourseDto,
+  CourseListFilters,
+  CreateCourseRequestDto,
+} from "./api";
+export type { Course, CoursePrerequisite } from "./model/types";
 export {
   type CourseDetails,
   type RequisiteItem,

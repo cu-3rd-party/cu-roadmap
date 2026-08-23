@@ -25,11 +25,11 @@ const renderFlow = () =>
   renderWithQuery(
     <Routes>
       <Route element={<RequireAuth />}>
-        <Route path="/admin/trajectories" element={<p>траектории</p>} />
+        <Route path="/admin/specializations" element={<p>траектории</p>} />
       </Route>
       <Route path="/admin/login" element={<LoginPage />} />
     </Routes>,
-    { route: "/admin/trajectories" },
+    { route: "/admin/specializations" },
   );
 
 describe("login flow", () => {

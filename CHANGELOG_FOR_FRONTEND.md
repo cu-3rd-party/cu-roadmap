@@ -98,3 +98,48 @@
 Файл спецификации `backend/docs/api/v1.yaml` обновлен:
 - Добавлены описания эндпоинтов `/api/v1/courses/dependencies` и `/api/v1/admin/sync`.
 - Добавлена схема `CourseDependency` с описанием полей `required_group_id`, `dependency_type`, `alternative_group`.
+
+---
+
+## 5. Получение одного курса по id: `GET /api/v1/courses/byId/{id}`
+
+### Зачем понадобился отдельный путь
+Очевидный `GET /api/v1/courses/{id}` **занят**: там `{id}` разбирается как год набора
+(`2025`) или как UUID мейджора. UUID курса в этом пути уходит в ветку мейджора и
+получает `404 {"error": "major not found"}`. Поэтому одиночный курс живёт под
+статическим сегментом `byId/`.
+
+### Формат ответа
+Возвращается **один объект** ровно той же формы, что и элемент массива из
+`GET /api/v1/courses/` — тело собирается тем же хелпером, включая `by_major_type`,
+сгруппированные `prerequisites` и `corequisites`:
+
+```json
+{
+  "id": "8e26a091-0000-4000-8000-00000000abcd",
+  "title": "Линейная алгебра и геометрия 2",
+  "description": "Текст для модераторов",
+  "by_major_type": "elective",
+  "category": "tech",
+  "available_semesters": [1, 2],
+  "lectures_week": 2,
+  "seminars_week": 1,
+  "prerequisites": [
+    { "group_id": "96d180b6-...", "course_ids": ["8e26a091-..."] }
+  ],
+  "corequisites": []
+}
+```
+
+Коды: `400` — id не парсится как UUID, `404` — курса нет, `500` / `503` — как у
+остальных эндпоинтов курсов.
+
+**Важно про `by_major_type`**: он зависит от мейджора в пути, а здесь мейджора нет,
+поэтому используется тот же фолбэк, что и в списке для курса без требования мейджора
+(`classifyCourseByCategory`). Если нужен `by_major_type` в контексте конкретного
+мейджора — берите курс из `GET /api/v1/courses/{cohort_year}/{major_id}`.
+
+### Влияние на фронтенд
+Эндпоинт публичный, как и остальные чтения курсов. На фронтенде обёрнут в
+`getCourseById` / `useCourseByIdQuery` (`src/entities/course/api/`) и используется
+страницей редактирования курса `/admin/courses/:courseId`.

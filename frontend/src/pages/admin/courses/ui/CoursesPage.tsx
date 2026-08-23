@@ -1,32 +1,67 @@
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 
+import type { Course } from "@/entities/course";
+import {
+  AdminCourseGrid,
+  CATEGORY_FILTER_LABELS,
+  CATEGORY_FILTER_OPTIONS,
+  useAdminCoursesQuery,
+  useCreateCourseMutation,
+  useDeleteCourseMutation,
+} from "@/features/admin-courses";
 import {
   ClearChip,
   CourseSearchFilter,
   FilterCard,
 } from "@/features/course-filters";
 import { ADMISSION_YEARS, type AdmissionYear } from "@/shared/constants";
-import { useMediaQuery } from "@/shared/lib";
+import { useDebouncedValue, useMediaQuery } from "@/shared/lib";
 import type { CourseCategory } from "@/shared/model";
-import { Button, Chip, CollapsiblePanel, Panel } from "@/shared/ui";
+import {
+  Button,
+  Chip,
+  CollapsiblePanel,
+  ConfirmModal,
+  Panel,
+} from "@/shared/ui";
 
-import { CATEGORY_FILTER_LABELS, CATEGORY_FILTER_OPTIONS } from "../model";
+const SEARCH_DEBOUNCE_MS = 300;
 
 const toggle = <T,>(list: T[], value: T): T[] =>
   list.includes(value)
     ? list.filter((item) => item !== value)
     : [...list, value];
 
-export default function CoursesPage() {
+const CoursesPage = () => {
   const isMobile = useMediaQuery("md");
 
-  /* Shell only: the chips and the search box own their state so the panel feels
-     alive, but nothing reads it yet — the query wiring lands with the course
-     list and the add/delete flow. */
   const [years, setYears] = useState<AdmissionYear[]>([]);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [search, setSearch] = useState("");
+
+  /* Filtering runs server-side, so every keystroke would be a request. The
+     chips are cheap enough to send straight through. */
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+
+  const {
+    data: courses,
+    isLoading,
+    isFetching,
+    error,
+  } = useAdminCoursesQuery({
+    cohortYears: years,
+    categories,
+    title: debouncedSearch,
+  });
+
+  /* Covers the debounce gap as well as the request: between a keystroke and the
+     refetch nothing is in flight, but the grid is already stale. */
+  const filtering = isFetching || search !== debouncedSearch;
+
+  const [pendingDelete, setPendingDelete] = useState<Course | null>(null);
+  const { mutate: removeCourse } = useDeleteCourseMutation();
+  const { mutate: addCourse, isPending: creating } = useCreateCourseMutation();
 
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2">
@@ -37,7 +72,15 @@ export default function CoursesPage() {
               <Chip variant="blue" size={isMobile ? "xs" : "sm"}>
                 <BookOpen />
               </Chip>
-              <h1 className="text-2xl font-bold text-fg-primary">Курсы</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-fg-primary">Курсы</h1>
+                {filtering && (
+                  <Loader2
+                    className="mt-0.5 size-4 animate-spin text-fg-secondary"
+                    aria-label="Загрузка…"
+                  />
+                )}
+              </div>
             </div>
 
             <Button
@@ -45,6 +88,8 @@ export default function CoursesPage() {
               size="sm"
               icon={isMobile ? <Plus /> : undefined}
               aria-label="Добавить курс"
+              loading={creating}
+              onClick={() => addCourse()}
             >
               {isMobile ? undefined : "Добавить курс"}
             </Button>
@@ -109,6 +154,22 @@ export default function CoursesPage() {
           </div>
         </CollapsiblePanel>
       </Panel>
+
+      <AdminCourseGrid
+        courses={courses}
+        isLoading={isLoading}
+        error={error}
+        onDelete={setPendingDelete}
+      />
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title="Удалить курс"
+        onConfirm={() => pendingDelete && removeCourse(pendingDelete.id)}
+      />
     </div>
   );
-}
+};
+
+export default CoursesPage;

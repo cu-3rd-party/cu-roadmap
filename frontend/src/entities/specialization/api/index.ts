@@ -1,4 +1,5 @@
 export { getSpecializations } from "./getSpecializations";
+export { createSpecialization } from "./createSpecialization";
 export {
   useSpecializationsQuery,
   specializationsQueryKey,
@@ -12,4 +13,5 @@ export type {
   SpecializationDto,
   SpecializationMatchDto,
   IdentifySpecializationsRequestDto,
+  CreateSpecializationRequestDto,
 } from "./dto";

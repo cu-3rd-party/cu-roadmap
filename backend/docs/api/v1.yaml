@@ -269,6 +269,30 @@ paths:
                 items:
                   $ref: '#/components/schemas/CourseDependency'
 
+  /api/v1/courses/byId/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      description: |
+        возвращает один курс по его id.
+        путь /api/v1/courses/{id} занят: там {id} трактуется как год набора
+        или id мейджора, поэтому одиночный курс живёт под byId/.
+      responses:
+        '200':
+          description: курс
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+
   /api/v1/courses/{id}/dependencies:
     parameters:
       - $ref: '#/components/parameters/ResourceId'

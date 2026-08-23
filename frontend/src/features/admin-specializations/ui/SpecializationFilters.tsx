@@ -1,40 +1,44 @@
-import { ADMISSION_YEARS, type AdmissionYear } from "@/shared/constants";
+import type { StructureMajor } from "@/entities/major";
 import { cn } from "@/shared/lib";
 import { Button, Tabs, TabsList, TabsTrigger } from "@/shared/ui";
 
-import type { MajorTab } from "../model";
-
-interface TrajectoryFiltersProps {
-  year: AdmissionYear;
-  onYearChange: (year: AdmissionYear) => void;
-  majors: MajorTab[];
-  majorId: string;
+interface SpecializationFiltersProps {
+  years: number[];
+  currentYear: number | null;
+  onYearChange: (year: number) => void;
+  majors: StructureMajor[];
+  majorId: string | null;
   onMajorChange: (majorId: string) => void;
   onAddSpecialization: () => void;
+  creating?: boolean;
   className?: string;
 }
 
 // Equal-width pills, same as every other segmented row in the app.
 const listClassName = "grid grid-flow-col auto-cols-fr";
 
-export const TrajectoryFilters = ({
-  year,
+export const SpecializationFilters = ({
+  years,
+  currentYear,
   onYearChange,
   majors,
   majorId,
   onMajorChange,
   onAddSpecialization,
+  creating = false,
   className,
-}: TrajectoryFiltersProps) => (
+}: SpecializationFiltersProps) => (
   <div className={cn("flex flex-wrap items-center gap-3", className)}>
-    {/* Radix Tabs speak strings; the cohort year is a number everywhere else. */}
+    {/* Radix Tabs speak strings; the cohort year is a number everywhere else.
+        Both values fall back to "" so the rows render unselected rather than
+        uncontrolled while the structure query is still in flight. */}
     <Tabs
-      value={String(year)}
-      onValueChange={(value) => onYearChange(Number(value) as AdmissionYear)}
+      value={currentYear === null ? "" : String(currentYear)}
+      onValueChange={(value) => onYearChange(Number(value))}
       className="min-w-0 flex-1"
     >
       <TabsList className={listClassName}>
-        {ADMISSION_YEARS.map((admissionYear) => (
+        {years.map((admissionYear) => (
           <TabsTrigger key={admissionYear} value={String(admissionYear)}>
             {admissionYear}
           </TabsTrigger>
@@ -43,20 +47,26 @@ export const TrajectoryFilters = ({
     </Tabs>
 
     <Tabs
-      value={majorId}
+      value={majorId ?? ""}
       onValueChange={onMajorChange}
       className="min-w-0 flex-1"
     >
       <TabsList className={listClassName}>
         {majors.map((major) => (
           <TabsTrigger key={major.id} value={major.id}>
-            {major.label}
+            {major.title}
           </TabsTrigger>
         ))}
       </TabsList>
     </Tabs>
 
-    <Button variant="outline" size="sm" onClick={onAddSpecialization}>
+    <Button
+      variant="outline"
+      size="sm"
+      loading={creating}
+      disabled={majorId === null}
+      onClick={onAddSpecialization}
+    >
       Добавить специализацию
     </Button>
   </div>

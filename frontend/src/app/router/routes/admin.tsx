@@ -6,6 +6,8 @@ import type { AppRoute } from "../types";
 const LazyTrajectoriesPage = lazy(() => import("@/pages/admin/trajectories"));
 const LazyBoxesPage = lazy(() => import("@/pages/admin/groups"));
 const LazyCoursesPage = lazy(() => import("@/pages/admin/courses"));
+const LazyRestrictionsPage = lazy(() => import("@/pages/admin/restrictions"));
+const LazyCourseEditPage = lazy(() => import("@/pages/admin/course"));
 
 // Single source of truth for both the router and the admin navbar — add a route
 // here and it appears in the admin shell automatically. `protected` is what puts
@@ -17,7 +19,7 @@ export interface AdminRoute extends AppRoute {
 
 export const adminRoutes: AdminRoute[] = [
   {
-    path: "admin/trajectories",
+    path: "admin/specializations",
     label: "Специализации",
     icon: <RouteIcon />,
     element: <LazyTrajectoriesPage />,
@@ -35,6 +37,22 @@ export const adminRoutes: AdminRoute[] = [
     label: "Курсы",
     icon: <BookOpen />,
     element: <LazyCoursesPage />,
+    protected: true,
+  },
+];
+
+/* Router-only: reachable by navigating from a course card, and deliberately
+   absent from `adminRoutes` — that array is what AdminNavbar maps over, so a
+   `:param` path listed there would render a broken nav item. */
+export const adminDetailRoutes: AppRoute[] = [
+  {
+    path: "admin/courses/:courseId",
+    element: <LazyCourseEditPage />,
+    protected: true,
+  },
+  {
+    path: "admin/specializations/:specializationId/restrictions",
+    element: <LazyRestrictionsPage />,
     protected: true,
   },
 ];

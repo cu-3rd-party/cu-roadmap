@@ -1,17 +1,6 @@
-import { Loader2 } from "lucide-react";
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useDeferredValue, useMemo } from "react";
 
-import {
-  CourseCardSkeleton,
-  CourseSelectCard,
-  type Course,
-} from "@/entities/course";
+import { CourseSelectCard, type Course } from "@/entities/course";
 import { useMajorsQuery } from "@/entities/major";
 import { usePlannerStore } from "@/entities/roadmap";
 import { useSpecializationsQuery } from "@/entities/specialization";
@@ -23,18 +12,7 @@ import {
 } from "@/features/course-filters";
 import { useSettingsStore } from "@/features/settings";
 import type { SemesterNumber } from "@/shared/constants";
-import { cn, useMediaQuery } from "@/shared/lib";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  RevealImage,
-} from "@/shared/ui";
+import { SelectGridModal } from "@/shared/ui";
 
 import { filterAvailableCourses, useCourseSelectFiltersStore } from "../model";
 
@@ -59,7 +37,6 @@ export const CourseSelectModal = ({
   const { filters, setGroup, setSub, setSearch } =
     useCourseSelectFiltersStore();
   const { admissionYear, majorId } = useSettingsStore();
-  const isMobile = useMediaQuery("sm");
 
   const { data: majors } = useMajorsQuery(admissionYear);
   const { data: specializations } = useSpecializationsQuery(majorId);
@@ -118,26 +95,6 @@ export const CourseSelectModal = ({
     [semesterCourses, listFilters, options],
   );
 
-  const deferredCourses = visibleCourses;
-
-  // ATTENTION
-  // On mobile the Sheet's 0.5s slide stutters when all cards mount in the same
-  // commit, so defer the (heavy) grid until the entrance settles. Desktop's
-  // Dialog opens fine, so it renders the cards immediately.
-  const [listReady, setListReady] = useState(false);
-  useEffect(() => {
-    if (!isMobile) {
-      setListReady(true);
-      return;
-    }
-    if (!open) {
-      setListReady(false);
-      return;
-    }
-    const t = setTimeout(() => setListReady(true), 520); // slightly > Sheet 500ms
-    return () => clearTimeout(t);
-  }, [open, isMobile]);
-
   // Stable across selection
   const handleCourseSelect = useCallback(
     (course: Course, selectedSemester?: SemesterNumber) => {
@@ -156,10 +113,21 @@ export const CourseSelectModal = ({
     [addCourse, removeCourse, semester],
   );
 
-  const content = (
-    <>
-      <div className="relative z-10 shrink-0 px-3 pb-1">
-        <div className="flex flex-col gap-3 rounded-2xl bg-background p-4">
+  return (
+    <SelectGridModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Доступные курсы"
+      mobileTitle={
+        <>
+          <span className="block">Доступные курсы</span>
+          <span className="block">{`(${semester} семестр)`}</span>
+        </>
+      }
+      imageSrc="/character3.png"
+      imageAlt="Персонаж 3"
+      controls={
+        <>
           <CourseSearchFilter
             search={filters.search}
             onSearchChange={setSearch}
@@ -172,110 +140,33 @@ export const CourseSelectModal = ({
             onSubChange={setSub}
             showLabel={false}
           />
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto bg-expert-blue-pale pl-4 pr-3 pb-3 scrollbar-gutter-stable">
-        {isLoading || !listReady ? (
-          isMobile ? (
-            <div className="flex w-full items-center justify-center py-16">
-              <Loader2
-                className="size-8 animate-spin text-fg-secondary"
-                aria-label="Загрузка…"
-              />
-            </div>
-          ) : (
-            <div className="grid gap-1 grid-cols-2 lg:grid-cols-5">
-              {Array.from({ length: 10 }).map((_, index) => (
-                <CourseCardSkeleton key={index} />
-              ))}
-            </div>
-          )
-        ) : isError ? (
-          <p className="px-1 py-4 text-sm text-fg-negative">
-            Не удалось загрузить курсы. Попробуйте обновить страницу.
-          </p>
-        ) : deferredCourses.length === 0 ? (
-          <div className="flex w-full items-center justify-center rounded-2xl bg-background px-4 py-10 text-sm text-fg-secondary">
-            Нет курсов, доступных в этом семестре.
-          </div>
-        ) : (
-          <div className={cn("grid gap-1 grid-cols-2 lg:grid-cols-5")}>
-            {deferredCourses.map((course) => {
-              const selectedSemester = semesterByCourseId.get(
-                course.id,
-              ) as SemesterNumber;
-              const isSelected = selectedSemester !== undefined;
-              const isFixed = fixedCourseIds.has(course.id);
-              const isOtherSemester =
-                isSelected && selectedSemester !== semester;
-              // dimmed + non-clickable: pinned, or placed in another semester
-              const isDisabled = isFixed || isOtherSemester;
-              return (
-                <CourseSelectCard
-                  key={course.id}
-                  course={course}
-                  selected={isSelected}
-                  selectedSemester={selectedSemester}
-                  disabled={isDisabled}
-                  onSelect={handleCourseSelect}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </>
-  );
-
-  if (isMobile) {
-    return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="bottom"
-          swipeToClose
-          dragHandleOnly
-          aria-describedby={undefined}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          className="flex h-[90vh] flex-col gap-0 overflow-hidden rounded-t-3xl bg-expert-blue-pale p-0"
-        >
-          <SheetHeader className="relative shrink-0 overflow-hidden px-8 pt-7 pb-4">
-            <SheetTitle className="text-2xl font-bold text-fg-primary">
-              <span className="block">Доступные курсы</span>
-              <span className="block">{`(${semester} семестр)`}</span>
-            </SheetTitle>
-            <RevealImage
-              src="/character3.png"
-              alt="Персонаж 3"
-              aria-hidden
-              className="pointer-events-none absolute top-6 right-6 h-24 w-auto select-none object-contain"
-            />
-          </SheetHeader>
-          {content}
-        </SheetContent>
-      </Sheet>
-    );
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        aria-describedby={undefined}
-        className="flex h-[42rem] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-3xl bg-expert-blue-pale p-0 max-w-xl sm:max-w-2xl lg:max-w-5xl xl:max-w-7xl"
-      >
-        <DialogHeader className="relative shrink-0 px-8 pt-7 pb-4 overflow-hidden">
-          <DialogTitle className="text-2xl font-bold text-fg-primary">
-            Доступные курсы
-          </DialogTitle>
-          <RevealImage
-            src="/character3.png"
-            alt="Персонаж 3"
-            aria-hidden
-            className="pointer-events-none absolute top-1 right-16 h-32 w-auto select-none object-contain"
+        </>
+      }
+      isLoading={isLoading}
+      isError={isError}
+      isEmpty={visibleCourses.length === 0}
+      emptyText="Нет курсов, доступных в этом семестре."
+    >
+      {visibleCourses.map((course) => {
+        const selectedSemester = semesterByCourseId.get(
+          course.id,
+        ) as SemesterNumber;
+        const isSelected = selectedSemester !== undefined;
+        const isFixed = fixedCourseIds.has(course.id);
+        const isOtherSemester = isSelected && selectedSemester !== semester;
+        // dimmed + non-clickable: pinned, or placed in another semester
+        const isDisabled = isFixed || isOtherSemester;
+        return (
+          <CourseSelectCard
+            key={course.id}
+            course={course}
+            selected={isSelected}
+            selectedSemester={selectedSemester}
+            disabled={isDisabled}
+            onSelect={handleCourseSelect}
           />
-        </DialogHeader>
-        {content}
-      </DialogContent>
-    </Dialog>
+        );
+      })}
+    </SelectGridModal>
   );
 };

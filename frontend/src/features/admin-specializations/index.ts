@@ -1,4 +1,4 @@
 export * from "./model";
 export { SpecializationList } from "./ui/SpecializationList";
 export { SpecializationRow } from "./ui/SpecializationRow";
-export { TrajectoryFilters } from "./ui/SpecializationFilters";
+export { SpecializationFilters } from "./ui/SpecializationFilters";

@@ -21,6 +21,7 @@ import (
 func RegisterCoursesRoutes(rg *gin.RouterGroup) {
 	rg.GET("/dependencies", getCourseDependencies)
 	rg.GET("/:id/dependencies", getDependenciesByCourseID)
+	rg.GET("/byId/:id", getCourseByID)
 	rg.GET("/", getCourses)
 	rg.GET("/:id", getCourses)
 	rg.GET("/:id/:major_id", getCourses)
@@ -550,6 +551,54 @@ func getDependenciesByCourseID(c *gin.Context) {
 		courseDeps = []interfaces.CourseDependencyData{}
 	}
 	c.JSON(http.StatusOK, courseDeps)
+}
+
+// Single course by id. `GET /courses/:id` is already spoken for — there `:id` is a
+// cohort year or a major UUID — hence the `byId/` prefix. The body is built with the
+// same helper the list endpoint uses, so the shape stays identical to one element of
+// `GET /courses/`.
+func getCourseByID(c *gin.Context) {
+	courseID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid course id"})
+		return
+	}
+
+	s := store.GetStore()
+	if s == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "store not initialized"})
+		return
+	}
+
+	course, err := s.GetCourseByID(courseID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if course == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "course not found"})
+		return
+	}
+
+	allDeps, err := s.GetCourseDependencies()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	/* nil analog groups: `inferFixedSemester` needs the whole catalog to size a group,
+	   and a single-course lookup has no such context. It returns 0 for a nil map. */
+	item := helpers.CourseToResponse(*course, allDeps, nil)
+
+	/* CourseToResponse stops short of `by_major_type`; getCourses derives it per request
+	   because it can depend on the major in the path. There is no major here, so this is
+	   the same fallback getCourses uses when a course has no major requirement. */
+	item["by_major_type"] = classifyCourseByCategory(course.Category, course.CourseType)
+	if item["by_major_type"] == "other" || item["by_major_type"] == "flex" {
+		item["course_type"] = item["by_major_type"]
+	}
+
+	c.JSON(http.StatusOK, item)
 }
 
 func addCourseDependency(c *gin.Context) {

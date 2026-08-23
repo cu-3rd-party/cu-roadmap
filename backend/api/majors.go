@@ -679,5 +679,10 @@ func createSpecialization(c *gin.Context) {
 		return
 	}
 
+	// getStructure serves the year -> majors -> specializations tree from the
+	// "structure_all" key, so without this the new specialization stays invisible
+	// there for the whole 5 minute TTL.
+	invalidateCachePrefixes("structure_all")
+
 	c.JSON(http.StatusCreated, created)
 }

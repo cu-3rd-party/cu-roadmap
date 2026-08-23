@@ -1,1 +1,1 @@
-export { default } from "./ui/TrajectoriesPage";
+export { default } from "./ui/SpecializationsPage";

@@ -2,6 +2,7 @@ import { memo } from "react";
 
 import { SemesterNumber } from "@/shared/constants";
 import { cn } from "@/shared/lib";
+import { SelectTile } from "@/shared/ui";
 import { Counter } from "@/shared/ui/kit";
 
 import type { Course } from "../model/types";
@@ -20,7 +21,9 @@ interface CourseSelectCardProps {
   onSelect: (course: Course, selectedSemester?: SemesterNumber) => void;
 }
 
-// Lightweight, memoized card used inside CourseSelectModal.
+// Lightweight, memoized card used inside CourseSelectModal. The tile chrome is
+// shared with the admin requisite picker; only the badges and the corner counter
+// are planner-specific.
 export const CourseSelectCard = memo(
   ({
     course,
@@ -29,42 +32,33 @@ export const CourseSelectCard = memo(
     disabled,
     onSelect,
   }: CourseSelectCardProps) => (
-    <button
-      type="button"
-      onClick={disabled ? undefined : () => onSelect(course, selectedSemester)}
+    <SelectTile
+      title={course.title}
+      selected={selected}
       disabled={disabled}
-      aria-pressed={selected}
-      className={cn(
-        "relative flex h-full flex-col gap-2 border-2 border-transparent rounded-xl bg-background py-2 px-2 sm:py-4 sm:px-4 text-left transition-colors duration-(--std-duration) ",
-        "cursor-pointer hover:bg-accent-pale-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-        selected && "border-accent/80",
-        disabled && "opacity-60 cursor-default hover:bg-background",
-      )}
-    >
-      <div
-        title={course.title}
-        className="min-h-[14h] text-sm leading-snug font-medium text-fg-primary"
-      >
-        {course.title}
-      </div>
-      <CourseBadges
-        variant="select"
-        category={course.category}
-        type={course.type}
-        recommendedSemester={course.recommendedSemester}
-        isMobile={false}
-        className={cn("mt-auto", selectedSemester !== undefined && "pr-8")}
-      />
-      {selectedSemester !== undefined && (
-        <Counter
-          variant="primary"
-          size="xxs"
-          className="absolute right-2 bottom-2"
-        >
-          {selectedSemester}
-        </Counter>
-      )}
-    </button>
+      onSelect={() => onSelect(course, selectedSemester)}
+      badges={
+        <CourseBadges
+          variant="select"
+          category={course.category}
+          type={course.type}
+          recommendedSemester={course.recommendedSemester}
+          isMobile={false}
+          className={cn("mt-auto", selectedSemester !== undefined && "pr-8")}
+        />
+      }
+      corner={
+        selectedSemester !== undefined ? (
+          <Counter
+            variant="primary"
+            size="xxs"
+            className="absolute right-2 bottom-2"
+          >
+            {selectedSemester}
+          </Counter>
+        ) : undefined
+      }
+    />
   ),
 );
 

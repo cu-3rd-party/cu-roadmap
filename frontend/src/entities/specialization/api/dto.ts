@@ -31,3 +31,10 @@ export interface IdentifySpecializationsRequestDto {
   current_semester: SemesterNumber;
   major_id: UUID;
 }
+
+// Request body for POST /api/v1/majors/specializations. Both fields are
+// required by the backend binding; there is no description field on the model.
+export interface CreateSpecializationRequestDto {
+  major_id: UUID;
+  title: string;
+}
